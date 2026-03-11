@@ -147,11 +147,3 @@ Use this as a production checklist for what still needs art/audio/prefab content
 - Popup frame/buttons/icons
 - One complete room background per theme
 
-
-## 18) Build/Interior Interaction Assets
-- Build mode toggle icons/states (on/off/locked)
-- Furniture gizmo handles (move/rotate/confirm/cancel)
-- Room doorway hotspot decals/highlights
-- Interactive props (trash can, door, storage) icon overlays
-- Furniture store panel card set + price tags + rarity badges
-- Drag shadow/placement validity indicators (valid/invalid)

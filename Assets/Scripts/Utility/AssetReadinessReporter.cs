@@ -17,8 +17,6 @@ namespace Survivebest.Utility
         [SerializeField] private CharacterScreenController characterScreenController;
         [SerializeField] private GameplayScreenController gameplayScreenController;
         [SerializeField] private ActionPopupController actionPopupController;
-        [SerializeField] private BuildModeManager buildModeManager;
-        [SerializeField] private FurnitureStoreController furnitureStoreController;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -38,8 +36,6 @@ namespace Survivebest.Utility
             missing += CheckNull(characterScreenController, nameof(characterScreenController));
             missing += CheckNull(gameplayScreenController, nameof(gameplayScreenController));
             missing += CheckNull(actionPopupController, nameof(actionPopupController));
-            missing += CheckNull(buildModeManager, nameof(buildModeManager));
-            missing += CheckNull(furnitureStoreController, nameof(furnitureStoreController));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
