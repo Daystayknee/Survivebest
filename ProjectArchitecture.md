@@ -485,7 +485,7 @@ Always-visible character presence:
 - `DaySliceManager` should resolve each stage into real system actions (needs checks, adaptive activities, pantry/order food pipeline, social/conflict/medical events) instead of placeholder-only event spam.
 - `UIGlassStyleController` can be used to quickly apply cinematic glass + glow styling across panels.
 
-- `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training) triggered from `SidebarContextMenu`.
+- `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training, animal-sitting contracts) triggered from `SidebarContextMenu`, including rich previews and outcome effects.
 - `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
 
 - `SaveGameManager` should own save slot snapshot persistence (metadata + world time + room + per-character needs/health/skills/status restore) and publish save lifecycle events.

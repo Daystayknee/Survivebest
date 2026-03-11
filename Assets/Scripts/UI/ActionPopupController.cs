@@ -8,9 +8,29 @@ using Survivebest.Commerce;
 using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.Health;
+using Survivebest.Needs;
+using Survivebest.Status;
 
 namespace Survivebest.UI
 {
+    [Serializable]
+    public class AnimalSittingGig
+    {
+        public string GigName;
+        public string AnimalName;
+        public string AnimalSpecies;
+        [TextArea] public string Description;
+        [Range(0f, 1f)] public float Difficulty = 0.4f;
+        [Min(0)] public int Payment = 35;
+        [Range(-20f, 20f)] public float EnergyDelta = -6f;
+        [Range(-20f, 20f)] public float HygieneDelta = -4f;
+        [Range(-20f, 20f)] public float MoodDelta = 8f;
+        [Range(-20f, 20f)] public float HydrationDelta = -2f;
+        public string RewardStatusId = "status_020";
+        public string PenaltyStatusId = "status_200";
+        public Sprite AnimalPreview;
+    }
+
     public class ActionPopupController : MonoBehaviour
     {
         [SerializeField] private SidebarContextMenu sidebarContextMenu;
@@ -25,8 +45,76 @@ namespace Survivebest.UI
         [SerializeField] private Text titleText;
         [SerializeField] private Text bodyText;
         [SerializeField] private Text optionsText;
+        [SerializeField] private Image animalPreviewImage;
+        [SerializeField] private Text animalPreviewLabel;
+
+        [Header("Animal Sitting Gigs")]
+        [SerializeField] private List<AnimalSittingGig> animalSittingGigs = new()
+        {
+            new AnimalSittingGig
+            {
+                GigName = "Evening Cat Sitting",
+                AnimalName = "Miso",
+                AnimalSpecies = "Cat",
+                Description = "Feed Miso, clean the litter box, and keep her calm during fireworks.",
+                Difficulty = 0.25f,
+                Payment = 28,
+                EnergyDelta = -4f,
+                HygieneDelta = -3f,
+                MoodDelta = 7f,
+                HydrationDelta = -1f,
+                RewardStatusId = "status_020",
+                PenaltyStatusId = "status_205"
+            },
+            new AnimalSittingGig
+            {
+                GigName = "Big Dog Walk",
+                AnimalName = "Bruno",
+                AnimalSpecies = "Dog",
+                Description = "Walk Bruno, refill water, and stop him from chewing the couch.",
+                Difficulty = 0.45f,
+                Payment = 42,
+                EnergyDelta = -8f,
+                HygieneDelta = -6f,
+                MoodDelta = 10f,
+                HydrationDelta = -3f,
+                RewardStatusId = "status_060",
+                PenaltyStatusId = "status_210"
+            },
+            new AnimalSittingGig
+            {
+                GigName = "Exotic Reptile Care",
+                AnimalName = "Zara",
+                AnimalSpecies = "Iguana",
+                Description = "Maintain terrarium heat, prep greens, and handle with care.",
+                Difficulty = 0.62f,
+                Payment = 60,
+                EnergyDelta = -7f,
+                HygieneDelta = -4f,
+                MoodDelta = 9f,
+                HydrationDelta = -2f,
+                RewardStatusId = "status_080",
+                PenaltyStatusId = "status_215"
+            },
+            new AnimalSittingGig
+            {
+                GigName = "Farm Animal Morning Shift",
+                AnimalName = "Daisy",
+                AnimalSpecies = "Goat",
+                Description = "Clean barn stalls, feed Daisy, and assist with basic grooming.",
+                Difficulty = 0.55f,
+                Payment = 55,
+                EnergyDelta = -10f,
+                HygieneDelta = -8f,
+                MoodDelta = 11f,
+                HydrationDelta = -4f,
+                RewardStatusId = "status_100",
+                PenaltyStatusId = "status_220"
+            }
+        };
 
         private string currentActionKey;
+        private AnimalSittingGig currentGig;
         private readonly StringBuilder builder = new();
 
         private void OnEnable()
@@ -50,6 +138,7 @@ namespace Survivebest.UI
         private void HandleSidebarOption(string actionKey)
         {
             currentActionKey = actionKey;
+            currentGig = actionKey == "animal_sit" ? PickGig() : null;
             SetPopupVisible(true);
             RefreshPopupContent(actionKey);
         }
@@ -101,6 +190,9 @@ namespace Survivebest.UI
                     reason = PracticeSkill(active, "Survival skills", 5f);
                     magnitude = 5f;
                     break;
+                case "animal_sit":
+                    reason = ResolveAnimalSitting(active, out magnitude);
+                    break;
                 case "talk_coworkers":
                     reason = "Coworker social interaction finished.";
                     magnitude = 1f;
@@ -139,9 +231,11 @@ namespace Survivebest.UI
             {
                 optionsText.text = BuildOptionsPreview(actionKey);
             }
+
+            RefreshAnimalPreview();
         }
 
-        private static string BuildTitle(string actionKey)
+        private string BuildTitle(string actionKey)
         {
             return actionKey switch
             {
@@ -152,13 +246,14 @@ namespace Survivebest.UI
                 "see_doctor" => "Medical: See Doctor",
                 "forage" => "Nature: Forage",
                 "camp" => "Nature: Camp",
+                "animal_sit" => currentGig != null ? $"Animal Sitting: {currentGig.GigName}" : "Animal Sitting Gig",
                 "practice_skill" => "Skill Practice",
                 "train_skill" => "Skill Training",
                 _ => "Action"
             };
         }
 
-        private static string BuildDescription(string actionKey)
+        private string BuildDescription(string actionKey)
         {
             return actionKey switch
             {
@@ -169,10 +264,21 @@ namespace Survivebest.UI
                 "see_doctor" => "Schedule a doctor consultation for diagnostics.",
                 "forage" => "Explore wild zones and gather random ingredients.",
                 "camp" => "Set camp to restore comfort and safety overnight.",
+                "animal_sit" => BuildAnimalSittingDescription(),
                 "practice_skill" => "Spend time to gain XP in an applied skill.",
                 "train_skill" => "Focused training to gain bigger XP rewards.",
                 _ => "Confirm to execute this action."
             };
+        }
+
+        private string BuildAnimalSittingDescription()
+        {
+            if (currentGig == null)
+            {
+                return "Take a short animal-sitting contract for cash and mood boosts.";
+            }
+
+            return $"Care for {currentGig.AnimalName} ({currentGig.AnimalSpecies}). {currentGig.Description}\nPotential payout: ${currentGig.Payment}.";
         }
 
         private string BuildOptionsPreview(string actionKey)
@@ -187,6 +293,9 @@ namespace Survivebest.UI
                 case "sell":
                     builder.AppendLine("Pantry Items:");
                     AppendPantryItems(builder, 5);
+                    break;
+                case "animal_sit":
+                    AppendAnimalSittingPreview(builder);
                     break;
                 case "practice_skill":
                 case "train_skill":
@@ -207,9 +316,125 @@ namespace Survivebest.UI
             return builder.ToString().TrimEnd();
         }
 
+        private void AppendAnimalSittingPreview(StringBuilder sb)
+        {
+            if (currentGig == null)
+            {
+                sb.AppendLine("• No gig selected.");
+                return;
+            }
+
+            sb.AppendLine($"Animal: {currentGig.AnimalName} ({currentGig.AnimalSpecies})");
+            sb.AppendLine($"Difficulty: {(int)(currentGig.Difficulty * 100f)}%");
+            sb.AppendLine($"Payout: ${currentGig.Payment}");
+            sb.AppendLine($"Need impact: Energy {currentGig.EnergyDelta:+0;-0;0}, Hygiene {currentGig.HygieneDelta:+0;-0;0}, Mood {currentGig.MoodDelta:+0;-0;0}");
+            sb.AppendLine("Confirm to attempt the sitting contract.");
+        }
+
+        private void RefreshAnimalPreview()
+        {
+            bool show = currentActionKey == "animal_sit" && currentGig != null;
+
+            if (animalPreviewImage != null)
+            {
+                animalPreviewImage.gameObject.SetActive(show);
+                if (show)
+                {
+                    animalPreviewImage.sprite = currentGig.AnimalPreview;
+                    animalPreviewImage.color = currentGig.AnimalPreview != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
+                }
+            }
+
+            if (animalPreviewLabel != null)
+            {
+                animalPreviewLabel.gameObject.SetActive(show);
+                if (show)
+                {
+                    animalPreviewLabel.text = currentGig.AnimalPreview != null
+                        ? $"{currentGig.AnimalName} • {currentGig.AnimalSpecies}"
+                        : $"{currentGig.AnimalName} • {currentGig.AnimalSpecies} (assign preview image)";
+                }
+            }
+        }
+
+        private AnimalSittingGig PickGig()
+        {
+            if (animalSittingGigs == null || animalSittingGigs.Count == 0)
+            {
+                return null;
+            }
+
+            int index = UnityEngine.Random.Range(0, animalSittingGigs.Count);
+            return animalSittingGigs[index];
+        }
+
+        private string ResolveAnimalSitting(CharacterCore active, out float magnitude)
+        {
+            magnitude = 2f;
+            if (active == null)
+            {
+                return "No active character available for animal sitting.";
+            }
+
+            AnimalSittingGig gig = currentGig ?? PickGig();
+            if (gig == null)
+            {
+                return "No animal sitting gigs are configured.";
+            }
+
+            NeedsSystem needs = active.GetComponent<NeedsSystem>();
+            SkillSystem skills = active.GetComponent<SkillSystem>();
+            StatusEffectSystem status = active.GetComponent<StatusEffectSystem>();
+
+            float handlingSkill = 0f;
+            if (skills != null && skills.SkillLevels.TryGetValue("Animal care", out float value))
+            {
+                handlingSkill = Mathf.Clamp01(value / 100f);
+            }
+
+            float moodBonus = needs != null ? Mathf.Clamp01(needs.Mood / 100f) * 0.08f : 0f;
+            float successChance = Mathf.Clamp01(0.52f + handlingSkill * 0.35f + moodBonus - gig.Difficulty * 0.28f);
+            bool success = UnityEngine.Random.value <= successChance;
+
+            if (needs != null)
+            {
+                needs.ModifyEnergy(gig.EnergyDelta);
+                needs.ModifyHygiene(gig.HygieneDelta);
+                needs.ModifyMood(success ? gig.MoodDelta : -Mathf.Abs(gig.MoodDelta) * 0.6f);
+                needs.RestoreHydration(gig.HydrationDelta);
+            }
+
+            if (skills != null)
+            {
+                skills.AddExperience("Animal care", success ? 5f : 2f);
+                skills.AddExperience("Survival skills", success ? 2f : 1f);
+            }
+
+            if (orderingSystem != null && success)
+            {
+                orderingSystem.AddFunds(gig.Payment);
+            }
+
+            if (status != null)
+            {
+                if (success && !string.IsNullOrWhiteSpace(gig.RewardStatusId))
+                {
+                    status.ApplyStatusById(gig.RewardStatusId, 6);
+                }
+                else if (!success && !string.IsNullOrWhiteSpace(gig.PenaltyStatusId))
+                {
+                    status.ApplyStatusById(gig.PenaltyStatusId, 6);
+                }
+            }
+
+            magnitude = success ? gig.Payment : -gig.Difficulty * 10f;
+            return success
+                ? $"Animal sitting success: {gig.AnimalName} is happy. Earned ${gig.Payment}."
+                : $"Animal sitting was rough: {gig.AnimalName} became stressed. Partial progress only.";
+        }
+
         private void AppendTopCatalogItems(StringBuilder sb, int count)
         {
-            // Preview essentials for store interactions
             string[] defaults = { "Bread", "Rice", "Chicken", "Tomato", "Milk" };
             for (int i = 0; i < count; i++)
             {
@@ -229,7 +454,7 @@ namespace Survivebest.UI
             int max = Mathf.Min(count, grocerySystem.Pantry.Count);
             for (int i = 0; i < max; i++)
             {
-                var entry = grocerySystem.Pantry[i];
+                InventoryEntry entry = grocerySystem.Pantry[i];
                 if (entry != null)
                 {
                     sb.AppendLine($"• {entry.ItemName} x{entry.Quantity}");
@@ -260,7 +485,7 @@ namespace Survivebest.UI
                 return "Nothing to sell.";
             }
 
-            var item = grocerySystem.Pantry.FirstOrDefault(x => x != null && x.Quantity > 0);
+            InventoryEntry item = grocerySystem.Pantry.FirstOrDefault(x => x != null && x.Quantity > 0);
             if (item == null)
             {
                 return "No valid pantry item to sell.";
@@ -326,7 +551,7 @@ namespace Survivebest.UI
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
                 Type = SimulationEventType.ActivityCompleted,
-                Severity = SimulationEventSeverity.Info,
+                Severity = magnitude < 0f ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
                 SystemName = nameof(ActionPopupController),
                 SourceCharacterId = householdManager != null && householdManager.ActiveCharacter != null
                     ? householdManager.ActiveCharacter.CharacterId

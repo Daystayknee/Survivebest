@@ -82,16 +82,19 @@ namespace Survivebest.UI
                 case LocationTheme.Workplace:
                     currentOptions.Add(new SidebarOption { Label = "Schmooze Boss", ActionKey = "schmooze_boss" });
                     currentOptions.Add(new SidebarOption { Label = "Talk to Coworkers", ActionKey = "talk_coworkers" });
+                    currentOptions.Add(new SidebarOption { Label = "Animal Sitting Gig", ActionKey = "animal_sit" });
                     currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;
                 case LocationTheme.Nature:
                     currentOptions.Add(new SidebarOption { Label = "Forage", ActionKey = "forage" });
                     currentOptions.Add(new SidebarOption { Label = "Camp", ActionKey = "camp" });
+                    currentOptions.Add(new SidebarOption { Label = "Animal Sitting Gig", ActionKey = "animal_sit" });
                     currentOptions.Add(new SidebarOption { Label = "Train Skill", ActionKey = "train_skill" });
                     break;
                 default:
                     currentOptions.Add(new SidebarOption { Label = "Talk", ActionKey = "talk" });
                     currentOptions.Add(new SidebarOption { Label = "Rest", ActionKey = "rest" });
+                    currentOptions.Add(new SidebarOption { Label = "Animal Sitting Gig", ActionKey = "animal_sit" });
                     currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;
             }
