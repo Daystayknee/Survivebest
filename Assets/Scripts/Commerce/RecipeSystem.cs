@@ -28,16 +28,8 @@ namespace Survivebest.Commerce
         [SerializeField] private GrocerySystem grocerySystem;
         [SerializeField] private List<Recipe> recipes = new();
         [SerializeField] private GameEventHub gameEventHub;
-        [SerializeField, Min(1)] private int minimumGeneratedRecipes = 220;
 
         public event Action<string, bool> OnRecipeCrafted;
-
-        public IReadOnlyList<Recipe> Recipes => recipes;
-
-        private void Awake()
-        {
-            EnsureRecipeDepth();
-        }
 
         public bool CookRecipe(string recipeName, NeedsSystem needs, HealthSystem health)
         {
