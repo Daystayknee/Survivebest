@@ -1,0 +1,90 @@
+# Survivebest (2D Life Sim Survival RPG Foundation)
+
+Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.  
+The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play.
+
+## Engine / Requirements
+
+- Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
+- .NET profile compatible with Unity C# scripts
+- No external server required
+
+## How to Run
+
+1. Clone repository.
+2. Open Unity Hub.
+3. Add this folder as a project: `.../Survivebest`.
+4. Open the main scene you use for simulation wiring (or create one).
+5. Add and wire these core managers in-scene:
+   - `GameEventHub`
+   - `WorldClock`
+   - `DaySliceManager`
+   - `HouseholdManager`
+   - `LocationManager`
+   - `WeatherManager`
+6. Add at least one `CharacterCore` GameObject with linked systems:
+   - `NeedsSystem`, `HealthSystem`, `EmotionSystem`, `SocialSystem`, `ActivitySystem`
+7. Press Play.
+
+> Tip: use `PlaceholderGenerator` if sprite slots are empty so UI portraits/world placeholders are still visible during setup.
+
+## Current Included Systems
+
+### Core Simulation
+- `WorldClock` (calendar/time progression, seasons, holidays, date events)
+- `DaySliceManager` (10-step daily loop orchestration)
+- `GameEventHub` (central structured simulation event pipeline)
+- `WorldCreatorManager` + law defaults/voting integration hooks
+
+### Character / Household
+- `CharacterCore` with life stage, talent, portrait traits, birth date, death events
+- `FamilyManager`, `HouseholdManager`, `LegacyManager`
+- `LifeStageManager`, `BodyCompositionSystem`, `VisualGenome`
+
+### Needs / Health / Emotion
+- `NeedsSystem`, `HealthSystem`, `MedicalConditionSystem`
+- `EmotionSystem`, `ConflictSystem`
+
+### Social / Dialogue / Activities
+- `SocialSystem`, `DialogueSystem`, `NarrativePromptSystem`
+- `ActivitySystem`, `DailyRoutineSystem`, `SkillSystem`
+
+### Commerce / Crafting / Food
+- `IngredientCatalog` (large ingredient sets by type)
+- `SupplyCatalog` (medicines, animals, skills, and other supplies)
+- `FoodDatabase`, `DrinkDatabase` (expanded variant content)
+- `GrocerySystem`, `RecipeSystem`, `OrderingSystem` (wallet + delayed delivery)
+
+### Crime / Society / Transport
+- `LawSystem`, `CrimeSystem`, `JusticeSystem`, `SubstanceSystem`
+- `CarSystem`
+
+### UI / Interaction / View
+- `GameHUD` (needs, money, clock)
+- `JournalFeedUI` + `JournalCardView` (card-style event feed)
+- `CharacterRosterHUD`, `CharacterPortraitRenderer`
+- `SidebarContextMenu`, `ZoneScenePanel`, `SuccessionUI`
+- `InteractionController`, `Interactable`, `MinigameManager`, `ViewManager`
+
+## Data Variants (Updated)
+
+Recent expansion includes:
+- Larger **food** variety across quick snacks, healthy, home-cooked, gourmet, comfort, dessert, and drink-type meals.
+- Larger **drink** variety across water, juice, soda, coffee, tea, smoothie, and alcohol categories.
+- Expanded **weather variants** beyond basic sunny/rain/snow with weighted seasonal outcomes.
+- Default **ordering menu variants** with different vendors, prices, and delivery times.
+
+## Architecture Notes
+
+- Systems should emit `SimulationEvent` via `GameEventHub` instead of directly manipulating UI.
+- UI observers (HUD/feed/panels) should subscribe to events and reflect state.
+- Keep simulation logic and UI rendering separate.
+
+See also:
+- `ProjectArchitecture.md`
+- `.github/copilot-instructions.md`
+
+## Current Status
+
+This repository is currently a **feature-rich foundation** rather than a fully content-complete game.  
+It is designed to be extended with scene/prefab wiring, balancing, art assets, save/load, and polish.
