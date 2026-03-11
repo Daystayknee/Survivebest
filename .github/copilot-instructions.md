@@ -68,9 +68,6 @@ When generating scripts, include:
 - Emit structured gameplay events to a central `GameEventHub` (type/source/target/reason/severity/magnitude) so UI/audio/VFX/analytics/saves can react without duplicating logic.
 - Implement a `DaySliceManager` state machine to enforce the 10-step daily loop and publish stage-change events.
 - Keep a primary `GameHUD` for live needs/money/clock/feed presentation, subscribed via observer/event pattern.
-- For narrative readability, prefer card-based feed rendering (`JournalFeedUI`/`JournalCardView`) over raw multiline text when adding new UI logs.
-- Character portraits should be data-driven: read face/eye/body/clothing from `CharacterCore` and tint/style from `AppearanceManager`.
-- Zone/room panels should expose illustration + NPCs + fauna + actions + short contextual prompt in one panel (`ZoneScenePanel`).
 - Economy actions (ordering) should use wallet + in-game delivery delay instead of instant effect application.
 - Start with world creation: generate area templates, assign default sensible laws, then allow law voting to shift local rules over time.
 - Use room themes to drive contextual sidebar options and short narrative entry prompts when entering locations.

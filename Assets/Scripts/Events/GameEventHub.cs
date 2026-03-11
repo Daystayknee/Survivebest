@@ -26,11 +26,7 @@ namespace Survivebest.Events
         LawVoteResolved,
         WorldCreated,
         SidebarOptionsGenerated,
-        NarrativePromptGenerated,
-        MenuScreenChanged,
-        SettingsChanged,
-        SaveCreated,
-        SaveLoaded
+        NarrativePromptGenerated
     }
 
     public enum SimulationEventSeverity

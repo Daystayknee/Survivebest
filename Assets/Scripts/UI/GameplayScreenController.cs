@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Core;
 using Survivebest.Events;
-using Survivebest.Core;
 using Survivebest.Health;
 using Survivebest.Location;
 using Survivebest.Needs;
@@ -25,7 +24,6 @@ namespace Survivebest.UI
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private GameEventHub gameEventHub;
-        [SerializeField] private SaveGameManager saveGameManager;
 
         [Header("Map / Nav")]
         [SerializeField] private Text locationNavigatorText;
@@ -108,22 +106,6 @@ namespace Survivebest.UI
         public void NavigateTo(string roomName)
         {
             locationManager?.NavigateToRoom(roomName);
-        }
-
-
-        public void QuickSaveSlot1(string worldName = "Current World")
-        {
-            saveGameManager?.SaveToSlot(1, worldName);
-        }
-
-        public void QuickSaveSlot2(string worldName = "Current World")
-        {
-            saveGameManager?.SaveToSlot(2, worldName);
-        }
-
-        public void QuickSaveSlot3(string worldName = "Current World")
-        {
-            saveGameManager?.SaveToSlot(3, worldName);
         }
 
         private void HandleRoomChanged(Room room)
