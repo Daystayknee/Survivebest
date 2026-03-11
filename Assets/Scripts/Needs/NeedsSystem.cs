@@ -16,21 +16,16 @@ namespace Survivebest.Needs
         [SerializeField, Range(0f, 100f)] private float energy = 100f;
         [SerializeField, Range(0f, 100f)] private float hygiene = 100f;
         [SerializeField, Range(0f, 100f)] private float mood = 100f;
-        [SerializeField, Range(0f, 100f)] private float hydration = 100f;
-
-        [Header("Decay")]
         [SerializeField, Min(0f)] private float bladderGainPerMinute = 2f;
         [SerializeField, Min(0f)] private float hungerLossPerHour = 5f;
         [SerializeField, Min(0f)] private float energyLossPerHour = 2f;
         [SerializeField, Min(0f)] private float hygieneLossPerHour = 1f;
-        [SerializeField, Min(0f)] private float hydrationLossPerHour = 3f;
 
         public event Action<float> OnHungerChanged;
         public event Action<float> OnBladderChanged;
         public event Action<float> OnEnergyChanged;
         public event Action<float> OnHygieneChanged;
         public event Action<float> OnMoodChanged;
-        public event Action<float> OnHydrationChanged;
         public event Action OnHourlyNeedDecay;
         public event Action OnBladderAccident;
 
@@ -40,7 +35,6 @@ namespace Survivebest.Needs
         public float Energy => energy;
         public float Hygiene => hygiene;
         public float Mood => mood;
-        public float Hydration => hydration;
 
         private void OnEnable()
         {
@@ -65,13 +59,16 @@ namespace Survivebest.Needs
             worldClock.OnHourPassed -= HandleHourPassed;
         }
 
-        public void RestoreHunger(float amount) => SetHunger(hunger + amount);
-        public void RestoreHydration(float amount) => SetHydration(hydration + amount);
-        public void ResetBladder() => SetBladder(0f);
+        public void RestoreHunger(float amount)
+        {
+            SetHunger(hunger + amount);
+        }
 
-        public void ModifyEnergy(float amount) => SetEnergy(energy + amount);
-        public void ModifyHygiene(float amount) => SetHygiene(hygiene + amount);
-        public void ModifyMood(float amount) => SetMood(mood + amount);
+        public void ResetBladder()
+        {
+            SetBladder(0f);
+        }
+
 
         public void ApplyFoodEffects(FoodItem food, HealthSystem healthSystem = null)
         {
@@ -85,11 +82,6 @@ namespace Survivebest.Needs
             SetHygiene(hygiene + food.HygieneDelta);
             SetMood(mood + food.MoodDelta);
 
-            if (food.IsSpicy)
-            {
-                RestoreHydration(-Mathf.Abs(food.SpiceIntensity) * 2f);
-            }
-
             if (healthSystem != null && Mathf.Abs(food.VitalityDelta) > 0f)
             {
                 if (food.VitalityDelta > 0f)
@@ -99,37 +91,6 @@ namespace Survivebest.Needs
                 else
                 {
                     healthSystem.Damage(Mathf.Abs(food.VitalityDelta));
-                }
-            }
-        }
-
-        public void ApplyDrinkEffects(DrinkItem drink, HealthSystem healthSystem = null)
-        {
-            if (drink == null)
-            {
-                return;
-            }
-
-            RestoreHydration(drink.HydrationRestore);
-            ModifyEnergy(drink.EnergyDelta);
-            ModifyMood(drink.MoodDelta);
-            ModifyHygiene(drink.HygieneDelta);
-
-            if (drink.IsAlcoholic)
-            {
-                ModifyMood(2f);
-                ModifyEnergy(-2f);
-            }
-
-            if (healthSystem != null && Mathf.Abs(drink.VitalityDelta) > 0f)
-            {
-                if (drink.VitalityDelta > 0f)
-                {
-                    healthSystem.Heal(drink.VitalityDelta);
-                }
-                else
-                {
-                    healthSystem.Damage(Mathf.Abs(drink.VitalityDelta));
                 }
             }
         }
@@ -169,7 +130,6 @@ namespace Survivebest.Needs
             SetHunger(hunger - hungerLossPerHour);
             SetEnergy(energy - energyLossPerHour);
             SetHygiene(hygiene - hygieneLossPerHour);
-            SetHydration(hydration - hydrationLossPerHour);
             SetMood(mood - 0.5f);
             OnHourlyNeedDecay?.Invoke();
         }
@@ -202,12 +162,6 @@ namespace Survivebest.Needs
         {
             mood = Mathf.Clamp(value, 0f, 100f);
             OnMoodChanged?.Invoke(mood);
-        }
-
-        private void SetHydration(float value)
-        {
-            hydration = Mathf.Clamp(value, 0f, 100f);
-            OnHydrationChanged?.Invoke(hydration);
         }
     }
 }

@@ -46,14 +46,3 @@ When generating scripts, include:
 
 - Model food as data (`FoodItem`) and apply outcomes through `NeedsSystem` and optional `HealthSystem` hooks.
 - Appearance systems should separate data profile from rendering application and support inclusive skin/hair/eye variation.
-
-- Model social/emotional outcomes explicitly (anger, affection, stress) and propagate to relationship logic.
-- Include everyday activity loops (rest/workout/read/drink/cook/socialize) with needs + skill consequences.
-- Treat transport as a managed system (`CarSystem`) with fuel/condition constraints rather than teleport-only logic.
-
-- Support layered face composition (head/neck/ears/eyes/nose/mouth/brows/lashes/makeup) with separate SpriteRenderers.
-- Model area-based law variance so crime/substance legality changes by location.
-- Route crimes and illegal substance usage through a justice pipeline (warning/fine/jail outcomes).
-
-- Medical systems should distinguish illness vs injury, with severity, duration, and age-appropriate condition pools.
-- Body metrics (height/weight/body-fat/muscle) must be life-stage-aware while preserving genetic potential over time.

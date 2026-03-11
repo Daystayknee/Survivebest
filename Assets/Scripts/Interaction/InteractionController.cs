@@ -12,7 +12,6 @@ namespace Survivebest.Interaction
         [SerializeField] private Camera gameplayCamera;
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private FoodDatabase foodDatabase;
-        [SerializeField] private DrinkDatabase drinkDatabase;
 
         private void Update()
         {
@@ -131,15 +130,8 @@ namespace Survivebest.Interaction
                     });
                     break;
                 case InteractableType.Bed:
-                    activeCharacter.transform.position = interactable.transform.position;
-                    needs.ModifyEnergy(18f);
-                    needs.ModifyMood(3f);
-                    break;
                 case InteractableType.Sink:
                     activeCharacter.transform.position = interactable.transform.position;
-                    DrinkItem drink = drinkDatabase != null ? drinkDatabase.GetRandomDrink() : null;
-                    HealthSystem sinkHealth = activeCharacter.GetComponent<HealthSystem>();
-                    needs.ApplyDrinkEffects(drink, sinkHealth);
                     break;
             }
         }
