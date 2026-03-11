@@ -24,13 +24,11 @@ namespace Survivebest.Core
 
         private readonly Dictionary<string, float> skillLevels = new()
         {
-            {"Cooking", 0f}, {"Gardening", 0f}, {"Hunting", 0f}, {"Fishing", 0f}, {"Farming", 0f},
-            {"Foraging", 0f}, {"Carpentry", 0f}, {"Blacksmithing", 0f}, {"Sewing", 0f}, {"Tailoring", 0f},
-            {"Leatherworking", 0f}, {"Pottery", 0f}, {"Painting", 0f}, {"Drawing", 0f}, {"Sculpting", 0f},
-            {"Writing", 0f}, {"Storytelling", 0f}, {"Programming", 0f}, {"Game design", 0f}, {"UI/UX design", 0f},
-            {"Photography", 0f}, {"Videography", 0f}, {"Music composition", 0f}, {"Singing", 0f}, {"Instrument playing", 0f},
-            {"Negotiation", 0f}, {"Leadership", 0f}, {"Public speaking", 0f}, {"First aid", 0f}, {"Survival skills", 0f},
-            {"Navigation", 0f}, {"Animal care", 0f}, {"Herbal medicine", 0f}, {"Chemistry", 0f}, {"Engineering", 0f}
+            {"Cooking", 0f},
+            {"Fitness", 0f},
+            {"Gaming", 0f},
+            {"Art", 0f},
+            {"Social", 0f}
         };
 
         public event Action<string, float> OnSkillChanged;

@@ -46,9 +46,6 @@ namespace Survivebest.World
         public event Action<Season> OnSeasonChanged;
         public event Action<string, int, int, int> OnHolidayStarted;
 
-        public int DaysPerMonth => daysPerMonth;
-        public int MonthsPerYear => monthsPerYear;
-
         public int Minute { get; private set; }
         public int Hour { get; private set; }
         public int Day { get; private set; }
@@ -142,12 +139,6 @@ namespace Survivebest.World
                     OnHolidayStarted?.Invoke(holiday.Name, Day, Month, Year);
                 }
             }
-        }
-
-
-        public bool IsDate(int month, int day)
-        {
-            return Month == month && Day == day;
         }
 
         private Season GetSeasonForMonth(int month)

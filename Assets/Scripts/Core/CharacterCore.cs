@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Survivebest.Events;
 
 namespace Survivebest.Core
 {
@@ -35,12 +34,6 @@ namespace Survivebest.Core
         [SerializeField] private bool isPlayerControlled;
         [SerializeField] private bool isDead;
         [SerializeField] private List<CharacterTalent> talents = new();
-        [SerializeField] private GameEventHub gameEventHub;
-
-        [Header("Birth Date")]
-        [SerializeField, Min(1)] private int birthYear = 1;
-        [SerializeField, Range(1, 12)] private int birthMonth = 1;
-        [SerializeField, Range(1, 31)] private int birthDay = 1;
 
         public event Action<CharacterCore> OnCharacterDied;
 
@@ -50,27 +43,12 @@ namespace Survivebest.Core
         public bool IsPlayerControlled => isPlayerControlled;
         public bool IsDead => isDead;
         public IReadOnlyList<CharacterTalent> Talents => talents;
-        public int BirthYear => birthYear;
-        public int BirthMonth => birthMonth;
-        public int BirthDay => birthDay;
 
         public void Initialize(string id, string name, LifeStage stage)
         {
             characterId = id;
             displayName = name;
             lifeStage = stage;
-        }
-
-        public void SetBirthDate(int year, int month, int day)
-        {
-            birthYear = Mathf.Max(1, year);
-            birthMonth = Mathf.Clamp(month, 1, 12);
-            birthDay = Mathf.Clamp(day, 1, 31);
-        }
-
-        public bool IsBirthday(int currentMonth, int currentDay)
-        {
-            return birthMonth == currentMonth && birthDay == currentDay;
         }
 
         public void SetDisplayName(string value)
@@ -128,17 +106,6 @@ namespace Survivebest.Core
             isDead = true;
             isPlayerControlled = false;
             OnCharacterDied?.Invoke(this);
-
-            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-            {
-                Type = SimulationEventType.CharacterDied,
-                Severity = SimulationEventSeverity.Critical,
-                SystemName = nameof(CharacterCore),
-                SourceCharacterId = characterId,
-                ChangeKey = nameof(isDead),
-                Reason = "Vitality or game system death trigger",
-                Magnitude = 100f
-            });
         }
     }
 }

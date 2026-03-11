@@ -4,7 +4,6 @@ using UnityEngine;
 using Survivebest.Food;
 using Survivebest.Needs;
 using Survivebest.Health;
-using Survivebest.Events;
 
 namespace Survivebest.Commerce
 {
@@ -27,7 +26,6 @@ namespace Survivebest.Commerce
     {
         [SerializeField] private GrocerySystem grocerySystem;
         [SerializeField] private List<Recipe> recipes = new();
-        [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<string, bool> OnRecipeCrafted;
 
@@ -44,15 +42,6 @@ namespace Survivebest.Commerce
                 if (!grocerySystem.HasIngredient(ingredient.IngredientName, ingredient.Quantity))
                 {
                     OnRecipeCrafted?.Invoke(recipeName, false);
-                    (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-                    {
-                        Type = SimulationEventType.RecipeCooked,
-                        Severity = SimulationEventSeverity.Warning,
-                        SystemName = nameof(RecipeSystem),
-                        ChangeKey = recipeName,
-                        Reason = "Missing ingredients",
-                        Magnitude = 0f
-                    });
                     return false;
                 }
             }
@@ -64,15 +53,6 @@ namespace Survivebest.Commerce
 
             needs?.ApplyFoodEffects(recipe.OutputFood, health);
             OnRecipeCrafted?.Invoke(recipeName, true);
-            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-            {
-                Type = SimulationEventType.RecipeCooked,
-                Severity = SimulationEventSeverity.Info,
-                SystemName = nameof(RecipeSystem),
-                ChangeKey = recipeName,
-                Reason = "Recipe successfully cooked",
-                Magnitude = 1f
-            });
             return true;
         }
     }
