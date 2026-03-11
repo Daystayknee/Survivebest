@@ -1,7 +1,27 @@
 # Project Rules for Life Sim
 
+## Core Style
+
 - Character Style: 2D Modular Paper Doll (layered sprites).
-- Coordinates: Use 2D Transform scaling for body features (`Hips`, `Chest`, `Height`).
+- Coordinates: Use 2D Transform scaling for body features (`Neck`, `Chest`, `Hips`, `Height`, etc.).
 - Stages: `Baby`, `Infant`, `Toddler`, `Child`, `Preteen`, `Teen`, `Young Adult`, `Adult`, `Older Adult`, `Elder`.
 - Language: C# for Unity 2026.
-- Naming: Use PascalCase for methods/types and camelCase for private fields.
+- Naming: PascalCase for methods/types, camelCase for private fields.
+
+## System-Awareness Rules
+
+- Keep logic modular and manager-driven (UI calls manager APIs; managers own state).
+- Use event-driven hooks for cross-system updates (`OnHourPassed`, `OnHolidayStarted`, `OnCharacterDeath`, `OnPlayerDeath`).
+- `WorldClock` drives time; time updates needs, weather, and aging.
+- `HouseholdManager` controls active character and roster membership.
+- `InteractionController` uses 2D raycasts + `Interactable` components for click actions.
+- `Legacy` flow must pause gameplay, show survivor selection, and resume with new active player.
+
+## Preferred Output Shape
+
+When generating scripts, include:
+
+1. Public API methods for manager-to-manager calls.
+2. Serialized fields for Unity inspector wiring.
+3. Events/delegates for decoupled system communication.
+4. Defensive null checks with concise logs (no giant boilerplate).
