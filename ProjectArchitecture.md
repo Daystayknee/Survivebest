@@ -485,6 +485,7 @@ Always-visible character presence:
 - `UIGlassStyleController` can be used to quickly apply cinematic glass + glow styling across panels.
 
 - `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training) triggered from `SidebarContextMenu`.
+- `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
 
 - `SaveGameManager` should own save slot snapshot persistence (metadata + room restore) and publish save lifecycle events.
 - `SettingsTabsController` should manage tabbed settings pages (Graphics/Audio/Gameplay/Controls/UI).

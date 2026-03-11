@@ -104,7 +104,7 @@ namespace Survivebest.Interaction
                         return;
                     }
 
-                    MinigameManager.Instance.StartMinigame(MinigameType.Cooking, success =>
+                    MinigameManager.Instance.StartMinigame(MinigameType.Cooking, activeCharacter, success =>
                     {
                         HealthSystem health = activeCharacter.GetComponent<HealthSystem>();
                         FoodItem selectedFood = foodDatabase != null ? foodDatabase.GetRandomFood() : null;
