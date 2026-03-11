@@ -85,6 +85,24 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `SidebarContextMenu`, `ZoneScenePanel`, `SuccessionUI`
 - `InteractionController`, `Interactable`, `MinigameManager`, `ViewManager`
 
+
+## Functional Status (What Works Right Now)
+
+### Fully Wired in Code
+- Splash flow: timed/skip transition to main menu (`SplashScreenController`).
+- Menu navigation with back-stack across splash/main/new/load/settings/world/household/gameplay/character pages (`MainMenuFlowController`).
+- Settings persistence: audio/display/subtitles/UI scale + theme color pickers with live target tinting (`SettingsPageController`, `SettingsTabsController`).
+- Save/load slots: 3-slot metadata model + save/load/delete APIs + load-screen slot rendering (`SaveGameManager`, `LoadGameScreenController`).
+- World creator tabs + preview + template generation into world/law/location systems (`WorldCreatorScreenController` + `WorldCreatorManager`).
+- Household maker tabs with rotate/zoom controls and start-game routing (`HouseholdMakerScreenController`).
+- Gameplay HUD layout orchestration: location nav, map label, environment/ecology/government summaries, resources row, and character vitals (`GameplayScreenController`).
+- Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice (`ActionPopupController`).
+
+### Implemented but Scene-Wiring Dependent
+- Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
+- Button and prefab hookups for every optional text/slider field in each page controller.
+- Deeper narrative/event animations and rich popup variant templates.
+
 ## Data Variants (Updated)
 
 Recent expansion includes:

@@ -28,7 +28,9 @@ namespace Survivebest.Events
         SidebarOptionsGenerated,
         NarrativePromptGenerated,
         MenuScreenChanged,
-        SettingsChanged
+        SettingsChanged,
+        SaveCreated,
+        SaveLoaded
     }
 
     public enum SimulationEventSeverity
