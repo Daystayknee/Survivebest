@@ -1,19 +1,18 @@
 using System;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.World;
 
 namespace Survivebest.Needs
 {
     public class NeedsSystem : MonoBehaviour
     {
         [SerializeField] private CharacterCore owner;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField, Range(0f, 100f)] private float hunger = 100f;
         [SerializeField, Range(0f, 100f)] private float bladder;
-        [SerializeField] private float minutesPerTick = 1f;
-        [SerializeField] private float realSecondsPerTick = 5f;
-
-        private float tickTimer;
-        private float accumulatedGameMinutes;
+        [SerializeField, Min(0f)] private float bladderGainPerMinute = 2f;
+        [SerializeField, Min(0f)] private float hungerLossPerHour = 5f;
 
         public event Action<float> OnHungerChanged;
         public event Action<float> OnBladderChanged;
@@ -24,24 +23,27 @@ namespace Survivebest.Needs
         public float Hunger => hunger;
         public float Bladder => bladder;
 
-        private void Update()
+        private void OnEnable()
         {
-            tickTimer += Time.deltaTime;
-            if (tickTimer < realSecondsPerTick)
+            if (worldClock == null)
+            {
+                Debug.LogWarning("NeedsSystem is missing WorldClock reference.");
+                return;
+            }
+
+            worldClock.OnMinutePassed += HandleMinutePassed;
+            worldClock.OnHourPassed += HandleHourPassed;
+        }
+
+        private void OnDisable()
+        {
+            if (worldClock == null)
             {
                 return;
             }
 
-            tickTimer -= realSecondsPerTick;
-            accumulatedGameMinutes += minutesPerTick;
-
-            IncreaseBladder(2f);
-
-            if (accumulatedGameMinutes >= 60f)
-            {
-                accumulatedGameMinutes -= 60f;
-                ApplyHourlyDecay();
-            }
+            worldClock.OnMinutePassed -= HandleMinutePassed;
+            worldClock.OnHourPassed -= HandleHourPassed;
         }
 
         public void RestoreHunger(float amount)
@@ -64,9 +66,14 @@ namespace Survivebest.Needs
             }
         }
 
-        private void ApplyHourlyDecay()
+        private void HandleMinutePassed(int hour, int minute)
         {
-            SetHunger(hunger - 5f);
+            IncreaseBladder(bladderGainPerMinute);
+        }
+
+        private void HandleHourPassed(int hour)
+        {
+            SetHunger(hunger - hungerLossPerHour);
             OnHourlyNeedDecay?.Invoke();
         }
 
