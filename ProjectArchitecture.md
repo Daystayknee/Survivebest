@@ -482,6 +482,7 @@ Always-visible character presence:
 - `WorldCreatorScreenController` should provide tabbed world setup controls and generate templates for `WorldCreatorManager`.
 - `HouseholdMakerScreenController` should support creator tabs and character rotate/zoom controls before game start.
 - `GameplayScreenController` should orchestrate the inspired HUD layout (location navigator, world map labels, environment/ecology/government summaries, resources row, character vitals panel).
+- `DaySliceManager` should resolve each stage into real system actions (needs checks, adaptive activities, pantry/order food pipeline, social/conflict/medical events) instead of placeholder-only event spam.
 - `UIGlassStyleController` can be used to quickly apply cinematic glass + glow styling across panels.
 
 - `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training) triggered from `SidebarContextMenu`.
