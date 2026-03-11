@@ -2,6 +2,8 @@ using System;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.World;
+using Survivebest.Food;
+using Survivebest.Health;
 
 namespace Survivebest.Needs
 {
@@ -11,17 +13,28 @@ namespace Survivebest.Needs
         [SerializeField] private WorldClock worldClock;
         [SerializeField, Range(0f, 100f)] private float hunger = 100f;
         [SerializeField, Range(0f, 100f)] private float bladder;
+        [SerializeField, Range(0f, 100f)] private float energy = 100f;
+        [SerializeField, Range(0f, 100f)] private float hygiene = 100f;
+        [SerializeField, Range(0f, 100f)] private float mood = 100f;
         [SerializeField, Min(0f)] private float bladderGainPerMinute = 2f;
         [SerializeField, Min(0f)] private float hungerLossPerHour = 5f;
+        [SerializeField, Min(0f)] private float energyLossPerHour = 2f;
+        [SerializeField, Min(0f)] private float hygieneLossPerHour = 1f;
 
         public event Action<float> OnHungerChanged;
         public event Action<float> OnBladderChanged;
+        public event Action<float> OnEnergyChanged;
+        public event Action<float> OnHygieneChanged;
+        public event Action<float> OnMoodChanged;
         public event Action OnHourlyNeedDecay;
         public event Action OnBladderAccident;
 
         public CharacterCore Owner => owner;
         public float Hunger => hunger;
         public float Bladder => bladder;
+        public float Energy => energy;
+        public float Hygiene => hygiene;
+        public float Mood => mood;
 
         private void OnEnable()
         {
@@ -56,6 +69,47 @@ namespace Survivebest.Needs
             SetBladder(0f);
         }
 
+
+        public void ApplyFoodEffects(FoodItem food, HealthSystem healthSystem = null)
+        {
+            if (food == null)
+            {
+                return;
+            }
+
+            RestoreHunger(food.HungerRestore);
+            SetEnergy(energy + food.EnergyDelta);
+            SetHygiene(hygiene + food.HygieneDelta);
+            SetMood(mood + food.MoodDelta);
+
+            if (healthSystem != null && Mathf.Abs(food.VitalityDelta) > 0f)
+            {
+                if (food.VitalityDelta > 0f)
+                {
+                    healthSystem.Heal(food.VitalityDelta);
+                }
+                else
+                {
+                    healthSystem.Damage(Mathf.Abs(food.VitalityDelta));
+                }
+            }
+        }
+
+        public float GetSocialFailureModifier()
+        {
+            if (mood >= 60f)
+            {
+                return 1f;
+            }
+
+            if (mood >= 30f)
+            {
+                return 1.2f;
+            }
+
+            return 1.5f;
+        }
+
         public void IncreaseBladder(float amount)
         {
             SetBladder(bladder + amount);
@@ -74,6 +128,9 @@ namespace Survivebest.Needs
         private void HandleHourPassed(int hour)
         {
             SetHunger(hunger - hungerLossPerHour);
+            SetEnergy(energy - energyLossPerHour);
+            SetHygiene(hygiene - hygieneLossPerHour);
+            SetMood(mood - 0.5f);
             OnHourlyNeedDecay?.Invoke();
         }
 
@@ -87,6 +144,24 @@ namespace Survivebest.Needs
         {
             bladder = Mathf.Clamp(value, 0f, 100f);
             OnBladderChanged?.Invoke(bladder);
+        }
+
+        private void SetEnergy(float value)
+        {
+            energy = Mathf.Clamp(value, 0f, 100f);
+            OnEnergyChanged?.Invoke(energy);
+        }
+
+        private void SetHygiene(float value)
+        {
+            hygiene = Mathf.Clamp(value, 0f, 100f);
+            OnHygieneChanged?.Invoke(hygiene);
+        }
+
+        private void SetMood(float value)
+        {
+            mood = Mathf.Clamp(value, 0f, 100f);
+            OnMoodChanged?.Invoke(mood);
         }
     }
 }

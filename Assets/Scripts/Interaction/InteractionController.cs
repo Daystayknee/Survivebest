@@ -3,6 +3,7 @@ using Survivebest.Core;
 using Survivebest.Needs;
 using Survivebest.Minigames;
 using Survivebest.Health;
+using Survivebest.Food;
 
 namespace Survivebest.Interaction
 {
@@ -10,6 +11,7 @@ namespace Survivebest.Interaction
     {
         [SerializeField] private Camera gameplayCamera;
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private FoodDatabase foodDatabase;
 
         private void Update()
         {
@@ -84,14 +86,42 @@ namespace Survivebest.Interaction
 
                     MinigameManager.Instance.StartMinigame(MinigameType.Cooking, success =>
                     {
+                        HealthSystem health = activeCharacter.GetComponent<HealthSystem>();
+                        FoodItem selectedFood = foodDatabase != null ? foodDatabase.GetRandomFood() : null;
+
                         if (success)
                         {
-                            needs.RestoreHunger(60f);
+                            if (selectedFood != null)
+                            {
+                                needs.ApplyFoodEffects(selectedFood, health);
+                            }
+                            else
+                            {
+                                needs.RestoreHunger(60f);
+                            }
                         }
                         else
                         {
-                            needs.RestoreHunger(20f);
-                            HealthSystem health = activeCharacter.GetComponent<HealthSystem>();
+                            if (selectedFood != null)
+                            {
+                                FoodItem failedMeal = new FoodItem
+                                {
+                                    Name = selectedFood.Name,
+                                    Category = selectedFood.Category,
+                                    HungerRestore = selectedFood.HungerRestore * 0.5f,
+                                    EnergyDelta = selectedFood.EnergyDelta * 0.5f,
+                                    MoodDelta = selectedFood.MoodDelta - 3f,
+                                    HygieneDelta = selectedFood.HygieneDelta - 1f,
+                                    VitalityDelta = selectedFood.VitalityDelta - 2f
+                                };
+
+                                needs.ApplyFoodEffects(failedMeal, health);
+                            }
+                            else
+                            {
+                                needs.RestoreHunger(20f);
+                            }
+
                             if (health != null)
                             {
                                 health.Damage(10f);

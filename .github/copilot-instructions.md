@@ -43,3 +43,6 @@ When generating scripts, include:
 - Prefer dedicated managers for camera mode (`ViewManager`) and location transitions (`LocationManager`).
 - Keep aging logic centralized in `LifeStageManager` driven by `WorldClock.OnYearPassed`.
 - For overlapped characters, use a root `SortingGroup` strategy (`CharacterSortingGroupBinder`).
+
+- Model food as data (`FoodItem`) and apply outcomes through `NeedsSystem` and optional `HealthSystem` hooks.
+- Appearance systems should separate data profile from rendering application and support inclusive skin/hair/eye variation.

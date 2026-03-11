@@ -267,3 +267,22 @@ Create CharacterSortingGroupBinder.cs.
 - Ensure every paper-doll character root has a SortingGroup.
 - Bind child SpriteRenderers to the group sorting layer/order to reduce inter-character clipping.
 ```
+
+
+### 9.5 Food Variety and Nutrition Depth
+
+```text
+Create a FoodDatabase.cs and expand NeedsSystem nutrition effects.
+- Define food categories and food items with hunger, energy, mood, hygiene, and vitality deltas.
+- On fridge/cooking interaction, select food from FoodDatabase and apply full effects to needs/health.
+- Include healthy and unhealthy outcomes so gameplay choices matter over time.
+```
+
+### 9.6 Appearance Depth (Hair/Eyes/Skin)
+
+```text
+Create an AppearanceManager.cs for modular paper-doll characters.
+- Support hair styles, hair colors, eye colors, skin tones, skin issues (e.g., freckles, acne, rosacea, vitiligo), and beauty marks.
+- Provide RandomizeAppearance() and setter methods for each appearance axis.
+- Apply sprites/colors to the appropriate SpriteRenderers and expose an OnAppearanceChanged event for UI refresh.
+```
