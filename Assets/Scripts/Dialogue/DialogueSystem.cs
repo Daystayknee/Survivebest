@@ -10,15 +10,11 @@ namespace Survivebest.Dialogue
     public enum DialogueIntent
     {
         FriendlyChat,
-        SmallTalk,
         Flirt,
         Apologize,
         Argue,
-        Yell,
         Compliment,
-        Insult,
-        Gossip,
-        Comfort
+        Insult
     }
 
     [Serializable]
@@ -45,90 +41,42 @@ namespace Survivebest.Dialogue
                 return false;
             }
 
-            float relationship = socialSystem.GetRelationshipValue(target.CharacterId);
             float failureModifier = needsSystem != null ? needsSystem.GetSocialFailureModifier() : 1f;
             float angerPenalty = emotionSystem != null ? emotionSystem.Anger * 0.005f : 0f;
-            float stressPenalty = emotionSystem != null ? emotionSystem.Stress * 0.003f : 0f;
-            float relationshipBonus = relationship > 50f ? 0.08f : 0f;
-
-            float successChance = Mathf.Clamp01(0.8f + relationshipBonus - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty);
+            float successChance = Mathf.Clamp01(0.85f - (failureModifier - 1f) * 0.25f - angerPenalty);
             bool success = UnityEngine.Random.value <= successChance;
 
-            int finalDelta = success ? baseRelationshipDelta : -Mathf.Max(1, Mathf.Abs(baseRelationshipDelta));
+            int finalDelta = success ? baseRelationshipDelta : -Mathf.Abs(baseRelationshipDelta);
             socialSystem.UpdateRelationship(target.CharacterId, finalDelta);
 
-            ApplyEmotionIntent(intent, success);
+            if (emotionSystem != null)
+            {
+                switch (intent)
+                {
+                    case DialogueIntent.FriendlyChat:
+                    case DialogueIntent.Compliment:
+                        emotionSystem.ModifyAffection(success ? 3f : -2f);
+                        emotionSystem.ModifyAnger(success ? -2f : 3f);
+                        break;
+                    case DialogueIntent.Flirt:
+                        emotionSystem.ModifyAffection(success ? 5f : -4f);
+                        emotionSystem.ModifyAnger(success ? -1f : 4f);
+                        break;
+                    case DialogueIntent.Argue:
+                    case DialogueIntent.Insult:
+                        emotionSystem.ModifyAnger(success ? 4f : 8f);
+                        emotionSystem.ModifyStress(4f);
+                        break;
+                    case DialogueIntent.Apologize:
+                        emotionSystem.ModifyAnger(success ? -6f : 2f);
+                        emotionSystem.ModifyAffection(success ? 2f : -1f);
+                        break;
+                }
+            }
 
             string line = GetLine(intent);
             OnDialogueResolved?.Invoke(line, success);
             return success;
-        }
-
-        public bool PerformDialogue(CharacterCore target, DialogueIntent intent)
-        {
-            int delta = GetBaseDelta(intent);
-            return PerformDialogue(target, intent, delta);
-        }
-
-        private void ApplyEmotionIntent(DialogueIntent intent, bool success)
-        {
-            if (emotionSystem == null)
-            {
-                return;
-            }
-
-            switch (intent)
-            {
-                case DialogueIntent.SmallTalk:
-                case DialogueIntent.FriendlyChat:
-                case DialogueIntent.Compliment:
-                    emotionSystem.ModifyAffection(success ? 3f : -1f);
-                    emotionSystem.ModifyAnger(success ? -2f : 2f);
-                    emotionSystem.ModifyStress(success ? -1f : 1f);
-                    break;
-                case DialogueIntent.Flirt:
-                    emotionSystem.ModifyAffection(success ? 6f : -4f);
-                    emotionSystem.ModifyAnger(success ? -1f : 5f);
-                    break;
-                case DialogueIntent.Comfort:
-                    emotionSystem.ModifyAffection(success ? 5f : 0f);
-                    emotionSystem.ModifyStress(success ? -5f : -1f);
-                    break;
-                case DialogueIntent.Argue:
-                    emotionSystem.ModifyAnger(success ? 5f : 8f);
-                    emotionSystem.ModifyStress(4f);
-                    break;
-                case DialogueIntent.Yell:
-                case DialogueIntent.Insult:
-                    emotionSystem.ModifyAnger(success ? 8f : 10f);
-                    emotionSystem.ModifyStress(5f);
-                    break;
-                case DialogueIntent.Gossip:
-                    emotionSystem.ModifyStress(success ? -1f : 2f);
-                    break;
-                case DialogueIntent.Apologize:
-                    emotionSystem.ModifyAnger(success ? -7f : 2f);
-                    emotionSystem.ModifyAffection(success ? 2f : -1f);
-                    break;
-            }
-        }
-
-        private int GetBaseDelta(DialogueIntent intent)
-        {
-            return intent switch
-            {
-                DialogueIntent.SmallTalk => 2,
-                DialogueIntent.FriendlyChat => 4,
-                DialogueIntent.Compliment => 6,
-                DialogueIntent.Flirt => 8,
-                DialogueIntent.Comfort => 7,
-                DialogueIntent.Gossip => 1,
-                DialogueIntent.Apologize => 5,
-                DialogueIntent.Argue => -6,
-                DialogueIntent.Yell => -10,
-                DialogueIntent.Insult => -12,
-                _ => 0
-            };
         }
 
         private string GetLine(DialogueIntent intent)

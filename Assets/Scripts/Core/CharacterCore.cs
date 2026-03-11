@@ -35,11 +35,6 @@ namespace Survivebest.Core
         [SerializeField] private bool isDead;
         [SerializeField] private List<CharacterTalent> talents = new();
 
-        [Header("Birth Date")]
-        [SerializeField, Min(1)] private int birthYear = 1;
-        [SerializeField, Range(1, 12)] private int birthMonth = 1;
-        [SerializeField, Range(1, 31)] private int birthDay = 1;
-
         public event Action<CharacterCore> OnCharacterDied;
 
         public string CharacterId => characterId;
@@ -48,27 +43,12 @@ namespace Survivebest.Core
         public bool IsPlayerControlled => isPlayerControlled;
         public bool IsDead => isDead;
         public IReadOnlyList<CharacterTalent> Talents => talents;
-        public int BirthYear => birthYear;
-        public int BirthMonth => birthMonth;
-        public int BirthDay => birthDay;
 
         public void Initialize(string id, string name, LifeStage stage)
         {
             characterId = id;
             displayName = name;
             lifeStage = stage;
-        }
-
-        public void SetBirthDate(int year, int month, int day)
-        {
-            birthYear = Mathf.Max(1, year);
-            birthMonth = Mathf.Clamp(month, 1, 12);
-            birthDay = Mathf.Clamp(day, 1, 31);
-        }
-
-        public bool IsBirthday(int currentMonth, int currentDay)
-        {
-            return birthMonth == currentMonth && birthDay == currentDay;
         }
 
         public void SetDisplayName(string value)

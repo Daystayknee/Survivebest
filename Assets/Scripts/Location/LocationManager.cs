@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Core;
-using Survivebest.Society;
 
 namespace Survivebest.Location
 {
@@ -11,7 +10,6 @@ namespace Survivebest.Location
     public class Room
     {
         public string RoomName;
-        public string AreaName = "Default";
         public Sprite Background;
         public Transform SpawnPoint;
     }
@@ -21,7 +19,6 @@ namespace Survivebest.Location
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private List<Room> rooms = new();
         [SerializeField] private SpriteRenderer backgroundRenderer;
-        [SerializeField] private LawSystem lawSystem;
         [SerializeField] private Image fadeOverlay;
         [SerializeField, Min(0f)] private float fadeDuration = 0.25f;
 
@@ -51,11 +48,6 @@ namespace Survivebest.Location
             if (backgroundRenderer != null && room.Background != null)
             {
                 backgroundRenderer.sprite = room.Background;
-            }
-
-            if (lawSystem != null)
-            {
-                lawSystem.SetCurrentArea(room.AreaName);
             }
 
             if (householdManager != null && room.SpawnPoint != null)
