@@ -211,3 +211,20 @@ Logic:
 ```text
 Write a script that 'Parents' all my 2D body part Sprites to a single 'Sorting Group' component, so that when characters overlap, the entire character is treated as one layer to prevent their arms and legs from clipping through each other.
 ```
+
+
+### 8.7 Weather Driven by Seasons
+
+```text
+Write a WeatherManager.cs that subscribes to WorldClock season/day events and sets a global WeatherState (Sunny, Rainy, Snowy).
+- Winter should bias toward Snowy, Spring/Fall toward Rainy, Summer toward Sunny.
+- Broadcast OnWeatherChanged when the state changes so UI/VFX can react.
+```
+
+### 8.8 Calendar Events and Holidays
+
+```text
+Extend WorldClock.cs to include Day/Month/Year progression, Season calculation, and holiday definitions.
+- Emit OnDateChanged(day, month, year), OnSeasonChanged(season), and OnHolidayStarted(name, day, month, year).
+- Keep existing minute/hour/day events for backward compatibility with NeedsSystem.
+```

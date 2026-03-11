@@ -35,3 +35,7 @@ When generating scripts, include:
 - `FamilyManager` is responsible for roommate spawning, baby creation, and household UI list updates.
 - `ViewManager` owns full-body vs portrait camera toggles and portrait layer filtering.
 - Use `SortingGroup` for each paper-doll character root to avoid inter-character limb clipping.
+
+- Keep WorldClock backwards-compatible while adding richer calendar events.
+- Prefer event-driven weather updates from WorldClock season/day signals.
+- MinigameManager should expose running state and start/complete events for UI flow.
