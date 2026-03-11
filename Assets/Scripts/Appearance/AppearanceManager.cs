@@ -57,6 +57,7 @@ namespace Survivebest.Appearance
         public SkinToneType SkinTone;
         public SkinIssueType SkinIssue;
         public bool HasBeautyMark;
+        public Color MakeupColor = new(1f, 0.7f, 0.7f, 0.5f);
     }
 
     [Serializable]
@@ -68,16 +69,42 @@ namespace Survivebest.Appearance
         public Sprite BackHair;
     }
 
+    [Serializable]
+    public class FaceFeatureSet
+    {
+        public Sprite Head;
+        public Sprite Neck;
+        public Sprite Ears;
+        public Sprite Eyes;
+        public Sprite Nose;
+        public Sprite Mouth;
+        public Sprite Eyebrows;
+        public Sprite Eyelashes;
+        public Sprite Makeup;
+    }
+
     public class AppearanceManager : MonoBehaviour
     {
+        [Header("Hair")]
         [SerializeField] private SpriteRenderer frontHairRenderer;
         [SerializeField] private SpriteRenderer sideHairRenderer;
         [SerializeField] private SpriteRenderer backHairRenderer;
+
+        [Header("Face and Body Layers")]
+        [SerializeField] private SpriteRenderer headRenderer;
+        [SerializeField] private SpriteRenderer neckRenderer;
+        [SerializeField] private SpriteRenderer earsRenderer;
         [SerializeField] private SpriteRenderer eyesRenderer;
+        [SerializeField] private SpriteRenderer noseRenderer;
+        [SerializeField] private SpriteRenderer mouthRenderer;
+        [SerializeField] private SpriteRenderer eyebrowsRenderer;
+        [SerializeField] private SpriteRenderer eyelashesRenderer;
+        [SerializeField] private SpriteRenderer makeupRenderer;
         [SerializeField] private SpriteRenderer skinRenderer;
         [SerializeField] private SpriteRenderer beautyMarkRenderer;
         [SerializeField] private SpriteRenderer vitiligoOverlayRenderer;
 
+        [Header("Variation Data")]
         [SerializeField] private List<HairStyleVariant> hairStyles = new();
 
         [SerializeField] private AppearanceProfile currentProfile = new();
@@ -85,6 +112,42 @@ namespace Survivebest.Appearance
         public event Action<AppearanceProfile> OnAppearanceChanged;
 
         public AppearanceProfile CurrentProfile => currentProfile;
+
+        public void ConfigureDefaultLayerOrder(int baseOrder = 0)
+        {
+            SetOrder(backHairRenderer, baseOrder - 3);
+            SetOrder(neckRenderer, baseOrder - 2);
+            SetOrder(headRenderer, baseOrder - 1);
+            SetOrder(earsRenderer, baseOrder);
+            SetOrder(eyesRenderer, baseOrder + 1);
+            SetOrder(noseRenderer, baseOrder + 2);
+            SetOrder(mouthRenderer, baseOrder + 3);
+            SetOrder(eyebrowsRenderer, baseOrder + 4);
+            SetOrder(eyelashesRenderer, baseOrder + 5);
+            SetOrder(makeupRenderer, baseOrder + 6);
+            SetOrder(frontHairRenderer, baseOrder + 7);
+            SetOrder(sideHairRenderer, baseOrder + 8);
+            SetOrder(beautyMarkRenderer, baseOrder + 9);
+            SetOrder(vitiligoOverlayRenderer, baseOrder + 10);
+        }
+
+        public void ApplyFaceFeatureSet(FaceFeatureSet features)
+        {
+            if (features == null)
+            {
+                return;
+            }
+
+            ApplySprite(headRenderer, features.Head);
+            ApplySprite(neckRenderer, features.Neck);
+            ApplySprite(earsRenderer, features.Ears);
+            ApplySprite(eyesRenderer, features.Eyes);
+            ApplySprite(noseRenderer, features.Nose);
+            ApplySprite(mouthRenderer, features.Mouth);
+            ApplySprite(eyebrowsRenderer, features.Eyebrows);
+            ApplySprite(eyelashesRenderer, features.Eyelashes);
+            ApplySprite(makeupRenderer, features.Makeup);
+        }
 
         public void RandomizeAppearance()
         {
@@ -94,6 +157,7 @@ namespace Survivebest.Appearance
             currentProfile.SkinIssue = RandomEnum<SkinIssueType>();
             currentProfile.HasBeautyMark = UnityEngine.Random.value > 0.7f;
             currentProfile.HairColor = UnityEngine.Random.ColorHSV(0f, 1f, 0.15f, 0.9f, 0.1f, 0.9f);
+            currentProfile.MakeupColor = UnityEngine.Random.ColorHSV(0.8f, 1f, 0.1f, 1f, 0.5f, 1f, 0.2f, 0.7f);
 
             ApplyAppearance(currentProfile);
         }
@@ -112,6 +176,7 @@ namespace Survivebest.Appearance
             ApplySkinTone(profile.SkinTone);
             ApplySkinIssue(profile.SkinIssue);
             SetBeautyMark(profile.HasBeautyMark);
+            SetMakeupColor(profile.MakeupColor);
 
             OnAppearanceChanged?.Invoke(currentProfile);
         }
@@ -157,6 +222,17 @@ namespace Survivebest.Appearance
             if (beautyMarkRenderer != null)
             {
                 beautyMarkRenderer.enabled = hasMark;
+            }
+
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetMakeupColor(Color color)
+        {
+            currentProfile.MakeupColor = color;
+            if (makeupRenderer != null)
+            {
+                makeupRenderer.color = color;
             }
 
             OnAppearanceChanged?.Invoke(currentProfile);
@@ -236,6 +312,22 @@ namespace Survivebest.Appearance
                 {
                     skinRenderer.color *= new Color(0.9f, 0.85f, 0.85f);
                 }
+            }
+        }
+
+        private static void SetOrder(SpriteRenderer renderer, int order)
+        {
+            if (renderer != null)
+            {
+                renderer.sortingOrder = order;
+            }
+        }
+
+        private static void ApplySprite(SpriteRenderer renderer, Sprite sprite)
+        {
+            if (renderer != null && sprite != null)
+            {
+                renderer.sprite = sprite;
             }
         }
 

@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.World;
 using Survivebest.Needs;
+using Survivebest.Events;
 
 namespace Survivebest.Health
 {
@@ -64,6 +65,7 @@ namespace Survivebest.Health
         [SerializeField] private HealthSystem healthSystem;
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private List<MedicalCondition> activeConditions = new();
+        [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<MedicalCondition> OnConditionAdded;
         public event Action<MedicalCondition> OnConditionExpired;
@@ -96,6 +98,16 @@ namespace Survivebest.Health
             MedicalCondition condition = BuildIllness(illnessType, severity);
             activeConditions.Add(condition);
             OnConditionAdded?.Invoke(condition);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.IllnessStarted,
+                Severity = severity == ConditionSeverity.Severe ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
+                SystemName = nameof(MedicalConditionSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = illnessType.ToString(),
+                Reason = "Illness added",
+                Magnitude = condition.RemainingHours
+            });
             return true;
         }
 
@@ -109,6 +121,16 @@ namespace Survivebest.Health
             MedicalCondition condition = BuildInjury(injuryType, severity);
             activeConditions.Add(condition);
             OnConditionAdded?.Invoke(condition);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.InjuryStarted,
+                Severity = severity == ConditionSeverity.Severe ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
+                SystemName = nameof(MedicalConditionSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = injuryType.ToString(),
+                Reason = "Injury added",
+                Magnitude = condition.RemainingHours
+            });
             return true;
         }
 

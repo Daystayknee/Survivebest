@@ -9,6 +9,7 @@ namespace Survivebest.Core
     {
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private GameObject characterPrefab;
+        [SerializeField] private WorldClock worldClock;
 
         public event Action<CharacterCore> OnFamilyMemberCreated;
 
@@ -40,6 +41,11 @@ namespace Survivebest.Core
             {
                 PhysicalTraits inherited = babyGenome.InheritTraits(genomeA.CurrentTraits, genomeB.CurrentTraits);
                 babyGenome.ApplyPhysicalTraits(inherited);
+            }
+
+            if (worldClock != null)
+            {
+                baby.SetBirthDate(worldClock.Year, worldClock.Month, worldClock.Day);
             }
 
             List<CharacterTalent> inheritedTalents = new();
@@ -81,6 +87,13 @@ namespace Survivebest.Core
 
             string id = Guid.NewGuid().ToString("N");
             character.Initialize(id, $"{defaultName} {id[..4]}", stage);
+
+            if (worldClock != null)
+            {
+                int randomMonth = UnityEngine.Random.Range(1, 13);
+                int randomDay = UnityEngine.Random.Range(1, 29);
+                character.SetBirthDate(worldClock.Year, randomMonth, randomDay);
+            }
 
             VisualGenome genome = character.GetComponent<VisualGenome>();
             if (genome != null)

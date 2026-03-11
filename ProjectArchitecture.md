@@ -286,3 +286,179 @@ Create an AppearanceManager.cs for modular paper-doll characters.
 - Provide RandomizeAppearance() and setter methods for each appearance axis.
 - Apply sprites/colors to the appropriate SpriteRenderers and expose an OnAppearanceChanged event for UI refresh.
 ```
+
+
+### 9.7 Human Behavior Depth (Dialogue/Anger/Love/Fighting)
+
+```text
+Create EmotionSystem.cs, DialogueSystem.cs, and ConflictSystem.cs.
+- EmotionSystem tracks Anger, Affection, and Stress with events.
+- DialogueSystem resolves intents (chat/flirt/argue/insult/apologize) and updates relationship + emotional outcomes.
+- ConflictSystem can trigger fights when anger/stress is high and apply health/relationship consequences.
+```
+
+### 9.8 Activities and Drinking Loop
+
+```text
+Create ActivitySystem.cs and DrinkDatabase.cs.
+- Add activities: Rest, Workout, Read, Drive, Drink, Cook, Socialize.
+- Drinks should restore hydration and affect mood/energy/health depending on type (water/coffee/soda/alcohol).
+- Route effects through NeedsSystem and HealthSystem APIs.
+```
+
+### 9.9 Cars and Transport
+
+```text
+Create CarSystem.cs with car inventory and trip logic.
+- Track car fuel and condition.
+- DriveToRoom(roomName) should consume fuel/condition and call LocationManager.NavigateToRoom.
+- Include refuel and repair functions.
+```
+
+
+### 9.10 Crime, Substances, and Justice by Area Laws
+
+```text
+Create LawSystem.cs + CrimeSystem.cs + SubstanceSystem.cs + JusticeSystem.cs.
+- Define area law profiles where legality/enforcement differs by area.
+- Include substances: alcohol, weed, prescription drugs, hard drugs.
+- Crime events (theft/assault/etc.) should be processed by justice outcomes (warning/fine/jail).
+- Location transitions should update active area law profile.
+```
+
+
+### 9.11 Medical Conditions (Illness + Injury)
+
+```text
+Create MedicalConditionSystem.cs for common illnesses/injuries with severity and hourly effects.
+- Include common illnesses (cold, flu, stomach bug, food poisoning, ear infection, bronchitis, migraine, allergy flare) and infant-specific issues (teething fever, colic, diaper rash).
+- Include common injuries (bruise, cut, sprain, burn, fracture, concussion, strain, bite, scrape).
+- Conditions should be age-appropriate by life stage.
+- Apply condition effects over time through HealthSystem + NeedsSystem.
+```
+
+### 9.12 Age-Appropriate Body Composition + Genetic Carry Through
+
+```text
+Create BodyCompositionSystem.cs to track height (cm), weight (kg), body fat, and muscle tone.
+- Apply age-appropriate ranges by life stage (baby -> elder).
+- Preserve inherited adult genetic potential (height/body-fat/muscle) and map it over maturity.
+- Feed body metrics into VisualGenome scaling so body features evolve logically with age.
+```
+
+
+### 9.13 Grocery, Recipes, and Ordering Out
+
+```text
+Create IngredientCatalog.cs + SupplyCatalog.cs + GrocerySystem.cs + RecipeSystem.cs + OrderingSystem.cs.
+- Support pantry inventory, buying/consuming ingredients, and checking recipe requirements.
+- Cooking recipes should consume ingredients and apply food effects through NeedsSystem.
+- Ordering out should apply menu food effects directly with vendor/menu style data.
+```
+
+### 9.14 Content Expansion Packs (Food/Medicine/Animals/Skills)
+
+```text
+Expand data catalogs to include broad ingredient groups, medicines, animals, and skill lists.
+- Keep data centralized in catalog/database scripts.
+- Reuse existing systems instead of duplicating mechanics.
+```
+
+### 9.15 Bustling Daily Autonomy (Make the World Feel Alive)
+
+```text
+Create DailyRoutineSystem.cs and connect it to WorldClock.
+- On each hour, characters should pick an autonomous action based on needs + emotions + time of day.
+- Include sleep windows, hungry/drink checks, stress relief hobbies, and social chatter patterns.
+- On each day, apply relationship drift so bonds cool down or rivalries worsen over time.
+```
+
+### 9.16 Rich Conversation + Conflict Escalation
+
+```text
+Expand DialogueSystem.cs + ConflictSystem.cs.
+- Dialogue intents should include: small talk, friendly chat, flirt, comfort, argue, yell, insult, gossip, apologize.
+- Dialogue success should depend on needs/emotion state and current relationship value.
+- Conflict should support multiple violence types (shove/punch/kick/brawl/weapon) with different damage and relationship fallout.
+- Violent outcomes should route through CrimeSystem so area laws and justice outcomes matter.
+```
+
+## 10) Lock Current Systems + Define the First Vertical Slice
+
+After implementing the calendar stack (weather + seasons + holidays + birthdays), freeze feature creep temporarily and ask this exact question:
+
+> **"What is the smallest complete day-in-the-life experience I can play?"**
+
+### Recommended first playable loop
+
+1. Wake up in bedroom.
+2. Check needs and weather.
+3. Go to bathroom.
+4. Eat/drink.
+5. Talk to a household member.
+6. Choose one activity.
+7. Buy/cook food.
+8. Trigger either a conflict or friendship event.
+9. End day / sleep.
+10. Advance time to next morning.
+
+If this single day loop feels good, keep systems locked and polish this loop before broadening scope.
+
+## 11) Central Event Architecture (System State Telemetry)
+
+Create a central `GameEventHub` that receives structured `SimulationEvent` payloads from all major systems.
+
+Each event should communicate:
+- what changed (`Type`, `ChangeKey`)
+- who changed (`SourceCharacterId`, `TargetCharacterId`)
+- why it changed (`Reason`)
+- how severe it is (`Severity`, `Magnitude`)
+
+Baseline event types to emit:
+- NeedCritical
+- RelationshipChanged
+- WeatherChanged
+- IllnessStarted
+- CrimeCommitted
+- JusticeOutcomeApplied
+- CharacterDied
+- ActivityStarted / ActivityCompleted
+- InventoryChanged
+- RecipeCooked
+- DialogueResolved
+
+Use this stream later for:
+- UI feed/ticker
+- sound + VFX triggers
+- analytics/debugging
+- save snapshots
+- AI reaction hooks
+
+## 12) Orchestrator + HUD + Economy Vertical Slice Wiring
+
+Build the gameplay "heart" in three linked pieces:
+- `DaySliceManager` enforces the 10-step day loop with explicit stage transitions.
+- `GameHUD` displays real-time needs, money, clock, and event feed from `GameEventHub`.
+- `OrderingSystem` uses wallet + delayed delivery by game-time instead of instant rewards.
+
+Technical rules:
+- Every day-stage transition must publish a structured event.
+- Event payloads should be timestamped by current `WorldClock` date/hour.
+- Keep UI display code (`GameHUD`) separate from simulation state updates.
+
+## 13) World Creator + Law Voting + Location Story Sidebars
+
+Add a world setup layer before daily simulation starts:
+- `WorldCreatorManager` should generate area templates with sensible default laws and room themes.
+- Support law voting (`stricter` / `more permissive`) per area/substance through `LawSystem`.
+- Use room themes (`Nature`, `StoreInterior`, `Workplace`, `Hospital`, etc.) to drive context-sensitive sidebar actions.
+
+Location-driven narrative layer:
+- On room enter, generate a short story prompt and present actions relevant to that area:
+  - Store: Buy / Sell / Trade
+  - Hospital: Get Meds / See Doctor
+  - Workplace: Schmooze Boss / Talk to Coworkers
+- Publish structured events for world creation, law voting, sidebar generation, and narrative prompt generation.
+
+Always-visible character presence:
+- Keep a character roster panel visible so the player can always see all household members and who is currently active.

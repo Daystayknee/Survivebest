@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Survivebest.Catalog;
+using Survivebest.Events;
 
 namespace Survivebest.Commerce
 {
@@ -18,6 +19,7 @@ namespace Survivebest.Commerce
         [SerializeField] private IngredientCatalog ingredientCatalog;
         [SerializeField] private SupplyCatalog supplyCatalog;
         [SerializeField] private List<InventoryEntry> pantry = new();
+        [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<string, int> OnInventoryChanged;
 
@@ -43,10 +45,12 @@ namespace Survivebest.Commerce
             {
                 pantry.Remove(entry);
                 OnInventoryChanged?.Invoke(name, 0);
+                PublishInventoryEvent(name, 0, "Ingredient depleted");
             }
             else
             {
                 OnInventoryChanged?.Invoke(name, entry.Quantity);
+                PublishInventoryEvent(name, entry.Quantity, "Ingredient consumed");
             }
 
             return true;
@@ -65,11 +69,26 @@ namespace Survivebest.Commerce
             {
                 pantry.Add(new InventoryEntry { ItemName = name, Quantity = quantity });
                 OnInventoryChanged?.Invoke(name, quantity);
+                PublishInventoryEvent(name, quantity, "Ingredient added to pantry");
                 return;
             }
 
             entry.Quantity += quantity;
             OnInventoryChanged?.Invoke(name, entry.Quantity);
+            PublishInventoryEvent(name, entry.Quantity, "Ingredient quantity increased");
+        }
+
+        private void PublishInventoryEvent(string itemName, int quantity, string reason)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.InventoryChanged,
+                Severity = quantity == 0 ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(GrocerySystem),
+                ChangeKey = itemName,
+                Reason = reason,
+                Magnitude = quantity
+            });
         }
 
         private bool ExistsInCatalog(string name)

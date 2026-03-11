@@ -1,15 +1,29 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Core;
+using Survivebest.Society;
 
 namespace Survivebest.Location
 {
+    public enum LocationTheme
+    {
+        Residential,
+        Nature,
+        StoreInterior,
+        Workplace,
+        Hospital,
+        Civic
+    }
+
     [System.Serializable]
     public class Room
     {
         public string RoomName;
+        public string AreaName = "Default";
+        public LocationTheme Theme = LocationTheme.Residential;
         public Sprite Background;
         public Transform SpawnPoint;
     }
@@ -19,14 +33,30 @@ namespace Survivebest.Location
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private List<Room> rooms = new();
         [SerializeField] private SpriteRenderer backgroundRenderer;
+        [SerializeField] private LawSystem lawSystem;
         [SerializeField] private Image fadeOverlay;
         [SerializeField, Min(0f)] private float fadeDuration = 0.25f;
 
         private Coroutine transitionRoutine;
 
+        public event Action<Room> OnRoomChanged;
+
+        public Room CurrentRoom { get; private set; }
+        public IReadOnlyList<Room> Rooms => rooms;
+
+        public void SetRooms(List<Room> newRooms)
+        {
+            rooms = newRooms ?? new List<Room>();
+        }
+
+        public Room FindRoom(string roomName)
+        {
+            return rooms.Find(r => r.RoomName == roomName);
+        }
+
         public void NavigateToRoom(string roomName)
         {
-            Room room = rooms.Find(r => r.RoomName == roomName);
+            Room room = FindRoom(roomName);
             if (room == null)
             {
                 Debug.LogWarning($"Room not found: {roomName}");
@@ -50,6 +80,11 @@ namespace Survivebest.Location
                 backgroundRenderer.sprite = room.Background;
             }
 
+            if (lawSystem != null)
+            {
+                lawSystem.SetCurrentArea(room.AreaName);
+            }
+
             if (householdManager != null && room.SpawnPoint != null)
             {
                 foreach (CharacterCore member in householdManager.Members)
@@ -60,6 +95,9 @@ namespace Survivebest.Location
                     }
                 }
             }
+
+            CurrentRoom = room;
+            OnRoomChanged?.Invoke(CurrentRoom);
 
             yield return Fade(1f, 0f);
             transitionRoutine = null;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.World;
 
 namespace Survivebest.Events
 {
@@ -18,7 +19,14 @@ namespace Survivebest.Events
         ActivityCompleted,
         InventoryChanged,
         RecipeCooked,
-        DialogueResolved
+        DialogueResolved,
+        DayStageChanged,
+        OrderPlaced,
+        OrderDelivered,
+        LawVoteResolved,
+        WorldCreated,
+        SidebarOptionsGenerated,
+        NarrativePromptGenerated
     }
 
     public enum SimulationEventSeverity
@@ -51,6 +59,7 @@ namespace Survivebest.Events
 
         [SerializeField, Min(1)] private int maxRecentEvents = 300;
         [SerializeField] private List<SimulationEvent> recentEvents = new();
+        [SerializeField] private WorldClock worldClock;
 
         public event Action<SimulationEvent> OnEventPublished;
 
@@ -65,6 +74,10 @@ namespace Survivebest.Events
             }
 
             Instance = this;
+            if (worldClock == null)
+            {
+                worldClock = FindObjectOfType<WorldClock>();
+            }
         }
 
         public void Publish(SimulationEvent simulationEvent)
@@ -73,6 +86,8 @@ namespace Survivebest.Events
             {
                 return;
             }
+
+            StampSimulationEvent(simulationEvent);
 
             recentEvents.Add(simulationEvent);
             if (recentEvents.Count > maxRecentEvents)
@@ -87,6 +102,19 @@ namespace Survivebest.Events
         public static void PublishFromAnywhere(SimulationEvent simulationEvent)
         {
             Instance?.Publish(simulationEvent);
+        }
+
+        private void StampSimulationEvent(SimulationEvent simulationEvent)
+        {
+            if (simulationEvent == null || worldClock == null)
+            {
+                return;
+            }
+
+            simulationEvent.Year = worldClock.Year;
+            simulationEvent.Month = worldClock.Month;
+            simulationEvent.Day = worldClock.Day;
+            simulationEvent.Hour = worldClock.Hour;
         }
     }
 }

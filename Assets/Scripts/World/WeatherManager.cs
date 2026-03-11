@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Survivebest.Events;
 
 namespace Survivebest.World
 {
@@ -14,6 +15,7 @@ namespace Survivebest.World
     {
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherState weatherState = WeatherState.Sunny;
+        [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<WeatherState> OnWeatherChanged;
 
@@ -80,6 +82,16 @@ namespace Survivebest.World
 
             weatherState = state;
             OnWeatherChanged?.Invoke(weatherState);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.WeatherChanged,
+                Severity = weatherState == WeatherState.Snowy ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(WeatherManager),
+                ChangeKey = weatherState.ToString(),
+                Reason = "Season/day weather resolution",
+                Magnitude = (float)weatherState
+            });
         }
     }
 }

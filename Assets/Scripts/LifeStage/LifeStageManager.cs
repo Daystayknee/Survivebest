@@ -11,6 +11,7 @@ namespace Survivebest.LifeStage
         [SerializeField] private CharacterCore owner;
         [SerializeField] private HealthSystem healthSystem;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private BodyCompositionSystem bodyCompositionSystem;
 
         [SerializeField, Min(1)] private int infantAge = 1;
         [SerializeField, Min(1)] private int toddlerAge = 2;
@@ -54,7 +55,12 @@ namespace Survivebest.LifeStage
             if (owner != null && next != owner.CurrentLifeStage)
             {
                 owner.SetLifeStage(next);
+                bodyCompositionSystem?.RecalculateForLifeStage(next);
                 OnLifeStageChanged?.Invoke(owner, AgeYears, next);
+            }
+            else if (owner != null && next == owner.CurrentLifeStage)
+            {
+                bodyCompositionSystem?.RecalculateForLifeStage(next);
             }
         }
 

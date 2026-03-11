@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Society;
+using Survivebest.Events;
 
 namespace Survivebest.Crime
 {
@@ -29,6 +30,7 @@ namespace Survivebest.Crime
         [SerializeField] private CharacterCore owner;
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private JusticeSystem justiceSystem;
+        [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<CrimeRecord> OnCrimeCommitted;
 
@@ -59,6 +61,17 @@ namespace Survivebest.Crime
             };
 
             OnCrimeCommitted?.Invoke(record);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.CrimeCommitted,
+                Severity = severity == LawSeverity.Felony ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
+                SystemName = nameof(CrimeSystem),
+                SourceCharacterId = owner.CharacterId,
+                ChangeKey = crimeType.ToString(),
+                Reason = $"Crime committed in {record.Area}",
+                Magnitude = (float)severity
+            });
 
             float enforcementChance = lawSystem != null
                 ? lawSystem.GetEnforcementForCrime(crimeType == CrimeType.Assault ? "Violence" : "Theft")
