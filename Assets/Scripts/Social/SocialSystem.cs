@@ -31,36 +31,6 @@ namespace Survivebest.Core
 
         public IReadOnlyList<Relationship> Relationships => relationships;
 
-        public float GetRelationshipValue(string targetCharacterId)
-        {
-            Relationship relationship = relationships.Find(r => r.TargetCharacterId == targetCharacterId);
-            return relationship != null ? relationship.RelationshipValue : 0f;
-        }
-
-        public RelationshipType GetRelationshipType(string targetCharacterId)
-        {
-            Relationship relationship = relationships.Find(r => r.TargetCharacterId == targetCharacterId);
-            return relationship != null ? relationship.RelationshipType : RelationshipType.Roommate;
-        }
-
-        public void ApplyDailyRelationshipDrift()
-        {
-            for (int i = 0; i < relationships.Count; i++)
-            {
-                Relationship relationship = relationships[i];
-                if (relationship.RelationshipType == RelationshipType.Enemy)
-                {
-                    relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue - 1f, -100f, 100f);
-                }
-                else if (relationship.RelationshipType == RelationshipType.Lover || relationship.RelationshipType == RelationshipType.Partner)
-                {
-                    relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue - 0.25f, -100f, 100f);
-                }
-
-                OnRelationshipChanged?.Invoke(relationship);
-            }
-        }
-
         public CharacterCore AddHouseholdMember(RelationshipType type)
         {
             if (familyManager == null)
