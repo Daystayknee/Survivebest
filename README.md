@@ -102,6 +102,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
 - Button and prefab hookups for every optional text/slider field in each page controller.
 - Deeper narrative/event animations and rich popup variant templates.
+- Use `AssetReadinessReporter` context action to quickly surface missing controller/image/text references in configured UI scenes.
 
 ## Data Variants (Updated)
 
@@ -123,6 +124,7 @@ Recent expansion includes:
 See also:
 - `ProjectArchitecture.md`
 - `.github/copilot-instructions.md`
+- `ASSET_CHECKLIST.md`
 
 ## Current Status
 
