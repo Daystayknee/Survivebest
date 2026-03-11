@@ -10,18 +10,21 @@ namespace Survivebest.Core
         [SerializeField] private CharacterCore activeCharacter;
 
         public event Action<CharacterCore> OnActiveCharacterChanged;
+        public event Action<CharacterCore> OnMemberAdded;
+        public event Action<CharacterCore> OnMemberRemoved;
 
         public IReadOnlyList<CharacterCore> Members => members;
         public CharacterCore ActiveCharacter => activeCharacter;
 
         public void AddMember(CharacterCore character)
         {
-            if (character == null || members.Contains(character))
+            if (character == null || character.IsDead || members.Contains(character))
             {
                 return;
             }
 
             members.Add(character);
+            OnMemberAdded?.Invoke(character);
 
             if (activeCharacter == null)
             {
@@ -36,7 +39,12 @@ namespace Survivebest.Core
                 return;
             }
 
-            members.Remove(character);
+            if (!members.Remove(character))
+            {
+                return;
+            }
+
+            OnMemberRemoved?.Invoke(character);
 
             if (activeCharacter == character)
             {

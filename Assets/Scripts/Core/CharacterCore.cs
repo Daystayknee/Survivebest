@@ -23,6 +23,7 @@ namespace Survivebest.Core
         [SerializeField] private string displayName = "New Character";
         [SerializeField] private LifeStage lifeStage = LifeStage.YoungAdult;
         [SerializeField] private bool isPlayerControlled;
+        [SerializeField] private bool isDead;
 
         public event Action<CharacterCore> OnCharacterDied;
 
@@ -30,6 +31,7 @@ namespace Survivebest.Core
         public string DisplayName => displayName;
         public LifeStage CurrentLifeStage => lifeStage;
         public bool IsPlayerControlled => isPlayerControlled;
+        public bool IsDead => isDead;
 
         public void Initialize(string id, string name, LifeStage stage)
         {
@@ -45,6 +47,13 @@ namespace Survivebest.Core
 
         public void Die()
         {
+            if (isDead)
+            {
+                return;
+            }
+
+            isDead = true;
+            isPlayerControlled = false;
             OnCharacterDied?.Invoke(this);
         }
     }

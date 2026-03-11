@@ -2,6 +2,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Needs;
 using Survivebest.Minigames;
+using Survivebest.Health;
 
 namespace Survivebest.Interaction
 {
@@ -90,6 +91,11 @@ namespace Survivebest.Interaction
                         else
                         {
                             needs.RestoreHunger(20f);
+                            HealthSystem health = activeCharacter.GetComponent<HealthSystem>();
+                            if (health != null)
+                            {
+                                health.Damage(10f);
+                            }
                         }
                     });
                     break;
