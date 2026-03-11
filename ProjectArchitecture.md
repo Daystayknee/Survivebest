@@ -228,3 +228,42 @@ Extend WorldClock.cs to include Day/Month/Year progression, Season calculation, 
 - Emit OnDateChanged(day, month, year), OnSeasonChanged(season), and OnHolidayStarted(name, day, month, year).
 - Keep existing minute/hour/day events for backward compatibility with NeedsSystem.
 ```
+
+
+## 9) Production Expansion Prompts (Phase 4)
+
+### 9.1 Aging and Life Stage Automation
+
+```text
+Create a LifeStageManager.cs that subscribes to WorldClock.OnYearPassed.
+- Track AgeYears.
+- Map age thresholds to LifeStage enum transitions.
+- Call CharacterCore.SetLifeStage(...) when thresholds are crossed.
+- Optionally reduce vitality in elder stage via HealthSystem.
+```
+
+### 9.2 Room Navigation and Scene Feel
+
+```text
+Write a LocationManager.cs with Room data (name, background sprite, spawn point).
+- Add NavigateToRoom(string roomName).
+- Fade to black, swap background, move household members to room spawn, then fade back in.
+- Keep it event-safe and interrupt-safe if multiple navigation requests occur.
+```
+
+### 9.3 Camera Mode Toggle
+
+```text
+Create a ViewManager.cs using two cameras (full body + portrait).
+- Toggle on button press.
+- In portrait mode, switch to portrait layer/render path for head/torso clarity.
+- Expose IsPortraitMode for UI state.
+```
+
+### 9.4 Character Sorting Cohesion
+
+```text
+Create CharacterSortingGroupBinder.cs.
+- Ensure every paper-doll character root has a SortingGroup.
+- Bind child SpriteRenderers to the group sorting layer/order to reduce inter-character clipping.
+```

@@ -39,3 +39,7 @@ When generating scripts, include:
 - Keep WorldClock backwards-compatible while adding richer calendar events.
 - Prefer event-driven weather updates from WorldClock season/day signals.
 - MinigameManager should expose running state and start/complete events for UI flow.
+
+- Prefer dedicated managers for camera mode (`ViewManager`) and location transitions (`LocationManager`).
+- Keep aging logic centralized in `LifeStageManager` driven by `WorldClock.OnYearPassed`.
+- For overlapped characters, use a root `SortingGroup` strategy (`CharacterSortingGroupBinder`).
