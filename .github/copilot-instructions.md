@@ -25,3 +25,13 @@ When generating scripts, include:
 2. Serialized fields for Unity inspector wiring.
 3. Events/delegates for decoupled system communication.
 4. Defensive null checks with concise logs (no giant boilerplate).
+
+
+## Interaction & Experience Addendum
+
+- Minigames must route through `MinigameManager.StartMinigame(MinigameType, Action<bool>)`.
+- `HealthSystem` owns vitality/conditions and may trigger death events consumed by legacy/succession flow.
+- `SkillSystem` should support JSON save/load and talent multipliers from character genetics/traits.
+- `FamilyManager` is responsible for roommate spawning, baby creation, and household UI list updates.
+- `ViewManager` owns full-body vs portrait camera toggles and portrait layer filtering.
+- Use `SortingGroup` for each paper-doll character root to avoid inter-character limb clipping.

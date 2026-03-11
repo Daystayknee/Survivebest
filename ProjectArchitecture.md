@@ -144,3 +144,70 @@ Logic:
  * Each card should show the character's Name, Life Stage, and a Portrait (using a Render Texture of their face).
  * When a card is clicked, set that character as the new ActivePlayer and reload the main game UI.
 ```
+
+
+## 8) Interaction & Experience Layer Prompts (Phase 3)
+
+### 8.1 Modular Minigame Framework
+
+```text
+Create a MinigameManager.cs for Unity.
+Logic:
+ * Use a Singleton pattern so it can be called from anywhere.
+ * Create an Enum for MinigameType (e.g., Cooking, Repairs, FirstAid, Cleaning).
+ * Write a function StartMinigame(MinigameType type, Action<bool> onComplete).
+ * When a minigame starts, it should overlay a specific UI Canvas.
+ * Example Logic: For 'Cooking', create a simple 'Click the moving bar in the green zone' mechanic.
+ * On success or failure, return the result to the calling script (e.g., if successful, Hunger is restored more; if failed, an 'Injury' might occur).
+```
+
+### 8.2 Hobbies, Skills, and Talent Genetics
+
+```text
+Write a SkillSystem.cs that tracks a character's progress in different Hobbies.
+Requirements:
+ * Create a Dictionary<string, float> skillLevels for skills like Cooking, Fitness, Gaming, Art, and Social.
+ * Add an Experience system where doing an activity (like 'Resting' or 'Eating' with a book) increases the skill.
+ * The Genetic Link: Include a 'Talent' multiplier in CharacterData. If a character has the 'Artistic' trait from their parents, their Art skill should level up 1.5x faster.
+ * Save and Load these skills using a JSON format so progress persists.
+```
+
+### 8.3 Illness, Injury, and Medical System
+
+```text
+Create a HealthSystem.cs that handles Illness and Injury.
+Details:
+ * Track a Vitality float (0-100). If it hits 0, the character dies regardless of their Life Stage.
+ * Create a Condition class for things like 'The Flu', 'Broken Arm', or 'Infection'.
+ * Contagion Logic: If a character has 'The Flu' and spends time in the same 'Room' (from the LocationManager) as another character, there is a 20% chance the illness spreads.
+ * Include a Healing function that requires the 'FirstAid' minigame or 'Rest' to increase Vitality.
+```
+
+### 8.4 Birth and Family Expansion
+
+```text
+Write a FamilyManager.cs that handles adding new members.
+Functions:
+ * CreateRoommate(): Spawns a new character with random genetics and no biological relation to the household.
+ * HaveBaby(CharacterData parentA, CharacterData parentB): Creates a new character at the 'Baby' Life Stage.
+ * The Heritage Logic: The baby must inherit the VisualGenome (skin tone, eye shape, hip width) from the parents using the inheritance function we wrote earlier.
+ * Automatically add the new character to the HouseholdUI portrait list.
+```
+
+### 8.5 Camera View Toggle (Chest-Up vs Full Body)
+
+```text
+Write a ViewManager.cs that controls the character's appearance in the UI.
+Logic:
+ * Use two Unity Cinemachine (or standard) cameras.
+ * Camera A (Full Body): Positioned to see the whole character in the room.
+ * Camera B (Portrait): Positioned to see the character from the chest up.
+ * Add a button listener that toggles between these two cameras.
+ * When in Portrait mode, ensure the BodyPartSwapper only renders the 'Head' and 'Torso' layers to a specific UI RawImage for clarity.
+```
+
+### 8.6 Optimization Prompt — Character Layer Cohesion
+
+```text
+Write a script that 'Parents' all my 2D body part Sprites to a single 'Sorting Group' component, so that when characters overlap, the entire character is treated as one layer to prevent their arms and legs from clipping through each other.
+```
