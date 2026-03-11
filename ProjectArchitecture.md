@@ -462,11 +462,3 @@ Location-driven narrative layer:
 
 Always-visible character presence:
 - Keep a character roster panel visible so the player can always see all household members and who is currently active.
-
-- `GameHUD` displays real-time needs, money, clock, and event feed from `GameEventHub`.
-- `JournalFeedUI` + `JournalCardView` render event cards (portrait/title/body/timestamp/severity) for readable story-style logs.
-- `CharacterPortraitRenderer` maps `CharacterCore` portrait data + appearance profile to layered portrait sprites.
-- `ZoneScenePanel` renders room illustration, NPC list, animals, actions, and a short context prompt on room change.
-- `CharacterRosterHUD` displays active household characters and allows active-character switching.
-- `SidebarContextMenu` presents contextual location options (store/work/hospital/nature, etc.).
-- `NarrativePromptSystem` can generate short contextual text prompts when entering locations.

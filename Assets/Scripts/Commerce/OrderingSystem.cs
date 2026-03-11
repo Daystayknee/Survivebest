@@ -30,15 +30,7 @@ namespace Survivebest.Commerce
 
     public class OrderingSystem : MonoBehaviour
     {
-        [SerializeField] private List<MenuItem> menu = new()
-        {
-            new MenuItem { VendorName = "Corner Deli", Food = new FoodItem { Name = "Instant Noodles", Category = FoodCategory.QuickSnack, HungerRestore = 25f, EnergyDelta = 2f, MoodDelta = 1f, HygieneDelta = 0f, VitalityDelta = -2f }, Price = 7, DeliveryMinutes = 20 },
-            new MenuItem { VendorName = "Sunrise Cafe", Food = new FoodItem { Name = "Garden Salad", Category = FoodCategory.Healthy, HungerRestore = 30f, EnergyDelta = 5f, MoodDelta = 2f, HygieneDelta = 0f, VitalityDelta = 4f }, Price = 11, DeliveryMinutes = 25 },
-            new MenuItem { VendorName = "Family Kitchen", Food = new FoodItem { Name = "Chicken Pot Pie", Category = FoodCategory.HomeCooked, HungerRestore = 52f, EnergyDelta = 7f, MoodDelta = 6f, HygieneDelta = 0f, VitalityDelta = 2f }, Price = 16, DeliveryMinutes = 35 },
-            new MenuItem { VendorName = "Riverside Grill", Food = new FoodItem { Name = "Grilled Fish", Category = FoodCategory.Gourmet, HungerRestore = 45f, EnergyDelta = 6f, MoodDelta = 4f, HygieneDelta = 0f, VitalityDelta = 5f }, Price = 22, DeliveryMinutes = 40 },
-            new MenuItem { VendorName = "Midnight Oven", Food = new FoodItem { Name = "Chocolate Cake", Category = FoodCategory.Dessert, HungerRestore = 20f, EnergyDelta = 10f, MoodDelta = 10f, HygieneDelta = -1f, VitalityDelta = -3f }, Price = 13, DeliveryMinutes = 30 },
-            new MenuItem { VendorName = "Fire Bowl", Food = new FoodItem { Name = "Spicy Curry", Category = FoodCategory.Comfort, HungerRestore = 40f, EnergyDelta = 4f, MoodDelta = 8f, HygieneDelta = -1f, VitalityDelta = 0f, IsSpicy = true, SpiceIntensity = 3f }, Price = 18, DeliveryMinutes = 30 }
-        };
+        [SerializeField] private List<MenuItem> menu = new();
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Min(0f)] private float wallet = 250f;
