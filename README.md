@@ -30,24 +30,6 @@ The project currently focuses on **foundational gameplay architecture**: world t
 
 ## Current Included Systems
 
-## Front-End Flow (Menu Vision)
-
-Current screen-flow architecture supports a forked path with back/forward navigation:
-
-- Splash Screen (dedicated screen / optional timed auto-advance)
-- Main Menu
-  - New Game → World Creator → Character Creator → Household Maker → Gameplay
-  - Load Game
-  - Settings → Settings Page (audio, fullscreen, subtitles, pause focus loss, UI scale, full theme color pickers)
-  - Character Screen (genetics, stats, traits, ailment/health overview with pill-style tags)
-
-These transitions are managed by `MainMenuFlowController`, splash timing/skip by `SplashScreenController`, character detail display by `CharacterScreenController`, and settings persistence/theme application by `SettingsPageController`.
-
-Load Game screen presents 3 save slots (world name, playtime, date, household size) via `LoadGameScreenController`.
-World creator is tabbed (`Appearance & Environment`, `Ecology & Inhabitants`, `Government & Laws`, `Starting Origins`, `Survival Mechanics`) via `WorldCreatorScreenController`.
-Household maker tab flow + rotation/zoom support is handled by `HouseholdMakerScreenController`.
-Gameplay map layout orchestration (location nav, map label, environment/ecology/government summaries, resources, character vitals) is handled by `GameplayScreenController`.
-
 ### Core Simulation
 - `WorldClock` (calendar/time progression, seasons, holidays, date events)
 - `DaySliceManager` (10-step daily loop orchestration)
@@ -71,7 +53,7 @@ Gameplay map layout orchestration (location nav, map label, environment/ecology/
 - `IngredientCatalog` (large ingredient sets by type)
 - `SupplyCatalog` (medicines, animals, skills, and other supplies)
 - `FoodDatabase`, `DrinkDatabase` (expanded variant content)
-- `GrocerySystem`, `RecipeSystem`, `OrderingSystem` (wallet + delayed delivery + fast-food location menus)
+- `GrocerySystem`, `RecipeSystem`, `OrderingSystem` (wallet + delayed delivery)
 
 ### Crime / Society / Transport
 - `LawSystem`, `CrimeSystem`, `JusticeSystem`, `SubstanceSystem`
@@ -90,10 +72,7 @@ Recent expansion includes:
 - Larger **food** variety across quick snacks, healthy, home-cooked, gourmet, comfort, dessert, and drink-type meals.
 - Larger **drink** variety across water, juice, soda, coffee, tea, smoothie, and alcohol categories.
 - Expanded **weather variants** beyond basic sunny/rain/snow with weighted seasonal outcomes.
-- **Recipe depth auto-generation** to maintain 200+ recipes for cooking gameplay variety.
-- **Drink catalog depth** expanded to 60 drinks across all categories.
-- Default **ordering menu variants** with different vendors, prices, delivery times, and separate fast-food chains.
-- Added supply/facility entries for food ecosystem simulation (farms, hatcheries, slaughterhouse, warehouses, zoo, markets).
+- Default **ordering menu variants** with different vendors, prices, and delivery times.
 
 ## Architecture Notes
 
