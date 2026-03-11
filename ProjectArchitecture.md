@@ -462,3 +462,40 @@ Location-driven narrative layer:
 
 Always-visible character presence:
 - Keep a character roster panel visible so the player can always see all household members and who is currently active.
+
+- `GameHUD` displays real-time needs, money, clock, and event feed from `GameEventHub`.
+- `JournalFeedUI` + `JournalCardView` render event cards (portrait/title/body/timestamp/severity) for readable story-style logs.
+- `CharacterPortraitRenderer` maps `CharacterCore` portrait data + appearance profile to layered portrait sprites.
+- `ZoneScenePanel` renders room illustration, NPC list, animals, actions, and a short context prompt on room change.
+- `CharacterRosterHUD` displays active household characters and allows active-character switching.
+- `SidebarContextMenu` presents contextual location options (store/work/hospital/nature, etc.).
+- `NarrativePromptSystem` can generate short contextual text prompts when entering locations.
+
+- `MainMenuFlowController` should manage splash/main/settings/new-game/load-game/gameplay screen transitions with back-stack support.
+- `SettingsPageController` should own settings persistence/application (audio/display/accessibility toggles) and emit `SettingsChanged` events.
+
+- Add a dedicated `SplashScreenController` for splash-specific logic (timed auto-forward + skip).
+- Include a `CharacterScreenController` page that surfaces genetics, body stats, talents, and active ailments using pill-tag UI components (`TraitPillTagView`).
+- `SettingsPageController` should support broad color-picker theming targets (primary/secondary/background/trait-pill) in addition to audio/display toggles.
+
+- `LoadGameScreenController` should render save slot cards (world, playtime, date, household members) and route selection to gameplay flow.
+- `WorldCreatorScreenController` should provide tabbed world setup controls and generate templates for `WorldCreatorManager`.
+- `HouseholdMakerScreenController` should support creator tabs and character rotate/zoom controls before game start.
+- `GameplayScreenController` should orchestrate the inspired HUD layout (location navigator, world map labels, environment/ecology/government summaries, resources row, character vitals panel).
+- `DaySliceManager` should resolve each stage into real system actions (needs checks, adaptive activities, pantry/order food pipeline, social/conflict/medical events) instead of placeholder-only event spam.
+- `UIGlassStyleController` can be used to quickly apply cinematic glass + glow styling across panels.
+
+- `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training, animal-sighting encounters) triggered from `SidebarContextMenu`, including rich previews and outcome effects.
+- `JusticeSystem` should enforce persistent consequences (immediate fines/debt, jail timers, hourly penalties, and release events) so crime affects ongoing simulation state.
+- `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
+
+- `SaveGameManager` should own save slot snapshot persistence (metadata + world time + room + per-character needs/health/skills/status restore) and publish save lifecycle events.
+- `CarSystem` should model meaningful travel outcomes (fuel economy, wear/cleanliness, distance multipliers, and driver-need impact) rather than simple location teleports.
+- `SettingsTabsController` should manage tabbed settings pages (Graphics/Audio/Gameplay/Controls/UI).
+
+- `BuildModeManager` should gate interior editing interactions and support drag-move placement for `FurniturePlaceable` actors.
+- `HomeInteractionHotspot` should route clickable background objects (doorways, trash can, store portal, shower, fridge, desk, TV, etc.) into systems actions and immediate needs deltas.
+- `StatusEffectSystem` should own the long-tail modifiers library (220+ effects), ticking runtime effects into needs/health and publishing `StatusEffectChanged` events for HUD/journal surfaces.
+- `GeneticsSystem` should model trait inheritance from parents (with low mutation chance), map genes into face/body/skin/eyes, and re-apply morphing across life stages for believable aging progression.
+- `AppearanceManager` should support layered sprite auto-binding/validation to reduce manual image stacking errors in Unity portrait rigs.
+- `FurnitureStoreController` should handle furniture purchase UI and spawn purchased placeables while transitioning player into build mode.

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.UI;
+using Survivebest.Status;
+using Survivebest.World;
 
 namespace Survivebest.Utility
 {
@@ -17,6 +19,10 @@ namespace Survivebest.Utility
         [SerializeField] private CharacterScreenController characterScreenController;
         [SerializeField] private GameplayScreenController gameplayScreenController;
         [SerializeField] private ActionPopupController actionPopupController;
+        [SerializeField] private BuildModeManager buildModeManager;
+        [SerializeField] private FurnitureStoreController furnitureStoreController;
+        [SerializeField] private StatusEffectSystem statusEffectSystem;
+        [SerializeField] private GeneticsSystem geneticsSystem;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -36,6 +42,10 @@ namespace Survivebest.Utility
             missing += CheckNull(characterScreenController, nameof(characterScreenController));
             missing += CheckNull(gameplayScreenController, nameof(gameplayScreenController));
             missing += CheckNull(actionPopupController, nameof(actionPopupController));
+            missing += CheckNull(buildModeManager, nameof(buildModeManager));
+            missing += CheckNull(furnitureStoreController, nameof(furnitureStoreController));
+            missing += CheckNull(statusEffectSystem, nameof(statusEffectSystem));
+            missing += CheckNull(geneticsSystem, nameof(geneticsSystem));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {

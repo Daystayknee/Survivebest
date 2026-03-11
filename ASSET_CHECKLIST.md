@@ -147,3 +147,28 @@ Use this as a production checklist for what still needs art/audio/prefab content
 - Popup frame/buttons/icons
 - One complete room background per theme
 
+
+## 18) Build/Interior Interaction Assets
+- Build mode toggle icons/states (on/off/locked)
+- Furniture gizmo handles (move/rotate/confirm/cancel)
+- Room doorway hotspot decals/highlights
+- Interactive props (trash can, door, storage) icon overlays
+- Furniture store panel card set + price tags + rarity badges
+- Drag shadow/placement validity indicators (valid/invalid)
+
+## 19) Home Hotspot + Status Effect Assets
+- Hotspot hover decals for: shower, fridge, water cooler, bed, mirror, couch, desk, bookshelf, TV, workout corner, pantry
+- Interaction tooltip cards with short buff/debuff previews
+- Status effect icon atlas (minimum 220 lightweight glyphs, generated naming allowed)
+- Positive/negative status pill backgrounds (glass + warning variants)
+- Hourly status tick VFX (soft spark for buffs, subtle glitch/smoke for debuffs)
+- Illness trigger FX cues for status-driven condition procs
+- UI legend card for status stacks, duration, and magnitude
+
+## 20) Genetics + Aging Portrait Assets
+- Life-stage portrait variants per character (baby/child/teen/adult/elder facial silhouettes)
+- Facial-feature variant sprites (jawline, nose bridge/shape, lip fullness overlays)
+- Genetics debug panel icons (heritage, mutation, inherited dominant/recessive indicator chips)
+- Age progression overlays (fine lines, eye-bags, freckles, skin texture detail)
+- Blend/morph transition FX for birthday age-up moments
+- Layer naming convention sheet for `AppearanceManager` auto-bind (`Head`, `Eyes`, `Nose`, `Mouth`, `FrontHair`, etc.)

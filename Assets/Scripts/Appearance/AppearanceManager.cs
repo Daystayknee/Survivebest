@@ -113,6 +113,46 @@ namespace Survivebest.Appearance
 
         public AppearanceProfile CurrentProfile => currentProfile;
 
+        [ContextMenu("Auto Bind Renderers By Name")]
+        public void AutoBindRenderersByName()
+        {
+            frontHairRenderer = FindLayerRenderer("FrontHair", frontHairRenderer);
+            sideHairRenderer = FindLayerRenderer("SideHair", sideHairRenderer);
+            backHairRenderer = FindLayerRenderer("BackHair", backHairRenderer);
+            headRenderer = FindLayerRenderer("Head", headRenderer);
+            neckRenderer = FindLayerRenderer("Neck", neckRenderer);
+            earsRenderer = FindLayerRenderer("Ears", earsRenderer);
+            eyesRenderer = FindLayerRenderer("Eyes", eyesRenderer);
+            noseRenderer = FindLayerRenderer("Nose", noseRenderer);
+            mouthRenderer = FindLayerRenderer("Mouth", mouthRenderer);
+            eyebrowsRenderer = FindLayerRenderer("Eyebrows", eyebrowsRenderer);
+            eyelashesRenderer = FindLayerRenderer("Eyelashes", eyelashesRenderer);
+            makeupRenderer = FindLayerRenderer("Makeup", makeupRenderer);
+            skinRenderer = FindLayerRenderer("Skin", skinRenderer);
+            beautyMarkRenderer = FindLayerRenderer("BeautyMark", beautyMarkRenderer);
+            vitiligoOverlayRenderer = FindLayerRenderer("VitiligoOverlay", vitiligoOverlayRenderer);
+        }
+
+        [ContextMenu("Validate Portrait Layer Setup")]
+        public void ValidatePortraitLayerSetup()
+        {
+            ValidateRenderer(frontHairRenderer, nameof(frontHairRenderer));
+            ValidateRenderer(sideHairRenderer, nameof(sideHairRenderer));
+            ValidateRenderer(backHairRenderer, nameof(backHairRenderer));
+            ValidateRenderer(headRenderer, nameof(headRenderer));
+            ValidateRenderer(neckRenderer, nameof(neckRenderer));
+            ValidateRenderer(earsRenderer, nameof(earsRenderer));
+            ValidateRenderer(eyesRenderer, nameof(eyesRenderer));
+            ValidateRenderer(noseRenderer, nameof(noseRenderer));
+            ValidateRenderer(mouthRenderer, nameof(mouthRenderer));
+            ValidateRenderer(eyebrowsRenderer, nameof(eyebrowsRenderer));
+            ValidateRenderer(eyelashesRenderer, nameof(eyelashesRenderer));
+            ValidateRenderer(makeupRenderer, nameof(makeupRenderer));
+            ValidateRenderer(skinRenderer, nameof(skinRenderer));
+            ValidateRenderer(beautyMarkRenderer, nameof(beautyMarkRenderer));
+            ValidateRenderer(vitiligoOverlayRenderer, nameof(vitiligoOverlayRenderer));
+        }
+
         public void ConfigureDefaultLayerOrder(int baseOrder = 0)
         {
             SetOrder(backHairRenderer, baseOrder - 3);
@@ -329,6 +369,36 @@ namespace Survivebest.Appearance
             {
                 renderer.sprite = sprite;
             }
+        }
+
+        private SpriteRenderer FindLayerRenderer(string containsName, SpriteRenderer existing)
+        {
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SpriteRenderer renderer = renderers[i];
+                if (renderer.name.IndexOf(containsName, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return renderer;
+                }
+            }
+
+            return null;
+        }
+
+        private void ValidateRenderer(SpriteRenderer renderer, string fieldName)
+        {
+            if (renderer != null)
+            {
+                return;
+            }
+
+            Debug.LogWarning($"[AppearanceManager] Missing renderer reference for {fieldName}. Use Auto Bind Renderers By Name or assign manually.", this);
         }
 
         private static T RandomEnum<T>() where T : Enum

@@ -37,6 +37,36 @@ namespace Survivebest.Core
 
         public IReadOnlyDictionary<string, float> SkillLevels => skillLevels;
 
+        public List<SkillEntry> CaptureSnapshot()
+        {
+            List<SkillEntry> entries = new();
+            foreach (KeyValuePair<string, float> pair in skillLevels)
+            {
+                entries.Add(new SkillEntry { SkillName = pair.Key, SkillValue = pair.Value });
+            }
+
+            return entries;
+        }
+
+        public void ApplySnapshot(List<SkillEntry> entries)
+        {
+            if (entries == null)
+            {
+                return;
+            }
+
+            foreach (SkillEntry entry in entries)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.SkillName))
+                {
+                    continue;
+                }
+
+                skillLevels[entry.SkillName] = Mathf.Max(0f, entry.SkillValue);
+                OnSkillChanged?.Invoke(entry.SkillName, skillLevels[entry.SkillName]);
+            }
+        }
+
         public void AddExperience(string skillName, float amount)
         {
             if (!skillLevels.ContainsKey(skillName))

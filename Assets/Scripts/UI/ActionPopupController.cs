@@ -8,9 +8,29 @@ using Survivebest.Commerce;
 using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.Health;
+using Survivebest.Needs;
+using Survivebest.Status;
 
 namespace Survivebest.UI
 {
+    [Serializable]
+    public class AnimalSightingEncounter
+    {
+        public string SightingName;
+        public string AnimalName;
+        public string AnimalSpecies;
+        [TextArea] public string Description;
+        [Range(0f, 1f)] public float Difficulty = 0.4f;
+        [Min(0)] public int Payment = 35;
+        [Range(-20f, 20f)] public float EnergyDelta = -6f;
+        [Range(-20f, 20f)] public float HygieneDelta = -4f;
+        [Range(-20f, 20f)] public float MoodDelta = 8f;
+        [Range(-20f, 20f)] public float HydrationDelta = -2f;
+        public string RewardStatusId = "status_020";
+        public string PenaltyStatusId = "status_200";
+        public Sprite AnimalPreview;
+    }
+
     public class ActionPopupController : MonoBehaviour
     {
         [SerializeField] private SidebarContextMenu sidebarContextMenu;
@@ -25,8 +45,76 @@ namespace Survivebest.UI
         [SerializeField] private Text titleText;
         [SerializeField] private Text bodyText;
         [SerializeField] private Text optionsText;
+        [SerializeField] private Image animalPreviewImage;
+        [SerializeField] private Text animalPreviewLabel;
+
+        [Header("Animal Sightings")]
+        [SerializeField] private List<AnimalSightingEncounter> animalSightingEncounters = new()
+        {
+            new AnimalSightingEncounter
+            {
+                SightingName = "Dawn Deer Crossing",
+                AnimalName = "White-tail Doe",
+                AnimalSpecies = "Deer",
+                Description = "Track hoof marks near the creek and quietly observe the herd at sunrise.",
+                Difficulty = 0.25f,
+                Payment = 30,
+                EnergyDelta = -3f,
+                HygieneDelta = -1f,
+                MoodDelta = 8f,
+                HydrationDelta = -1f,
+                RewardStatusId = "status_020",
+                PenaltyStatusId = "status_205"
+            },
+            new AnimalSightingEncounter
+            {
+                SightingName = "Night Owl Watch",
+                AnimalName = "Barn Owl",
+                AnimalSpecies = "Bird",
+                Description = "Stay quiet near the old mill and capture a clean sighting at dusk.",
+                Difficulty = 0.45f,
+                Payment = 44,
+                EnergyDelta = -6f,
+                HygieneDelta = -2f,
+                MoodDelta = 10f,
+                HydrationDelta = -2f,
+                RewardStatusId = "status_060",
+                PenaltyStatusId = "status_210"
+            },
+            new AnimalSightingEncounter
+            {
+                SightingName = "Wetland Croc Survey",
+                AnimalName = "Marsh Crocodile",
+                AnimalSpecies = "Reptile",
+                Description = "Log movement patterns from a safe ridge without startling the animal.",
+                Difficulty = 0.62f,
+                Payment = 62,
+                EnergyDelta = -7f,
+                HygieneDelta = -3f,
+                MoodDelta = 9f,
+                HydrationDelta = -2f,
+                RewardStatusId = "status_080",
+                PenaltyStatusId = "status_215"
+            },
+            new AnimalSightingEncounter
+            {
+                SightingName = "Mountain Fox Trail",
+                AnimalName = "Silver Fox",
+                AnimalSpecies = "Mammal",
+                Description = "Follow tracks in the highlands and report a verified visual sighting.",
+                Difficulty = 0.55f,
+                Payment = 57,
+                EnergyDelta = -9f,
+                HygieneDelta = -4f,
+                MoodDelta = 11f,
+                HydrationDelta = -3f,
+                RewardStatusId = "status_100",
+                PenaltyStatusId = "status_220"
+            }
+        };
 
         private string currentActionKey;
+        private AnimalSightingEncounter currentSighting;
         private readonly StringBuilder builder = new();
 
         private void OnEnable()
@@ -50,6 +138,7 @@ namespace Survivebest.UI
         private void HandleSidebarOption(string actionKey)
         {
             currentActionKey = actionKey;
+            currentSighting = actionKey == "animal_sight" ? PickSighting() : null;
             SetPopupVisible(true);
             RefreshPopupContent(actionKey);
         }
@@ -101,6 +190,9 @@ namespace Survivebest.UI
                     reason = PracticeSkill(active, "Survival skills", 5f);
                     magnitude = 5f;
                     break;
+                case "animal_sight":
+                    reason = ResolveAnimalSighting(active, out magnitude);
+                    break;
                 case "talk_coworkers":
                     reason = "Coworker social interaction finished.";
                     magnitude = 1f;
@@ -139,9 +231,11 @@ namespace Survivebest.UI
             {
                 optionsText.text = BuildOptionsPreview(actionKey);
             }
+
+            RefreshAnimalPreview();
         }
 
-        private static string BuildTitle(string actionKey)
+        private string BuildTitle(string actionKey)
         {
             return actionKey switch
             {
@@ -152,13 +246,14 @@ namespace Survivebest.UI
                 "see_doctor" => "Medical: See Doctor",
                 "forage" => "Nature: Forage",
                 "camp" => "Nature: Camp",
+                "animal_sight" => currentSighting != null ? $"Animal Sighting: {currentSighting.SightingName}" : "Animal Sighting",
                 "practice_skill" => "Skill Practice",
                 "train_skill" => "Skill Training",
                 _ => "Action"
             };
         }
 
-        private static string BuildDescription(string actionKey)
+        private string BuildDescription(string actionKey)
         {
             return actionKey switch
             {
@@ -169,10 +264,21 @@ namespace Survivebest.UI
                 "see_doctor" => "Schedule a doctor consultation for diagnostics.",
                 "forage" => "Explore wild zones and gather random ingredients.",
                 "camp" => "Set camp to restore comfort and safety overnight.",
+                "animal_sight" => BuildAnimalSightingDescription(),
                 "practice_skill" => "Spend time to gain XP in an applied skill.",
                 "train_skill" => "Focused training to gain bigger XP rewards.",
                 _ => "Confirm to execute this action."
             };
+        }
+
+        private string BuildAnimalSightingDescription()
+        {
+            if (currentSighting == null)
+            {
+                return "Track a wildlife encounter for finder payout, mood boosts, and skill growth.";
+            }
+
+            return $"Care for {currentSighting.AnimalName} ({currentSighting.AnimalSpecies}). {currentSighting.Description}\nFinder payout: ${currentSighting.Payment}.";
         }
 
         private string BuildOptionsPreview(string actionKey)
@@ -187,6 +293,9 @@ namespace Survivebest.UI
                 case "sell":
                     builder.AppendLine("Pantry Items:");
                     AppendPantryItems(builder, 5);
+                    break;
+                case "animal_sight":
+                    AppendAnimalSightingPreview(builder);
                     break;
                 case "practice_skill":
                 case "train_skill":
@@ -207,9 +316,125 @@ namespace Survivebest.UI
             return builder.ToString().TrimEnd();
         }
 
+        private void AppendAnimalSightingPreview(StringBuilder sb)
+        {
+            if (currentSighting == null)
+            {
+                sb.AppendLine("• No gig selected.");
+                return;
+            }
+
+            sb.AppendLine($"Target: {currentSighting.AnimalName} ({currentSighting.AnimalSpecies})");
+            sb.AppendLine($"Difficulty: {(int)(currentSighting.Difficulty * 100f)}%");
+            sb.AppendLine($"Payout: ${currentSighting.Payment}");
+            sb.AppendLine($"Need impact: Energy {currentSighting.EnergyDelta:+0;-0;0}, Hygiene {currentSighting.HygieneDelta:+0;-0;0}, Mood {currentSighting.MoodDelta:+0;-0;0}");
+            sb.AppendLine("Confirm to attempt the wildlife sighting.");
+        }
+
+        private void RefreshAnimalPreview()
+        {
+            bool show = currentActionKey == "animal_sight" && currentSighting != null;
+
+            if (animalPreviewImage != null)
+            {
+                animalPreviewImage.gameObject.SetActive(show);
+                if (show)
+                {
+                    animalPreviewImage.sprite = currentSighting.AnimalPreview;
+                    animalPreviewImage.color = currentSighting.AnimalPreview != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
+                }
+            }
+
+            if (animalPreviewLabel != null)
+            {
+                animalPreviewLabel.gameObject.SetActive(show);
+                if (show)
+                {
+                    animalPreviewLabel.text = currentSighting.AnimalPreview != null
+                        ? $"{currentSighting.AnimalName} • {currentSighting.AnimalSpecies}"
+                        : $"{currentSighting.AnimalName} • {currentSighting.AnimalSpecies} (assign preview image)";
+                }
+            }
+        }
+
+        private AnimalSightingEncounter PickSighting()
+        {
+            if (animalSightingEncounters == null || animalSightingEncounters.Count == 0)
+            {
+                return null;
+            }
+
+            int index = UnityEngine.Random.Range(0, animalSightingEncounters.Count);
+            return animalSightingEncounters[index];
+        }
+
+        private string ResolveAnimalSighting(CharacterCore active, out float magnitude)
+        {
+            magnitude = 2f;
+            if (active == null)
+            {
+                return "No active character available for animal sighting.";
+            }
+
+            AnimalSightingEncounter gig = currentSighting ?? PickSighting();
+            if (gig == null)
+            {
+                return "No animal sighting encounters are configured.";
+            }
+
+            NeedsSystem needs = active.GetComponent<NeedsSystem>();
+            SkillSystem skills = active.GetComponent<SkillSystem>();
+            StatusEffectSystem status = active.GetComponent<StatusEffectSystem>();
+
+            float handlingSkill = 0f;
+            if (skills != null && skills.SkillLevels.TryGetValue("Animal care", out float value))
+            {
+                handlingSkill = Mathf.Clamp01(value / 100f);
+            }
+
+            float moodBonus = needs != null ? Mathf.Clamp01(needs.Mood / 100f) * 0.08f : 0f;
+            float successChance = Mathf.Clamp01(0.52f + handlingSkill * 0.35f + moodBonus - gig.Difficulty * 0.28f);
+            bool success = UnityEngine.Random.value <= successChance;
+
+            if (needs != null)
+            {
+                needs.ModifyEnergy(gig.EnergyDelta);
+                needs.ModifyHygiene(gig.HygieneDelta);
+                needs.ModifyMood(success ? gig.MoodDelta : -Mathf.Abs(gig.MoodDelta) * 0.6f);
+                needs.RestoreHydration(gig.HydrationDelta);
+            }
+
+            if (skills != null)
+            {
+                skills.AddExperience("Animal care", success ? 5f : 2f);
+                skills.AddExperience("Survival skills", success ? 2f : 1f);
+            }
+
+            if (orderingSystem != null && success)
+            {
+                orderingSystem.AddFunds(gig.Payment);
+            }
+
+            if (status != null)
+            {
+                if (success && !string.IsNullOrWhiteSpace(gig.RewardStatusId))
+                {
+                    status.ApplyStatusById(gig.RewardStatusId, 6);
+                }
+                else if (!success && !string.IsNullOrWhiteSpace(gig.PenaltyStatusId))
+                {
+                    status.ApplyStatusById(gig.PenaltyStatusId, 6);
+                }
+            }
+
+            magnitude = success ? gig.Payment : -gig.Difficulty * 10f;
+            return success
+                ? $"Animal sighting success: {gig.AnimalName} is happy. Earned ${gig.Payment}."
+                : $"Animal sighting failed: {gig.AnimalName} became stressed. Partial progress only.";
+        }
+
         private void AppendTopCatalogItems(StringBuilder sb, int count)
         {
-            // Preview essentials for store interactions
             string[] defaults = { "Bread", "Rice", "Chicken", "Tomato", "Milk" };
             for (int i = 0; i < count; i++)
             {
@@ -229,7 +454,7 @@ namespace Survivebest.UI
             int max = Mathf.Min(count, grocerySystem.Pantry.Count);
             for (int i = 0; i < max; i++)
             {
-                var entry = grocerySystem.Pantry[i];
+                InventoryEntry entry = grocerySystem.Pantry[i];
                 if (entry != null)
                 {
                     sb.AppendLine($"• {entry.ItemName} x{entry.Quantity}");
@@ -260,7 +485,7 @@ namespace Survivebest.UI
                 return "Nothing to sell.";
             }
 
-            var item = grocerySystem.Pantry.FirstOrDefault(x => x != null && x.Quantity > 0);
+            InventoryEntry item = grocerySystem.Pantry.FirstOrDefault(x => x != null && x.Quantity > 0);
             if (item == null)
             {
                 return "No valid pantry item to sell.";
@@ -326,7 +551,7 @@ namespace Survivebest.UI
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
                 Type = SimulationEventType.ActivityCompleted,
-                Severity = SimulationEventSeverity.Info,
+                Severity = magnitude < 0f ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
                 SystemName = nameof(ActionPopupController),
                 SourceCharacterId = householdManager != null && householdManager.ActiveCharacter != null
                     ? householdManager.ActiveCharacter.CharacterId

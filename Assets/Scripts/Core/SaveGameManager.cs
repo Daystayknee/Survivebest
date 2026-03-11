@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
+using Survivebest.Health;
 using Survivebest.Location;
+using Survivebest.Needs;
+using Survivebest.Status;
 using Survivebest.World;
 
 namespace Survivebest.Core
@@ -14,6 +18,38 @@ namespace Survivebest.Core
         public string PlaytimeLabel;
         public int HouseholdMembers;
         public string ActiveRoomName;
+    }
+
+    [Serializable]
+    public class WorldSnapshot
+    {
+        public int Year;
+        public int Month;
+        public int Day;
+        public int Hour;
+        public int Minute;
+    }
+
+    [Serializable]
+    public class CharacterSnapshot
+    {
+        public string CharacterId;
+        public string DisplayName;
+        public bool IsActive;
+        public LifeStage LifeStage;
+        public float Vitality;
+        public NeedsSnapshot Needs;
+        public List<SkillEntry> Skills = new();
+        public List<ActiveStatusEffect> Statuses = new();
+    }
+
+    [Serializable]
+    public class SaveSlotPayload
+    {
+        public string WorldName;
+        public string ActiveRoomName;
+        public WorldSnapshot World = new();
+        public List<CharacterSnapshot> HouseholdCharacters = new();
     }
 
     public class SaveGameManager : MonoBehaviour
@@ -32,6 +68,7 @@ namespace Survivebest.Core
 
             string prefix = GetPrefix(slotIndex);
             SaveSnapshot snapshot = BuildSnapshot(worldName);
+            SaveSlotPayload payload = BuildPayload(snapshot.WorldName);
 
             PlayerPrefs.SetInt(prefix + "_HasData", 1);
             PlayerPrefs.SetString(prefix + "_World", snapshot.WorldName);
@@ -39,6 +76,7 @@ namespace Survivebest.Core
             PlayerPrefs.SetString(prefix + "_Playtime", snapshot.PlaytimeLabel);
             PlayerPrefs.SetInt(prefix + "_Household", snapshot.HouseholdMembers);
             PlayerPrefs.SetString(prefix + "_Room", snapshot.ActiveRoomName);
+            PlayerPrefs.SetString(prefix + "_Payload", JsonUtility.ToJson(payload));
             PlayerPrefs.Save();
 
             PublishSaveEvent(SimulationEventType.SaveCreated, slotIndex, snapshot.WorldName);
@@ -58,13 +96,22 @@ namespace Survivebest.Core
                 return false;
             }
 
-            string roomName = PlayerPrefs.GetString(prefix + "_Room", string.Empty);
-            if (!string.IsNullOrWhiteSpace(roomName))
+            string worldName = PlayerPrefs.GetString(prefix + "_World", "Unknown World");
+            string payloadJson = PlayerPrefs.GetString(prefix + "_Payload", string.Empty);
+            if (!string.IsNullOrWhiteSpace(payloadJson))
             {
-                locationManager?.NavigateToRoom(roomName);
+                SaveSlotPayload payload = JsonUtility.FromJson<SaveSlotPayload>(payloadJson);
+                ApplyPayload(payload);
+            }
+            else
+            {
+                string roomName = PlayerPrefs.GetString(prefix + "_Room", string.Empty);
+                if (!string.IsNullOrWhiteSpace(roomName))
+                {
+                    locationManager?.NavigateToRoom(roomName);
+                }
             }
 
-            string worldName = PlayerPrefs.GetString(prefix + "_World", "Unknown World");
             PublishSaveEvent(SimulationEventType.SaveLoaded, slotIndex, worldName);
             return true;
         }
@@ -83,6 +130,7 @@ namespace Survivebest.Core
             PlayerPrefs.DeleteKey(prefix + "_Playtime");
             PlayerPrefs.DeleteKey(prefix + "_Household");
             PlayerPrefs.DeleteKey(prefix + "_Room");
+            PlayerPrefs.DeleteKey(prefix + "_Payload");
             PlayerPrefs.Save();
         }
 
@@ -93,11 +141,11 @@ namespace Survivebest.Core
                 : 0;
 
             string date = worldClock != null
-                ? $"{worldClock.CurrentSeason} Year {worldClock.Year} Day {worldClock.Day}"
+                ? $"{worldClock.CurrentSeason} Year {worldClock.Year} Day {worldClock.Day} {worldClock.Hour:00}:{worldClock.Minute:00}"
                 : "Year 1 Day 1";
 
             string playtime = worldClock != null
-                ? $"Y{worldClock.Year} M{worldClock.Month} D{worldClock.Day}"
+                ? $"Y{worldClock.Year} M{worldClock.Month} D{worldClock.Day} H{worldClock.Hour}"
                 : "0h";
 
             string room = locationManager != null && locationManager.CurrentRoom != null
@@ -112,6 +160,121 @@ namespace Survivebest.Core
                 HouseholdMembers = householdCount,
                 ActiveRoomName = room
             };
+        }
+
+        private SaveSlotPayload BuildPayload(string worldName)
+        {
+            SaveSlotPayload payload = new SaveSlotPayload
+            {
+                WorldName = worldName,
+                ActiveRoomName = locationManager != null && locationManager.CurrentRoom != null
+                    ? locationManager.CurrentRoom.RoomName
+                    : "Home District",
+                World = new WorldSnapshot
+                {
+                    Year = worldClock != null ? worldClock.Year : 1,
+                    Month = worldClock != null ? worldClock.Month : 1,
+                    Day = worldClock != null ? worldClock.Day : 1,
+                    Hour = worldClock != null ? worldClock.Hour : 8,
+                    Minute = worldClock != null ? worldClock.Minute : 0
+                }
+            };
+
+            if (householdManager == null || householdManager.Members == null)
+            {
+                return payload;
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                NeedsSystem needs = member.GetComponent<NeedsSystem>();
+                HealthSystem health = member.GetComponent<HealthSystem>();
+                SkillSystem skills = member.GetComponent<SkillSystem>();
+                StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
+
+                payload.HouseholdCharacters.Add(new CharacterSnapshot
+                {
+                    CharacterId = member.CharacterId,
+                    DisplayName = member.DisplayName,
+                    IsActive = householdManager.ActiveCharacter == member,
+                    LifeStage = member.CurrentLifeStage,
+                    Vitality = health != null ? health.CaptureVitality() : 100f,
+                    Needs = needs != null ? needs.CaptureSnapshot() : null,
+                    Skills = skills != null ? skills.CaptureSnapshot() : new List<SkillEntry>(),
+                    Statuses = status != null ? status.CaptureSnapshot() : new List<ActiveStatusEffect>()
+                });
+            }
+
+            return payload;
+        }
+
+        private void ApplyPayload(SaveSlotPayload payload)
+        {
+            if (payload == null)
+            {
+                return;
+            }
+
+            if (worldClock != null && payload.World != null)
+            {
+                worldClock.SetDateTime(payload.World.Year, payload.World.Month, payload.World.Day, payload.World.Hour, payload.World.Minute);
+            }
+
+            if (locationManager != null && !string.IsNullOrWhiteSpace(payload.ActiveRoomName))
+            {
+                locationManager.NavigateToRoom(payload.ActiveRoomName);
+            }
+
+            if (householdManager == null || householdManager.Members == null || payload.HouseholdCharacters == null)
+            {
+                return;
+            }
+
+            CharacterCore activeToSet = null;
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                CharacterSnapshot snapshot = payload.HouseholdCharacters.Find(c => c.CharacterId == member.CharacterId || c.DisplayName == member.DisplayName);
+                if (snapshot == null)
+                {
+                    continue;
+                }
+
+                member.SetLifeStage(snapshot.LifeStage);
+
+                NeedsSystem needs = member.GetComponent<NeedsSystem>();
+                needs?.ApplySnapshot(snapshot.Needs);
+
+                HealthSystem health = member.GetComponent<HealthSystem>();
+                health?.ApplyVitality(snapshot.Vitality);
+
+                SkillSystem skills = member.GetComponent<SkillSystem>();
+                skills?.ApplySnapshot(snapshot.Skills);
+
+                StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
+                status?.ApplySnapshot(snapshot.Statuses);
+
+                if (snapshot.IsActive)
+                {
+                    activeToSet = member;
+                }
+            }
+
+            if (activeToSet != null)
+            {
+                householdManager.SetActiveCharacter(activeToSet);
+            }
         }
 
         private void PublishSaveEvent(SimulationEventType eventType, int slotIndex, string worldName)

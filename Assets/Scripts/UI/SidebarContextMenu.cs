@@ -72,22 +72,30 @@ namespace Survivebest.UI
                     currentOptions.Add(new SidebarOption { Label = "Buy", ActionKey = "buy" });
                     currentOptions.Add(new SidebarOption { Label = "Sell", ActionKey = "sell" });
                     currentOptions.Add(new SidebarOption { Label = "Trade", ActionKey = "trade" });
+                    currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;
                 case LocationTheme.Hospital:
                     currentOptions.Add(new SidebarOption { Label = "Get Meds", ActionKey = "get_meds" });
                     currentOptions.Add(new SidebarOption { Label = "See Doctor", ActionKey = "see_doctor" });
+                    currentOptions.Add(new SidebarOption { Label = "Train Skill", ActionKey = "train_skill" });
                     break;
                 case LocationTheme.Workplace:
                     currentOptions.Add(new SidebarOption { Label = "Schmooze Boss", ActionKey = "schmooze_boss" });
                     currentOptions.Add(new SidebarOption { Label = "Talk to Coworkers", ActionKey = "talk_coworkers" });
+                    currentOptions.Add(new SidebarOption { Label = "Animal Sighting", ActionKey = "animal_sight" });
+                    currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;
                 case LocationTheme.Nature:
                     currentOptions.Add(new SidebarOption { Label = "Forage", ActionKey = "forage" });
                     currentOptions.Add(new SidebarOption { Label = "Camp", ActionKey = "camp" });
+                    currentOptions.Add(new SidebarOption { Label = "Animal Sighting", ActionKey = "animal_sight" });
+                    currentOptions.Add(new SidebarOption { Label = "Train Skill", ActionKey = "train_skill" });
                     break;
                 default:
                     currentOptions.Add(new SidebarOption { Label = "Talk", ActionKey = "talk" });
                     currentOptions.Add(new SidebarOption { Label = "Rest", ActionKey = "rest" });
+                    currentOptions.Add(new SidebarOption { Label = "Animal Sighting", ActionKey = "animal_sight" });
+                    currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;
             }
 

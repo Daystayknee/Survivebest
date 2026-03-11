@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
+using Survivebest.Appearance;
 
 namespace Survivebest.Core
 {
@@ -27,6 +28,69 @@ namespace Survivebest.Core
         Social
     }
 
+    public enum FaceShapeType
+    {
+        Oval,
+        Round,
+        Square,
+        Heart,
+        Diamond
+    }
+
+    public enum EyeShapeType
+    {
+        Almond,
+        Round,
+        Hooded,
+        Monolid,
+        Upturned,
+        Downturned
+    }
+
+    public enum BodyType
+    {
+        Slim,
+        Average,
+        Curvy,
+        Muscular,
+        Heavy
+    }
+
+    public enum JawShapeType
+    {
+        Soft,
+        Balanced,
+        Defined,
+        Angular
+    }
+
+    public enum NoseShapeType
+    {
+        Petite,
+        Straight,
+        Aquiline,
+        Button,
+        Broad
+    }
+
+    public enum LipShapeType
+    {
+        Thin,
+        Balanced,
+        Full,
+        Heart
+    }
+
+    public enum ClothingStyleType
+    {
+        Casual,
+        Work,
+        Sport,
+        Formal,
+        Medical,
+        Outdoor
+    }
+
     public class CharacterCore : MonoBehaviour
     {
         [SerializeField] private string characterId;
@@ -36,6 +100,15 @@ namespace Survivebest.Core
         [SerializeField] private bool isDead;
         [SerializeField] private List<CharacterTalent> talents = new();
         [SerializeField] private GameEventHub gameEventHub;
+
+        [Header("Portrait Data")]
+        [SerializeField] private FaceShapeType faceShape = FaceShapeType.Oval;
+        [SerializeField] private EyeShapeType eyeShape = EyeShapeType.Almond;
+        [SerializeField] private BodyType bodyType = BodyType.Average;
+        [SerializeField] private JawShapeType jawShape = JawShapeType.Balanced;
+        [SerializeField] private NoseShapeType noseShape = NoseShapeType.Straight;
+        [SerializeField] private LipShapeType lipShape = LipShapeType.Balanced;
+        [SerializeField] private ClothingStyleType clothingStyle = ClothingStyleType.Casual;
 
         [Header("Birth Date")]
         [SerializeField, Min(1)] private int birthYear = 1;
@@ -53,6 +126,13 @@ namespace Survivebest.Core
         public int BirthYear => birthYear;
         public int BirthMonth => birthMonth;
         public int BirthDay => birthDay;
+        public FaceShapeType FaceShape => faceShape;
+        public EyeShapeType EyeShape => eyeShape;
+        public BodyType CurrentBodyType => bodyType;
+        public JawShapeType JawShape => jawShape;
+        public NoseShapeType NoseShape => noseShape;
+        public LipShapeType LipShape => lipShape;
+        public ClothingStyleType ClothingStyle => clothingStyle;
 
         public void Initialize(string id, string name, LifeStage stage)
         {
@@ -86,6 +166,59 @@ namespace Survivebest.Core
         public void SetTalents(List<CharacterTalent> values)
         {
             talents = values ?? new List<CharacterTalent>();
+        }
+
+        public void SetPortraitData(FaceShapeType newFaceShape, EyeShapeType newEyeShape, BodyType newBodyType, ClothingStyleType newClothingStyle)
+        {
+            faceShape = newFaceShape;
+            eyeShape = newEyeShape;
+            bodyType = newBodyType;
+            clothingStyle = newClothingStyle;
+        }
+
+        public void SetFacialFeatureData(JawShapeType newJawShape, NoseShapeType newNoseShape, LipShapeType newLipShape)
+        {
+            jawShape = newJawShape;
+            noseShape = newNoseShape;
+            lipShape = newLipShape;
+        }
+
+        public void RandomizePortraitData()
+        {
+            faceShape = RandomEnum<FaceShapeType>();
+            eyeShape = RandomEnum<EyeShapeType>();
+            bodyType = RandomEnum<BodyType>();
+            jawShape = RandomEnum<JawShapeType>();
+            noseShape = RandomEnum<NoseShapeType>();
+            lipShape = RandomEnum<LipShapeType>();
+            clothingStyle = RandomEnum<ClothingStyleType>();
+        }
+
+        public void SyncPortraitDataFromAppearance(AppearanceManager appearanceManager)
+        {
+            if (appearanceManager == null || appearanceManager.CurrentProfile == null)
+            {
+                return;
+            }
+
+            AppearanceProfile profile = appearanceManager.CurrentProfile;
+            eyeShape = profile.EyeColor switch
+            {
+                EyeColorType.Brown => EyeShapeType.Almond,
+                EyeColorType.Hazel => EyeShapeType.Round,
+                EyeColorType.Green => EyeShapeType.Upturned,
+                EyeColorType.Blue => EyeShapeType.Hooded,
+                EyeColorType.Gray => EyeShapeType.Downturned,
+                _ => EyeShapeType.Monolid
+            };
+
+            clothingStyle = profile.SkinIssue switch
+            {
+                SkinIssueType.None => ClothingStyleType.Casual,
+                SkinIssueType.Acne or SkinIssueType.Rosacea => ClothingStyleType.Work,
+                SkinIssueType.Vitiligo => ClothingStyleType.Formal,
+                _ => clothingStyle
+            };
         }
 
         public float GetSkillMultiplier(string skillName)
@@ -139,6 +272,12 @@ namespace Survivebest.Core
                 Reason = "Vitality or game system death trigger",
                 Magnitude = 100f
             });
+        }
+
+        private static T RandomEnum<T>() where T : Enum
+        {
+            Array values = Enum.GetValues(typeof(T));
+            return (T)values.GetValue(UnityEngine.Random.Range(0, values.Length));
         }
     }
 }

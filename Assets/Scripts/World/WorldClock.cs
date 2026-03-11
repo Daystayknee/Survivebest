@@ -145,6 +145,19 @@ namespace Survivebest.World
         }
 
 
+        public void SetDateTime(int year, int month, int day, int hour, int minute)
+        {
+            Year = Mathf.Max(1, year);
+            Month = Mathf.Clamp(month, 1, monthsPerYear);
+            Day = Mathf.Clamp(day, 1, daysPerMonth);
+            Hour = Mathf.Clamp(hour, 0, 23);
+            Minute = Mathf.Clamp(minute, 0, 59);
+            CurrentSeason = GetSeasonForMonth(Month);
+            OnDateChanged?.Invoke(Day, Month, Year);
+            OnHourPassed?.Invoke(Hour);
+            OnMinutePassed?.Invoke(Hour, Minute);
+        }
+
         public bool IsDate(int month, int day)
         {
             return Month == month && Day == day;

@@ -4,6 +4,7 @@ using Survivebest.Needs;
 using Survivebest.Minigames;
 using Survivebest.Health;
 using Survivebest.Food;
+using Survivebest.UI;
 
 namespace Survivebest.Interaction
 {
@@ -13,6 +14,7 @@ namespace Survivebest.Interaction
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private FoodDatabase foodDatabase;
         [SerializeField] private DrinkDatabase drinkDatabase;
+        [SerializeField] private BuildModeManager buildModeManager;
 
         private void Update()
         {
@@ -35,6 +37,23 @@ namespace Survivebest.Interaction
             if (!hit.collider)
             {
                 return;
+            }
+
+            HomeInteractionHotspot hotspot = hit.collider.GetComponent<HomeInteractionHotspot>();
+            if (hotspot != null)
+            {
+                hotspot.Execute();
+                return;
+            }
+
+            FurniturePlaceable placeable = hit.collider.GetComponent<FurniturePlaceable>();
+            if (placeable != null)
+            {
+                bool buildEnabled = buildModeManager != null && buildModeManager.IsBuildModeEnabled;
+                if (!placeable.CanMove(buildEnabled))
+                {
+                    return;
+                }
             }
 
             Interactable interactable = hit.collider.GetComponent<Interactable>();
@@ -85,7 +104,7 @@ namespace Survivebest.Interaction
                         return;
                     }
 
-                    MinigameManager.Instance.StartMinigame(MinigameType.Cooking, success =>
+                    MinigameManager.Instance.StartMinigame(MinigameType.Cooking, activeCharacter, success =>
                     {
                         HealthSystem health = activeCharacter.GetComponent<HealthSystem>();
                         FoodItem selectedFood = foodDatabase != null ? foodDatabase.GetRandomFood() : null;

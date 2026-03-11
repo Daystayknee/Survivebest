@@ -62,6 +62,12 @@ namespace Survivebest.Commerce
             return entry != null && entry.Quantity >= quantity;
         }
 
+        public int GetIngredientQuantity(string name)
+        {
+            InventoryEntry entry = pantry.Find(x => x.ItemName == name);
+            return entry != null ? entry.Quantity : 0;
+        }
+
         private void AddToPantry(string name, int quantity)
         {
             InventoryEntry entry = pantry.Find(x => x.ItemName == name);

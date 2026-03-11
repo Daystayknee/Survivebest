@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Events;
+using Survivebest.Core;
 
 namespace Survivebest.UI
 {
@@ -20,6 +21,7 @@ namespace Survivebest.UI
     public class LoadGameScreenController : MonoBehaviour
     {
         [SerializeField] private MainMenuFlowController menuFlowController;
+        [SerializeField] private SaveGameManager saveGameManager;
         [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Optional Slot Text UI")]
@@ -41,6 +43,12 @@ namespace Survivebest.UI
         {
             SaveSlotMeta meta = slots.Find(s => s.SlotIndex == slotIndex);
             if (meta == null || !meta.HasData)
+            {
+                return;
+            }
+
+            bool loaded = saveGameManager == null || saveGameManager.LoadFromSlot(slotIndex);
+            if (!loaded)
             {
                 return;
             }

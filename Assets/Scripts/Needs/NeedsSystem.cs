@@ -8,6 +8,17 @@ using Survivebest.Events;
 
 namespace Survivebest.Needs
 {
+    [Serializable]
+    public class NeedsSnapshot
+    {
+        public float Hunger;
+        public float Bladder;
+        public float Energy;
+        public float Hygiene;
+        public float Mood;
+        public float Hydration;
+    }
+
     public class NeedsSystem : MonoBehaviour
     {
         [SerializeField] private CharacterCore owner;
@@ -38,6 +49,34 @@ namespace Survivebest.Needs
 
         public CharacterCore Owner => owner;
         public float Hunger => hunger;
+        public NeedsSnapshot CaptureSnapshot()
+        {
+            return new NeedsSnapshot
+            {
+                Hunger = hunger,
+                Bladder = bladder,
+                Energy = energy,
+                Hygiene = hygiene,
+                Mood = mood,
+                Hydration = hydration
+            };
+        }
+
+        public void ApplySnapshot(NeedsSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            SetHunger(snapshot.Hunger);
+            SetBladder(snapshot.Bladder);
+            SetEnergy(snapshot.Energy);
+            SetHygiene(snapshot.Hygiene);
+            SetMood(snapshot.Mood);
+            SetHydration(snapshot.Hydration);
+        }
+
         public float Bladder => bladder;
         public float Energy => energy;
         public float Hygiene => hygiene;

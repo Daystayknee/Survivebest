@@ -15,6 +15,16 @@ namespace Survivebest.Health
         public float Vitality => vitality;
         public CharacterCore Owner => owner;
 
+        public float CaptureVitality()
+        {
+            return vitality;
+        }
+
+        public void ApplyVitality(float value)
+        {
+            SetVitality(value);
+        }
+
         public void Damage(float amount)
         {
             SetVitality(vitality - Mathf.Max(0f, amount));
