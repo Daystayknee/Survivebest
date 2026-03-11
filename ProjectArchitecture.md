@@ -325,3 +325,23 @@ Create LawSystem.cs + CrimeSystem.cs + SubstanceSystem.cs + JusticeSystem.cs.
 - Crime events (theft/assault/etc.) should be processed by justice outcomes (warning/fine/jail).
 - Location transitions should update active area law profile.
 ```
+
+
+### 9.11 Medical Conditions (Illness + Injury)
+
+```text
+Create MedicalConditionSystem.cs for common illnesses/injuries with severity and hourly effects.
+- Include common illnesses (cold, flu, stomach bug, food poisoning, ear infection, bronchitis, migraine, allergy flare) and infant-specific issues (teething fever, colic, diaper rash).
+- Include common injuries (bruise, cut, sprain, burn, fracture, concussion, strain, bite, scrape).
+- Conditions should be age-appropriate by life stage.
+- Apply condition effects over time through HealthSystem + NeedsSystem.
+```
+
+### 9.12 Age-Appropriate Body Composition + Genetic Carry Through
+
+```text
+Create BodyCompositionSystem.cs to track height (cm), weight (kg), body fat, and muscle tone.
+- Apply age-appropriate ranges by life stage (baby -> elder).
+- Preserve inherited adult genetic potential (height/body-fat/muscle) and map it over maturity.
+- Feed body metrics into VisualGenome scaling so body features evolve logically with age.
+```

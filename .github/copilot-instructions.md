@@ -54,3 +54,6 @@ When generating scripts, include:
 - Support layered face composition (head/neck/ears/eyes/nose/mouth/brows/lashes/makeup) with separate SpriteRenderers.
 - Model area-based law variance so crime/substance legality changes by location.
 - Route crimes and illegal substance usage through a justice pipeline (warning/fine/jail outcomes).
+
+- Medical systems should distinguish illness vs injury, with severity, duration, and age-appropriate condition pools.
+- Body metrics (height/weight/body-fat/muscle) must be life-stage-aware while preserving genetic potential over time.
