@@ -53,7 +53,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 - `IngredientCatalog` (large ingredient sets by type)
 - `SupplyCatalog` (medicines, animals, skills, and other supplies)
 - `FoodDatabase`, `DrinkDatabase` (expanded variant content)
-- `GrocerySystem`, `RecipeSystem`, `OrderingSystem` (wallet + delayed delivery + fast-food location menus)
+- `GrocerySystem`, `RecipeSystem`, `OrderingSystem` (wallet + delayed delivery)
 
 ### Crime / Society / Transport
 - `LawSystem`, `CrimeSystem`, `JusticeSystem`, `SubstanceSystem`
@@ -72,10 +72,7 @@ Recent expansion includes:
 - Larger **food** variety across quick snacks, healthy, home-cooked, gourmet, comfort, dessert, and drink-type meals.
 - Larger **drink** variety across water, juice, soda, coffee, tea, smoothie, and alcohol categories.
 - Expanded **weather variants** beyond basic sunny/rain/snow with weighted seasonal outcomes.
-- **Recipe depth auto-generation** to maintain 200+ recipes for cooking gameplay variety.
-- **Drink catalog depth** expanded to 60 drinks across all categories.
-- Default **ordering menu variants** with different vendors, prices, delivery times, and separate fast-food chains.
-- Added supply/facility entries for food ecosystem simulation (farms, hatcheries, slaughterhouse, warehouses, zoo, markets).
+- Default **ordering menu variants** with different vendors, prices, and delivery times.
 
 ## Architecture Notes
 

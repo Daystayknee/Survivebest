@@ -13,8 +13,7 @@ namespace Survivebest.Catalog
         Dessert,
         Medicine,
         Animal,
-        Skill,
-        Facility
+        Skill
     }
 
     [Serializable]
@@ -30,7 +29,6 @@ namespace Survivebest.Catalog
         {
             // Spices & Seasonings (35)
             new SupplyItem { Name = "Black pepper", Group = SupplyGroup.Spice },
-            new SupplyItem { Name = "Salt", Group = SupplyGroup.Spice },
             new SupplyItem { Name = "White pepper", Group = SupplyGroup.Spice },
             new SupplyItem { Name = "Paprika", Group = SupplyGroup.Spice },
             new SupplyItem { Name = "Smoked paprika", Group = SupplyGroup.Spice },
@@ -323,29 +321,7 @@ namespace Survivebest.Catalog
             new SupplyItem { Name = "Animal care", Group = SupplyGroup.Skill },
             new SupplyItem { Name = "Herbal medicine", Group = SupplyGroup.Skill },
             new SupplyItem { Name = "Chemistry", Group = SupplyGroup.Skill },
-            new SupplyItem { Name = "Engineering", Group = SupplyGroup.Skill },
-
-            // Facilities & Food Infrastructure
-            new SupplyItem { Name = "Family Farm", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Industrial Farm", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Greenhouse Complex", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Orchard", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Vineyard", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Fish Hatchery", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Fishing Dock", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Dairy Plant", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Meat Processing Plant", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Slaughterhouse", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Cold Storage Warehouse", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Grain Mill", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Bakery Factory", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Beverage Bottling Plant", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Distribution Center", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Food Market", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Butcher Shop", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Seafood Market", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "Petting Zoo", Group = SupplyGroup.Facility },
-            new SupplyItem { Name = "City Zoo", Group = SupplyGroup.Facility }
+            new SupplyItem { Name = "Engineering", Group = SupplyGroup.Skill }
         };
 
         public IReadOnlyList<SupplyItem> Supplies => supplies;
