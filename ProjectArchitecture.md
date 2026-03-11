@@ -489,6 +489,7 @@ Always-visible character presence:
 - `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
 
 - `SaveGameManager` should own save slot snapshot persistence (metadata + world time + room + per-character needs/health/skills/status restore) and publish save lifecycle events.
+- `CarSystem` should model meaningful travel outcomes (fuel economy, wear/cleanliness, distance multipliers, and driver-need impact) rather than simple location teleports.
 - `SettingsTabsController` should manage tabbed settings pages (Graphics/Audio/Gameplay/Controls/UI).
 
 - `BuildModeManager` should gate interior editing interactions and support drag-move placement for `FurniturePlaceable` actors.
