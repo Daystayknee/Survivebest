@@ -2,7 +2,6 @@ using System;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Society;
-using Survivebest.Events;
 
 namespace Survivebest.Crime
 {
@@ -25,7 +24,6 @@ namespace Survivebest.Crime
     public class JusticeSystem : MonoBehaviour
     {
         [SerializeField] private LawSystem lawSystem;
-        [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<CharacterCore, string, JusticeOutcome> OnJusticeApplied;
 
@@ -38,17 +36,6 @@ namespace Survivebest.Crime
 
             JusticeOutcome outcome = BuildOutcome(severity);
             OnJusticeApplied?.Invoke(offender, crimeType, outcome);
-
-            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-            {
-                Type = SimulationEventType.JusticeOutcomeApplied,
-                Severity = outcome.Outcome == JusticeOutcomeType.Jail ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
-                SystemName = nameof(JusticeSystem),
-                SourceCharacterId = offender.CharacterId,
-                ChangeKey = outcome.Outcome.ToString(),
-                Reason = $"Justice applied for {crimeType}",
-                Magnitude = outcome.JailHours + outcome.FineAmount
-            });
         }
 
         private JusticeOutcome BuildOutcome(LawSeverity severity)
