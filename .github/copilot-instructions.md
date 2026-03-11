@@ -46,7 +46,3 @@ When generating scripts, include:
 
 - Model food as data (`FoodItem`) and apply outcomes through `NeedsSystem` and optional `HealthSystem` hooks.
 - Appearance systems should separate data profile from rendering application and support inclusive skin/hair/eye variation.
-
-- Model social/emotional outcomes explicitly (anger, affection, stress) and propagate to relationship logic.
-- Include everyday activity loops (rest/workout/read/drink/cook/socialize) with needs + skill consequences.
-- Treat transport as a managed system (`CarSystem`) with fuel/condition constraints rather than teleport-only logic.
