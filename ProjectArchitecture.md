@@ -462,18 +462,3 @@ Location-driven narrative layer:
 
 Always-visible character presence:
 - Keep a character roster panel visible so the player can always see all household members and who is currently active.
-
-- `GameHUD` displays real-time needs, money, clock, and event feed from `GameEventHub`.
-- `JournalFeedUI` + `JournalCardView` render event cards (portrait/title/body/timestamp/severity) for readable story-style logs.
-- `CharacterPortraitRenderer` maps `CharacterCore` portrait data + appearance profile to layered portrait sprites.
-- `ZoneScenePanel` renders room illustration, NPC list, animals, actions, and a short context prompt on room change.
-- `CharacterRosterHUD` displays active household characters and allows active-character switching.
-- `SidebarContextMenu` presents contextual location options (store/work/hospital/nature, etc.).
-- `NarrativePromptSystem` can generate short contextual text prompts when entering locations.
-
-- `MainMenuFlowController` should manage splash/main/settings/new-game/load-game/gameplay screen transitions with back-stack support.
-- `SettingsPageController` should own settings persistence/application (audio/display/accessibility toggles) and emit `SettingsChanged` events.
-
-- Add a dedicated `SplashScreenController` for splash-specific logic (timed auto-forward + skip).
-- Include a `CharacterScreenController` page that surfaces genetics, body stats, talents, and active ailments using pill-tag UI components (`TraitPillTagView`).
-- `SettingsPageController` should support broad color-picker theming targets (primary/secondary/background/trait-pill) in addition to audio/display toggles.
