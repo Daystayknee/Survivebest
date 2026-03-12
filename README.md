@@ -218,6 +218,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Deeper narrative/event animations and rich popup variant templates.
 - Use `AssetReadinessReporter` context action to quickly surface missing controller/image/text references in configured UI scenes.
 - `AssetReadinessReporter` now includes an `Auto Wire Known References` context action to auto-bind many commonly-missed scene references before running missing-reference reports.
+- `AssetReadinessReporter` now includes `Report Runtime Vision Coverage` to verify required-vs-optional runtime systems are present and enabled for the intended gameplay vision.
 
 ## Data Variants (Updated)
 
