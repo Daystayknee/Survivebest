@@ -27,6 +27,9 @@ namespace Survivebest.Interaction
         TV,
         WorkoutCorner,
         Pantry,
+        RecyclingBin,
+        LaundryBasket,
+        CleaningStation,
         Generic
     }
 
@@ -42,6 +45,9 @@ namespace Survivebest.Interaction
         [SerializeField] private GrocerySystem grocerySystem;
         [SerializeField] private BuildModeManager buildModeManager;
         [SerializeField] private FurnitureStoreController furnitureStoreController;
+        [SerializeField] private HousingPropertySystem housingPropertySystem;
+        [SerializeField] private HouseholdChoreSystem householdChoreSystem;
+        [SerializeField] private string propertyId = "home_property";
         [SerializeField] private GameEventHub gameEventHub;
 
         public bool Execute()
@@ -68,6 +74,9 @@ namespace Survivebest.Interaction
                 HomeHotspotType.TV => ExecuteTV(needs, status),
                 HomeHotspotType.WorkoutCorner => ExecuteWorkout(needs, health, status),
                 HomeHotspotType.Pantry => ExecutePantry(needs, status),
+                HomeHotspotType.RecyclingBin => ExecuteRecycling(status),
+                HomeHotspotType.LaundryBasket => ExecuteLaundry(status),
+                HomeHotspotType.CleaningStation => ExecuteCleaningStation(status),
                 _ => ExecuteGeneric(status)
             };
 
@@ -89,11 +98,56 @@ namespace Survivebest.Interaction
             bool ok = grocerySystem.ConsumeIngredient(discardItemName, Mathf.Max(1, discardQuantity));
             if (ok)
             {
+                if (housingPropertySystem != null)
+                {
+                    housingPropertySystem.RegisterWaste(propertyId, WasteItemState.Waste, discardQuantity);
+                }
+
                 status?.ApplyRandomStatus(false);
                 Publish(SimulationEventSeverity.Info, "ItemDiscarded", $"Discarded {discardQuantity}x {discardItemName}", discardQuantity);
             }
 
             return ok;
+        }
+
+        private bool ExecuteRecycling(StatusEffectSystem status)
+        {
+            if (housingPropertySystem == null)
+            {
+                return false;
+            }
+
+            housingPropertySystem.ProcessBinDisposal(propertyId, recycle: true);
+            householdChoreSystem?.TryCompleteHighestPriorityChore();
+            status?.ApplyStatusById("status_160", 2);
+            return true;
+        }
+
+        private bool ExecuteLaundry(StatusEffectSystem status)
+        {
+            if (housingPropertySystem == null)
+            {
+                return false;
+            }
+
+            housingPropertySystem.ProcessLaundry(propertyId);
+            householdChoreSystem?.TryCompleteHighestPriorityChore();
+            status?.ApplyStatusById("status_170", 3);
+            return true;
+        }
+
+        private bool ExecuteCleaningStation(StatusEffectSystem status)
+        {
+            if (housingPropertySystem == null)
+            {
+                return false;
+            }
+
+            housingPropertySystem.ApplyRoomMaintenance(propertyId, 8f, 3f);
+            housingPropertySystem.ProcessDishes(propertyId);
+            householdChoreSystem?.TryCompleteHighestPriorityChore();
+            status?.ApplyStatusById("status_180", 3);
+            return true;
         }
 
         private bool ExecuteDoorway(StatusEffectSystem status)

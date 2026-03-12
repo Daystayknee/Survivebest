@@ -21,12 +21,27 @@ namespace Survivebest.Location
         [Range(0f, 100f)] public float ComfortScore = 55f;
         [Range(0f, 100f)] public float CleanlinessScore = 70f;
         [Range(0f, 100f)] public float ClutterScore = 25f;
+        [Range(0f, 100f)] public float RoomCleanliness = 70f;
+        [Range(0f, 100f)] public float RoomClutter = 25f;
+        [Range(0f, 100f)] public float TrashLevel;
+        [Range(0f, 100f)] public float DishStack;
+        [Range(0f, 100f)] public float LaundryPile;
+        [Range(0f, 100f)] public float OdorLevel;
         [Range(0f, 100f)] public float ApplianceCondition = 90f;
         [Range(0f, 100f)] public float NeighborhoodDesirability = 50f;
         [Min(0)] public int StorageCapacity = 100;
         [Min(0)] public int StorageUsed;
         public bool ElectricityOn = true;
         public bool WaterOn = true;
+    }
+
+    public enum WasteItemState
+    {
+        Fresh,
+        Used,
+        Waste,
+        Recyclable,
+        Hazardous
     }
 
     [Serializable]
@@ -99,8 +114,130 @@ namespace Survivebest.Location
             property.CleanlinessScore = Mathf.Clamp(property.CleanlinessScore + cleaningDelta, 0f, 100f);
             property.ComfortScore = Mathf.Clamp(property.ComfortScore + comfortDelta, 0f, 100f);
             property.ClutterScore = Mathf.Clamp(property.ClutterScore - cleaningDelta * 0.5f, 0f, 100f);
+            property.RoomCleanliness = property.CleanlinessScore;
+            property.RoomClutter = property.ClutterScore;
+            property.OdorLevel = Mathf.Clamp(property.OdorLevel - cleaningDelta * 0.4f, 0f, 100f);
             RecomputeRoomQuality(property);
             OnPropertyChanged?.Invoke(property);
+        }
+
+        public void RegisterWaste(string propertyId, WasteItemState state, float amount)
+        {
+            PropertyRecord property = GetProperty(propertyId);
+            if (property == null || amount <= 0f)
+            {
+                return;
+            }
+
+            float clampedAmount = Mathf.Clamp(amount, 0f, 40f);
+            switch (state)
+            {
+                case WasteItemState.Recyclable:
+                    property.TrashLevel = Mathf.Clamp(property.TrashLevel + clampedAmount * 0.3f, 0f, 100f);
+                    property.ClutterScore = Mathf.Clamp(property.ClutterScore + clampedAmount * 0.2f, 0f, 100f);
+                    break;
+                case WasteItemState.Hazardous:
+                    property.TrashLevel = Mathf.Clamp(property.TrashLevel + clampedAmount, 0f, 100f);
+                    property.OdorLevel = Mathf.Clamp(property.OdorLevel + clampedAmount * 0.8f, 0f, 100f);
+                    break;
+                default:
+                    property.TrashLevel = Mathf.Clamp(property.TrashLevel + clampedAmount * 0.7f, 0f, 100f);
+                    property.OdorLevel = Mathf.Clamp(property.OdorLevel + clampedAmount * 0.45f, 0f, 100f);
+                    break;
+            }
+
+            property.RoomClutter = property.ClutterScore;
+            RecomputeRoomQuality(property);
+            OnPropertyChanged?.Invoke(property);
+            PublishPropertyEvent(property, $"Waste registered ({state})", SimulationEventSeverity.Info, clampedAmount);
+        }
+
+        public void AddDishStack(string propertyId, float amount)
+        {
+            PropertyRecord property = GetProperty(propertyId);
+            if (property == null || amount <= 0f)
+            {
+                return;
+            }
+
+            property.DishStack = Mathf.Clamp(property.DishStack + amount, 0f, 100f);
+            property.OdorLevel = Mathf.Clamp(property.OdorLevel + amount * 0.3f, 0f, 100f);
+            property.CleanlinessScore = Mathf.Clamp(property.CleanlinessScore - amount * 0.25f, 0f, 100f);
+            property.RoomCleanliness = property.CleanlinessScore;
+            RecomputeRoomQuality(property);
+            OnPropertyChanged?.Invoke(property);
+        }
+
+        public void AddLaundry(string propertyId, float amount)
+        {
+            PropertyRecord property = GetProperty(propertyId);
+            if (property == null || amount <= 0f)
+            {
+                return;
+            }
+
+            property.LaundryPile = Mathf.Clamp(property.LaundryPile + amount, 0f, 100f);
+            property.OdorLevel = Mathf.Clamp(property.OdorLevel + amount * 0.18f, 0f, 100f);
+            property.ClutterScore = Mathf.Clamp(property.ClutterScore + amount * 0.2f, 0f, 100f);
+            property.RoomClutter = property.ClutterScore;
+            RecomputeRoomQuality(property);
+            OnPropertyChanged?.Invoke(property);
+        }
+
+        public void ProcessBinDisposal(string propertyId, bool recycle)
+        {
+            PropertyRecord property = GetProperty(propertyId);
+            if (property == null)
+            {
+                return;
+            }
+
+            float multiplier = recycle ? 0.85f : 1f;
+            float disposed = property.TrashLevel * multiplier;
+            property.TrashLevel = Mathf.Clamp(property.TrashLevel - disposed, 0f, 100f);
+            property.OdorLevel = Mathf.Clamp(property.OdorLevel - disposed * 0.35f, 0f, 100f);
+            property.ClutterScore = Mathf.Clamp(property.ClutterScore - disposed * 0.2f, 0f, 100f);
+            property.RoomClutter = property.ClutterScore;
+            RecomputeRoomQuality(property);
+            OnPropertyChanged?.Invoke(property);
+            PublishPropertyEvent(property, recycle ? "Recycling processed" : "Trash taken out", SimulationEventSeverity.Info, disposed);
+        }
+
+        public void ProcessLaundry(string propertyId)
+        {
+            PropertyRecord property = GetProperty(propertyId);
+            if (property == null)
+            {
+                return;
+            }
+
+            float cleaned = property.LaundryPile;
+            property.LaundryPile = 0f;
+            property.CleanlinessScore = Mathf.Clamp(property.CleanlinessScore + cleaned * 0.3f, 0f, 100f);
+            property.ComfortScore = Mathf.Clamp(property.ComfortScore + cleaned * 0.15f, 0f, 100f);
+            property.OdorLevel = Mathf.Clamp(property.OdorLevel - cleaned * 0.25f, 0f, 100f);
+            property.RoomCleanliness = property.CleanlinessScore;
+            RecomputeRoomQuality(property);
+            OnPropertyChanged?.Invoke(property);
+            PublishPropertyEvent(property, "Laundry washed", SimulationEventSeverity.Info, cleaned);
+        }
+
+        public void ProcessDishes(string propertyId)
+        {
+            PropertyRecord property = GetProperty(propertyId);
+            if (property == null)
+            {
+                return;
+            }
+
+            float cleaned = property.DishStack;
+            property.DishStack = 0f;
+            property.CleanlinessScore = Mathf.Clamp(property.CleanlinessScore + cleaned * 0.25f, 0f, 100f);
+            property.OdorLevel = Mathf.Clamp(property.OdorLevel - cleaned * 0.2f, 0f, 100f);
+            property.RoomCleanliness = property.CleanlinessScore;
+            RecomputeRoomQuality(property);
+            OnPropertyChanged?.Invoke(property);
+            PublishPropertyEvent(property, "Dishes washed", SimulationEventSeverity.Info, cleaned);
         }
 
         public bool TryAddStorageUsage(string propertyId, int amount)
@@ -210,6 +347,18 @@ namespace Survivebest.Location
                 property.ClutterScore = Mathf.Clamp(property.ClutterScore + 0.9f, 0f, 100f);
                 property.ApplianceCondition = Mathf.Clamp(property.ApplianceCondition - 0.5f, 0f, 100f);
 
+                property.DishStack = Mathf.Clamp(property.DishStack + 1.5f, 0f, 100f);
+                property.LaundryPile = Mathf.Clamp(property.LaundryPile + 1f, 0f, 100f);
+                property.TrashLevel = Mathf.Clamp(property.TrashLevel + 1.2f, 0f, 100f);
+                property.OdorLevel = Mathf.Clamp(property.OdorLevel + property.TrashLevel * 0.015f + property.DishStack * 0.01f, 0f, 100f);
+                property.RoomCleanliness = property.CleanlinessScore;
+                property.RoomClutter = property.ClutterScore;
+
+                if (property.TrashLevel > 85f || property.OdorLevel > 80f)
+                {
+                    PublishPropertyEvent(property, "Overflowing waste is increasing disease risk", SimulationEventSeverity.Warning, property.TrashLevel + property.OdorLevel);
+                }
+
                 if (property.ApplianceCondition < 45f && UnityEngine.Random.value < 0.15f)
                 {
                     SubmitRepairRequest(property.PropertyId, "Appliance Breakdown", UnityEngine.Random.Range(25f, 70f), UnityEngine.Random.Range(40, 180));
@@ -234,6 +383,7 @@ namespace Survivebest.Location
                 property.ApplianceCondition * 0.2f +
                 property.NeighborhoodDesirability * 0.1f -
                 property.ClutterScore * 0.15f -
+                property.OdorLevel * 0.1f -
                 utilityPenalty,
                 0f,
                 100f);

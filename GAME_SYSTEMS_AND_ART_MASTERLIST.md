@@ -399,6 +399,9 @@ Additional progress this pass:
 - Added `TownSimulationManager.GetTownPressureScore()` (crowding + district activity + off-screen strain) so pacing systems can react to macro simulation stress.
 - Updated `AIDirectorDramaManager` to react to high town pressure and select disruption/recovery incident types based on the active story vibe preset.
 - Added procedural-core building blocks (`RunSeed`, `SeededRandomService`, `SimulationProfile`, `ScenarioContext`, `WeightedTable<T>`) as the deterministic base for seeded scenario generation.
+- Added `HouseholdChoreSystem` integrated with routines/housing to create daily chores and apply home-state consequences when chores are completed or ignored.
+- Expanded `HousingPropertySystem` with hygiene-environment signals (`TrashLevel`, `DishStack`, `LaundryPile`, `OdorLevel`, room cleanliness/clutter mirrors) plus disposal/laundry/dishes processing methods.
+- Expanded `HomeInteractionHotspot` with dedicated home-maintenance interactions (`RecyclingBin`, `LaundryBasket`, `CleaningStation`).
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 
