@@ -111,6 +111,9 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `UIEventFeedbackRouter` UX polish hook for event-driven pulse text + severity-based SFX triggers.
 - Day-slice balancing now exposes tunable thresholds and random event probabilities in inspector (`DaySliceManager`).
 - Recipe progression now supports lock/unlock by skill level + skill-tree node requirements for profession depth (`RecipeSystem`).
+- Unified inventory/economy authority now supports item instances, ownership scopes (household/personal/lot/equipped), recipe reservations, equipment state, spoilage/decay, theft flags, and value/depreciation evaluation (`EconomyInventorySystem`).
+- NPC simulation now includes home/work/lot presence, weather reactions, health-driven schedule overrides, jail unavailability, memory/reputation updates, and destination routing (`NpcScheduleSystem`).
+- Added a town/lot/zone simulation layer with districts, lot ownership/zoning, business open/close logic, route graph travel costs, and local safety/wealth values (`TownSimulationSystem`).
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).

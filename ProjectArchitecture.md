@@ -512,3 +512,6 @@ Always-visible character presence:
 - `RecipeSystem` should support progression-gated recipes tied to skill levels and skill-tree unlock nodes for deeper profession/crafting loops.
 - `DaySliceManager` should expose balancing coefficients (thresholds/chances) via inspector so tuning can happen without code edits.
 - `UIEventFeedbackRouter` should map simulation-event severity to audio/animation/text feedback to improve UX polish and moment-to-moment readability.
+- `EconomyInventorySystem` should serve as a AAA-style authority for ownership/instances/quality/spoilage/reservations/equipment/resale value so all possession logic resolves through one domain model.
+- `NpcScheduleSystem` should model live town presence (home/work/current lot), weather adaptation, jail/health unavailability, memory, and reputation drift so NPCs feel systemic rather than scripted.
+- `TownSimulationSystem` should own lot zoning, district identity, business hours, route costs, and local danger/wealth signals used by travel, law, NPC, and economy systems.

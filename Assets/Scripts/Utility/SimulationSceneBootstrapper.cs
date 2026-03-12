@@ -35,6 +35,7 @@ namespace Survivebest.Utility
             EnsureSingleton<WeatherManager>("WeatherManager");
             EnsureSingleton<HouseholdManager>("HouseholdManager");
             EnsureSingleton<LocationManager>("LocationManager");
+            EnsureSingleton<TownSimulationSystem>("TownSimulationSystem");
             EnsureSingleton<LawSystem>("LawSystem");
             EnsureSingleton<DaySliceManager>("DaySliceManager");
             EnsureSingleton<GrocerySystem>("GrocerySystem");

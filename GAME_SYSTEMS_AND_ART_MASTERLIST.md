@@ -71,6 +71,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 
 ### Location / Interaction / Transport
 - `Assets/Scripts/Location/LocationManager.cs`
+- `Assets/Scripts/Location/TownSimulationSystem.cs`
 - `Assets/Scripts/Interaction/Interactable.cs`
 - `Assets/Scripts/Interaction/InteractionController.cs`
 - `Assets/Scripts/Interaction/HomeInteractionHotspot.cs`
@@ -243,6 +244,15 @@ This file is a comprehensive implementation inventory for the current codebase.
 42. **Recipe unlock progression flow**
     - Recipe starts locked → skill/node requirements met → unlock event → craft enabled.
 
+43. **Unified inventory authority flow**
+    - Item instance created → ownership scope applied → reserve/equip/spoil/depreciate lifecycle → resale value evaluation.
+
+44. **Town lot lifecycle flow**
+    - Lot open/close by hour → district/lot risk+wealth signals update → route costs vary by weather.
+
+45. **NPC living-town flow**
+    - NPC schedule state resolves against jail/health/weather/business-hours, then routes to home/work/social/commercial lots with memory/reputation drift.
+
 ---
 
 ## 3) State Lifecycles with Explicit Start/End (implemented)
@@ -333,7 +343,7 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 
 ## 5) What’s Still Missing / Next Features To Build
 
-Status update: items 2, 3, 4, 6, 7, 8, and 10 now have foundational runtime systems; items 1, 5, and 9 remain major production work.
+Status update: items 1, 2, 3, 4, 6, 7, 8, and 10 now have foundational runtime systems; items 5 and 9 remain major production work.
 
 
 1. **Scene prefab completeness**
