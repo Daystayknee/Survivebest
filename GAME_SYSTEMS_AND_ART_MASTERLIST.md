@@ -51,6 +51,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/PersonalityMatrixSystem.cs`
 - `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
 - `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
+- `Assets/Scripts/Core/PsychologicalGrowthMentalHealthEngine.cs`
+- `Assets/Scripts/Core/WorldCultureSocietyEngine.cs`
 - `Assets/Scripts/Tasking/TaskModels.cs`
 - `Assets/Scripts/Tasking/TaskDatabase.cs`
 - `Assets/Scripts/Tasking/TaskInteractionManager.cs`
@@ -124,6 +126,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Location/LocationManager.cs`
 - `Assets/Scripts/Location/TownSimulationSystem.cs`
 - `Assets/Scripts/Location/HousingPropertySystem.cs`
+- `Assets/Scripts/Location/LivingWorldInfrastructureEngine.cs`
 - `Assets/Scripts/Interaction/Interactable.cs`
 - `Assets/Scripts/Interaction/InteractionController.cs`
 - `Assets/Scripts/Interaction/HomeInteractionHotspot.cs`
@@ -181,6 +184,9 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/LifeMilestonesEngineTests.cs`
 - `Assets/Tests/EditMode/SocialDramaEngineTests.cs`
 - `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
+- `Assets/Tests/EditMode/HumanLifeExperienceLayerSystemTests.cs`
+- `Assets/Tests/EditMode/WorldCultureSocietyEngineTests.cs`
+- `Assets/Tests/EditMode/LivingWorldInfrastructureEngineTests.cs`
 
 ---
 

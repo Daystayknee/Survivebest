@@ -48,5 +48,46 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
         }
+
+        [Test]
+        public void GenerateDecisionSpace_CreatesProceduralOptionsWithScores()
+        {
+            GameObject go = new GameObject("DecisionSpace");
+            PersonalityDecisionSystem system = go.AddComponent<PersonalityDecisionSystem>();
+
+            GameObject charGo = new GameObject("CharSpace");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_space", "Space", LifeStage.YoungAdult);
+            charGo.AddComponent<NeedsSystem>();
+
+            var options = system.GenerateDecisionSpace(character, 1234, 10);
+
+            Assert.GreaterOrEqual(options.Count, 3);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(options[0].OptionId));
+            Assert.Greater(options[0].Score, 0f);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void GenerateProceduralDecisionLoop_ProducesMultiStepLoop()
+        {
+            GameObject go = new GameObject("DecisionLoop");
+            PersonalityDecisionSystem system = go.AddComponent<PersonalityDecisionSystem>();
+
+            GameObject charGo = new GameObject("CharLoop");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_loop", "Loop", LifeStage.YoungAdult);
+            charGo.AddComponent<NeedsSystem>();
+
+            var loop = system.GenerateProceduralDecisionLoop(character, 20);
+
+            Assert.GreaterOrEqual(loop.Count, 10);
+            Assert.IsTrue(System.Enum.IsDefined(typeof(AutonomousActionType), loop[0].ActionType));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
     }
 }

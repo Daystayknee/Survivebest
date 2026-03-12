@@ -48,6 +48,7 @@ namespace Survivebest.Location
         [SerializeField] private NpcScheduleSystem npcScheduleSystem;
         [SerializeField] private AutonomousStoryGenerator autonomousStoryGenerator;
         [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
+        [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Range(0f, 1f)] private float dailyIncidentChance = 0.35f;
         [SerializeField, Range(0f, 1f)] private float dailyCommunityEventChance = 0.28f;
@@ -105,6 +106,7 @@ namespace Survivebest.Location
             }
 
             RecomputeTownState();
+            livingWorldInfrastructureEngine?.EnsureSeededDefaults();
         }
 
         private void OnDisable()
@@ -126,6 +128,7 @@ namespace Survivebest.Location
         private void HandleHourPassed(int hour)
         {
             RecomputeTownState();
+            livingWorldInfrastructureEngine?.SimulateInfrastructureHour(hour);
             float pressure = GetTownPressureScore();
             PublishTownEvent("HourlyTownUpdate", $"Town state refreshed for hour {hour} (pressure {pressure:0.0})", pressure, SimulationEventSeverity.Info);
         }
@@ -133,6 +136,8 @@ namespace Survivebest.Location
         private void HandleDayPassed(int day)
         {
             RecomputeTownState();
+
+            livingWorldInfrastructureEngine?.SimulateInfrastructureDay(day);
 
             if (UnityEngine.Random.value <= dailyIncidentChance)
             {
