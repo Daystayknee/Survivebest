@@ -35,6 +35,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/HouseholdManager.cs`
 - `Assets/Scripts/Core/FamilyManager.cs`
 - `Assets/Scripts/Core/FamilyDynamicsSystem.cs`
+- `Assets/Scripts/Core/LifeMilestonesEngine.cs`
 - `Assets/Scripts/Core/LegacyManager.cs`
 - `Assets/Scripts/LifeStage/LifeStageManager.cs`
 - `Assets/Scripts/Core/BodyCompositionSystem.cs`
@@ -177,6 +178,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/PersonalityMatrixSystemTests.cs`
 - `Assets/Tests/EditMode/RelationshipCompatibilityEngineTests.cs`
 - `Assets/Tests/EditMode/FamilyDynamicsSystemTests.cs`
+- `Assets/Tests/EditMode/LifeMilestonesEngineTests.cs`
 - `Assets/Tests/EditMode/SocialDramaEngineTests.cs`
 - `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
 
