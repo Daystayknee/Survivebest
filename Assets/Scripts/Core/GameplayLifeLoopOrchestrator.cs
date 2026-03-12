@@ -34,6 +34,7 @@ namespace Survivebest.Core
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
         [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
+        [SerializeField] private AdaptiveLifeEventsDirector adaptiveLifeEventsDirector;
         [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Loop Control")]
@@ -94,6 +95,7 @@ namespace Survivebest.Core
             float progress = BuildProgressFromDecision(decision);
 
             humanLifeExperienceLayerSystem?.SimulateHourPulse(active, hour, pressure, social, progress);
+            adaptiveLifeEventsDirector?.DirectBeatForActiveCharacter(hour);
             gameplayInteractionPresentationLayer?.RegisterManualChoiceResult(decision.ToString(), $"Loop resolved: {decision}", progress * 8f - pressure * 3f);
 
             if (hour == sleepHour)

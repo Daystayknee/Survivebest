@@ -219,6 +219,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `GameplayInteractionPresentationLayer` as the gameplay bridge between simulation and player-facing outcomes (world/character panel snapshots, context action suggestions, hotspot packs, map travel options, and action-result feedback pulses with visual-cue tags) without changing existing UI prefabs.
 - Deepened life-story continuity with timeline entries in `HumanLifeExperienceLayerSystem` and timeline-preview/daily-flow helpers in `GameplayInteractionPresentationLayer` so daily actions accumulate into readable life arcs.
 - Added `GameplayLifeLoopOrchestrator` to continuously run the practical daily human loop (wake/check/decide/world pulse/reflect/sleep) by coordinating decision, infrastructure, presentation feedback, and life-timeline updates each hour.
+- Added `AdaptiveLifeEventsDirector` to inject context-aware support/growth/complication/disruption/recovery/high-risk beats based on mental pressure, social support, and infrastructure stress, so long runs keep producing human-feeling turning points.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

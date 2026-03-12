@@ -60,7 +60,8 @@ namespace Survivebest.Utility
             new("WorldCultureSocietyEngine", typeof(WorldCultureSocietyEngine), false),
             new("LivingWorldInfrastructureEngine", typeof(LivingWorldInfrastructureEngine), true),
             new("GameplayInteractionPresentationLayer", typeof(GameplayInteractionPresentationLayer), false),
-            new("GameplayLifeLoopOrchestrator", typeof(GameplayLifeLoopOrchestrator), false)
+            new("GameplayLifeLoopOrchestrator", typeof(GameplayLifeLoopOrchestrator), false),
+            new("AdaptiveLifeEventsDirector", typeof(AdaptiveLifeEventsDirector), false)
         };
 
         [Header("Optional Key UI Controllers")]
@@ -108,6 +109,7 @@ namespace Survivebest.Utility
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private GameplayInteractionPresentationLayer gameplayInteractionPresentationLayer;
         [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
+        [SerializeField] private AdaptiveLifeEventsDirector adaptiveLifeEventsDirector;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -162,6 +164,7 @@ namespace Survivebest.Utility
             missing += CheckNull(livingWorldInfrastructureEngine, nameof(livingWorldInfrastructureEngine));
             missing += CheckNull(gameplayInteractionPresentationLayer, nameof(gameplayInteractionPresentationLayer));
             missing += CheckNull(gameplayLifeLoopOrchestrator, nameof(gameplayLifeLoopOrchestrator));
+            missing += CheckNull(adaptiveLifeEventsDirector, nameof(adaptiveLifeEventsDirector));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -248,6 +251,7 @@ namespace Survivebest.Utility
             livingWorldInfrastructureEngine ??= FindObjectOfType<LivingWorldInfrastructureEngine>(true);
             gameplayInteractionPresentationLayer ??= FindObjectOfType<GameplayInteractionPresentationLayer>(true);
             gameplayLifeLoopOrchestrator ??= FindObjectOfType<GameplayLifeLoopOrchestrator>(true);
+            adaptiveLifeEventsDirector ??= FindObjectOfType<AdaptiveLifeEventsDirector>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
