@@ -6,6 +6,7 @@ using Survivebest.Needs;
 using Survivebest.Health;
 using Survivebest.Events;
 using Survivebest.Core;
+using Survivebest.Economy;
 
 namespace Survivebest.Commerce
 {
@@ -39,6 +40,7 @@ namespace Survivebest.Commerce
         [SerializeField] private SkillTreeSystem skillTreeSystem;
         [SerializeField] private List<Recipe> recipes = new();
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private InventoryManager inventoryManager;
         [SerializeField, Min(1)] private int minimumGeneratedRecipes = 220;
 
         public event Action<string, bool> OnRecipeCrafted;
@@ -102,14 +104,55 @@ namespace Survivebest.Commerce
                 }
             }
 
+            bool reserved = ReserveIngredientsForRecipe(recipe);
+            if (!reserved)
+            {
+                PublishCraftEvent(recipeName, false, "Ingredients are currently reserved for another recipe");
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < recipe.Ingredients.Count; i++)
+                {
+                    RecipeIngredient ingredient = recipe.Ingredients[i];
+                    grocerySystem.ConsumeIngredient(ingredient.IngredientName, ingredient.Quantity);
+                }
+
+                needs?.ApplyFoodEffects(recipe.OutputFood, health);
+                PublishCraftEvent(recipeName, true, "Recipe successfully cooked");
+                return true;
+            }
+            finally
+            {
+                inventoryManager?.ReleaseReservation(recipe.RecipeName);
+            }
+        }
+
+
+        private bool ReserveIngredientsForRecipe(Recipe recipe)
+        {
+            if (recipe == null || inventoryManager == null)
+            {
+                return true;
+            }
+
+            inventoryManager.EnsureContainer("household_pantry", "Household Pantry", InventoryScope.Household);
             for (int i = 0; i < recipe.Ingredients.Count; i++)
             {
                 RecipeIngredient ingredient = recipe.Ingredients[i];
-                grocerySystem.ConsumeIngredient(ingredient.IngredientName, ingredient.Quantity);
+                if (ingredient == null)
+                {
+                    continue;
+                }
+
+                if (!inventoryManager.ReserveIngredient("household_pantry", ingredient.IngredientName, recipe.RecipeName, ingredient.Quantity))
+                {
+                    inventoryManager.ReleaseReservation(recipe.RecipeName);
+                    return false;
+                }
             }
 
-            needs?.ApplyFoodEffects(recipe.OutputFood, health);
-            PublishCraftEvent(recipeName, true, "Recipe successfully cooked");
             return true;
         }
 

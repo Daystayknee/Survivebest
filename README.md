@@ -112,6 +112,8 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Day-slice balancing now exposes tunable thresholds and random event probabilities in inspector (`DaySliceManager`).
 - Recipe progression now supports lock/unlock by skill level + skill-tree node requirements for profession depth (`RecipeSystem`).
 - Unified inventory/economy authority now supports item instances, ownership scopes (household/personal/lot/equipped), recipe reservations, equipment state, spoilage/decay, theft flags, and value/depreciation evaluation (`EconomyInventorySystem`).
+- Added `InventoryManager` as explicit inventory authority for containers, stack transfers, usage, storage scopes, equipment hooks, and recipe reservation tracking across systems.
+- Added `EconomyManager` as explicit financial authority for account balances, transaction history, dynamic pricing modifiers, paychecks/fines, debt-aware charges, and cross-account transfers.
 - NPC simulation now includes home/work/lot presence, weather reactions, health-driven schedule overrides, jail unavailability, memory/reputation updates, and destination routing (`NpcScheduleSystem`).
 - Added a town/lot/zone simulation layer with districts, lot ownership/zoning, business open/close logic, route graph travel costs, and local safety/wealth values (`TownSimulationSystem`).
 - Added `NpcCareerSystem` for role requirements, shifts, pay schedules, attendance/performance, promotions/demotions, and role equipment/tool assignment.
