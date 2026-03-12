@@ -398,6 +398,7 @@ Additional progress this pass:
 - Added story **vibe presets** to `AutonomousStoryGenerator` (`FrontierSurvival`, `RoadTripCalamity`, `GenerationalLegacy`, `SmallTownSaga`) to steer emergent incidents toward distinct tone families.
 - Added `TownSimulationManager.GetTownPressureScore()` (crowding + district activity + off-screen strain) so pacing systems can react to macro simulation stress.
 - Updated `AIDirectorDramaManager` to react to high town pressure and select disruption/recovery incident types based on the active story vibe preset.
+- Added procedural-core building blocks (`RunSeed`, `SeededRandomService`, `SimulationProfile`, `ScenarioContext`, `WeightedTable<T>`) as the deterministic base for seeded scenario generation.
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 

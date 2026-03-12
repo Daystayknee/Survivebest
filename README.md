@@ -138,6 +138,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added story "vibe presets" (`FrontierSurvival`, `RoadTripCalamity`, `GenerationalLegacy`, `SmallTownSaga`) so incident weighting can lean toward survival hardship, journey hazards, dynasty drama, or cozy-chaos town stories while still using emergent simulation.
 - `TownSimulationManager` now computes a reusable town pressure score (crowding + district activity + off-screen strain) that can drive director pacing and incident escalation.
 - `AIDirectorDramaManager` now considers town pressure and vibe profile when selecting disruption/recovery incident types, improving authored-feeling pacing without scripted rails.
+- Added procedural-foundation primitives in `Survivebest.Core.Procedural`: `RunSeed`, `SeededRandomService` (`IRandomService`), `SimulationProfile`, `ScenarioContext`, and `WeightedTable<T>` so runs can be reproducible and profile-driven before full scenario-runner rollout.
 - Added `WorldPersistenceCullingSystem` for off-screen simulation rules, lot activation/deactivation budget, remote NPC catch-up summaries, and story-priority simulation scaling.
 - Added `AIDirectorDramaManager` to monitor boredom/tension and inject disruption or recovery beats so major moments are paced rather than random.
 - Added `AnimationFeedbackJuiceSystem` to translate simulation events into animation/SFX/VFX/UI cue payloads for stronger moment-to-moment feedback and readability.
