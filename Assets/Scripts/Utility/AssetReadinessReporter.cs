@@ -34,6 +34,7 @@ namespace Survivebest.Utility
         [SerializeField] private ContractBoardSystem contractBoardSystem;
         [SerializeField] private NpcScheduleSystem npcScheduleSystem;
         [SerializeField] private InjuryRecoverySystem injuryRecoverySystem;
+        [SerializeField] private UIEventFeedbackRouter uiEventFeedbackRouter;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -62,6 +63,7 @@ namespace Survivebest.Utility
             missing += CheckNull(contractBoardSystem, nameof(contractBoardSystem));
             missing += CheckNull(npcScheduleSystem, nameof(npcScheduleSystem));
             missing += CheckNull(injuryRecoverySystem, nameof(injuryRecoverySystem));
+            missing += CheckNull(uiEventFeedbackRouter, nameof(uiEventFeedbackRouter));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -122,6 +124,7 @@ namespace Survivebest.Utility
             contractBoardSystem ??= FindObjectOfType<ContractBoardSystem>(true);
             npcScheduleSystem ??= FindObjectOfType<NpcScheduleSystem>(true);
             injuryRecoverySystem ??= FindObjectOfType<InjuryRecoverySystem>(true);
+            uiEventFeedbackRouter ??= FindObjectOfType<UIEventFeedbackRouter>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }

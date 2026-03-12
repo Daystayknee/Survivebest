@@ -37,6 +37,16 @@ namespace Survivebest.Core
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private string defaultRecipeName = "Hearty Stew";
 
+        [Header("Balancing")]
+        [SerializeField, Range(1f, 60f)] private float needsCriticalThreshold = 18f;
+        [SerializeField, Range(1f, 80f)] private float needsWarningThreshold = 35f;
+        [SerializeField, Range(1f, 80f)] private float lowEnergyActivityThreshold = 30f;
+        [SerializeField, Range(1f, 80f)] private float lowMoodActivityThreshold = 45f;
+        [SerializeField, Range(1f, 80f)] private float lowHygieneActivityThreshold = 35f;
+        [SerializeField, Range(0f, 1f)] private float randomIllnessChance = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float randomDialogueChance = 0.45f;
+        [SerializeField, Range(0f, 1f)] private float randomConflictChance = 0.22f;
+
         [SerializeField] private bool autoAdvanceEachHour = true;
         [SerializeField] private int stageAdvanceHourInterval = 2;
 
@@ -159,13 +169,13 @@ namespace Survivebest.Core
             string reason = "Needs are stable";
             SimulationEventSeverity severity = SimulationEventSeverity.Info;
 
-            if (lowest < 18f)
+            if (lowest < needsCriticalThreshold)
             {
                 key = "NeedsCritical";
                 reason = $"Critical needs detected H:{needs.Hunger:0} E:{needs.Energy:0} W:{needs.Hydration:0} M:{needs.Mood:0}";
                 severity = SimulationEventSeverity.Critical;
             }
-            else if (lowest < 35f)
+            else if (lowest < needsWarningThreshold)
             {
                 key = "NeedsWarning";
                 reason = $"Needs warning H:{needs.Hunger:0} E:{needs.Energy:0} W:{needs.Hydration:0} M:{needs.Mood:0}";
@@ -191,19 +201,19 @@ namespace Survivebest.Core
                 return;
             }
 
-            if (needs != null && needs.Energy < 30f)
+            if (needs != null && needs.Energy < lowEnergyActivityThreshold)
             {
                 activeActivitySystem.PerformActivity(ActivityType.Rest);
                 return;
             }
 
-            if (needs != null && needs.Mood < 45f)
+            if (needs != null && needs.Mood < lowMoodActivityThreshold)
             {
                 activeActivitySystem.PerformActivity(ActivityType.HobbyPractice);
                 return;
             }
 
-            if (needs != null && needs.Hygiene < 35f)
+            if (needs != null && needs.Hygiene < lowHygieneActivityThreshold)
             {
                 activeActivitySystem.PerformActivity(ActivityType.Chore);
                 return;
@@ -265,43 +275,43 @@ namespace Survivebest.Core
                 return;
             }
 
-            int roll = UnityEngine.Random.Range(0, 4);
-            switch (roll)
-            {
-                case 0:
-                {
-                    DialogueSystem ds = ResolveDialogueSystem(active);
-                    bool ok = ds != null && ds.PerformDialogue(target, DialogueIntent.FriendlyChat);
-                    PublishStageNote(active, "RandomFriendly", ok ? "Random friendly social beat succeeded" : "Random friendly social beat failed", ok ? 2f : -1f);
-                    break;
-                }
-                case 1:
-                {
-                    ConflictSystem cs = ResolveConflictSystem(active);
-                    HealthSystem targetHealth = target.GetComponent<HealthSystem>();
-                    bool ok = cs != null && cs.TryStartViolence(target, targetHealth, ViolenceType.Shove);
-                    PublishStageNote(active, "RandomConflict", ok ? "Random conflict triggered" : "Random conflict avoided", ok ? -3f : 1f);
-                    break;
-                }
-                case 2:
-                {
-                    MedicalConditionSystem medical = active.GetComponent<MedicalConditionSystem>();
-                    bool ok = medical != null && medical.AddIllness(IllnessType.CommonCold, ConditionSeverity.Mild);
-                    PublishStageNote(active, "RandomIllness", ok ? "Caught a mild illness from random event" : "No illness applied", ok ? -2f : 1f);
-                    break;
-                }
-                default:
-                {
-                    SocialSystem social = active.GetComponent<SocialSystem>();
-                    if (social != null)
-                    {
-                        social.UpdateRelationship(target.CharacterId, 4);
-                    }
+            float roll = UnityEngine.Random.value;
+            float conflictThreshold = randomConflictChance;
+            float illnessThreshold = conflictThreshold + randomIllnessChance;
+            float dialogueThreshold = illnessThreshold + randomDialogueChance;
 
-                    PublishStageNote(active, "RandomBond", "Shared event increased bond", 4f);
-                    break;
-                }
+            if (roll < conflictThreshold)
+            {
+                ConflictSystem cs = ResolveConflictSystem(active);
+                HealthSystem targetHealth = target.GetComponent<HealthSystem>();
+                bool ok = cs != null && cs.TryStartViolence(target, targetHealth, ViolenceType.Shove);
+                PublishStageNote(active, "RandomConflict", ok ? "Random conflict triggered" : "Random conflict avoided", ok ? -3f : 1f);
+                return;
             }
+
+            if (roll < illnessThreshold)
+            {
+                MedicalConditionSystem medical = active.GetComponent<MedicalConditionSystem>();
+                bool ok = medical != null && medical.AddIllness(IllnessType.CommonCold, ConditionSeverity.Mild);
+                PublishStageNote(active, "RandomIllness", ok ? "Caught a mild illness from random event" : "No illness applied", ok ? -2f : 1f);
+                return;
+            }
+
+            if (roll < dialogueThreshold)
+            {
+                DialogueSystem ds = ResolveDialogueSystem(active);
+                bool ok = ds != null && ds.PerformDialogue(target, DialogueIntent.FriendlyChat);
+                PublishStageNote(active, "RandomFriendly", ok ? "Random friendly social beat succeeded" : "Random friendly social beat failed", ok ? 2f : -1f);
+                return;
+            }
+
+            SocialSystem social = active.GetComponent<SocialSystem>();
+            if (social != null)
+            {
+                social.UpdateRelationship(target.CharacterId, 4);
+            }
+
+            PublishStageNote(active, "RandomBond", "Shared event increased bond", 4f);
         }
 
         private void TryPerformSocialMoment(CharacterCore active)

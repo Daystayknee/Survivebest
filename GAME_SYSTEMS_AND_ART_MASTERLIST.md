@@ -95,6 +95,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/UI/ActionPopupController.cs`
 - `Assets/Scripts/UI/ZoneScenePanel.cs`
 - `Assets/Scripts/UI/SuccessionUI.cs`
+- `Assets/Scripts/UI/UIEventFeedbackRouter.cs`
 - `Assets/Scripts/UI/BuildModeManager.cs`
 - `Assets/Scripts/UI/FurnitureStoreController.cs`
 - `Assets/Scripts/UI/FurniturePlaceable.cs`
@@ -106,6 +107,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/View/ViewManager.cs`
 - `Assets/Scripts/Utility/AssetReadinessReporter.cs`
 - `Assets/Scripts/Utility/PlaceholderGenerator.cs`
+- `Assets/Scripts/Utility/SimulationSceneBootstrapper.cs`
 
 ### Automated Tests
 - `Assets/Tests/EditMode/EconomyInventorySystemTests.cs`
@@ -232,6 +234,15 @@ This file is a comprehensive implementation inventory for the current codebase.
 39. **Save schema migration flow**
     - Load payload schema check → migrate legacy payloads → apply state safely.
 
+40. **Scene bootstrap flow**
+    - Bootstrap helper auto-creates missing core managers and triggers readiness auto-wire/report pass.
+
+41. **UX feedback routing flow**
+    - Simulation events map to UI text pulse + severity-based SFX hooks.
+
+42. **Recipe unlock progression flow**
+    - Recipe starts locked → skill/node requirements met → unlock event → craft enabled.
+
 ---
 
 ## 3) State Lifecycles with Explicit Start/End (implemented)
@@ -322,7 +333,7 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 
 ## 5) What’s Still Missing / Next Features To Build
 
-Status update: items 2, 3, 4, 6, 7, and 8 now have foundational runtime systems; items 1, 5, 9, and 10 remain major production work.
+Status update: items 2, 3, 4, 6, 7, 8, and 10 now have foundational runtime systems; items 1, 5, and 9 remain major production work.
 
 
 1. **Scene prefab completeness**

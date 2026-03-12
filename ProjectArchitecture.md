@@ -508,3 +508,7 @@ Always-visible character presence:
 - `AppearanceManager` should support layered sprite auto-binding/validation to reduce manual image stacking errors in Unity portrait rigs.
 - `AssetReadinessReporter` should provide both diagnostics and auto-wire helpers (e.g., "Auto Wire Known References") to accelerate scene prefab completeness.
 - `FurnitureStoreController` should handle furniture purchase UI and spawn purchased placeables while transitioning player into build mode.
+- `SimulationSceneBootstrapper` should support quick creation/wiring of core manager dependencies in new scenes to accelerate prefab completeness.
+- `RecipeSystem` should support progression-gated recipes tied to skill levels and skill-tree unlock nodes for deeper profession/crafting loops.
+- `DaySliceManager` should expose balancing coefficients (thresholds/chances) via inspector so tuning can happen without code edits.
+- `UIEventFeedbackRouter` should map simulation-event severity to audio/animation/text feedback to improve UX polish and moment-to-moment readability.

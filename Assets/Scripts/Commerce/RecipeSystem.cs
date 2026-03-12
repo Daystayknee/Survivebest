@@ -5,6 +5,7 @@ using Survivebest.Food;
 using Survivebest.Needs;
 using Survivebest.Health;
 using Survivebest.Events;
+using Survivebest.Core;
 
 namespace Survivebest.Commerce
 {
@@ -21,22 +22,60 @@ namespace Survivebest.Commerce
         public string RecipeName;
         public List<RecipeIngredient> Ingredients = new();
         public FoodItem OutputFood;
+
+        [Header("Progression")]
+        public bool StartsLocked;
+        public string RequiredSkillName;
+        public float RequiredSkillLevel;
+        public string RequiredSkillNodeId;
+
+        [HideInInspector] public bool IsUnlocked = true;
     }
 
     public class RecipeSystem : MonoBehaviour
     {
         [SerializeField] private GrocerySystem grocerySystem;
+        [SerializeField] private SkillSystem skillSystem;
+        [SerializeField] private SkillTreeSystem skillTreeSystem;
         [SerializeField] private List<Recipe> recipes = new();
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Min(1)] private int minimumGeneratedRecipes = 220;
 
         public event Action<string, bool> OnRecipeCrafted;
+        public event Action<string, bool> OnRecipeUnlockStateChanged;
 
         public IReadOnlyList<Recipe> Recipes => recipes;
 
         private void Awake()
         {
             EnsureRecipeDepth();
+            RefreshRecipeUnlocks();
+        }
+
+        private void OnEnable()
+        {
+            if (skillSystem != null)
+            {
+                skillSystem.OnSkillChanged += HandleSkillChanged;
+            }
+
+            if (skillTreeSystem != null)
+            {
+                skillTreeSystem.OnNodeUnlocked += HandleSkillNodeUnlocked;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (skillSystem != null)
+            {
+                skillSystem.OnSkillChanged -= HandleSkillChanged;
+            }
+
+            if (skillTreeSystem != null)
+            {
+                skillTreeSystem.OnNodeUnlocked -= HandleSkillNodeUnlocked;
+            }
         }
 
         public bool CookRecipe(string recipeName, NeedsSystem needs, HealthSystem health)
@@ -47,41 +86,107 @@ namespace Survivebest.Commerce
                 return false;
             }
 
-            foreach (RecipeIngredient ingredient in recipe.Ingredients)
+            if (!recipe.IsUnlocked)
             {
+                PublishCraftEvent(recipeName, false, "Recipe is locked");
+                return false;
+            }
+
+            for (int i = 0; i < recipe.Ingredients.Count; i++)
+            {
+                RecipeIngredient ingredient = recipe.Ingredients[i];
                 if (!grocerySystem.HasIngredient(ingredient.IngredientName, ingredient.Quantity))
                 {
-                    OnRecipeCrafted?.Invoke(recipeName, false);
-                    (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-                    {
-                        Type = SimulationEventType.RecipeCooked,
-                        Severity = SimulationEventSeverity.Warning,
-                        SystemName = nameof(RecipeSystem),
-                        ChangeKey = recipeName,
-                        Reason = "Missing ingredients",
-                        Magnitude = 0f
-                    });
+                    PublishCraftEvent(recipeName, false, "Missing ingredients");
                     return false;
                 }
             }
 
-            foreach (RecipeIngredient ingredient in recipe.Ingredients)
+            for (int i = 0; i < recipe.Ingredients.Count; i++)
             {
+                RecipeIngredient ingredient = recipe.Ingredients[i];
                 grocerySystem.ConsumeIngredient(ingredient.IngredientName, ingredient.Quantity);
             }
 
             needs?.ApplyFoodEffects(recipe.OutputFood, health);
-            OnRecipeCrafted?.Invoke(recipeName, true);
-            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-            {
-                Type = SimulationEventType.RecipeCooked,
-                Severity = SimulationEventSeverity.Info,
-                SystemName = nameof(RecipeSystem),
-                ChangeKey = recipeName,
-                Reason = "Recipe successfully cooked",
-                Magnitude = 1f
-            });
+            PublishCraftEvent(recipeName, true, "Recipe successfully cooked");
             return true;
+        }
+
+        public void RefreshRecipeUnlocks()
+        {
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                Recipe recipe = recipes[i];
+                if (recipe == null)
+                {
+                    continue;
+                }
+
+                bool old = recipe.IsUnlocked;
+                bool unlocked = !recipe.StartsLocked || MeetsUnlockRequirements(recipe);
+                recipe.IsUnlocked = unlocked;
+
+                if (old != unlocked)
+                {
+                    OnRecipeUnlockStateChanged?.Invoke(recipe.RecipeName, unlocked);
+                    (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                    {
+                        Type = SimulationEventType.RecipeCooked,
+                        Severity = unlocked ? SimulationEventSeverity.Info : SimulationEventSeverity.Warning,
+                        SystemName = nameof(RecipeSystem),
+                        ChangeKey = recipe.RecipeName,
+                        Reason = unlocked ? "Recipe unlocked" : "Recipe locked",
+                        Magnitude = unlocked ? 1f : 0f
+                    });
+                }
+            }
+        }
+
+        private bool MeetsUnlockRequirements(Recipe recipe)
+        {
+            bool skillPass = true;
+            bool nodePass = true;
+
+            if (!string.IsNullOrWhiteSpace(recipe.RequiredSkillName) && recipe.RequiredSkillLevel > 0f)
+            {
+                if (skillSystem == null || skillSystem.SkillLevels == null)
+                {
+                    skillPass = false;
+                }
+                else
+                {
+                    skillSystem.SkillLevels.TryGetValue(recipe.RequiredSkillName, out float currentValue);
+                    skillPass = currentValue >= recipe.RequiredSkillLevel;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(recipe.RequiredSkillNodeId))
+            {
+                SkillTreeNode node = skillTreeSystem != null ? FindSkillNode(recipe.RequiredSkillNodeId) : null;
+                nodePass = node != null && node.IsUnlocked;
+            }
+
+            return skillPass && nodePass;
+        }
+
+        private SkillTreeNode FindSkillNode(string nodeId)
+        {
+            if (skillTreeSystem == null || skillTreeSystem.Nodes == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < skillTreeSystem.Nodes.Count; i++)
+            {
+                SkillTreeNode node = skillTreeSystem.Nodes[i];
+                if (node != null && node.NodeId == nodeId)
+                {
+                    return node;
+                }
+            }
+
+            return null;
         }
 
         private void EnsureRecipeDepth()
@@ -138,6 +243,9 @@ namespace Survivebest.Commerce
                         continue;
                     }
 
+                    bool lockRecipe = style is "Roast" or "Casserole" or "Stir Fry";
+                    float requiredSkill = lockRecipe ? 15f + ((p + v) % 5) * 5f : 0f;
+
                     recipes.Add(new Recipe
                     {
                         RecipeName = recipeName,
@@ -148,7 +256,12 @@ namespace Survivebest.Commerce
                             new RecipeIngredient { IngredientName = starch, Quantity = 1 },
                             new RecipeIngredient { IngredientName = "Salt", Quantity = 1 }
                         },
-                        OutputFood = BuildGeneratedFood(recipeName, style, proteins[p])
+                        OutputFood = BuildGeneratedFood(recipeName, style, proteins[p]),
+                        StartsLocked = lockRecipe,
+                        RequiredSkillName = lockRecipe ? "Cooking" : null,
+                        RequiredSkillLevel = requiredSkill,
+                        RequiredSkillNodeId = lockRecipe && style is "Casserole" ? "profession_chef_tier1" : null,
+                        IsUnlocked = !lockRecipe
                     });
 
                     existing.Add(recipeName);
@@ -175,6 +288,33 @@ namespace Survivebest.Commerce
                 IsSpicy = spicy,
                 SpiceIntensity = spicy ? 2f : 0f
             };
+        }
+
+        private void PublishCraftEvent(string recipeName, bool success, string reason)
+        {
+            OnRecipeCrafted?.Invoke(recipeName, success);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.RecipeCooked,
+                Severity = success ? SimulationEventSeverity.Info : SimulationEventSeverity.Warning,
+                SystemName = nameof(RecipeSystem),
+                ChangeKey = recipeName,
+                Reason = reason,
+                Magnitude = success ? 1f : 0f
+            });
+        }
+
+        private void HandleSkillChanged(string skillName, float value)
+        {
+            if (string.Equals(skillName, "Cooking", StringComparison.OrdinalIgnoreCase))
+            {
+                RefreshRecipeUnlocks();
+            }
+        }
+
+        private void HandleSkillNodeUnlocked(SkillTreeNode node)
+        {
+            RefreshRecipeUnlocks();
         }
     }
 }

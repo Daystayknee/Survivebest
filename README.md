@@ -107,6 +107,10 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - New skill-tree progression layer introduces unlockable profession nodes gated by skill levels and prerequisites (`SkillTreeSystem`).
 - Save payloads now include schema versioning + migration hook for backward-compatible future save evolution (`SaveGameManager`).
 - Added initial EditMode test coverage for economy state mutations/snapshots and save schema migration behavior (`Assets/Tests/EditMode/*`).
+- Added `SimulationSceneBootstrapper` scene setup helper to auto-create missing core managers and run readiness auto-wire/report passes for faster prefab wiring.
+- Added `UIEventFeedbackRouter` UX polish hook for event-driven pulse text + severity-based SFX triggers.
+- Day-slice balancing now exposes tunable thresholds and random event probabilities in inspector (`DaySliceManager`).
+- Recipe progression now supports lock/unlock by skill level + skill-tree node requirements for profession depth (`RecipeSystem`).
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).
