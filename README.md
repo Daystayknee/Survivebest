@@ -198,6 +198,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Upgraded `GameplayScreenController` into a readable daily-life dashboard layer with top-state (time/weather/location), immediate pressure summaries, suggested next actions, and world-pulse snippets (latest event + thought) so the main loop is legible at a glance.
 - Refined `JournalFeedUI` and `HumanLifeExperienceLayerSystem` messaging so event cards and world pulse text read like a human-facing life feed (named character context, richer event titles, strongest thought/place summary) rather than raw debug output.
 - Expanded crime/law/drug governance depth with evidence-based investigations in `CrimeSystem`, staged justice outcomes in `JusticeSystem`, prison routine mode (`PrisonRoutineSystem`), criminal reputation tiers, addiction lifecycle tracking, and election-cycle policy hooks (`ElectionCycleSystem`) to make legal/social pressure a living life loop.
+- Added prison-mode depth systems: `PrisonInteractionSystem` (40+ interaction choices), `GuardAlertSystem`, `ContrabandSystem`, `PrisonEconomySystem`, `DisciplineSystem`, and `ParoleEvaluationSystem`, with dashboard legal-pressure wiring so incarceration feels like an alternate playable life chapter rather than a timer.
 - Added dyed-vs-natural hair controls (checkbox + RGB/ombre/highlight sliders) so genetics updates only the **natural** hair gene color while user dye choices remain cosmetic overlays.
 
 ### Implemented but Scene-Wiring Dependent

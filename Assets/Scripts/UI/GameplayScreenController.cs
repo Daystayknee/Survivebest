@@ -30,6 +30,10 @@ namespace Survivebest.UI
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private CriminalReputationSystem criminalReputationSystem;
         [SerializeField] private ElectionCycleSystem electionCycleSystem;
+        [SerializeField] private PrisonRoutineSystem prisonRoutineSystem;
+        [SerializeField] private GuardAlertSystem guardAlertSystem;
+        [SerializeField] private ContrabandSystem contrabandSystem;
+        [SerializeField] private ParoleEvaluationSystem paroleEvaluationSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
@@ -560,6 +564,90 @@ namespace Survivebest.UI
             else
             {
                 builder.AppendLine("• Waiting for world updates…");
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private string BuildLegalPressureText()
+        {
+            if (currentCharacter == null)
+            {
+                return "Legal pressure: unavailable.";
+            }
+
+            builder.Clear();
+            builder.AppendLine("Law / society pressure:");
+
+            CriminalReputationState reputation = criminalReputationSystem != null
+                ? criminalReputationSystem.GetState(currentCharacter.CharacterId)
+                : null;
+            if (reputation != null)
+            {
+                builder.AppendLine($"• Reputation: {reputation.Tier} (score {reputation.Score})");
+            }
+            else
+            {
+                builder.AppendLine("• Reputation: Clean");
+            }
+
+            if (justiceSystem != null)
+            {
+                ActiveSentence sentence = null;
+                IReadOnlyList<ActiveSentence> sentences = justiceSystem.ActiveSentences;
+                for (int i = 0; i < sentences.Count; i++)
+                {
+                    ActiveSentence candidate = sentences[i];
+                    if (candidate != null && candidate.Offender == currentCharacter)
+                    {
+                        sentence = candidate;
+                        break;
+                    }
+                }
+
+                if (sentence != null)
+                {
+                    builder.AppendLine($"• Sentence: jail {sentence.RemainingJailHours}h, probation {sentence.RemainingProbationHours}h, debt ${sentence.OutstandingFine}");
+                }
+                else
+                {
+                    builder.AppendLine("• Sentence: none active");
+                }
+            }
+
+            if (electionCycleSystem != null)
+            {
+                builder.AppendLine($"• Election phase: {electionCycleSystem.CurrentPhase}");
+                builder.AppendLine($"• Voting eligible: {(electionCycleSystem.CanCharacterVote(currentCharacter) ? "Yes" : "No")}");
+            }
+
+            if (justiceSystem != null && justiceSystem.IsIncarcerated(currentCharacter))
+            {
+                builder.AppendLine("• Game mode: Prison");
+                if (guardAlertSystem != null)
+                {
+                    builder.AppendLine($"• Guard alert: {guardAlertSystem.CurrentLevel} ({Mathf.RoundToInt(guardAlertSystem.AlertScore * 100f)}%)");
+                }
+
+                if (contrabandSystem != null)
+                {
+                    builder.AppendLine($"• Contraband count: {contrabandSystem.CountItems(currentCharacter.CharacterId)}");
+                }
+
+                if (prisonRoutineSystem != null)
+                {
+                    InmateRoutineState state = prisonRoutineSystem.GetState(currentCharacter.CharacterId);
+                    if (state != null)
+                    {
+                        builder.AppendLine($"• Prison activity: {state.CurrentActivity}");
+                        builder.AppendLine($"• Inmate rep: {state.InmateReputation:0.00}");
+                    }
+                }
+
+                if (paroleEvaluationSystem != null)
+                {
+                    builder.AppendLine("• Parole evaluations: active");
+                }
             }
 
             return builder.ToString().TrimEnd();

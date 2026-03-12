@@ -64,6 +64,12 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Crime/CriminalReputationSystem.cs`
 - `Assets/Scripts/Crime/PrisonRoutineSystem.cs`
 - `Assets/Scripts/Crime/AddictionLifecycleSystem.cs`
+- `Assets/Scripts/Crime/PrisonInteractionSystem.cs`
+- `Assets/Scripts/Crime/ParoleEvaluationSystem.cs`
+- `Assets/Scripts/Crime/DisciplineSystem.cs`
+- `Assets/Scripts/Crime/PrisonEconomySystem.cs`
+- `Assets/Scripts/Crime/ContrabandSystem.cs`
+- `Assets/Scripts/Crime/GuardAlertSystem.cs`
 
 ### Emotions / Social / Dialogue / Conflict
 - `Assets/Scripts/Emotion/EmotionSystem.cs`
@@ -457,6 +463,7 @@ Additional progress this pass:
 - Refined `GameplayScreenController` into a vertical-slice readability hub: top state strip (time/weather/location), immediate pressure panel, suggested next actions, and world pulse feed that bridges simulation output into player-facing sensation.
 - Improved simulation-to-sensation translation in `JournalFeedUI` and `HumanLifeExperienceLayerSystem` with character-attributed life-feed text, richer event-card title mapping, pressure-tier hints, and stronger world-pulse summaries for the main dashboard loop.
 - Expanded law/crime/drug lifecycle depth: richer `CrimeRecord` evidence+witness+investigation flow, staged justice outcomes (warning/fine/community-service/probation/house-arrest/jail), prison schedule mode (`PrisonRoutineSystem`), criminal reputation tracking, addiction lifecycle tracking, and election-cycle policy hooks that can alter law pressure over time.
+- Added full prison-life simulation layer with 40+ inmate interactions (`PrisonInteractionSystem`), guard alert states, contraband flow, commissary economy, discipline punishments (incl. solitary/sentence extension), and parole evaluation hooks for redemption arcs after incarceration.
 
 
 ### Updated completion snapshot
