@@ -429,6 +429,10 @@ Additional progress this pass:
 - Expanded food/cooking depth on existing systems: ingredient taxonomy metadata (`IngredientCatalog`), recipe method/equipment/cuisine/quality/discovery + daily specials (`RecipeSystem`), seasonal grocery availability/pricing (`GrocerySystem`), procedural daily order specials/recommendations (`OrderingSystem`), and explicit freshness states (`InventoryManager`).
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
+- Added genetics architecture split into **Genotype / Phenotype / Condition Overlays / Life-Stage Morph** via `GeneticProfile`, `PhenotypeProfile`, and resolver pipeline (`InheritanceResolver`, `PhenotypeResolver`, `LifeStageMorphResolver`).
+- Added explicit genetics subprofiles for modular expansion: `FaceMorphProfile`, `BodyMorphProfile`, `SkinProfile`, `HairProfile`, and `HealthPredispositionProfile`.
+- Updated `GeneticsSystem` to resolve phenotype outputs into portrait, body morph, skin-state overlays, and body composition so genetics feed both visuals and simulation tendencies.
+- Extended save/load contracts (`SaveGameManager`) to persist `GeneticProfile` + `PhenotypeProfile` alongside core character state for future-proof inheritance and art pipeline stability.
 
 
 ### Updated completion snapshot
