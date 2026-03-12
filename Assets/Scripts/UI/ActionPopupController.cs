@@ -115,6 +115,8 @@ namespace Survivebest.UI
 
         private string currentActionKey;
         private AnimalSightingEncounter currentSighting;
+
+        public event Action<string, string, float> OnActionResolved;
         private readonly StringBuilder builder = new();
 
         private void OnEnable()
@@ -207,6 +209,7 @@ namespace Survivebest.UI
             }
 
             PublishActionEvent(reason, magnitude);
+            OnActionResolved?.Invoke(currentActionKey, reason, magnitude);
             SetPopupVisible(false);
         }
 

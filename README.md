@@ -216,6 +216,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Expanded `PersonalityDecisionSystem` with procedural decision-space generation (seeded option synthesis, weighted scoring, confidence/novelty tags, and multi-step decision loops) so each character can continuously surface varied choices instead of a single static pick.
 - Expanded `HumanLifeExperienceLayerSystem` with procedural day-to-day life moments, hourly life-pulse simulation, and emotional reflection logging (gratitude/regret/pride/nostalgia/fear/hope) that feed mental-health and culture consequences for richer everyday loops.
 - Added `LivingWorldInfrastructureEngine` as the world-structure layer for active districts, business/workplace ecosystem health, service reliability/failures, transport pressure, supply-chain drift, housing pressure, population flow, and chance encounters feeding social-memory/drama context.
+- Added `GameplayInteractionPresentationLayer` as the gameplay bridge between simulation and player-facing outcomes (world/character panel snapshots, context action suggestions, hotspot packs, map travel options, and action-result feedback pulses with visual-cue tags) without changing existing UI prefabs.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

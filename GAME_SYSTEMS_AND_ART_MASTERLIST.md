@@ -142,6 +142,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/UI/HouseholdMakerScreenController.cs`
 - `Assets/Scripts/UI/CharacterCreatorDashboardController.cs`
 - `Assets/Scripts/UI/GameplayScreenController.cs`
+- `Assets/Scripts/UI/GameplayInteractionPresentationLayer.cs`
 - `Assets/Scripts/UI/GameHUD.cs`
 - `Assets/Scripts/UI/CharacterScreenController.cs`
 - `Assets/Scripts/UI/CharacterRosterHUD.cs`
@@ -187,6 +188,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/HumanLifeExperienceLayerSystemTests.cs`
 - `Assets/Tests/EditMode/WorldCultureSocietyEngineTests.cs`
 - `Assets/Tests/EditMode/LivingWorldInfrastructureEngineTests.cs`
+- `Assets/Tests/EditMode/GameplayInteractionPresentationLayerTests.cs`
 
 ---
 
