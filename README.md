@@ -99,6 +99,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Day-slice loop now executes systemic stage outcomes (needs audit, adaptive activity selection, pantry-aware buy/cook fallback, dialogue/conflict/illness random events) tied to active-character systems (`DaySliceManager`).
 - Justice outcomes now apply concrete consequences (fines with debt fallback, active jail sentences, hourly sentence penalties, and release events) instead of one-off notifications (`JusticeSystem`).
 - Substance use now has lifecycle state (active effects, hourly ticking, dependency, crash/withdrawal end-states) with legal enforcement hooks (`SubstanceSystem`).
+- Weather effects now apply immediate and hourly simulation impacts across household members based on active weather state (`WeatherEffectSystem`).
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).
@@ -136,6 +137,7 @@ See also:
 - `ProjectArchitecture.md`
 - `.github/copilot-instructions.md`
 - `ASSET_CHECKLIST.md`
+- `GAME_SYSTEMS_AND_ART_MASTERLIST.md`
 
 ## Current Status
 
