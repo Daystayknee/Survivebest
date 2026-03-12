@@ -53,6 +53,7 @@ namespace Survivebest.Economy
         public string ReservedByRecipe;
         public bool IsEquipped;
         public bool IsStolen;
+        public bool IsRefrigerated;
     }
 
     [Serializable]
@@ -71,6 +72,7 @@ namespace Survivebest.Economy
         [SerializeField] private List<EconomyItemInstance> itemInstances = new();
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField, Range(0.1f, 1f)] private float refrigeratedSpoilageMultiplier = 0.35f;
 
         private readonly Dictionary<string, int> inventoryByName = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, EconomyItemDefinition> definitionsById = new(StringComparer.OrdinalIgnoreCase);
@@ -430,6 +432,19 @@ namespace Survivebest.Economy
             HandleHourPassed(0);
         }
 
+        public void SetRefrigeration(string instanceId, bool refrigerated)
+        {
+            EconomyItemInstance instance = FindInstance(instanceId);
+            if (instance == null)
+            {
+                return;
+            }
+
+            instance.IsRefrigerated = refrigerated;
+            OnItemInstanceChanged?.Invoke(instance);
+            PublishInventoryEvent(instance.DisplayName, refrigerated ? "Moved to refrigerated storage" : "Removed from refrigerated storage", 1f, SimulationEventSeverity.Info);
+        }
+
         private void HandleHourPassed(int hour)
         {
             for (int i = itemInstances.Count - 1; i >= 0; i--)
@@ -449,7 +464,13 @@ namespace Survivebest.Economy
 
                 float dailyFactor = 1f / 24f;
                 instance.Quality = Mathf.Max(0f, instance.Quality - definition.DepreciationPerDay * 100f * dailyFactor);
-                instance.RemainingFreshness = Mathf.Max(0f, instance.RemainingFreshness - definition.SpoilagePerDay * 100f * dailyFactor);
+                float freshnessLoss = definition.SpoilagePerDay * 100f * dailyFactor;
+                if (instance.IsRefrigerated)
+                {
+                    freshnessLoss *= refrigeratedSpoilageMultiplier;
+                }
+
+                instance.RemainingFreshness = Mathf.Max(0f, instance.RemainingFreshness - freshnessLoss);
 
                 if (instance.RemainingFreshness <= 0f && definition.SpoilagePerDay > 0f)
                 {

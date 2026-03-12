@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
+using Survivebest.World;
 
 namespace Survivebest.Economy
 {
@@ -35,18 +36,48 @@ namespace Survivebest.Economy
         public int Quantity;
     }
 
+    [Serializable]
+    public class FoodStackState
+    {
+        public string ContainerId;
+        public string ItemId;
+        [Range(0f, 100f)] public float Freshness = 100f;
+        public bool Refrigerated;
+    }
+
     public class InventoryManager : MonoBehaviour
     {
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<InventoryContainer> containers = new();
         [SerializeField] private List<InventoryTransferRecord> transferHistory = new();
         [SerializeField] private List<ReservedIngredientEntry> reservedIngredients = new();
+        [SerializeField] private List<FoodStackState> foodStackStates = new();
         [SerializeField, Min(1)] private int maxTransferHistory = 300;
+        [SerializeField, Min(0f)] private float foodSpoilagePerHour = 1.2f;
+        [SerializeField, Range(0.1f, 1f)] private float refrigeratedSpoilageMultiplier = 0.4f;
 
         public IReadOnlyList<InventoryContainer> Containers => containers;
         public IReadOnlyList<InventoryTransferRecord> TransferHistory => transferHistory;
         public IReadOnlyList<ReservedIngredientEntry> ReservedIngredients => reservedIngredients;
+        public IReadOnlyList<FoodStackState> FoodStackStates => foodStackStates;
+
+        private void OnEnable()
+        {
+            if (worldClock != null)
+            {
+                worldClock.OnHourPassed += HandleHourPassed;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (worldClock != null)
+            {
+                worldClock.OnHourPassed -= HandleHourPassed;
+            }
+        }
 
         public InventoryContainer EnsureContainer(string containerId, string displayName, InventoryScope scope, string ownerCharacterId = null)
         {
@@ -106,6 +137,10 @@ namespace Survivebest.Economy
             }
 
             stack.Quantity += quantity;
+            if (string.Equals(containerId, "fridge", StringComparison.OrdinalIgnoreCase) || string.Equals(containerId, "refrigerator", StringComparison.OrdinalIgnoreCase))
+            {
+                SetRefrigerated(containerId, itemId, true);
+            }
             PublishInventoryEvent(itemId, reason, quantity, SimulationEventSeverity.Info);
             return true;
         }
@@ -133,6 +168,7 @@ namespace Survivebest.Economy
             if (stack.Quantity <= 0)
             {
                 container.Stacks.Remove(stack);
+                RemoveFoodState(containerId, itemId);
             }
 
             PublishInventoryEvent(itemId, reason, -quantity, stack != null && stack.Quantity == 0 ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
@@ -207,6 +243,74 @@ namespace Survivebest.Economy
 
             PublishInventoryEvent(itemId, $"Reserved for {recipeId}", quantity, SimulationEventSeverity.Info);
             return true;
+        }
+
+        public void SetRefrigerated(string containerId, string itemId, bool refrigerated)
+        {
+            if (string.IsNullOrWhiteSpace(containerId) || string.IsNullOrWhiteSpace(itemId))
+            {
+                return;
+            }
+
+            FoodStackState state = EnsureFoodState(containerId, itemId);
+            state.Refrigerated = refrigerated;
+        }
+
+        private void HandleHourPassed(int hour)
+        {
+            for (int i = foodStackStates.Count - 1; i >= 0; i--)
+            {
+                FoodStackState state = foodStackStates[i];
+                if (state == null)
+                {
+                    foodStackStates.RemoveAt(i);
+                    continue;
+                }
+
+                float decay = foodSpoilagePerHour * (state.Refrigerated ? refrigeratedSpoilageMultiplier : 1f);
+                state.Freshness = Mathf.Clamp(state.Freshness - decay, 0f, 100f);
+
+                if (state.Freshness <= 0f)
+                {
+                    int quantity = GetStackQuantity(state.ContainerId, state.ItemId);
+                    if (quantity > 0)
+                    {
+                        RemoveStack(state.ContainerId, state.ItemId, quantity, "Food spoiled");
+                    }
+
+                    foodStackStates.RemoveAt(i);
+                    PublishInventoryEvent(state.ItemId, "Food stack spoiled", quantity, SimulationEventSeverity.Warning);
+                }
+            }
+        }
+
+        private FoodStackState EnsureFoodState(string containerId, string itemId)
+        {
+            FoodStackState existing = foodStackStates.Find(x => x != null &&
+                string.Equals(x.ContainerId, containerId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(x.ItemId, itemId, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            FoodStackState created = new FoodStackState
+            {
+                ContainerId = containerId,
+                ItemId = itemId,
+                Freshness = 100f,
+                Refrigerated = false
+            };
+
+            foodStackStates.Add(created);
+            return created;
+        }
+
+        private void RemoveFoodState(string containerId, string itemId)
+        {
+            foodStackStates.RemoveAll(x => x != null &&
+                string.Equals(x.ContainerId, containerId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(x.ItemId, itemId, StringComparison.OrdinalIgnoreCase));
         }
 
         public void ReleaseReservation(string recipeId)

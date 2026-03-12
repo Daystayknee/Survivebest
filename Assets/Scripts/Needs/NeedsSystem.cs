@@ -17,6 +17,8 @@ namespace Survivebest.Needs
         public float Hygiene;
         public float Mood;
         public float Hydration;
+        public float Grooming;
+        public float Appearance;
     }
 
     public class NeedsSystem : MonoBehaviour
@@ -29,6 +31,8 @@ namespace Survivebest.Needs
         [SerializeField, Range(0f, 100f)] private float hygiene = 100f;
         [SerializeField, Range(0f, 100f)] private float mood = 100f;
         [SerializeField, Range(0f, 100f)] private float hydration = 100f;
+        [SerializeField, Range(0f, 100f)] private float grooming = 100f;
+        [SerializeField, Range(0f, 100f)] private float appearance = 100f;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
 
@@ -38,6 +42,8 @@ namespace Survivebest.Needs
         [SerializeField, Min(0f)] private float energyLossPerHour = 2f;
         [SerializeField, Min(0f)] private float hygieneLossPerHour = 1f;
         [SerializeField, Min(0f)] private float hydrationLossPerHour = 3f;
+        [SerializeField, Min(0f)] private float groomingLossPerHour = 0.8f;
+        [SerializeField, Min(0f)] private float appearanceLossPerHour = 0.6f;
 
         public event Action<float> OnHungerChanged;
         public event Action<float> OnBladderChanged;
@@ -45,6 +51,8 @@ namespace Survivebest.Needs
         public event Action<float> OnHygieneChanged;
         public event Action<float> OnMoodChanged;
         public event Action<float> OnHydrationChanged;
+        public event Action<float> OnGroomingChanged;
+        public event Action<float> OnAppearanceChanged;
         public event Action OnHourlyNeedDecay;
         public event Action OnBladderAccident;
 
@@ -59,7 +67,9 @@ namespace Survivebest.Needs
                 Energy = energy,
                 Hygiene = hygiene,
                 Mood = mood,
-                Hydration = hydration
+                Hydration = hydration,
+                Grooming = grooming,
+                Appearance = appearance
             };
         }
 
@@ -76,6 +86,8 @@ namespace Survivebest.Needs
             SetHygiene(snapshot.Hygiene);
             SetMood(snapshot.Mood);
             SetHydration(snapshot.Hydration);
+            SetGrooming(snapshot.Grooming);
+            SetAppearance(snapshot.Appearance);
         }
 
         public float Bladder => bladder;
@@ -83,6 +95,8 @@ namespace Survivebest.Needs
         public float Hygiene => hygiene;
         public float Mood => mood;
         public float Hydration => hydration;
+        public float Grooming => grooming;
+        public float Appearance => appearance;
 
         private void OnEnable()
         {
@@ -114,6 +128,8 @@ namespace Survivebest.Needs
         public void ModifyEnergy(float amount) => SetEnergy(energy + amount);
         public void ModifyHygiene(float amount) => SetHygiene(hygiene + amount);
         public void ModifyMood(float amount) => SetMood(mood + amount);
+        public void ModifyGrooming(float amount) => SetGrooming(grooming + amount);
+        public void ModifyAppearance(float amount) => SetAppearance(appearance + amount);
 
         public void ApplyFoodEffects(FoodItem food, HealthSystem healthSystem = null)
         {
@@ -214,6 +230,8 @@ namespace Survivebest.Needs
             SetEnergy(energy - energyLossPerHour * m);
             SetHygiene(hygiene - hygieneLossPerHour * m);
             SetHydration(hydration - hydrationLossPerHour * m);
+            SetGrooming(grooming - groomingLossPerHour * m);
+            SetAppearance(appearance - appearanceLossPerHour * m);
             SetMood(mood - 0.5f * m);
             OnHourlyNeedDecay?.Invoke();
         }
@@ -276,6 +294,20 @@ namespace Survivebest.Needs
             hydration = Mathf.Clamp(value, 0f, 100f);
             OnHydrationChanged?.Invoke(hydration);
             PublishNeedCritical(nameof(hydration), hydration, "Hydration dropped to critical threshold");
+        }
+
+        private void SetGrooming(float value)
+        {
+            grooming = Mathf.Clamp(value, 0f, 100f);
+            OnGroomingChanged?.Invoke(grooming);
+            PublishNeedCritical(nameof(grooming), grooming, "Grooming dropped to critical threshold");
+        }
+
+        private void SetAppearance(float value)
+        {
+            appearance = Mathf.Clamp(value, 0f, 100f);
+            OnAppearanceChanged?.Invoke(appearance);
+            PublishNeedCritical(nameof(appearance), appearance, "Appearance dropped to critical threshold");
         }
     }
 }

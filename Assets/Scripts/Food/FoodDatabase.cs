@@ -27,6 +27,8 @@ namespace Survivebest.Food
         [Range(-20f, 20f)] public float VitalityDelta;
         public bool IsSpicy;
         [Range(0f, 5f)] public float SpiceIntensity;
+        [Range(0f, 1f)] public float SpoilagePerDay = 0.08f;
+        [Range(0.1f, 1f)] public float RefrigerationBonus = 0.4f;
     }
 
     public class FoodDatabase : MonoBehaviour

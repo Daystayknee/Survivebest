@@ -402,6 +402,9 @@ Additional progress this pass:
 - Added `HouseholdChoreSystem` integrated with routines/housing to create daily chores and apply home-state consequences when chores are completed or ignored.
 - Expanded `HousingPropertySystem` with hygiene-environment signals (`TrashLevel`, `DishStack`, `LaundryPile`, `OdorLevel`, room cleanliness/clutter mirrors) plus disposal/laundry/dishes processing methods.
 - Expanded `HomeInteractionHotspot` with dedicated home-maintenance interactions (`RecyclingBin`, `LaundryBasket`, `CleaningStation`).
+- Added deeper home-life simulation extensions: laundry state machine, dish lifecycle pressure, appliance-specific wear, utility usage/billing-cycle metering, and weather-driven home-state impact (`HousingPropertySystem`).
+- Extended `NeedsSystem` with grooming/appearance values for personal-care feedback loops.
+- Extended inventory/food spoilage handling with refrigeration-aware decay metadata and stack-level spoilage tracking (`FoodDatabase`, `InventoryManager`, `EconomyInventorySystem`).
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 

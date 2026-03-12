@@ -84,6 +84,37 @@ namespace Survivebest.Activity
                 return ActivityType.Sleep;
             }
 
+            if (hour >= 6 && hour <= 9)
+            {
+                if (needsSystem.Hygiene < 65f)
+                {
+                    return ActivityType.Chore;
+                }
+
+                if (needsSystem.Hunger < 75f)
+                {
+                    return ActivityType.Cook;
+                }
+            }
+
+            if (hour >= 18 && hour <= 21)
+            {
+                if (needsSystem.Hunger < 65f)
+                {
+                    return ActivityType.Cook;
+                }
+
+                if (needsSystem.Hygiene < 55f)
+                {
+                    return ActivityType.Chore;
+                }
+
+                if (emotionSystem != null && emotionSystem.Stress > 50f)
+                {
+                    return ActivityType.Socialize;
+                }
+            }
+
             if (needsSystem.Energy < 25f)
             {
                 return ActivityType.Rest;
