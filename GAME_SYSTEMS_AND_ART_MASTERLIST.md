@@ -44,6 +44,14 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
 - `Assets/Scripts/Core/PersonalityDecisionSystem.cs`
 - `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
+- `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
+- `Assets/Scripts/Tasking/TaskModels.cs`
+- `Assets/Scripts/Tasking/TaskDatabase.cs`
+- `Assets/Scripts/Tasking/TaskInteractionManager.cs`
+- `Assets/Scripts/Tasking/AutoTaskRunner.cs`
+- `Assets/Scripts/Tasking/InteractiveTaskRunner.cs`
+- `Assets/Scripts/Tasking/TaskResultSpawner.cs`
+- `Assets/Scripts/Tasking/TaskStateUpdater.cs`
 
 ### Needs / Health / Medical / Status
 - `Assets/Scripts/Needs/NeedsSystem.cs`
@@ -440,6 +448,8 @@ Additional progress this pass:
 - Added modular paper-doll hair/beard/body-hair architecture with sprite-slot contracts, hairstyle bundles, compatibility tags, and timer-based grooming regrowth for future wet/messy/dirty/accessory variants.
 - Added modern creator-dashboard scaffolding (`CharacterCreatorDashboardController`) with top-tab routing, style filter panel, style-card grid binding, color swatches, preview controls, and appearance preset hooks.
 - Added natural-vs-dyed hair color separation with dashboard slider controls and genetics-safe behavior (genotype resolves natural hair, dye remains cosmetic/user-authored).
+- Added Optional Interactive Task Actions framework (`TaskInteractionManager`) to support Auto vs Interactive daily-task flow with tactile step sequences and result spawning/state updates (inventory, appearance, world-state, service outcomes) without arcade scoring.
+- Added `HumanLifeExperienceLayerSystem` as a portrait/dashboard-first integration layer for daily routines, embodiment feedback, introspective thought prompts, and place attachment progression without requiring direct walking-avatar navigation.
 
 
 ### Updated completion snapshot

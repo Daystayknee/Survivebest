@@ -6,6 +6,7 @@ using Survivebest.Appearance;
 using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.UI.ViewModels;
+using Survivebest.Tasks;
 
 namespace Survivebest.UI
 {
@@ -48,6 +49,7 @@ namespace Survivebest.UI
         [SerializeField] private CharacterPortraitRenderer portraitRenderer;
         [SerializeField] private MainMenuFlowController menuFlowController;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private TaskInteractionManager taskInteractionManager;
 
         [Header("Preview")]
         [SerializeField] private Camera characterPreviewCamera;
@@ -404,6 +406,30 @@ namespace Survivebest.UI
             {
                 characterPreviewCamera.fieldOfView = Mathf.Clamp(characterPreviewCamera.fieldOfView - delta * zoomSpeed * 5f * Time.deltaTime, 25f, 80f);
             }
+        }
+
+        public bool StartTaskAutoFromDashboard(string taskId)
+        {
+            CharacterCore actor = householdManager != null ? householdManager.ActiveCharacter : null;
+            bool started = taskInteractionManager != null && taskInteractionManager.StartTaskAuto(taskId, actor, "creator_dashboard");
+            if (started)
+            {
+                PublishUiEvent("TaskAuto", $"Started auto task {taskId}", 1f);
+            }
+
+            return started;
+        }
+
+        public bool StartTaskInteractiveFromDashboard(string taskId)
+        {
+            CharacterCore actor = householdManager != null ? householdManager.ActiveCharacter : null;
+            bool started = taskInteractionManager != null && taskInteractionManager.StartTaskInteractive(taskId, actor, "creator_dashboard");
+            if (started)
+            {
+                PublishUiEvent("TaskInteractive", $"Started interactive task {taskId}", 1f);
+            }
+
+            return started;
         }
 
         public void Back() => menuFlowController?.Back();
