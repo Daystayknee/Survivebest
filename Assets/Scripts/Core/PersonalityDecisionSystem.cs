@@ -5,6 +5,7 @@ using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Needs;
 using Survivebest.World;
+using Survivebest.Social;
 
 namespace Survivebest.Core
 {
@@ -72,6 +73,7 @@ namespace Survivebest.Core
         [SerializeField] private MoralValueSystem moralValueSystem;
         [SerializeField] private PreferenceSystem preferenceSystem;
         [SerializeField] private PersonalityMatrixSystem personalityMatrixSystem;
+        [SerializeField] private RelationshipCompatibilityEngine relationshipCompatibilityEngine;
         [SerializeField] private List<PersonalityProfile> profiles = new();
         [SerializeField] private List<SocialCompatibility> compatibilities = new();
         [SerializeField] private List<JobFitScore> jobFitScores = new();
@@ -180,6 +182,15 @@ namespace Survivebest.Core
             if (existing != null)
             {
                 return existing.Score;
+            }
+
+            if (relationshipCompatibilityEngine != null)
+            {
+                RelationshipCompatibilityProfile pair = relationshipCompatibilityEngine.GetOrCreateProfile(characterAId, characterBId);
+                if (pair != null)
+                {
+                    return pair.CompatibilityScore - 50f;
+                }
             }
 
             if (personalityMatrixSystem == null)

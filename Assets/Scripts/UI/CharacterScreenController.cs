@@ -10,6 +10,7 @@ namespace Survivebest.UI
     public class CharacterScreenController : MonoBehaviour
     {
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private PersonalityMatrixSystem personalityMatrixSystem;
 
         [Header("Panels")]
         [SerializeField] private CharacterPortraitRenderer portraitRenderer;
@@ -17,6 +18,7 @@ namespace Survivebest.UI
         [SerializeField] private Text bodyStatsText;
         [SerializeField] private Text geneticsText;
         [SerializeField] private Text healthText;
+        [SerializeField] private Text personalityText;
 
         [Header("Trait Pills")]
         [SerializeField] private TraitPillTagView pillPrefab;
@@ -67,6 +69,7 @@ namespace Survivebest.UI
             RenderBodyStats(character.GetComponent<BodyCompositionSystem>());
             RenderGenetics(character.GetComponent<GeneticsSystem>(), character.GetComponent<VisualGenome>());
             RenderHealth(character.GetComponent<HealthSystem>(), character.GetComponent<MedicalConditionSystem>());
+            RenderPersonality(character);
             RenderTraitPills(character);
         }
 
@@ -166,6 +169,23 @@ namespace Survivebest.UI
             healthText.text = builder.ToString().TrimEnd();
         }
 
+
+        private void RenderPersonality(CharacterCore character)
+        {
+            if (personalityText == null)
+            {
+                return;
+            }
+
+            if (character == null || personalityMatrixSystem == null)
+            {
+                personalityText.text = "Personality data unavailable.";
+                return;
+            }
+
+            personalityText.text = personalityMatrixSystem.BuildCompactSummary(character.CharacterId);
+        }
+
         private void RenderTraitPills(CharacterCore character)
         {
             if (pillPrefab == null || pillsContainer == null)
@@ -215,6 +235,7 @@ namespace Survivebest.UI
             if (bodyStatsText != null) bodyStatsText.text = string.Empty;
             if (geneticsText != null) geneticsText.text = string.Empty;
             if (healthText != null) healthText.text = string.Empty;
+            if (personalityText != null) personalityText.text = string.Empty;
         }
     }
 }

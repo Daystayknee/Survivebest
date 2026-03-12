@@ -20,6 +20,18 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void GeneratedProfile_ContainsAtLeastOneHundredTenTraits()
+        {
+            GameObject go = new GameObject("PersonalityMatrixTraitCount");
+            PersonalityMatrixSystem system = go.AddComponent<PersonalityMatrixSystem>();
+
+            PersonalityMatrixProfile profile = system.GetOrCreateProfile("dense");
+
+            Assert.GreaterOrEqual(profile.CountTotalTraits(), 110);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void FightEscalationBias_IncreasesForAggressiveLowControlProfile()
         {
             GameObject go = new GameObject("PersonalityMatrixFightBias");
@@ -30,12 +42,14 @@ namespace Survivebest.Tests.EditMode
             calm.EmotionalControl = 90f;
             calm.Patience = 85f;
             calm.Rebelliousness = 10f;
+            calm.ConflictAvoidance = 85f;
 
             PersonalityMatrixProfile volatileProfile = system.GetOrCreateProfile("volatile");
             volatileProfile.AngerThreshold = 10f;
             volatileProfile.EmotionalControl = 10f;
             volatileProfile.Patience = 15f;
             volatileProfile.Rebelliousness = 85f;
+            volatileProfile.ConflictAvoidance = 10f;
 
             float calmBias = system.GetFightEscalationBias("calm");
             float volatileBias = system.GetFightEscalationBias("volatile");
@@ -68,6 +82,20 @@ namespace Survivebest.Tests.EditMode
             float farCompatibility = system.ComputeCompatibility("a", "c");
 
             Assert.Greater(closeCompatibility, farCompatibility);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildCompactSummary_ReturnsArchetypeAndBars()
+        {
+            GameObject go = new GameObject("PersonalityMatrixSummary");
+            PersonalityMatrixSystem system = go.AddComponent<PersonalityMatrixSystem>();
+
+            string summary = system.BuildCompactSummary("summary");
+
+            Assert.IsTrue(summary.Contains("Archetype:"));
+            Assert.IsTrue(summary.Contains("Empathy"));
+            Assert.IsTrue(summary.Contains("█") || summary.Contains("░"));
             Object.DestroyImmediate(go);
         }
     }
