@@ -39,6 +39,8 @@ namespace Survivebest.Core
         public bool IsActive;
         public LifeStage LifeStage;
         public float Vitality;
+        public GeneticProfile Genetics;
+        public PhenotypeProfile Phenotype;
         public NeedsSnapshot Needs;
         public List<SkillEntry> Skills = new();
         public List<ActiveStatusEffect> Statuses = new();
@@ -57,7 +59,7 @@ namespace Survivebest.Core
 
     public class SaveGameManager : MonoBehaviour
     {
-        private const int CurrentSchemaVersion = 3;
+        private const int CurrentSchemaVersion = 4;
         private const int LegacySchemaVersion = 1;
 
         [SerializeField] private WorldClock worldClock;
@@ -209,6 +211,8 @@ namespace Survivebest.Core
                 SkillSystem skills = member.GetComponent<SkillSystem>();
                 StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
 
+                GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
+
                 payload.HouseholdCharacters.Add(new CharacterSnapshot
                 {
                     CharacterId = member.CharacterId,
@@ -216,6 +220,8 @@ namespace Survivebest.Core
                     IsActive = householdManager.ActiveCharacter == member,
                     LifeStage = member.CurrentLifeStage,
                     Vitality = health != null ? health.CaptureVitality() : 100f,
+                    Genetics = genetics != null ? genetics.Profile : null,
+                    Phenotype = genetics != null ? genetics.Phenotype : null,
                     Needs = needs != null ? needs.CaptureSnapshot() : null,
                     Skills = skills != null ? skills.CaptureSnapshot() : new List<SkillEntry>(),
                     Statuses = status != null ? status.CaptureSnapshot() : new List<ActiveStatusEffect>()
@@ -266,8 +272,19 @@ namespace Survivebest.Core
 
                 member.SetLifeStage(snapshot.LifeStage);
 
+                GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
+                if (genetics != null && snapshot.Genetics != null)
+                {
+                    genetics.OverrideGenetics(snapshot.Genetics, false);
+                }
+
                 NeedsSystem needs = member.GetComponent<NeedsSystem>();
                 needs?.ApplySnapshot(snapshot.Needs);
+
+                if (genetics != null)
+                {
+                    genetics.ApplyGeneticsToSystems();
+                }
 
                 HealthSystem health = member.GetComponent<HealthSystem>();
                 health?.ApplyVitality(snapshot.Vitality);
@@ -332,6 +349,8 @@ namespace Survivebest.Core
                 }
 
                 character.Vitality = Mathf.Clamp(character.Vitality, 0f, 100f);
+                character.Genetics ??= new GeneticProfile();
+                character.Phenotype ??= new PhenotypeProfile();
                 character.Skills ??= new List<SkillEntry>();
                 character.Statuses ??= new List<ActiveStatusEffect>();
                 character.Needs ??= new NeedsSnapshot();
