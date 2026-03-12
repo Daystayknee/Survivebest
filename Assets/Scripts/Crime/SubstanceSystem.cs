@@ -12,6 +12,19 @@ using Survivebest.World;
 
 namespace Survivebest.Crime
 {
+
+
+    [Serializable]
+    public class SubstanceProfile
+    {
+        public SubstanceType Substance;
+        [Range(0f, 12f)] public float OnsetHours = 0.25f;
+        [Min(1)] public int DurationHours = 3;
+        [Range(0f, 1f)] public float ToleranceRate = 0.08f;
+        [Range(0f, 1f)] public float AddictionRate = 0.1f;
+        [Range(0f, 1f)] public float WithdrawalSeverity = 0.3f;
+    }
+
     [Serializable]
     public class ActiveSubstanceEffect
     {
@@ -32,6 +45,15 @@ namespace Survivebest.Crime
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
+
+        [Header("Substance Profiles")]
+        [SerializeField] private List<SubstanceProfile> substanceProfiles = new()
+        {
+            new SubstanceProfile { Substance = SubstanceType.Alcohol, OnsetHours = 0.1f, DurationHours = 3, ToleranceRate = 0.05f, AddictionRate = 0.06f, WithdrawalSeverity = 0.2f },
+            new SubstanceProfile { Substance = SubstanceType.Weed, OnsetHours = 0.2f, DurationHours = 4, ToleranceRate = 0.05f, AddictionRate = 0.05f, WithdrawalSeverity = 0.15f },
+            new SubstanceProfile { Substance = SubstanceType.PrescriptionDrug, OnsetHours = 0.1f, DurationHours = 2, ToleranceRate = 0.08f, AddictionRate = 0.08f, WithdrawalSeverity = 0.25f },
+            new SubstanceProfile { Substance = SubstanceType.HardDrug, OnsetHours = 0.05f, DurationHours = 6, ToleranceRate = 0.16f, AddictionRate = 0.2f, WithdrawalSeverity = 0.6f }
+        };
 
         [Header("Runtime Substance State")]
         [SerializeField] private List<ActiveSubstanceEffect> activeEffects = new();
@@ -126,7 +148,8 @@ namespace Survivebest.Crime
         private void StartOrExtendEffect(SubstanceType substanceType)
         {
             ActiveSubstanceEffect existing = activeEffects.Find(x => x.Substance == substanceType);
-            int duration = GetBaseDuration(substanceType);
+            SubstanceProfile profile = GetProfile(substanceType);
+            int duration = profile != null ? Mathf.Max(1, profile.DurationHours) : GetBaseDuration(substanceType);
 
             if (existing != null)
             {
@@ -145,14 +168,12 @@ namespace Survivebest.Crime
 
         private void RaiseDependency(SubstanceType substanceType)
         {
-            float risk = dependencyRiskPerUse * (balanceManager != null ? balanceManager.AddictionSeverityMultiplier : 1f);
+            SubstanceProfile profile = GetProfile(substanceType);
+            float profileRate = profile != null ? profile.AddictionRate : 0.08f;
+            float risk = (dependencyRiskPerUse + profileRate) * (balanceManager != null ? balanceManager.AddictionSeverityMultiplier : 1f);
             if (substanceType == SubstanceType.HardDrug)
             {
-                risk *= 2.4f;
-            }
-            else if (substanceType == SubstanceType.Alcohol)
-            {
-                risk *= 1.4f;
+                risk *= 1.8f;
             }
 
             dependencyLevel = Mathf.Clamp01(dependencyLevel + risk);
@@ -182,7 +203,7 @@ namespace Survivebest.Crime
             if (activeEffects.Count == 0)
             {
                 float decay = balanceManager != null ? 0.01f * balanceManager.AddictionSeverityMultiplier : 0.01f;
-            dependencyLevel = Mathf.Max(0f, dependencyLevel - decay);
+                dependencyLevel = Mathf.Max(0f, dependencyLevel - decay);
             }
         }
 
@@ -227,7 +248,9 @@ namespace Survivebest.Crime
                 return;
             }
 
-            float crashScale = Mathf.Lerp(0.6f, 1.8f, dependencyLevel);
+            SubstanceProfile profile = GetProfile(substanceType);
+            float withdrawalSeverity = profile != null ? profile.WithdrawalSeverity : 0.3f;
+            float crashScale = Mathf.Lerp(0.6f, 1.8f + withdrawalSeverity, dependencyLevel);
             switch (substanceType)
             {
                 case SubstanceType.Alcohol:
@@ -252,6 +275,16 @@ namespace Survivebest.Crime
             }
 
             PublishSubstanceEvent("Withdrawal", $"Withdrawal/crash from {substanceType}", crashScale, SimulationEventSeverity.Warning);
+        }
+
+        private SubstanceProfile GetProfile(SubstanceType substanceType)
+        {
+            if (substanceProfiles == null)
+            {
+                return null;
+            }
+
+            return substanceProfiles.Find(x => x != null && x.Substance == substanceType);
         }
 
         private static int GetBaseDuration(SubstanceType substanceType)

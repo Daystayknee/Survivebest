@@ -61,6 +61,9 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Health/AdvancedHealthRecoverySystem.cs`
 - `Assets/Scripts/Status/StatusEffectSystem.cs`
 - `Assets/Scripts/Crime/SubstanceSystem.cs`
+- `Assets/Scripts/Crime/CriminalReputationSystem.cs`
+- `Assets/Scripts/Crime/PrisonRoutineSystem.cs`
+- `Assets/Scripts/Crime/AddictionLifecycleSystem.cs`
 
 ### Emotions / Social / Dialogue / Conflict
 - `Assets/Scripts/Emotion/EmotionSystem.cs`
@@ -96,6 +99,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 
 ### Law / Crime / Justice
 - `Assets/Scripts/Society/LawSystem.cs`
+- `Assets/Scripts/Society/ElectionCycleSystem.cs`
 - `Assets/Scripts/Crime/CrimeSystem.cs`
 - `Assets/Scripts/Crime/JusticeSystem.cs`
 
@@ -452,6 +456,7 @@ Additional progress this pass:
 - Added `HumanLifeExperienceLayerSystem` as a portrait/dashboard-first integration layer for daily routines, embodiment feedback, introspective thought prompts, and place attachment progression without requiring direct walking-avatar navigation.
 - Refined `GameplayScreenController` into a vertical-slice readability hub: top state strip (time/weather/location), immediate pressure panel, suggested next actions, and world pulse feed that bridges simulation output into player-facing sensation.
 - Improved simulation-to-sensation translation in `JournalFeedUI` and `HumanLifeExperienceLayerSystem` with character-attributed life-feed text, richer event-card title mapping, pressure-tier hints, and stronger world-pulse summaries for the main dashboard loop.
+- Expanded law/crime/drug lifecycle depth: richer `CrimeRecord` evidence+witness+investigation flow, staged justice outcomes (warning/fine/community-service/probation/house-arrest/jail), prison schedule mode (`PrisonRoutineSystem`), criminal reputation tracking, addiction lifecycle tracking, and election-cycle policy hooks that can alter law pressure over time.
 
 
 ### Updated completion snapshot

@@ -8,6 +8,7 @@ using Survivebest.Health;
 using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Society;
+using Survivebest.Crime;
 using Survivebest.World;
 
 namespace Survivebest.UI
@@ -26,6 +27,9 @@ namespace Survivebest.UI
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private SaveGameManager saveGameManager;
+        [SerializeField] private JusticeSystem justiceSystem;
+        [SerializeField] private CriminalReputationSystem criminalReputationSystem;
+        [SerializeField] private ElectionCycleSystem electionCycleSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
@@ -62,6 +66,7 @@ namespace Survivebest.UI
         [SerializeField] private Text immediatePressureText;
         [SerializeField] private Text suggestedActionsText;
         [SerializeField] private Text worldPulseText;
+        [SerializeField] private Text legalPressureText;
 
         private readonly StringBuilder builder = new();
         private CharacterCore currentCharacter;
@@ -210,7 +215,7 @@ namespace Survivebest.UI
                 return;
             }
 
-            governmentText.text = $"Law Strictness: {Mathf.RoundToInt(profile.TheftEnforcement * 100f)}\nViolence Enforcement: {Mathf.RoundToInt(profile.ViolenceEnforcement * 100f)}\nArea: {area}";
+            governmentText.text = $"Law Strictness: {Mathf.RoundToInt(profile.TheftEnforcement * 100f)}\nViolence Enforcement: {Mathf.RoundToInt(profile.ViolenceEnforcement * 100f)}\nPolice Funding: {Mathf.RoundToInt(profile.PoliceFunding * 100f)}\nPrison Reform: {Mathf.RoundToInt(profile.PrisonReform * 100f)}\nArea: {area}";
         }
 
         private void HandleCharacterChanged(CharacterCore character)
@@ -446,6 +451,11 @@ namespace Survivebest.UI
             if (worldPulseText != null)
             {
                 worldPulseText.text = BuildWorldPulseText();
+            }
+
+            if (legalPressureText != null)
+            {
+                legalPressureText.text = BuildLegalPressureText();
             }
         }
 
