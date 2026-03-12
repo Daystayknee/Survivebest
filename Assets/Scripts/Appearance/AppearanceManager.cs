@@ -89,6 +89,27 @@ namespace Survivebest.Appearance
         [SerializeField] private SpriteRenderer frontHairRenderer;
         [SerializeField] private SpriteRenderer sideHairRenderer;
         [SerializeField] private SpriteRenderer backHairRenderer;
+        [SerializeField] private SpriteRenderer sideLeftHairRenderer;
+        [SerializeField] private SpriteRenderer sideRightHairRenderer;
+        [SerializeField] private SpriteRenderer bangsHairRenderer;
+        [SerializeField] private SpriteRenderer flyawayHairRenderer;
+        [SerializeField] private SpriteRenderer hairlineRenderer;
+
+        [Header("Facial Hair Slots")]
+        [SerializeField] private SpriteRenderer mustacheRenderer;
+        [SerializeField] private SpriteRenderer beardJawRenderer;
+        [SerializeField] private SpriteRenderer beardChinRenderer;
+        [SerializeField] private SpriteRenderer sideburnsRenderer;
+        [SerializeField] private SpriteRenderer neckBeardRenderer;
+
+        [Header("Body Hair Slots")]
+        [SerializeField] private SpriteRenderer chestHairRenderer;
+        [SerializeField] private SpriteRenderer armHairRenderer;
+        [SerializeField] private SpriteRenderer legHairRenderer;
+        [SerializeField] private SpriteRenderer forearmHairRenderer;
+        [SerializeField] private SpriteRenderer lowerLegHairRenderer;
+        [SerializeField] private SpriteRenderer armpitHairRenderer;
+        [SerializeField] private SpriteRenderer lowerAbdomenHairRenderer;
 
         [Header("Face and Body Layers")]
         [SerializeField] private SpriteRenderer headRenderer;
@@ -106,12 +127,24 @@ namespace Survivebest.Appearance
 
         [Header("Variation Data")]
         [SerializeField] private List<HairStyleVariant> hairStyles = new();
+        [SerializeField] private List<HairPieceDefinition> hairPieceDefinitions = new();
+        [SerializeField] private List<HairstyleDefinition> hairstyleDefinitions = new();
+
+        [Header("Layered Hair Profiles")]
+        [SerializeField] private HairProfile scalpHairProfile = new();
+        [SerializeField] private FacialHairProfile facialHairProfile = new();
+        [SerializeField] private BodyHairProfile bodyHairProfile = new();
 
         [SerializeField] private AppearanceProfile currentProfile = new();
 
         public event Action<AppearanceProfile> OnAppearanceChanged;
 
         public AppearanceProfile CurrentProfile => currentProfile;
+        public HairProfile ScalpHairProfile => scalpHairProfile;
+        public FacialHairProfile FacialHairProfile => facialHairProfile;
+        public BodyHairProfile BodyHairProfile => bodyHairProfile;
+        public IReadOnlyList<HairPieceDefinition> HairPieceDefinitions => hairPieceDefinitions;
+        public IReadOnlyList<HairstyleDefinition> HairstyleDefinitions => hairstyleDefinitions;
 
         [ContextMenu("Auto Bind Renderers By Name")]
         public void AutoBindRenderersByName()
@@ -119,6 +152,23 @@ namespace Survivebest.Appearance
             frontHairRenderer = FindLayerRenderer("FrontHair", frontHairRenderer);
             sideHairRenderer = FindLayerRenderer("SideHair", sideHairRenderer);
             backHairRenderer = FindLayerRenderer("BackHair", backHairRenderer);
+            sideLeftHairRenderer = FindLayerRenderer("HairSideLeft", sideLeftHairRenderer);
+            sideRightHairRenderer = FindLayerRenderer("HairSideRight", sideRightHairRenderer);
+            bangsHairRenderer = FindLayerRenderer("HairBangs", bangsHairRenderer);
+            flyawayHairRenderer = FindLayerRenderer("HairFlyaways", flyawayHairRenderer);
+            hairlineRenderer = FindLayerRenderer("Hairline", hairlineRenderer);
+            mustacheRenderer = FindLayerRenderer("Mustache", mustacheRenderer);
+            beardJawRenderer = FindLayerRenderer("BeardJaw", beardJawRenderer);
+            beardChinRenderer = FindLayerRenderer("BeardChin", beardChinRenderer);
+            sideburnsRenderer = FindLayerRenderer("Sideburn", sideburnsRenderer);
+            neckBeardRenderer = FindLayerRenderer("NeckBeard", neckBeardRenderer);
+            chestHairRenderer = FindLayerRenderer("ChestHair", chestHairRenderer);
+            armHairRenderer = FindLayerRenderer("ArmHair", armHairRenderer);
+            legHairRenderer = FindLayerRenderer("LegHair", legHairRenderer);
+            forearmHairRenderer = FindLayerRenderer("ForearmHair", forearmHairRenderer);
+            lowerLegHairRenderer = FindLayerRenderer("LowerLegHair", lowerLegHairRenderer);
+            armpitHairRenderer = FindLayerRenderer("ArmpitHair", armpitHairRenderer);
+            lowerAbdomenHairRenderer = FindLayerRenderer("LowerAbdomenHair", lowerAbdomenHairRenderer);
             headRenderer = FindLayerRenderer("Head", headRenderer);
             neckRenderer = FindLayerRenderer("Neck", neckRenderer);
             earsRenderer = FindLayerRenderer("Ears", earsRenderer);
@@ -139,6 +189,19 @@ namespace Survivebest.Appearance
             ValidateRenderer(frontHairRenderer, nameof(frontHairRenderer));
             ValidateRenderer(sideHairRenderer, nameof(sideHairRenderer));
             ValidateRenderer(backHairRenderer, nameof(backHairRenderer));
+            ValidateRenderer(sideLeftHairRenderer, nameof(sideLeftHairRenderer));
+            ValidateRenderer(sideRightHairRenderer, nameof(sideRightHairRenderer));
+            ValidateRenderer(bangsHairRenderer, nameof(bangsHairRenderer));
+            ValidateRenderer(flyawayHairRenderer, nameof(flyawayHairRenderer));
+            ValidateRenderer(hairlineRenderer, nameof(hairlineRenderer));
+            ValidateRenderer(mustacheRenderer, nameof(mustacheRenderer));
+            ValidateRenderer(beardJawRenderer, nameof(beardJawRenderer));
+            ValidateRenderer(beardChinRenderer, nameof(beardChinRenderer));
+            ValidateRenderer(sideburnsRenderer, nameof(sideburnsRenderer));
+            ValidateRenderer(neckBeardRenderer, nameof(neckBeardRenderer));
+            ValidateRenderer(chestHairRenderer, nameof(chestHairRenderer));
+            ValidateRenderer(armHairRenderer, nameof(armHairRenderer));
+            ValidateRenderer(legHairRenderer, nameof(legHairRenderer));
             ValidateRenderer(headRenderer, nameof(headRenderer));
             ValidateRenderer(neckRenderer, nameof(neckRenderer));
             ValidateRenderer(earsRenderer, nameof(earsRenderer));
@@ -211,6 +274,11 @@ namespace Survivebest.Appearance
 
             currentProfile = profile;
             ApplyHairStyle(profile.HairStyle);
+            if (!scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.NaturalHairColor = profile.HairColor;
+                scalpHairProfile.HairColor = profile.HairColor;
+            }
             ApplyHairColor(profile.HairColor);
             ApplyEyeColor(profile.EyeColor);
             ApplySkinTone(profile.SkinTone);
@@ -231,7 +299,96 @@ namespace Survivebest.Appearance
         public void SetHairColor(Color color)
         {
             currentProfile.HairColor = color;
+            if (scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.DyedHairColor = color;
+            }
+            else
+            {
+                scalpHairProfile.NaturalHairColor = color;
+            }
+
+            scalpHairProfile.HairColor = color;
             ApplyHairColor(color);
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetNaturalHairColor(Color color)
+        {
+            scalpHairProfile.NaturalHairColor = color;
+            if (!scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.HairColor = color;
+                currentProfile.HairColor = color;
+                ApplyHairColor(color);
+            }
+
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetDyedHairColor(Color color)
+        {
+            scalpHairProfile.DyedHairColor = color;
+            if (scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.HairColor = color;
+                currentProfile.HairColor = color;
+                ApplyHairColor(color);
+            }
+
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetUseDyedHairColor(bool useDyed)
+        {
+            scalpHairProfile.UseDyedColor = useDyed;
+            Color effective = scalpHairProfile.GetEffectiveBaseColor();
+            scalpHairProfile.HairColor = effective;
+            currentProfile.HairColor = effective;
+            ApplyHairColor(effective);
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetHairColorChannels(float? baseR = null, float? baseG = null, float? baseB = null, float? highlight = null, float? roots = null, float? ombre = null)
+        {
+            Color active = scalpHairProfile.GetEffectiveBaseColor();
+            if (baseR.HasValue) active.r = Mathf.Clamp01(baseR.Value);
+            if (baseG.HasValue) active.g = Mathf.Clamp01(baseG.Value);
+            if (baseB.HasValue) active.b = Mathf.Clamp01(baseB.Value);
+
+            if (scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.DyedHairColor = active;
+            }
+            else
+            {
+                scalpHairProfile.NaturalHairColor = active;
+            }
+
+            if (highlight.HasValue)
+            {
+                scalpHairProfile.HighlightIntensity = Mathf.Clamp01(highlight.Value);
+            }
+
+            if (roots.HasValue)
+            {
+                float root = Mathf.Clamp01(roots.Value);
+                scalpHairProfile.RootColor = new Color(root, root, root, 1f);
+            }
+
+            if (ombre.HasValue)
+            {
+                scalpHairProfile.OmbreAmount = Mathf.Clamp01(ombre.Value);
+            }
+
+            scalpHairProfile.HairColor = active;
+            currentProfile.HairColor = active;
+            ApplyHairColor(active);
+            ApplyLayeredHairContract();
             OnAppearanceChanged?.Invoke(currentProfile);
         }
 
@@ -278,6 +435,177 @@ namespace Survivebest.Appearance
             OnAppearanceChanged?.Invoke(currentProfile);
         }
 
+
+
+        public bool TryApplyHairstyleById(string styleId)
+        {
+            if (string.IsNullOrWhiteSpace(styleId) || hairstyleDefinitions == null || hairstyleDefinitions.Count == 0)
+            {
+                return false;
+            }
+
+            HairstyleDefinition definition = hairstyleDefinitions.Find(x => x != null && x.Id == styleId);
+            if (definition == null)
+            {
+                return false;
+            }
+
+            scalpHairProfile.CurrentStyleId = definition.Id;
+            scalpHairProfile.TextureFamily = definition.TextureFamily;
+            scalpHairProfile.GrowthStage = definition.GrowthCategory;
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+            return true;
+        }
+
+        public List<HairstyleDefinition> GetHairstylesByFilter(HairTextureFamily? textureFamily, HairGrowthStage? growthStage)
+        {
+            List<HairstyleDefinition> result = new();
+            if (hairstyleDefinitions == null)
+            {
+                return result;
+            }
+
+            for (int i = 0; i < hairstyleDefinitions.Count; i++)
+            {
+                HairstyleDefinition style = hairstyleDefinitions[i];
+                if (style == null)
+                {
+                    continue;
+                }
+
+                if (textureFamily.HasValue && style.TextureFamily != textureFamily.Value)
+                {
+                    continue;
+                }
+
+                if (growthStage.HasValue && style.GrowthCategory != growthStage.Value)
+                {
+                    continue;
+                }
+
+                result.Add(style);
+            }
+
+            return result;
+        }
+
+        public void SetHairProfile(HairProfile profile)
+        {
+            scalpHairProfile = profile ?? new HairProfile();
+            Color effective = scalpHairProfile.GetEffectiveBaseColor();
+            scalpHairProfile.HairColor = effective;
+            currentProfile.HairColor = effective;
+            ApplyHairColor(effective);
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetFacialHairProfile(FacialHairProfile profile)
+        {
+            facialHairProfile = profile ?? new FacialHairProfile();
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetBodyHairProfile(BodyHairProfile profile)
+        {
+            bodyHairProfile = profile ?? new BodyHairProfile();
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public HairRenderContract BuildHairRenderContract(AvatarLayerProfile avatarLayerProfile = null)
+        {
+            return HairAssemblyResolver.BuildContract(scalpHairProfile, facialHairProfile, bodyHairProfile, hairPieceDefinitions, hairstyleDefinitions, avatarLayerProfile);
+        }
+
+        public void ApplyLayeredHairContract(AvatarLayerProfile avatarLayerProfile = null)
+        {
+            HairRenderContract contract = BuildHairRenderContract(avatarLayerProfile);
+            ClearLayeredHairSlots();
+            for (int i = 0; i < contract.Pieces.Count; i++)
+            {
+                ApplyRenderPiece(contract.Pieces[i]);
+            }
+        }
+
+        private void ClearLayeredHairSlots()
+        {
+            ClearSprite(sideLeftHairRenderer);
+            ClearSprite(sideRightHairRenderer);
+            ClearSprite(bangsHairRenderer);
+            ClearSprite(flyawayHairRenderer);
+            ClearSprite(hairlineRenderer);
+            ClearSprite(mustacheRenderer);
+            ClearSprite(beardJawRenderer);
+            ClearSprite(beardChinRenderer);
+            ClearSprite(sideburnsRenderer);
+            ClearSprite(neckBeardRenderer);
+            ClearSprite(chestHairRenderer);
+            ClearSprite(armHairRenderer);
+            ClearSprite(legHairRenderer);
+            ClearSprite(forearmHairRenderer);
+            ClearSprite(lowerLegHairRenderer);
+            ClearSprite(armpitHairRenderer);
+            ClearSprite(lowerAbdomenHairRenderer);
+        }
+
+        private void ApplyRenderPiece(HairRenderPiece piece)
+        {
+            SpriteRenderer target = ResolveSlotRenderer(piece.SlotType);
+            if (target == null)
+            {
+                return;
+            }
+
+            target.sprite = piece.Sprite;
+            target.color = piece.Color;
+            target.enabled = piece.Sprite != null;
+            if (piece.DrawOrder != 0)
+            {
+                target.sortingOrder = piece.DrawOrder;
+            }
+        }
+
+        private SpriteRenderer ResolveSlotRenderer(HairSlotType slotType)
+        {
+            return slotType switch
+            {
+                HairSlotType.HairBack => backHairRenderer,
+                HairSlotType.HairSideLeft => sideLeftHairRenderer != null ? sideLeftHairRenderer : sideHairRenderer,
+                HairSlotType.HairSideRight => sideRightHairRenderer != null ? sideRightHairRenderer : sideHairRenderer,
+                HairSlotType.HairFront => frontHairRenderer,
+                HairSlotType.HairBangs => bangsHairRenderer,
+                HairSlotType.HairFlyaways => flyawayHairRenderer,
+                HairSlotType.Hairline => hairlineRenderer,
+                HairSlotType.Mustache => mustacheRenderer,
+                HairSlotType.BeardJaw => beardJawRenderer,
+                HairSlotType.BeardChin => beardChinRenderer,
+                HairSlotType.Sideburns => sideburnsRenderer,
+                HairSlotType.NeckBeard => neckBeardRenderer,
+                HairSlotType.ChestHair => chestHairRenderer,
+                HairSlotType.ArmHair => armHairRenderer,
+                HairSlotType.LegHair => legHairRenderer,
+                HairSlotType.ForearmHair => forearmHairRenderer,
+                HairSlotType.LowerLegHair => lowerLegHairRenderer,
+                HairSlotType.ArmpitHair => armpitHairRenderer,
+                HairSlotType.LowerAbdomenHair => lowerAbdomenHairRenderer,
+                _ => null
+            };
+        }
+
+        private static void ClearSprite(SpriteRenderer renderer)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            renderer.sprite = null;
+            renderer.enabled = false;
+        }
+
         private void ApplyHairStyle(HairStyleType style)
         {
             HairStyleVariant variant = hairStyles.Find(h => h.HairStyle == style);
@@ -296,6 +624,11 @@ namespace Survivebest.Appearance
             if (frontHairRenderer != null) frontHairRenderer.color = color;
             if (sideHairRenderer != null) sideHairRenderer.color = color;
             if (backHairRenderer != null) backHairRenderer.color = color;
+            if (sideLeftHairRenderer != null) sideLeftHairRenderer.color = color;
+            if (sideRightHairRenderer != null) sideRightHairRenderer.color = color;
+            if (bangsHairRenderer != null) bangsHairRenderer.color = color;
+            if (flyawayHairRenderer != null) flyawayHairRenderer.color = color;
+            if (hairlineRenderer != null) hairlineRenderer.color = color;
         }
 
         private void ApplyEyeColor(EyeColorType eyeColor)
