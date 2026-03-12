@@ -211,6 +211,12 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added dyed-vs-natural hair controls (checkbox + RGB/ombre/highlight sliders) so genetics updates only the **natural** hair gene color while user dye choices remain cosmetic overlays.
 - Expanded the personality matrix into 12 domains (social/emotional/cognitive/behavioral/moral/lifestyle + relationship, motivation, coping, risk response, preferences, identity expression) with 110+ trait variables driving autonomous choices, compatibility, and compact UI summary bars.
 - Added a relationship compatibility engine layered on top of the personality matrix to continuously model pair dynamics (familiarity/trust/attraction/respect/comfort/tension/jealousy/loyalty/romantic interest) and emit a compact compatibility dashboard summary.
+- Added `PsychologicalGrowthMentalHealthEngine` with per-character mental health profiles (stress/anxiety/depression/burnout/self-esteem/resilience/purpose/loneliness/trauma), therapy/coping/life-event processing, and cross-system modifiers for decisions, relationships, addiction pressure, work performance, conflict behavior, and long-term personality evolution.
+- Added `WorldCultureSocietyEngine` to model region/community culture (tradition, individualism/collectivism, authority, openness, moral strictness, cohesion), social norms/traditions/career prestige, cultural reputation pressure, migration adaptation, and cultural evolution hooks across social/family/milestone/lifestyle systems.
+- Expanded `PersonalityDecisionSystem` with procedural decision-space generation (seeded option synthesis, weighted scoring, confidence/novelty tags, and multi-step decision loops) so each character can continuously surface varied choices instead of a single static pick.
+- Expanded `HumanLifeExperienceLayerSystem` with procedural day-to-day life moments, hourly life-pulse simulation, and emotional reflection logging (gratitude/regret/pride/nostalgia/fear/hope) that feed mental-health and culture consequences for richer everyday loops.
+- Added `LivingWorldInfrastructureEngine` as the world-structure layer for active districts, business/workplace ecosystem health, service reliability/failures, transport pressure, supply-chain drift, housing pressure, population flow, and chance encounters feeding social-memory/drama context.
+- Added `GameplayInteractionPresentationLayer` as the gameplay bridge between simulation and player-facing outcomes (world/character panel snapshots, context action suggestions, hotspot packs, map travel options, and action-result feedback pulses with visual-cue tags) without changing existing UI prefabs.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
@@ -218,6 +224,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Deeper narrative/event animations and rich popup variant templates.
 - Use `AssetReadinessReporter` context action to quickly surface missing controller/image/text references in configured UI scenes.
 - `AssetReadinessReporter` now includes an `Auto Wire Known References` context action to auto-bind many commonly-missed scene references before running missing-reference reports.
+- `AssetReadinessReporter` now includes `Report Runtime Vision Coverage` to verify required-vs-optional runtime systems are present and enabled for the intended gameplay vision.
 
 ## Data Variants (Updated)
 
