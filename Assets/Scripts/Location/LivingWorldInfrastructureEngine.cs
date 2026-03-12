@@ -44,6 +44,17 @@ namespace Survivebest.Location
         Library
     }
 
+    public enum SupplyItemType
+    {
+        FreshFood,
+        Medicine,
+        Fuel,
+        UtilitiesParts,
+        OfficeGoods,
+        HouseholdGoods,
+        ConstructionMaterials
+    }
+
     [Serializable]
     public class DistrictInfrastructureProfile
     {
@@ -113,6 +124,15 @@ namespace Survivebest.Location
     }
 
     [Serializable]
+    public class SupplyItemState
+    {
+        public SupplyItemType Item;
+        [Range(0f, 100f)] public float Availability = 60f;
+        [Range(0f, 100f)] public float PricePressure = 40f;
+        [Range(0f, 100f)] public float Volatility = 30f;
+    }
+
+    [Serializable]
     public class EncounterRecord
     {
         public string EncounterId;
@@ -141,6 +161,7 @@ namespace Survivebest.Location
         [SerializeField] private List<HousingInfrastructureProfile> housingProfiles = new();
         [SerializeField] private List<PublicServiceInfrastructureState> publicServices = new();
         [SerializeField] private List<TransportInfrastructureState> transportRoutes = new();
+        [SerializeField] private List<SupplyItemState> itemStocks = new();
         [SerializeField] private List<EncounterRecord> recentEncounters = new();
 
         public IReadOnlyList<DistrictInfrastructureProfile> DistrictProfiles => districtProfiles;
@@ -148,6 +169,7 @@ namespace Survivebest.Location
         public IReadOnlyList<HousingInfrastructureProfile> HousingProfiles => housingProfiles;
         public IReadOnlyList<PublicServiceInfrastructureState> PublicServices => publicServices;
         public IReadOnlyList<TransportInfrastructureState> TransportRoutes => transportRoutes;
+        public IReadOnlyList<SupplyItemState> ItemStocks => itemStocks;
         public IReadOnlyList<EncounterRecord> RecentEncounters => recentEncounters;
 
         public void EnsureSeededDefaults()
@@ -172,6 +194,8 @@ namespace Survivebest.Location
                 transportRoutes.Add(new TransportInfrastructureState { RouteId = "bus_line_a", Mode = TransportMode.Bus, Availability = 72f, DelayPressure = 25f, Cost = 22f, EncounterChance = 44f });
                 transportRoutes.Add(new TransportInfrastructureState { RouteId = "car_network", Mode = TransportMode.Car, Availability = 65f, DelayPressure = 20f, Cost = 58f, EncounterChance = 18f });
             }
+
+            SeedDefaultItemStocks();
         }
 
         public void SimulateInfrastructureHour(int hour)
@@ -424,8 +448,58 @@ namespace Survivebest.Location
             }
         }
 
+        public float GetItemAvailability(SupplyItemType item)
+        {
+            SupplyItemState state = itemStocks.Find(x => x != null && x.Item == item);
+            return state != null ? state.Availability : 50f;
+        }
+
+        private void SeedDefaultItemStocks()
+        {
+            if (itemStocks.Count > 0)
+            {
+                return;
+            }
+
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.FreshFood, Availability = 68f, PricePressure = 35f, Volatility = 28f });
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.Medicine, Availability = 62f, PricePressure = 42f, Volatility = 25f });
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.Fuel, Availability = 58f, PricePressure = 48f, Volatility = 38f });
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.UtilitiesParts, Availability = 65f, PricePressure = 40f, Volatility = 33f });
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.OfficeGoods, Availability = 72f, PricePressure = 30f, Volatility = 20f });
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.HouseholdGoods, Availability = 70f, PricePressure = 32f, Volatility = 22f });
+            itemStocks.Add(new SupplyItemState { Item = SupplyItemType.ConstructionMaterials, Availability = 60f, PricePressure = 45f, Volatility = 35f });
+        }
+
+        private SupplyItemType ResolvePrimarySupplyNeed(BusinessIndustry industry)
+        {
+            return industry switch
+            {
+                BusinessIndustry.Restaurant or BusinessIndustry.Grocery => SupplyItemType.FreshFood,
+                BusinessIndustry.Hospital => SupplyItemType.Medicine,
+                BusinessIndustry.Factory or BusinessIndustry.RepairShop => SupplyItemType.ConstructionMaterials,
+                BusinessIndustry.Office or BusinessIndustry.Library or BusinessIndustry.School => SupplyItemType.OfficeGoods,
+                BusinessIndustry.Nightclub => SupplyItemType.Fuel,
+                _ => SupplyItemType.HouseholdGoods
+            };
+        }
+
         private void SimulateSupplyChains()
         {
+            float transportHealth = ComputeTransportHealth();
+
+            for (int s = 0; s < itemStocks.Count; s++)
+            {
+                SupplyItemState state = itemStocks[s];
+                if (state == null)
+                {
+                    continue;
+                }
+
+                float drift = UnityEngine.Random.Range(-1.8f, 1.6f) + (transportHealth - 50f) * 0.03f - state.Volatility * 0.015f;
+                state.Availability = Mathf.Clamp(state.Availability + drift, 0f, 100f);
+                state.PricePressure = Mathf.Clamp(state.PricePressure + (50f - state.Availability) * 0.04f + state.Volatility * 0.01f, 0f, 100f);
+            }
+
             for (int i = 0; i < businessProfiles.Count; i++)
             {
                 BusinessInfrastructureProfile business = businessProfiles[i];
@@ -434,9 +508,18 @@ namespace Survivebest.Location
                     continue;
                 }
 
-                float transportHealth = ComputeTransportHealth();
                 float dailyDrift = UnityEngine.Random.Range(-1.5f, 1.2f);
-                business.SupplyHealth = Mathf.Clamp(business.SupplyHealth + dailyDrift + (transportHealth - 50f) * 0.03f, 0f, 100f);
+                SupplyItemType supplyNeed = ResolvePrimarySupplyNeed(business.Industry);
+                float itemAvailability = GetItemAvailability(supplyNeed);
+                float itemPenalty = (50f - itemAvailability) * 0.06f;
+
+                business.SupplyHealth = Mathf.Clamp(business.SupplyHealth + dailyDrift + (transportHealth - 50f) * 0.03f - itemPenalty, 0f, 100f);
+
+                if (itemAvailability < 30f)
+                {
+                    business.ServiceDemand = Mathf.Clamp(business.ServiceDemand + 2.5f, 0f, 100f);
+                    ApplyDistrictPressure(business.DistrictId, 0.9f, 0.6f);
+                }
             }
         }
 

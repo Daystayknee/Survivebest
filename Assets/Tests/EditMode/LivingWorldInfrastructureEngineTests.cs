@@ -16,7 +16,24 @@ namespace Survivebest.Tests.EditMode
 
             Assert.Greater(engine.PublicServices.Count, 0);
             Assert.Greater(engine.TransportRoutes.Count, 0);
+            Assert.Greater(engine.ItemStocks.Count, 0);
 
+            Object.DestroyImmediate(go);
+        }
+
+
+
+        [Test]
+        public void GetItemAvailability_ReturnsSeededValueRange()
+        {
+            GameObject go = new GameObject("InfrastructureItems");
+            LivingWorldInfrastructureEngine engine = go.AddComponent<LivingWorldInfrastructureEngine>();
+            engine.EnsureSeededDefaults();
+
+            float foodAvailability = engine.GetItemAvailability(SupplyItemType.FreshFood);
+
+            Assert.GreaterOrEqual(foodAvailability, 0f);
+            Assert.LessOrEqual(foodAvailability, 100f);
             Object.DestroyImmediate(go);
         }
 
@@ -30,6 +47,7 @@ namespace Survivebest.Tests.EditMode
 
             Assert.Greater(engine.PublicServices.Count, 0);
             Assert.Greater(engine.TransportRoutes.Count, 0);
+            Assert.Greater(engine.ItemStocks.Count, 0);
 
             Object.DestroyImmediate(go);
         }
