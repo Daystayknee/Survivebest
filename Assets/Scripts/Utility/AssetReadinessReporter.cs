@@ -34,6 +34,8 @@ namespace Survivebest.Utility
         [SerializeField] private GeneticsSystem geneticsSystem;
         [SerializeField] private WeatherEffectSystem weatherEffectSystem;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private InventoryManager inventoryManager;
+        [SerializeField] private EconomyManager economyManager;
         [SerializeField] private ContractBoardSystem contractBoardSystem;
         [SerializeField] private NpcScheduleSystem npcScheduleSystem;
         [SerializeField] private InjuryRecoverySystem injuryRecoverySystem;
@@ -76,6 +78,8 @@ namespace Survivebest.Utility
             missing += CheckNull(geneticsSystem, nameof(geneticsSystem));
             missing += CheckNull(weatherEffectSystem, nameof(weatherEffectSystem));
             missing += CheckNull(economyInventorySystem, nameof(economyInventorySystem));
+            missing += CheckNull(inventoryManager, nameof(inventoryManager));
+            missing += CheckNull(economyManager, nameof(economyManager));
             missing += CheckNull(contractBoardSystem, nameof(contractBoardSystem));
             missing += CheckNull(npcScheduleSystem, nameof(npcScheduleSystem));
             missing += CheckNull(injuryRecoverySystem, nameof(injuryRecoverySystem));
@@ -150,6 +154,8 @@ namespace Survivebest.Utility
             geneticsSystem ??= FindObjectOfType<GeneticsSystem>(true);
             weatherEffectSystem ??= FindObjectOfType<WeatherEffectSystem>(true);
             economyInventorySystem ??= FindObjectOfType<EconomyInventorySystem>(true);
+            inventoryManager ??= FindObjectOfType<InventoryManager>(true);
+            economyManager ??= FindObjectOfType<EconomyManager>(true);
             contractBoardSystem ??= FindObjectOfType<ContractBoardSystem>(true);
             npcScheduleSystem ??= FindObjectOfType<NpcScheduleSystem>(true);
             injuryRecoverySystem ??= FindObjectOfType<InjuryRecoverySystem>(true);

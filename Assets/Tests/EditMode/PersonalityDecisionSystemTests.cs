@@ -8,6 +8,27 @@ namespace Survivebest.Tests.EditMode
     public class PersonalityDecisionSystemTests
     {
         [Test]
+        public void GetFightEscalationChance_ReflectsHotHeadedBias()
+        {
+            GameObject go = new GameObject("PersonalityFightBiasTest");
+            PersonalityDecisionSystem system = go.AddComponent<PersonalityDecisionSystem>();
+
+            PersonalityProfile calm = system.GetOrCreateProfile("calm");
+            calm.Traits.Add(PersonalityTrait.Calm);
+            calm.StressResilience = 0.8f;
+
+            PersonalityProfile hot = system.GetOrCreateProfile("hot");
+            hot.Traits.Add(PersonalityTrait.HotHeaded);
+            hot.Traits.Add(PersonalityTrait.Impulsive);
+
+            float calmChance = system.GetFightEscalationChance("calm", 70f, true);
+            float hotChance = system.GetFightEscalationChance("hot", 70f, true);
+
+            Assert.Greater(hotChance, calmChance);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void DecideNextAction_ReturnsValidAction()
         {
             GameObject go = new GameObject("PersonalityDecisionTest");

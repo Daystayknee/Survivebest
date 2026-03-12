@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 using Survivebest.Crime;
 using Survivebest.Events;
 using Survivebest.Location;
+using Survivebest.Social;
 using Survivebest.World;
 
 namespace Survivebest.NPC
@@ -76,6 +78,8 @@ namespace Survivebest.NPC
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<NpcProfile> npcProfiles = new();
 
@@ -252,6 +256,57 @@ namespace Survivebest.NPC
             {
                 RememberInteraction(npc.NpcId, "Town", "RumorSpread", -4);
             }
+
+            TryResolveCrowdedConflict(npc, hour);
+        }
+
+        private void TryResolveCrowdedConflict(NpcProfile npc, int hour)
+        {
+            if (npc == null || npc.CurrentState != NpcActivityState.Socializing)
+            {
+                return;
+            }
+
+            bool inCrowdedVenue = IsCrowdedSocialLot(npc.CurrentLotId);
+            float chance = personalityDecisionSystem != null
+                ? personalityDecisionSystem.GetFightEscalationChance(npc.NpcId, npc.Stress, inCrowdedVenue)
+                : Mathf.Clamp01(npc.Stress / 140f);
+
+            if (UnityEngine.Random.value > chance)
+            {
+                return;
+            }
+
+            RememberInteraction(npc.NpcId, "Town", "BarFight", -12);
+            relationshipMemorySystem?.RecordEvent(npc.NpcId, "Town", "bar fight in crowded venue", -12, true, npc.CurrentLotId);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.CrimeCommitted,
+                Severity = SimulationEventSeverity.Warning,
+                SystemName = nameof(NpcScheduleSystem),
+                SourceCharacterId = npc.NpcId,
+                ChangeKey = "CrowdedFight",
+                Reason = $"{npc.DisplayName} escalated conflict while socializing",
+                Magnitude = chance
+            });
+        }
+
+        private bool IsCrowdedSocialLot(string lotId)
+        {
+            if (townSimulationSystem == null || string.IsNullOrWhiteSpace(lotId))
+            {
+                return false;
+            }
+
+            LotDefinition lot = townSimulationSystem.GetLot(lotId);
+            if (lot == null)
+            {
+                return false;
+            }
+
+            bool isSocialZone = lot.Zone == ZoneType.Entertainment || lot.Zone == ZoneType.Park || lot.Zone == ZoneType.Commercial;
+            return isSocialZone && lot.Capacity >= 20;
         }
 
         private NpcActivityState ResolveStateForHour(NpcProfile npc, int hour)
@@ -354,7 +409,9 @@ namespace Survivebest.NPC
             switch (npc.CurrentState)
             {
                 case NpcActivityState.Working:
-                    npc.CurrentLotId = !string.IsNullOrWhiteSpace(npc.WorkLotId) ? npc.WorkLotId : npc.CurrentLotId;
+                    npc.CurrentLotId = !string.IsNullOrWhiteSpace(npc.WorkLotId)
+                        ? npc.WorkLotId
+                        : ResolveZoneFallbackLot(ResolveWorkZone(npc.Job), hour, npc.HomeLotId);
                     break;
                 case NpcActivityState.Sleeping:
                 case NpcActivityState.SickRest:
@@ -362,31 +419,48 @@ namespace Survivebest.NPC
                     npc.CurrentLotId = !string.IsNullOrWhiteSpace(npc.HomeLotId) ? npc.HomeLotId : npc.CurrentLotId;
                     break;
                 case NpcActivityState.Socializing:
-                    if (townSimulationSystem != null)
-                    {
-                        List<LotDefinition> openEntertainment = townSimulationSystem.GetOpenLotsByZone(ZoneType.Entertainment, hour);
-                        if (openEntertainment.Count > 0)
-                        {
-                            npc.CurrentLotId = openEntertainment[UnityEngine.Random.Range(0, openEntertainment.Count)].LotId;
-                            return;
-                        }
-                    }
-
-                    npc.CurrentLotId = !string.IsNullOrWhiteSpace(npc.HomeLotId) ? npc.HomeLotId : npc.CurrentLotId;
+                    npc.CurrentLotId = ResolveZoneFallbackLot(ZoneType.Entertainment, hour, npc.HomeLotId);
                     break;
                 case NpcActivityState.Shopping:
-                    if (townSimulationSystem != null)
-                    {
-                        List<LotDefinition> openCommercial = townSimulationSystem.GetOpenLotsByZone(ZoneType.Commercial, hour);
-                        if (openCommercial.Count > 0)
-                        {
-                            npc.CurrentLotId = openCommercial[UnityEngine.Random.Range(0, openCommercial.Count)].LotId;
-                            return;
-                        }
-                    }
-
+                    npc.CurrentLotId = ResolveZoneFallbackLot(ZoneType.Commercial, hour, npc.HomeLotId);
+                    break;
+                case NpcActivityState.Eating:
+                    npc.CurrentLotId = ResolveZoneFallbackLot(ZoneType.Commercial, hour, npc.HomeLotId);
+                    break;
+                case NpcActivityState.Idle:
+                    npc.CurrentLotId = ResolveZoneFallbackLot(ZoneType.Park, hour, npc.HomeLotId);
                     break;
             }
+        }
+
+        private ZoneType ResolveWorkZone(NpcJobType job)
+        {
+            return job switch
+            {
+                NpcJobType.Medic => ZoneType.Medical,
+                NpcJobType.Teacher => ZoneType.Civic,
+                NpcJobType.Guard => ZoneType.Civic,
+                NpcJobType.Shopkeeper => ZoneType.Commercial,
+                NpcJobType.Mechanic => ZoneType.Industrial,
+                NpcJobType.Farmer => ZoneType.Industrial,
+                _ => ZoneType.Residential
+            };
+        }
+
+        private string ResolveZoneFallbackLot(ZoneType zone, int hour, string fallbackLot)
+        {
+            if (townSimulationSystem == null)
+            {
+                return fallbackLot;
+            }
+
+            List<LotDefinition> openLots = townSimulationSystem.GetOpenLotsByZone(zone, hour);
+            if (openLots.Count > 0)
+            {
+                return openLots[UnityEngine.Random.Range(0, openLots.Count)].LotId;
+            }
+
+            return fallbackLot;
         }
 
         private int GetCurrentTotalHours()

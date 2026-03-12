@@ -387,6 +387,11 @@ Additional progress this pass:
 - Added **M. World Persistence / Simulation Culling Rules** (`WorldPersistenceCullingSystem`) for lot activation budgets, off-screen NPC abstraction, and catch-up simulation.
 - Added **N. AI Director / Drama Manager** (`AIDirectorDramaManager`) to pace disruption/recovery beats based on boredom and tension.
 - Added **O. Animation-State / Feedback / Juice Layer** (`AnimationFeedbackJuiceSystem`) to map simulation events into animation/SFX/VFX/UI feedback cues.
+- Enhanced NPC agents with zone-aware routine routing + personality-driven crowded social conflict escalation in `NpcScheduleSystem`.
+- Added **InventoryManager** as master inventory authority (instances/stacks/containers/transfers/equips/reservations) and integrated grocery/ordering/recipe flows with it.
+- Added **EconomyManager** as financial authority (wallets/accounts/transactions/pricing modifiers/fines/paychecks/debt) for unified economy behavior.
+- Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
+- Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 
 
 1. **Scene prefab completeness**

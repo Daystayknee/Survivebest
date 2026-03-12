@@ -34,6 +34,7 @@ namespace Survivebest.NPC
         public string UniformItemId;
         public string ToolItemId;
         public string AccessTag;
+        public bool IsCriticalWorldService;
     }
 
     [Serializable]
@@ -60,6 +61,8 @@ namespace Survivebest.NPC
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<CareerRoleDefinition> roleDefinitions = new();
         [SerializeField] private List<NpcCareerRecord> records = new();
+
+        private readonly Dictionary<string, int> lastServiceOutageHourByRole = new(StringComparer.OrdinalIgnoreCase);
 
         public event Action<NpcCareerRecord> OnCareerChanged;
 
@@ -102,6 +105,55 @@ namespace Survivebest.NPC
             EnsureRoleEquipment(npcId, role);
             OnCareerChanged?.Invoke(record);
             PublishCareerEvent(record, "Career assigned/updated", SimulationEventSeverity.Info, record.CareerLevel);
+        }
+
+        public bool IsServiceAvailable(ProfessionType profession, string workplaceLotId, int hour)
+        {
+            return CountOnDuty(profession, workplaceLotId, hour) > 0;
+        }
+
+        public int CountOnDuty(ProfessionType profession, string workplaceLotId, int hour)
+        {
+            if (npcScheduleSystem == null)
+            {
+                return 0;
+            }
+
+            int total = 0;
+            for (int i = 0; i < npcScheduleSystem.NpcProfiles.Count; i++)
+            {
+                NpcProfile npc = npcScheduleSystem.NpcProfiles[i];
+                if (npc == null || npc.IsDead)
+                {
+                    continue;
+                }
+
+                NpcCareerRecord record = records.Find(x => x != null && x.NpcId == npc.NpcId);
+                if (record == null || !record.IsEmployed || record.Profession != profession)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(workplaceLotId) && !string.Equals(record.WorkplaceLotId, workplaceLotId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!IsWithinShift(record, hour))
+                {
+                    continue;
+                }
+
+                bool presentAtWork = npc.CurrentState == NpcActivityState.Working &&
+                    (string.IsNullOrWhiteSpace(record.WorkplaceLotId) || string.Equals(npc.CurrentLotId, record.WorkplaceLotId, StringComparison.OrdinalIgnoreCase));
+
+                if (presentAtWork)
+                {
+                    total++;
+                }
+            }
+
+            return total;
         }
 
         public void EvaluatePromotion(string npcId)
@@ -189,6 +241,52 @@ namespace Survivebest.NPC
                     PublishCareerEvent(record, "Missed shift hour", SimulationEventSeverity.Warning, record.Attendance);
                 }
             }
+
+            EvaluateCriticalServiceCoverage(hour);
+        }
+
+        private void EvaluateCriticalServiceCoverage(int hour)
+        {
+            for (int i = 0; i < roleDefinitions.Count; i++)
+            {
+                CareerRoleDefinition role = roleDefinitions[i];
+                if (role == null || !role.IsCriticalWorldService)
+                {
+                    continue;
+                }
+
+                bool wraps = role.ShiftEndHour < role.ShiftStartHour;
+                bool inShiftWindow = wraps
+                    ? hour >= role.ShiftStartHour || hour < role.ShiftEndHour
+                    : hour >= role.ShiftStartHour && hour < role.ShiftEndHour;
+
+                if (!inShiftWindow)
+                {
+                    continue;
+                }
+
+                if (IsServiceAvailable(role.Profession, role.WorkplaceLotId, hour))
+                {
+                    continue;
+                }
+
+                string key = $"{role.Profession}:{role.WorkplaceLotId}";
+                if (lastServiceOutageHourByRole.TryGetValue(key, out int lastHour) && lastHour == hour)
+                {
+                    continue;
+                }
+
+                lastServiceOutageHourByRole[key] = hour;
+                (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                {
+                    Type = SimulationEventType.ActivityCompleted,
+                    Severity = SimulationEventSeverity.Warning,
+                    SystemName = nameof(NpcCareerSystem),
+                    ChangeKey = "CriticalServiceOutage",
+                    Reason = $"No on-duty {role.Profession} at {role.WorkplaceLotId}",
+                    Magnitude = hour
+                });
+            }
         }
 
         private void HandleDayPassed(int day)
@@ -220,7 +318,7 @@ namespace Survivebest.NPC
             CareerRoleDefinition role = roleDefinitions.Find(x => x != null && x.Profession == record.Profession);
             if (role == null)
             {
-                return false;
+                return true;
             }
 
             bool wraps = role.ShiftEndHour < role.ShiftStartHour;

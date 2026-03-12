@@ -18,7 +18,8 @@ namespace Survivebest.Core
         Disciplined,
         Impulsive,
         Addictive,
-        Resilient
+        Resilient,
+        HotHeaded
     }
 
     public enum AutonomousActionType
@@ -86,6 +87,32 @@ namespace Survivebest.Core
             return created;
         }
 
+        public float GetFightEscalationChance(string characterId, float stress, bool inCrowdedVenue)
+        {
+            PersonalityProfile profile = GetOrCreateProfile(characterId);
+            float chance = Mathf.Clamp01(stress / 140f);
+
+            if (HasTrait(profile, PersonalityTrait.HotHeaded))
+            {
+                chance += 0.35f;
+            }
+
+            if (HasTrait(profile, PersonalityTrait.Calm))
+            {
+                chance -= 0.2f;
+            }
+
+            if (HasTrait(profile, PersonalityTrait.Impulsive))
+            {
+                chance += 0.12f;
+            }
+
+            chance += inCrowdedVenue ? 0.12f : -0.05f;
+            chance += profile.EmotionalSensitivity * 0.2f;
+            chance -= profile.StressResilience * 0.18f;
+            return Mathf.Clamp01(chance);
+        }
+
         public AutonomousActionType DecideNextAction(CharacterCore character)
         {
             if (character == null)
@@ -114,22 +141,7 @@ namespace Survivebest.Core
                 { AutonomousActionType.Rest, 18f + ((1f - profile.StressResilience) * 30f) }
             };
 
-            if (HasTrait(profile, PersonalityTrait.Impulsive))
-            {
-                weights[AutonomousActionType.Explore] += UnityEngine.Random.Range(0f, 22f);
-                weights[AutonomousActionType.Socialize] += UnityEngine.Random.Range(0f, 14f);
-            }
-
-            if (HasTrait(profile, PersonalityTrait.Cautious))
-            {
-                weights[AutonomousActionType.Explore] *= 0.6f;
-                weights[AutonomousActionType.Rest] += 8f;
-            }
-
-            if (HasTrait(profile, PersonalityTrait.Addictive))
-            {
-                weights[AutonomousActionType.Socialize] += profile.AddictionSusceptibility * 18f;
-            }
+            ApplyTraitBiases(profile, weights);
 
             AutonomousActionType decision = PickWeighted(weights);
             float confidence = Mathf.Clamp01(weights[decision] / 140f);
@@ -161,6 +173,32 @@ namespace Survivebest.Core
         {
             JobFitScore existing = jobFitScores.Find(x => x != null && x.CharacterId == characterId && x.ProfessionId == professionId);
             return existing != null ? existing.Score : 50f;
+        }
+
+        private static void ApplyTraitBiases(PersonalityProfile profile, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (HasTrait(profile, PersonalityTrait.Impulsive))
+            {
+                weights[AutonomousActionType.Explore] += UnityEngine.Random.Range(0f, 22f);
+                weights[AutonomousActionType.Socialize] += UnityEngine.Random.Range(0f, 14f);
+            }
+
+            if (HasTrait(profile, PersonalityTrait.Cautious))
+            {
+                weights[AutonomousActionType.Explore] *= 0.6f;
+                weights[AutonomousActionType.Rest] += 8f;
+            }
+
+            if (HasTrait(profile, PersonalityTrait.Addictive))
+            {
+                weights[AutonomousActionType.Socialize] += profile.AddictionSusceptibility * 18f;
+            }
+
+            if (HasTrait(profile, PersonalityTrait.HotHeaded))
+            {
+                weights[AutonomousActionType.Socialize] += 12f;
+                weights[AutonomousActionType.Rest] *= 0.75f;
+            }
         }
 
         private static bool HasTrait(PersonalityProfile profile, PersonalityTrait trait)

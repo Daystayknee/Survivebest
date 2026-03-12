@@ -107,6 +107,38 @@ namespace Survivebest.Social
             return created;
         }
 
+
+        public void ApplyFamilyReputationConsequences(string offenderId, List<string> familyMemberIds, int baseImpact, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(offenderId) || familyMemberIds == null || familyMemberIds.Count == 0)
+            {
+                return;
+            }
+
+            int perMemberImpact = Mathf.Clamp(baseImpact, -30, 30);
+            for (int i = 0; i < familyMemberIds.Count; i++)
+            {
+                string familyId = familyMemberIds[i];
+                if (string.IsNullOrWhiteSpace(familyId) || familyId == offenderId)
+                {
+                    continue;
+                }
+
+                AdjustReputation(offenderId, ReputationScope.Family, familyId, perMemberImpact);
+            }
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.RelationshipChanged,
+                Severity = perMemberImpact < 0 ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(RelationshipMemorySystem),
+                SourceCharacterId = offenderId,
+                ChangeKey = "FamilyConsequence",
+                Reason = reason,
+                Magnitude = perMemberImpact
+            });
+        }
+
         public int GetReputation(string characterId, ReputationScope scope, string scopeId)
         {
             ReputationEntry entry = reputations.Find(x => x != null && x.CharacterId == characterId && x.Scope == scope && x.ScopeId == scopeId);

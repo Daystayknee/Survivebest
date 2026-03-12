@@ -9,6 +9,9 @@ namespace Survivebest.UI
     public class FeedbackCue
     {
         public string AnimationState;
+        public string PostureState;
+        public string FacialState;
+        public string LocomotionState;
         public string SfxKey;
         public string VfxKey;
         public string UiPulseKey;
@@ -64,6 +67,9 @@ namespace Survivebest.UI
             FeedbackCue cue = new FeedbackCue
             {
                 AnimationState = "Idle",
+                PostureState = "Neutral",
+                FacialState = "Neutral",
+                LocomotionState = "NormalWalk",
                 SfxKey = "ui_soft_tick",
                 VfxKey = "none",
                 UiPulseKey = "hud_minor",
@@ -73,15 +79,27 @@ namespace Survivebest.UI
             switch (simulationEvent.Type)
             {
                 case SimulationEventType.InjuryStarted:
-                case SimulationEventType.IllnessStarted:
                     cue.AnimationState = "PainReact";
+                    cue.PostureState = "Limping";
+                    cue.FacialState = "Grimace";
+                    cue.LocomotionState = "SlowWalk";
                     cue.SfxKey = "body_hit_soft";
                     cue.VfxKey = "vfx_pain_flash";
+                    cue.UiPulseKey = "health_warning";
+                    break;
+                case SimulationEventType.IllnessStarted:
+                    cue.AnimationState = "CoughLoop";
+                    cue.PostureState = "Hunched";
+                    cue.FacialState = "PaleSick";
+                    cue.LocomotionState = "FatiguedWalk";
+                    cue.SfxKey = "cough_soft";
+                    cue.VfxKey = "vfx_fever_haze";
                     cue.UiPulseKey = "health_warning";
                     break;
                 case SimulationEventType.OrderDelivered:
                 case SimulationEventType.RecipeCooked:
                     cue.AnimationState = "CelebrateSmall";
+                    cue.FacialState = "Pleased";
                     cue.SfxKey = "reward_chime";
                     cue.VfxKey = "vfx_sparkle";
                     cue.UiPulseKey = "inventory_gain";
@@ -89,18 +107,23 @@ namespace Survivebest.UI
                 case SimulationEventType.CrimeCommitted:
                 case SimulationEventType.JusticeOutcomeApplied:
                     cue.AnimationState = "Alert";
+                    cue.PostureState = "Defensive";
+                    cue.FacialState = "Alarmed";
                     cue.SfxKey = "alert_sting";
                     cue.VfxKey = "vfx_warning_blink";
                     cue.UiPulseKey = "law_warning";
                     break;
                 case SimulationEventType.WeatherChanged:
                     cue.AnimationState = "WeatherReact";
+                    cue.PostureState = "ShiverOrBrace";
+                    cue.FacialState = "Reactive";
                     cue.SfxKey = "ambient_weather_shift";
                     cue.VfxKey = "vfx_weather_transition";
                     cue.UiPulseKey = "weather_notice";
                     break;
                 case SimulationEventType.NarrativePromptGenerated:
                     cue.AnimationState = "TalkEmphasis";
+                    cue.FacialState = "Expressive";
                     cue.SfxKey = "story_ping";
                     cue.VfxKey = "vfx_story_orb";
                     cue.UiPulseKey = "journal_story";
@@ -113,6 +136,7 @@ namespace Survivebest.UI
                 cue.SfxKey = "critical_alarm";
                 cue.VfxKey = "vfx_critical_flash";
                 cue.UiPulseKey = "critical_alert";
+                cue.FacialState = "Panic";
             }
 
             return cue;
@@ -142,6 +166,9 @@ namespace Survivebest.UI
             OnFeedbackRequested?.Invoke(new FeedbackCue
             {
                 AnimationState = "BreatheIdle",
+                PostureState = "Relaxed",
+                FacialState = "Neutral",
+                LocomotionState = "Idle",
                 SfxKey = "ambient_soft",
                 VfxKey = "vfx_timepulse",
                 UiPulseKey = "clock_tick",

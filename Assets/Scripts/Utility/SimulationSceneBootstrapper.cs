@@ -46,6 +46,8 @@ namespace Survivebest.Utility
             EnsureSingleton<OrderingSystem>("OrderingSystem");
             EnsureSingleton<RecipeSystem>("RecipeSystem");
             EnsureSingleton<EconomyInventorySystem>("EconomyInventorySystem");
+            EnsureSingleton<InventoryManager>("InventoryManager");
+            EnsureSingleton<EconomyManager>("EconomyManager");
             EnsureSingleton<ContractBoardSystem>("ContractBoardSystem");
             EnsureSingleton<NpcScheduleSystem>("NpcScheduleSystem");
             EnsureSingleton<NpcCareerSystem>("NpcCareerSystem");

@@ -22,6 +22,8 @@ namespace Survivebest.Commerce
         [SerializeField] private List<InventoryEntry> pantry = new();
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private InventoryManager inventoryManager;
+        [SerializeField] private EconomyManager economyManager;
         [SerializeField, Min(1)] private int defaultIngredientUnitPrice = 3;
 
         public event Action<string, int> OnInventoryChanged;
@@ -36,7 +38,17 @@ namespace Survivebest.Commerce
             }
 
             int totalCost = defaultIngredientUnitPrice * quantity;
-            if (economyInventorySystem != null && !economyInventorySystem.TrySpend(totalCost, $"Purchased {quantity}x {name}"))
+            bool paid = true;
+            if (economyManager != null)
+            {
+                paid = economyManager.TryCharge("household", totalCost, $"Purchased {quantity}x {name}");
+            }
+            else if (economyInventorySystem != null)
+            {
+                paid = economyInventorySystem.TrySpend(totalCost, $"Purchased {quantity}x {name}");
+            }
+
+            if (!paid)
             {
                 PublishInventoryEvent(name, GetIngredientQuantity(name), "Purchase failed due to insufficient funds");
                 return;
@@ -57,11 +69,13 @@ namespace Survivebest.Commerce
             if (entry.Quantity <= 0)
             {
                 pantry.Remove(entry);
+                inventoryManager?.RemoveStack("household_pantry", name, quantity, "Pantry consume");
                 OnInventoryChanged?.Invoke(name, 0);
                 PublishInventoryEvent(name, 0, "Ingredient depleted");
             }
             else
             {
+                inventoryManager?.RemoveStack("household_pantry", name, quantity, "Pantry consume");
                 OnInventoryChanged?.Invoke(name, entry.Quantity);
                 PublishInventoryEvent(name, entry.Quantity, "Ingredient consumed");
             }
@@ -87,12 +101,16 @@ namespace Survivebest.Commerce
             if (entry == null)
             {
                 pantry.Add(new InventoryEntry { ItemName = name, Quantity = quantity });
+                inventoryManager?.EnsureContainer("household_pantry", "Household Pantry", InventoryScope.Household);
+                inventoryManager?.AddStack("household_pantry", name, quantity, "Pantry add");
                 OnInventoryChanged?.Invoke(name, quantity);
                 PublishInventoryEvent(name, quantity, "Ingredient added to pantry");
                 return;
             }
 
             entry.Quantity += quantity;
+            inventoryManager?.EnsureContainer("household_pantry", "Household Pantry", InventoryScope.Household);
+            inventoryManager?.AddStack("household_pantry", name, quantity, "Pantry add");
             OnInventoryChanged?.Invoke(name, entry.Quantity);
             PublishInventoryEvent(name, entry.Quantity, "Ingredient quantity increased");
         }

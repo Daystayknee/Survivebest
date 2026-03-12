@@ -108,6 +108,8 @@ namespace Survivebest.Commerce
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Min(0f)] private float wallet = 250f;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private EconomyManager economyManager;
+        [SerializeField] private InventoryManager inventoryManager;
 
         private readonly List<PendingOrder> pendingOrders = new();
 
@@ -115,7 +117,7 @@ namespace Survivebest.Commerce
         public event Action<string, int> OnOrderPlaced;
         public event Action<float> OnWalletChanged;
 
-        public float Wallet => economyInventorySystem != null ? economyInventorySystem.Funds : wallet;
+        public float Wallet => economyManager != null ? economyManager.GetBalance("household") : economyInventorySystem != null ? economyInventorySystem.Funds : wallet;
         public IReadOnlyList<PendingOrder> PendingOrders => pendingOrders;
         public IReadOnlyList<MenuItem> Menu => menu;
         public IReadOnlyList<FastFoodLocation> FastFoodLocations => fastFoodLocations;
@@ -143,6 +145,13 @@ namespace Survivebest.Commerce
                 return;
             }
 
+            if (economyManager != null)
+            {
+                economyManager.Deposit("household", amount, "Ordering funds added");
+                OnWalletChanged?.Invoke(economyManager.GetBalance("household"));
+                return;
+            }
+
             if (economyInventorySystem != null)
             {
                 economyInventorySystem.AddFunds(amount, "Ordering funds added");
@@ -159,6 +168,17 @@ namespace Survivebest.Commerce
             if (amount <= 0f)
             {
                 return false;
+            }
+
+            if (economyManager != null)
+            {
+                bool spent = economyManager.TryCharge("household", amount, "Ordering purchase");
+                if (spent)
+                {
+                    OnWalletChanged?.Invoke(economyManager.GetBalance("household"));
+                }
+
+                return spent;
             }
 
             if (economyInventorySystem != null)
@@ -253,6 +273,11 @@ namespace Survivebest.Commerce
                 }
 
                 order.NeedsTarget?.ApplyFoodEffects(order.Item.Food, order.HealthTarget);
+                if (order.Item.Food != null)
+                {
+                    inventoryManager?.EnsureContainer("household_delivery", "Household Delivery", InventoryScope.Household);
+                    inventoryManager?.AddStack("household_delivery", order.Item.Food.Name, 1, "Delivery received");
+                }
                 OnOrderCompleted?.Invoke(order.Item.Food != null ? order.Item.Food.Name : "Unknown", true);
 
                 (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
