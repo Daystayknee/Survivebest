@@ -450,6 +450,7 @@ Additional progress this pass:
 - Added natural-vs-dyed hair color separation with dashboard slider controls and genetics-safe behavior (genotype resolves natural hair, dye remains cosmetic/user-authored).
 - Added Optional Interactive Task Actions framework (`TaskInteractionManager`) to support Auto vs Interactive daily-task flow with tactile step sequences and result spawning/state updates (inventory, appearance, world-state, service outcomes) without arcade scoring.
 - Added `HumanLifeExperienceLayerSystem` as a portrait/dashboard-first integration layer for daily routines, embodiment feedback, introspective thought prompts, and place attachment progression without requiring direct walking-avatar navigation.
+- Refined `GameplayScreenController` into a vertical-slice readability hub: top state strip (time/weather/location), immediate pressure panel, suggested next actions, and world pulse feed that bridges simulation output into player-facing sensation.
 
 
 ### Updated completion snapshot
