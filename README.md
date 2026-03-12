@@ -191,6 +191,8 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `AppearanceManager` now includes context-menu tools to auto-bind portrait layers by child name and validate missing layer references for Unity setup speed.
 - Furniture store purchase flow with wallet spend + instant placement spawn + build-mode handoff (`FurnitureStoreController`).
 - Added `ExperiencePacingOrchestrator` as a cross-system cadence layer to monitor survival/social/progression/expression/risk pillars and inject dynamic beats (director spikes, emergency opportunities, social memory beats, progression minigame nudges) when play gets too quiet.
+- Added modular layered hair pipeline for 2D avatars (`HairLayerSystem` + `HairGroomingSystem`) with slot-based assembly (back/side/front/bangs/flyaways/hairline), facial/body hair overlays, growth stages, shave/trim regrowth timers, and renderer contracts compatible with `AppearanceManager` + `CharacterPortraitRenderer`.
+- Added `CharacterCreatorDashboardController` for modern paper-doll dashboard flow (Appearance/Traits/Clothing tabs, filter-driven style cards, swatch colors, advanced sliders, preview rotate/zoom/drag, randomize, and preset save/load hooks).
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

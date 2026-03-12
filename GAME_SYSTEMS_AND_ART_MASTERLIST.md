@@ -108,6 +108,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/UI/SettingsTabsController.cs`
 - `Assets/Scripts/UI/WorldCreatorScreenController.cs`
 - `Assets/Scripts/UI/HouseholdMakerScreenController.cs`
+- `Assets/Scripts/UI/CharacterCreatorDashboardController.cs`
 - `Assets/Scripts/UI/GameplayScreenController.cs`
 - `Assets/Scripts/UI/GameHUD.cs`
 - `Assets/Scripts/UI/CharacterScreenController.cs`
@@ -436,6 +437,8 @@ Additional progress this pass:
 - Updated `GeneticsSystem` to resolve phenotype outputs into portrait, body morph, skin-state overlays, and body composition so genetics feed both visuals and simulation tendencies.
 - Extended save/load contracts (`SaveGameManager`) to persist `GeneticProfile` + `PhenotypeProfile` alongside core character state for future-proof inheritance and art pipeline stability.
 - Added `ExperiencePacingOrchestrator` to coordinate AI drama, quests, minigames, dialogue, and social memory into consistent high-intensity loop cadence across survival/social/progression pillars.
+- Added modular paper-doll hair/beard/body-hair architecture with sprite-slot contracts, hairstyle bundles, compatibility tags, and timer-based grooming regrowth for future wet/messy/dirty/accessory variants.
+- Added modern creator-dashboard scaffolding (`CharacterCreatorDashboardController`) with top-tab routing, style filter panel, style-card grid binding, color swatches, preview controls, and appearance preset hooks.
 
 
 ### Updated completion snapshot
