@@ -27,6 +27,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/SkillSystem.cs`
 - `Assets/Scripts/Core/SkillTreeSystem.cs`
 - `Assets/Scripts/Core/DaySliceManager.cs`
+- `Assets/Scripts/Core/LongTermProgressionSystem.cs`
 
 ### Needs / Health / Medical / Status
 - `Assets/Scripts/Needs/NeedsSystem.cs`
@@ -39,6 +40,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 ### Emotions / Social / Dialogue / Conflict
 - `Assets/Scripts/Emotion/EmotionSystem.cs`
 - `Assets/Scripts/Social/SocialSystem.cs`
+- `Assets/Scripts/Social/RelationshipMemorySystem.cs`
 - `Assets/Scripts/Dialogue/DialogueSystem.cs`
 - `Assets/Scripts/Dialogue/NarrativePromptSystem.cs`
 - `Assets/Scripts/Emotion/ConflictSystem.cs`
@@ -60,9 +62,11 @@ This file is a comprehensive implementation inventory for the current codebase.
 
 ### Quest / Contracts
 - `Assets/Scripts/Quest/ContractBoardSystem.cs`
+- `Assets/Scripts/Quest/QuestOpportunitySystem.cs`
 
 ### NPC / Town Simulation
 - `Assets/Scripts/NPC/NpcScheduleSystem.cs`
+- `Assets/Scripts/NPC/NpcCareerSystem.cs`
 
 ### Law / Crime / Justice
 - `Assets/Scripts/Society/LawSystem.cs`
@@ -113,6 +117,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 ### Automated Tests
 - `Assets/Tests/EditMode/EconomyInventorySystemTests.cs`
 - `Assets/Tests/EditMode/SaveSchemaMigrationTests.cs`
+- `Assets/Tests/EditMode/QuestOpportunitySystemTests.cs`
+- `Assets/Tests/EditMode/LongTermProgressionSystemTests.cs`
 
 ---
 
@@ -253,6 +259,18 @@ This file is a comprehensive implementation inventory for the current codebase.
 45. **NPC living-town flow**
     - NPC schedule state resolves against jail/health/weather/business-hours, then routes to home/work/social/commercial lots with memory/reputation drift.
 
+46. **NPC career flow**
+    - Role assignment → shift attendance/pay/performance updates → promotion/demotion/unemployment outcomes with role-linked gear/tools.
+
+47. **Relationship memory flow**
+    - Social event recorded → trust/fear/respect/loyalty updated → public events propagate gossip/reputation effects.
+
+48. **Quest opportunity flow**
+    - Opportunity published → accepted → objective progress → success/fail/expire with branching follow-up opportunities.
+
+49. **Long-term progression flow**
+    - Aspirations progress → milestones unlock perks → fame/infamy/prestige shift social class and legacy bonuses.
+
 ---
 
 ## 3) State Lifecycles with Explicit Start/End (implemented)
@@ -343,7 +361,7 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 
 ## 5) What’s Still Missing / Next Features To Build
 
-Status update: items 1, 2, 3, 4, 6, 7, 8, and 10 now have foundational runtime systems; items 5 and 9 remain major production work.
+Status update: items 1, 2, 3, 4, 5, 6, 7, 8, and 10 now have foundational runtime systems; item 9 remains major production work.
 
 
 1. **Scene prefab completeness**

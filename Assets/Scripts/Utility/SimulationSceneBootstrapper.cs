@@ -8,6 +8,8 @@ using Survivebest.Commerce;
 using Survivebest.Economy;
 using Survivebest.Quest;
 using Survivebest.NPC;
+using Survivebest.Social;
+using Survivebest.Quest;
 
 namespace Survivebest.Utility
 {
@@ -44,6 +46,10 @@ namespace Survivebest.Utility
             EnsureSingleton<EconomyInventorySystem>("EconomyInventorySystem");
             EnsureSingleton<ContractBoardSystem>("ContractBoardSystem");
             EnsureSingleton<NpcScheduleSystem>("NpcScheduleSystem");
+            EnsureSingleton<NpcCareerSystem>("NpcCareerSystem");
+            EnsureSingleton<RelationshipMemorySystem>("RelationshipMemorySystem");
+            EnsureSingleton<QuestOpportunitySystem>("QuestOpportunitySystem");
+            EnsureSingleton<LongTermProgressionSystem>("LongTermProgressionSystem");
 
             if (assetReadinessReporter == null)
             {

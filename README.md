@@ -114,6 +114,10 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Unified inventory/economy authority now supports item instances, ownership scopes (household/personal/lot/equipped), recipe reservations, equipment state, spoilage/decay, theft flags, and value/depreciation evaluation (`EconomyInventorySystem`).
 - NPC simulation now includes home/work/lot presence, weather reactions, health-driven schedule overrides, jail unavailability, memory/reputation updates, and destination routing (`NpcScheduleSystem`).
 - Added a town/lot/zone simulation layer with districts, lot ownership/zoning, business open/close logic, route graph travel costs, and local safety/wealth values (`TownSimulationSystem`).
+- Added `NpcCareerSystem` for role requirements, shifts, pay schedules, attendance/performance, promotions/demotions, and role equipment/tool assignment.
+- Added `RelationshipMemorySystem` for remembered social events, betrayal/cheating memory impact, gossip propagation, and scoped reputation (district/family/faction).
+- Added `QuestOpportunitySystem` for formal quest/contract delivery with objectives, deadlines, branching follow-up opportunities, emergency generation, and failure/expiration states.
+- Added `LongTermProgressionSystem` for aspiration goals, milestones, perk unlocks, fame/infamy, house prestige, social-class mobility, and legacy bonuses.
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).

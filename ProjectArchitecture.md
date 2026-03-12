@@ -515,3 +515,7 @@ Always-visible character presence:
 - `EconomyInventorySystem` should serve as a AAA-style authority for ownership/instances/quality/spoilage/reservations/equipment/resale value so all possession logic resolves through one domain model.
 - `NpcScheduleSystem` should model live town presence (home/work/current lot), weather adaptation, jail/health unavailability, memory, and reputation drift so NPCs feel systemic rather than scripted.
 - `TownSimulationSystem` should own lot zoning, district identity, business hours, route costs, and local danger/wealth signals used by travel, law, NPC, and economy systems.
+- `NpcCareerSystem` should model role membership (shifts/pay/performance/promotion/demotion/unemployment) so job-based world staffing remains systemic over time.
+- `RelationshipMemorySystem` should persist trust/fear/respect/attraction/chemistry/loyalty and propagate witnessed events into gossip/reputation consequences.
+- `QuestOpportunitySystem` should provide objective-based, deadline-driven, branching opportunities (including emergencies and location-specific jobs) as structured content delivery.
+- `LongTermProgressionSystem` should own long-loop identity progression (aspirations, milestones, perks, fame/infamy, social class, and legacy bonuses).

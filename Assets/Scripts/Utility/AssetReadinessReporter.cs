@@ -10,6 +10,8 @@ using Survivebest.Economy;
 using Survivebest.Quest;
 using Survivebest.NPC;
 using Survivebest.Health;
+using Survivebest.Social;
+using Survivebest.Quest;
 
 namespace Survivebest.Utility
 {
@@ -36,6 +38,10 @@ namespace Survivebest.Utility
         [SerializeField] private InjuryRecoverySystem injuryRecoverySystem;
         [SerializeField] private UIEventFeedbackRouter uiEventFeedbackRouter;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private NpcCareerSystem npcCareerSystem;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
+        [SerializeField] private LongTermProgressionSystem longTermProgressionSystem;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -66,6 +72,10 @@ namespace Survivebest.Utility
             missing += CheckNull(injuryRecoverySystem, nameof(injuryRecoverySystem));
             missing += CheckNull(uiEventFeedbackRouter, nameof(uiEventFeedbackRouter));
             missing += CheckNull(townSimulationSystem, nameof(townSimulationSystem));
+            missing += CheckNull(npcCareerSystem, nameof(npcCareerSystem));
+            missing += CheckNull(relationshipMemorySystem, nameof(relationshipMemorySystem));
+            missing += CheckNull(questOpportunitySystem, nameof(questOpportunitySystem));
+            missing += CheckNull(longTermProgressionSystem, nameof(longTermProgressionSystem));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -128,6 +138,10 @@ namespace Survivebest.Utility
             injuryRecoverySystem ??= FindObjectOfType<InjuryRecoverySystem>(true);
             uiEventFeedbackRouter ??= FindObjectOfType<UIEventFeedbackRouter>(true);
             townSimulationSystem ??= FindObjectOfType<TownSimulationSystem>(true);
+            npcCareerSystem ??= FindObjectOfType<NpcCareerSystem>(true);
+            relationshipMemorySystem ??= FindObjectOfType<RelationshipMemorySystem>(true);
+            questOpportunitySystem ??= FindObjectOfType<QuestOpportunitySystem>(true);
+            longTermProgressionSystem ??= FindObjectOfType<LongTermProgressionSystem>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
