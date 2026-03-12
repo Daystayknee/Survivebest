@@ -23,6 +23,7 @@ namespace Survivebest.Utility
         [SerializeField] private FurnitureStoreController furnitureStoreController;
         [SerializeField] private StatusEffectSystem statusEffectSystem;
         [SerializeField] private GeneticsSystem geneticsSystem;
+        [SerializeField] private WeatherEffectSystem weatherEffectSystem;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -46,6 +47,7 @@ namespace Survivebest.Utility
             missing += CheckNull(furnitureStoreController, nameof(furnitureStoreController));
             missing += CheckNull(statusEffectSystem, nameof(statusEffectSystem));
             missing += CheckNull(geneticsSystem, nameof(geneticsSystem));
+            missing += CheckNull(weatherEffectSystem, nameof(weatherEffectSystem));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {

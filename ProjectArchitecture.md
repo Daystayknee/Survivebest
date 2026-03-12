@@ -487,6 +487,8 @@ Always-visible character presence:
 
 - `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training, animal-sighting encounters) triggered from `SidebarContextMenu`, including rich previews and outcome effects.
 - `JusticeSystem` should enforce persistent consequences (immediate fines/debt, jail timers, hourly penalties, and release events) so crime affects ongoing simulation state.
+- `SubstanceSystem` should track active substance states with durations/tolerance/dependency and apply start/tick/end consequences (including withdrawal) so usage has full lifecycle outcomes.
+- `WeatherEffectSystem` should apply immediate weather-state consequences and hourly weather ticks to needs/health so climate has persistent gameplay impact.
 - `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
 
 - `SaveGameManager` should own save slot snapshot persistence (metadata + world time + room + per-character needs/health/skills/status restore) and publish save lifecycle events.
