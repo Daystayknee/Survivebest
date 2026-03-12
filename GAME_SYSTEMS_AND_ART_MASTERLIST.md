@@ -28,12 +28,14 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/SkillTreeSystem.cs`
 - `Assets/Scripts/Core/DaySliceManager.cs`
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
+- `Assets/Scripts/Core/PersonalityDecisionSystem.cs`
 
 ### Needs / Health / Medical / Status
 - `Assets/Scripts/Needs/NeedsSystem.cs`
 - `Assets/Scripts/Health/HealthSystem.cs`
 - `Assets/Scripts/Health/MedicalConditionSystem.cs`
 - `Assets/Scripts/Health/InjuryRecoverySystem.cs`
+- `Assets/Scripts/Health/AdvancedHealthRecoverySystem.cs`
 - `Assets/Scripts/Status/StatusEffectSystem.cs`
 - `Assets/Scripts/Crime/SubstanceSystem.cs`
 
@@ -59,6 +61,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Commerce/GrocerySystem.cs`
 - `Assets/Scripts/Commerce/RecipeSystem.cs`
 - `Assets/Scripts/Commerce/OrderingSystem.cs`
+- `Assets/Scripts/Commerce/CraftingProfessionSystem.cs`
 
 ### Quest / Contracts
 - `Assets/Scripts/Quest/ContractBoardSystem.cs`
@@ -76,6 +79,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 ### Location / Interaction / Transport
 - `Assets/Scripts/Location/LocationManager.cs`
 - `Assets/Scripts/Location/TownSimulationSystem.cs`
+- `Assets/Scripts/Location/HousingPropertySystem.cs`
 - `Assets/Scripts/Interaction/Interactable.cs`
 - `Assets/Scripts/Interaction/InteractionController.cs`
 - `Assets/Scripts/Interaction/HomeInteractionHotspot.cs`
@@ -119,6 +123,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/SaveSchemaMigrationTests.cs`
 - `Assets/Tests/EditMode/QuestOpportunitySystemTests.cs`
 - `Assets/Tests/EditMode/LongTermProgressionSystemTests.cs`
+- `Assets/Tests/EditMode/PersonalityDecisionSystemTests.cs`
+- `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
 
 ---
 
@@ -271,6 +277,18 @@ This file is a comprehensive implementation inventory for the current codebase.
 49. **Long-term progression flow**
     - Aspirations progress → milestones unlock perks → fame/infamy/prestige shift social class and legacy bonuses.
 
+50. **Personality decision flow**
+    - Trait/personality profile resolves autonomous weighted choices, including biased/irrational tendencies.
+
+51. **Advanced health recovery flow**
+    - Region-specific injury added → medication/treatment/rehab loop → infection/relapse/disability/scar outcomes.
+
+52. **Housing utility/property flow**
+    - Bills processed daily → utilities on/off, room-quality/cleanliness/clutter/storage dynamics, repair request lifecycle, ownership transfer.
+
+53. **Crafting profession flow**
+    - Blueprint/station/tool/skill checks → ingredient/substitution handling → quality-weighted crafted output item instance.
+
 ---
 
 ## 3) State Lifecycles with Explicit Start/End (implemented)
@@ -361,7 +379,7 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 
 ## 5) What’s Still Missing / Next Features To Build
 
-Status update: items 1, 2, 3, 4, 5, 6, 7, 8, and 10 now have foundational runtime systems; item 9 remains major production work.
+Status update: items 1 through 8 and 10 now have foundational runtime systems; item 9 remains major production work.
 
 
 1. **Scene prefab completeness**

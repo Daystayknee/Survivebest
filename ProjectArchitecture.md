@@ -519,3 +519,7 @@ Always-visible character presence:
 - `RelationshipMemorySystem` should persist trust/fear/respect/attraction/chemistry/loyalty and propagate witnessed events into gossip/reputation consequences.
 - `QuestOpportunitySystem` should provide objective-based, deadline-driven, branching opportunities (including emergencies and location-specific jobs) as structured content delivery.
 - `LongTermProgressionSystem` should own long-loop identity progression (aspirations, milestones, perks, fame/infamy, social class, and legacy bonuses).
+- `PersonalityDecisionSystem` should convert trait/personality profiles into autonomous action weighting (risk, resilience, compatibility, job fit, and irrational bias tendencies) to differentiate character behavior.
+- `AdvancedHealthRecoverySystem` should model region-specific injury trajectories (severity/infection/medication/chronicity/relapse/scarring/disability) and treatment quality outcomes.
+- `HousingPropertySystem` should make homes systemic via ownership, rent/mortgage/bills, utilities, room quality metrics, storage limits, appliance degradation, and repair lifecycle flows.
+- `CraftingProfessionSystem` should deepen profession gameplay with stations, blueprints, tool gates, specialization, substitutions, and quality-weighted outputs.

@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Survivebest.UI;
 using Survivebest.Status;
 using Survivebest.World;
+using Survivebest.Location;
 using Survivebest.Core;
 using Survivebest.Commerce;
 using Survivebest.Economy;
@@ -11,7 +12,6 @@ using Survivebest.Quest;
 using Survivebest.NPC;
 using Survivebest.Health;
 using Survivebest.Social;
-using Survivebest.Quest;
 
 namespace Survivebest.Utility
 {
@@ -42,6 +42,10 @@ namespace Survivebest.Utility
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private LongTermProgressionSystem longTermProgressionSystem;
+        [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
+        [SerializeField] private AdvancedHealthRecoverySystem advancedHealthRecoverySystem;
+        [SerializeField] private HousingPropertySystem housingPropertySystem;
+        [SerializeField] private CraftingProfessionSystem craftingProfessionSystem;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -76,6 +80,10 @@ namespace Survivebest.Utility
             missing += CheckNull(relationshipMemorySystem, nameof(relationshipMemorySystem));
             missing += CheckNull(questOpportunitySystem, nameof(questOpportunitySystem));
             missing += CheckNull(longTermProgressionSystem, nameof(longTermProgressionSystem));
+            missing += CheckNull(personalityDecisionSystem, nameof(personalityDecisionSystem));
+            missing += CheckNull(advancedHealthRecoverySystem, nameof(advancedHealthRecoverySystem));
+            missing += CheckNull(housingPropertySystem, nameof(housingPropertySystem));
+            missing += CheckNull(craftingProfessionSystem, nameof(craftingProfessionSystem));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -142,6 +150,10 @@ namespace Survivebest.Utility
             relationshipMemorySystem ??= FindObjectOfType<RelationshipMemorySystem>(true);
             questOpportunitySystem ??= FindObjectOfType<QuestOpportunitySystem>(true);
             longTermProgressionSystem ??= FindObjectOfType<LongTermProgressionSystem>(true);
+            personalityDecisionSystem ??= FindObjectOfType<PersonalityDecisionSystem>(true);
+            advancedHealthRecoverySystem ??= FindObjectOfType<AdvancedHealthRecoverySystem>(true);
+            housingPropertySystem ??= FindObjectOfType<HousingPropertySystem>(true);
+            craftingProfessionSystem ??= FindObjectOfType<CraftingProfessionSystem>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }

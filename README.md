@@ -118,6 +118,10 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `RelationshipMemorySystem` for remembered social events, betrayal/cheating memory impact, gossip propagation, and scoped reputation (district/family/faction).
 - Added `QuestOpportunitySystem` for formal quest/contract delivery with objectives, deadlines, branching follow-up opportunities, emergency generation, and failure/expiration states.
 - Added `LongTermProgressionSystem` for aspiration goals, milestones, perk unlocks, fame/infamy, house prestige, social-class mobility, and legacy bonuses.
+- Added `PersonalityDecisionSystem` for trait-synergy decision weighting (risk tolerance, stress resilience, routine preference, compatibility/job-fit hooks, and bias-driven autonomous choices).
+- Added `AdvancedHealthRecoverySystem` for body-region injuries, infection/relapse risk, medication schedules, treatment quality, disability/scar outcomes, and rehab timelines.
+- Added `HousingPropertySystem` for rent/mortgage/bills, utility state, room quality/comfort/cleanliness/clutter scoring, storage limits, appliance breakdowns, repair requests, and ownership transfer.
+- Added `CraftingProfessionSystem` for profession categories, crafting stations, blueprint/tool requirements, substitution logic, and output item quality outcomes.
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).

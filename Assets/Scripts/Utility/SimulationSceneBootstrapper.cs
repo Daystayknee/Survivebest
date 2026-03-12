@@ -9,7 +9,7 @@ using Survivebest.Economy;
 using Survivebest.Quest;
 using Survivebest.NPC;
 using Survivebest.Social;
-using Survivebest.Quest;
+using Survivebest.Health;
 
 namespace Survivebest.Utility
 {
@@ -50,6 +50,10 @@ namespace Survivebest.Utility
             EnsureSingleton<RelationshipMemorySystem>("RelationshipMemorySystem");
             EnsureSingleton<QuestOpportunitySystem>("QuestOpportunitySystem");
             EnsureSingleton<LongTermProgressionSystem>("LongTermProgressionSystem");
+            EnsureSingleton<PersonalityDecisionSystem>("PersonalityDecisionSystem");
+            EnsureSingleton<AdvancedHealthRecoverySystem>("AdvancedHealthRecoverySystem");
+            EnsureSingleton<HousingPropertySystem>("HousingPropertySystem");
+            EnsureSingleton<CraftingProfessionSystem>("CraftingProfessionSystem");
 
             if (assetReadinessReporter == null)
             {
