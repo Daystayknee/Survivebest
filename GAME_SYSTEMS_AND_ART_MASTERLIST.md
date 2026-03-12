@@ -70,6 +70,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Crime/PrisonEconomySystem.cs`
 - `Assets/Scripts/Crime/ContrabandSystem.cs`
 - `Assets/Scripts/Crime/GuardAlertSystem.cs`
+- `Assets/Scripts/Crime/RehabilitationSystem.cs`
+- `Assets/Scripts/Crime/CravingSystem.cs`
 
 ### Emotions / Social / Dialogue / Conflict
 - `Assets/Scripts/Emotion/EmotionSystem.cs`
@@ -464,6 +466,8 @@ Additional progress this pass:
 - Improved simulation-to-sensation translation in `JournalFeedUI` and `HumanLifeExperienceLayerSystem` with character-attributed life-feed text, richer event-card title mapping, pressure-tier hints, and stronger world-pulse summaries for the main dashboard loop.
 - Expanded law/crime/drug lifecycle depth: richer `CrimeRecord` evidence+witness+investigation flow, staged justice outcomes (warning/fine/community-service/probation/house-arrest/jail), prison schedule mode (`PrisonRoutineSystem`), criminal reputation tracking, addiction lifecycle tracking, and election-cycle policy hooks that can alter law pressure over time.
 - Added full prison-life simulation layer with 40+ inmate interactions (`PrisonInteractionSystem`), guard alert states, contraband flow, commissary economy, discipline punishments (incl. solitary/sentence extension), and parole evaluation hooks for redemption arcs after incarceration.
+- Added simplified temptation→use→withdrawal→consequence→recovery loop support with `CravingSystem` and `RehabilitationSystem`, plus dashboard suggestions/legal panel cues so addiction pressure and recovery progress stay player-readable in daily play.
+- Added simplified drug+crime personal loop support: profile-aware dependency gain in `SubstanceSystem`, explicit craving progression (`CravingSystem`), withdrawal/recovery hooks in `AddictionLifecycleSystem`, and multi-day recovery programs (`RehabilitationSystem`) so players can fall into or recover from use cycles with social/legal consequences.
 
 
 ### Updated completion snapshot

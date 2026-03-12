@@ -9,6 +9,7 @@ using Survivebest.Emotion;
 using Survivebest.Society;
 using Survivebest.Status;
 using Survivebest.World;
+using Survivebest.Social;
 
 namespace Survivebest.Crime
 {
@@ -45,6 +46,17 @@ namespace Survivebest.Crime
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
+        [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+
+        [Header("Substance Profiles")]
+        [SerializeField] private List<SubstanceProfile> substanceProfiles = new()
+        {
+            new SubstanceProfile { Substance = SubstanceType.Alcohol, OnsetHours = 0.1f, DurationHours = 3, ToleranceRate = 0.05f, AddictionRate = 0.06f, WithdrawalSeverity = 0.2f },
+            new SubstanceProfile { Substance = SubstanceType.Weed, OnsetHours = 0.2f, DurationHours = 4, ToleranceRate = 0.05f, AddictionRate = 0.05f, WithdrawalSeverity = 0.15f },
+            new SubstanceProfile { Substance = SubstanceType.PrescriptionDrug, OnsetHours = 0.1f, DurationHours = 2, ToleranceRate = 0.08f, AddictionRate = 0.08f, WithdrawalSeverity = 0.25f },
+            new SubstanceProfile { Substance = SubstanceType.HardDrug, OnsetHours = 0.05f, DurationHours = 6, ToleranceRate = 0.16f, AddictionRate = 0.2f, WithdrawalSeverity = 0.6f }
+        };
 
         [Header("Substance Profiles")]
         [SerializeField] private List<SubstanceProfile> substanceProfiles = new()
@@ -66,6 +78,11 @@ namespace Survivebest.Crime
         public IReadOnlyList<ActiveSubstanceEffect> ActiveEffects => activeEffects;
         public float DependencyLevel => dependencyLevel;
 
+        public void ModifyDependency(float delta)
+        {
+            dependencyLevel = Mathf.Clamp01(dependencyLevel + delta);
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)
@@ -84,23 +101,42 @@ namespace Survivebest.Crime
 
         public void UseSubstance(SubstanceType substanceType)
         {
+            UseSubstance(substanceType, false, false, false);
+        }
+
+        public void UseSubstance(SubstanceType substanceType, bool inPublic, bool whileDriving, bool distributionIntent)
+        {
             ApplyImmediateEffects(substanceType);
             StartOrExtendEffect(substanceType);
             RaiseDependency(substanceType);
 
             LawSeverity severity = lawSystem != null ? lawSystem.GetSubstanceSeverity(substanceType) : LawSeverity.Legal;
             bool illegal = severity != LawSeverity.Legal;
+            float legalRisk = BuildLegalRisk(substanceType, inPublic, whileDriving, distributionIntent, illegal);
 
-            if (illegal && owner != null && justiceSystem != null)
+            if (owner != null)
             {
-                float enforcement = lawSystem != null ? lawSystem.GetEnforcementForCrime("Substance") : 0.5f;
-                if (UnityEngine.Random.value <= enforcement)
+                RecordSocialConsequences(owner, substanceType, inPublic, legalRisk);
+            }
+
+            if (owner != null && justiceSystem != null && legalRisk > 0f)
+            {
+                string crimeKey = distributionIntent ? "DrugDistribution" : substanceType.ToString();
+                if (whileDriving)
                 {
-                    justiceSystem.ProcessCrime(owner, substanceType.ToString(), severity);
+                    crimeKey = "DrivingUnderInfluence";
+                }
+
+                if (UnityEngine.Random.value <= legalRisk)
+                {
+                    LawSeverity appliedSeverity = distributionIntent || whileDriving
+                        ? LawSeverity.Felony
+                        : (illegal ? severity : LawSeverity.Infraction);
+                    justiceSystem.ProcessCrime(owner, crimeKey, appliedSeverity);
                 }
             }
 
-            PublishSubstanceEvent("SubstanceUsed", $"Used {substanceType}", 1f, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
+            PublishSubstanceEvent("SubstanceUsed", $"Used {substanceType}", legalRisk, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
             OnSubstanceUsed?.Invoke(substanceType, illegal);
         }
 
@@ -168,12 +204,35 @@ namespace Survivebest.Crime
 
         private void RaiseDependency(SubstanceType substanceType)
         {
-            SubstanceProfile profile = GetProfile(substanceType);
-            float profileRate = profile != null ? profile.AddictionRate : 0.08f;
+            SubstanceProfile substanceProfile = GetProfile(substanceType);
+            float profileRate = substanceProfile != null ? substanceProfile.AddictionRate : 0.08f;
             float risk = (dependencyRiskPerUse + profileRate) * (balanceManager != null ? balanceManager.AddictionSeverityMultiplier : 1f);
             if (substanceType == SubstanceType.HardDrug)
             {
                 risk *= 1.8f;
+            }
+
+            if (owner != null)
+            {
+                PersonalityProfile personalityProfile = personalityDecisionSystem != null ? personalityDecisionSystem.GetOrCreateProfile(owner.CharacterId) : null;
+                if (personalityProfile != null)
+                {
+                    risk += personalityProfile.AddictionSusceptibility * 0.09f;
+                    if (personalityProfile.Traits != null && personalityProfile.Traits.Contains(PersonalityTrait.Addictive))
+                    {
+                        risk *= 1.2f;
+                    }
+
+                    if (personalityProfile.Traits != null && personalityProfile.Traits.Contains(PersonalityTrait.Disciplined))
+                    {
+                        risk *= 0.8f;
+                    }
+
+                    if (personalityProfile.Traits != null && personalityProfile.Traits.Contains(PersonalityTrait.Impulsive))
+                    {
+                        risk *= 1.1f;
+                    }
+                }
             }
 
             dependencyLevel = Mathf.Clamp01(dependencyLevel + risk);
@@ -275,6 +334,51 @@ namespace Survivebest.Crime
             }
 
             PublishSubstanceEvent("Withdrawal", $"Withdrawal/crash from {substanceType}", crashScale, SimulationEventSeverity.Warning);
+        }
+
+        private float BuildLegalRisk(SubstanceType substanceType, bool inPublic, bool whileDriving, bool distributionIntent, bool illegal)
+        {
+            float baseRisk = 0f;
+            if (illegal)
+            {
+                baseRisk += 0.28f;
+            }
+
+            if (inPublic)
+            {
+                baseRisk += 0.15f;
+            }
+
+            if (whileDriving)
+            {
+                baseRisk += 0.45f;
+            }
+
+            if (distributionIntent)
+            {
+                baseRisk += 0.38f;
+            }
+
+            float enforcement = lawSystem != null ? lawSystem.GetEnforcementForCrime("Substance") : 0.5f;
+            return Mathf.Clamp01(baseRisk + (enforcement * 0.22f));
+        }
+
+        private void RecordSocialConsequences(CharacterCore actor, SubstanceType substanceType, bool inPublic, float legalRisk)
+        {
+            if (actor == null || relationshipMemorySystem == null)
+            {
+                return;
+            }
+
+            if (inPublic)
+            {
+                relationshipMemorySystem.RecordEvent(actor.CharacterId, null, $"saw_you_high:{substanceType}", -10, true, "district_default");
+            }
+
+            if (legalRisk >= 0.5f)
+            {
+                relationshipMemorySystem.RecordEvent(actor.CharacterId, null, "reckless_substance_behavior", -8, true, "district_default");
+            }
         }
 
         private SubstanceProfile GetProfile(SubstanceType substanceType)

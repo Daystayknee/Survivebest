@@ -34,6 +34,8 @@ namespace Survivebest.UI
         [SerializeField] private GuardAlertSystem guardAlertSystem;
         [SerializeField] private ContrabandSystem contrabandSystem;
         [SerializeField] private ParoleEvaluationSystem paroleEvaluationSystem;
+        [SerializeField] private CravingSystem cravingSystem;
+        [SerializeField] private RehabilitationSystem rehabilitationSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
@@ -527,6 +529,16 @@ namespace Survivebest.UI
                 actions.Add("Open medical panel and apply treatment");
             }
 
+            if (cravingSystem != null && cravingSystem.CravingActive)
+            {
+                actions.Add("Address cravings (therapy, support, exercise)");
+            }
+
+            if (rehabilitationSystem != null && rehabilitationSystem.HasActiveProgram)
+            {
+                actions.Add("Continue active rehabilitation program");
+            }
+
             if (actions.Count == 0)
             {
                 actions.Add("Push progression task (work, skill, or social goal)");
@@ -648,6 +660,16 @@ namespace Survivebest.UI
                 {
                     builder.AppendLine("• Parole evaluations: active");
                 }
+            }
+
+            if (cravingSystem != null)
+            {
+                builder.AppendLine($"• Craving: {(cravingSystem.CravingActive ? "Active" : "Stable")} ({Mathf.RoundToInt(cravingSystem.CravingIntensity * 100f)}%)");
+            }
+
+            if (rehabilitationSystem != null)
+            {
+                builder.AppendLine($"• Recovery program: {(rehabilitationSystem.HasActiveProgram ? "Enrolled" : "None")}");
             }
 
             return builder.ToString().TrimEnd();

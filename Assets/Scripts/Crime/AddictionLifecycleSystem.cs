@@ -30,10 +30,12 @@ namespace Survivebest.Crime
         [SerializeField, Min(0)] private int hoursSinceLastUse;
 
         public event Action<AddictionStage> OnStageChanged;
+        public event Action<float> OnWithdrawalUpdated;
 
         public AddictionStage Stage => stage;
         public float Tolerance => tolerance;
         public float WithdrawalLoad => withdrawalLoad;
+        public int HoursSinceLastUse => hoursSinceLastUse;
 
         private void OnEnable()
         {
@@ -61,6 +63,23 @@ namespace Survivebest.Crime
             }
         }
 
+        public void ApplyRehabilitationProgress(float amount)
+        {
+            float reduction = Mathf.Clamp01(amount);
+            withdrawalLoad = Mathf.Max(0f, withdrawalLoad - reduction);
+            tolerance = Mathf.Max(0f, tolerance - (reduction * 0.7f));
+
+            if (substanceSystem != null)
+            {
+                substanceSystem.ModifyDependency(-reduction * 0.6f);
+            }
+
+            needsSystem?.ModifyMood(reduction * 2f);
+            needsSystem?.ModifyEnergy(reduction * 1.5f);
+            OnWithdrawalUpdated?.Invoke(withdrawalLoad);
+            RecomputeStage();
+        }
+
         private void HandleSubstanceUsed(SubstanceType type, bool illegal)
         {
             hoursSinceLastUse = 0;
@@ -72,6 +91,7 @@ namespace Survivebest.Crime
                 needsSystem?.ModifyMood(0.5f);
             }
 
+            OnWithdrawalUpdated?.Invoke(withdrawalLoad);
             RecomputeStage();
         }
 
@@ -91,6 +111,7 @@ namespace Survivebest.Crime
                 withdrawalLoad = Mathf.Max(0f, withdrawalLoad - 0.015f);
             }
 
+            OnWithdrawalUpdated?.Invoke(withdrawalLoad);
             RecomputeStage();
         }
 
@@ -101,6 +122,7 @@ namespace Survivebest.Crime
                 needsSystem.ModifyMood(-1.1f * intensity);
                 needsSystem.ModifyEnergy(-0.8f * intensity);
                 needsSystem.RestoreHydration(-0.6f * intensity);
+                needsSystem.ModifyHygiene(-0.3f * intensity);
             }
 
             healthSystem?.Damage(0.25f * intensity);
