@@ -52,6 +52,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
 - `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
 - `Assets/Scripts/Core/PsychologicalGrowthMentalHealthEngine.cs`
+- `Assets/Scripts/Core/WorldCultureSocietyEngine.cs`
 - `Assets/Scripts/Tasking/TaskModels.cs`
 - `Assets/Scripts/Tasking/TaskDatabase.cs`
 - `Assets/Scripts/Tasking/TaskInteractionManager.cs`
@@ -182,6 +183,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/LifeMilestonesEngineTests.cs`
 - `Assets/Tests/EditMode/SocialDramaEngineTests.cs`
 - `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
+- `Assets/Tests/EditMode/WorldCultureSocietyEngineTests.cs`
 
 ---
 

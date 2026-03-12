@@ -56,7 +56,8 @@ namespace Survivebest.Utility
             new("AutonomousStoryGenerator", typeof(AutonomousStoryGenerator), false),
             new("AIDirectorDramaManager", typeof(AIDirectorDramaManager), false),
             new("SimulationStabilityMonitor", typeof(SimulationStabilityMonitor), false),
-            new("PsychologicalGrowthMentalHealthEngine", typeof(PsychologicalGrowthMentalHealthEngine), true)
+            new("PsychologicalGrowthMentalHealthEngine", typeof(PsychologicalGrowthMentalHealthEngine), true),
+            new("WorldCultureSocietyEngine", typeof(WorldCultureSocietyEngine), false)
         };
 
         [Header("Optional Key UI Controllers")]
@@ -100,6 +101,7 @@ namespace Survivebest.Utility
         [SerializeField] private AnimationFeedbackJuiceSystem animationFeedbackJuiceSystem;
         [SerializeField] private SimulationStabilityMonitor simulationStabilityMonitor;
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
+        [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -150,6 +152,7 @@ namespace Survivebest.Utility
             missing += CheckNull(animationFeedbackJuiceSystem, nameof(animationFeedbackJuiceSystem));
             missing += CheckNull(simulationStabilityMonitor, nameof(simulationStabilityMonitor));
             missing += CheckNull(psychologicalGrowthMentalHealthEngine, nameof(psychologicalGrowthMentalHealthEngine));
+            missing += CheckNull(worldCultureSocietyEngine, nameof(worldCultureSocietyEngine));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -232,6 +235,7 @@ namespace Survivebest.Utility
             animationFeedbackJuiceSystem ??= FindObjectOfType<AnimationFeedbackJuiceSystem>(true);
             simulationStabilityMonitor ??= FindObjectOfType<SimulationStabilityMonitor>(true);
             psychologicalGrowthMentalHealthEngine ??= FindObjectOfType<PsychologicalGrowthMentalHealthEngine>(true);
+            worldCultureSocietyEngine ??= FindObjectOfType<WorldCultureSocietyEngine>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
