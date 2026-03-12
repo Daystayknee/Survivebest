@@ -10,7 +10,19 @@ namespace Survivebest.Social
     {
         District,
         Family,
-        Faction
+        Faction,
+        Work,
+        Town
+    }
+
+    [Serializable]
+    public enum PersonalMemoryKind
+    {
+        Kindness,
+        Insult,
+        Help,
+        Betrayal,
+        SharedExperience
     }
 
     [Serializable]
@@ -24,6 +36,7 @@ namespace Survivebest.Social
         public bool IsPublic;
         [Range(-100, 100)] public int Impact;
         public int TimestampHour;
+        public PersonalMemoryKind MemoryKind;
     }
 
     [Serializable]
@@ -79,7 +92,8 @@ namespace Survivebest.Social
                 Topic = topic,
                 IsPublic = isPublic,
                 Impact = Mathf.Clamp(impact, -100, 100),
-                TimestampHour = GetCurrentTotalHours()
+                TimestampHour = GetCurrentTotalHours(),
+                MemoryKind = InferMemoryKind(topic, impact)
             };
 
             memories.Add(memory);
@@ -89,9 +103,24 @@ namespace Survivebest.Social
             if (isPublic)
             {
                 PropagateGossip(memory);
+                SpreadNeighborhoodGossip(memory, contextLotId);
             }
 
             PublishMemoryEvent(memory, "Memory recorded", SimulationEventSeverity.Info);
+        }
+
+        public void RecordPersonalMemory(string subjectCharacterId, string targetCharacterId, PersonalMemoryKind kind, int impact, bool isPublic, string contextLotId = null)
+        {
+            string topic = kind switch
+            {
+                PersonalMemoryKind.Kindness => "act of kindness",
+                PersonalMemoryKind.Insult => "personal insult",
+                PersonalMemoryKind.Help => "received help",
+                PersonalMemoryKind.Betrayal => "trust betrayal",
+                _ => "shared experience"
+            };
+
+            RecordEvent(subjectCharacterId, targetCharacterId, topic, impact, isPublic, contextLotId);
         }
 
         public RelationshipProfile GetOrCreateProfile(string characterId)
@@ -207,6 +236,23 @@ namespace Survivebest.Social
             PublishMemoryEvent(memory, "Public memory propagated as gossip", SimulationEventSeverity.Warning);
         }
 
+        public void SpreadNeighborhoodGossip(RelationshipMemory memory, string districtId)
+        {
+            if (memory == null || string.IsNullOrWhiteSpace(memory.SubjectCharacterId))
+            {
+                return;
+            }
+
+            int districtImpact = Mathf.RoundToInt(memory.Impact * 0.2f);
+            if (!string.IsNullOrWhiteSpace(districtId))
+            {
+                AdjustReputation(memory.SubjectCharacterId, ReputationScope.District, districtId, districtImpact);
+            }
+
+            AdjustReputation(memory.SubjectCharacterId, ReputationScope.Town, "town_global", Mathf.RoundToInt(memory.Impact * 0.1f));
+            PublishMemoryEvent(memory, "Neighborhood gossip spread", SimulationEventSeverity.Info);
+        }
+
         private int GetCurrentTotalHours()
         {
             if (worldClock == null)
@@ -218,6 +264,36 @@ namespace Survivebest.Social
                             + (worldClock.Month - 1) * worldClock.DaysPerMonth
                             + (worldClock.Day - 1);
             return totalDays * 24 + worldClock.Hour;
+        }
+
+        private static PersonalMemoryKind InferMemoryKind(string topic, int impact)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                return impact >= 0 ? PersonalMemoryKind.SharedExperience : PersonalMemoryKind.Insult;
+            }
+
+            if (topic.Contains("betray", StringComparison.OrdinalIgnoreCase) || topic.Contains("cheat", StringComparison.OrdinalIgnoreCase))
+            {
+                return PersonalMemoryKind.Betrayal;
+            }
+
+            if (topic.Contains("help", StringComparison.OrdinalIgnoreCase))
+            {
+                return PersonalMemoryKind.Help;
+            }
+
+            if (topic.Contains("kind", StringComparison.OrdinalIgnoreCase) || topic.Contains("support", StringComparison.OrdinalIgnoreCase))
+            {
+                return PersonalMemoryKind.Kindness;
+            }
+
+            if (topic.Contains("insult", StringComparison.OrdinalIgnoreCase) || impact < 0)
+            {
+                return PersonalMemoryKind.Insult;
+            }
+
+            return PersonalMemoryKind.SharedExperience;
         }
 
         private void PublishMemoryEvent(RelationshipMemory memory, string reason, SimulationEventSeverity severity)

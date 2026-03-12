@@ -32,6 +32,15 @@ namespace Survivebest.Location
         public float AverageEnergyDelta;
     }
 
+    [Serializable]
+    public class CommunityEventRecord
+    {
+        public string EventId;
+        public string Label;
+        public string DistrictId;
+        public int TriggeredDay;
+    }
+
     public class TownSimulationManager : MonoBehaviour
     {
         [SerializeField] private WorldClock worldClock;
@@ -41,14 +50,17 @@ namespace Survivebest.Location
         [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Range(0f, 1f)] private float dailyIncidentChance = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float dailyCommunityEventChance = 0.28f;
 
         [SerializeField] private List<LotPopulationSnapshot> lotPopulations = new();
         [SerializeField] private List<DistrictActivitySnapshot> districtActivity = new();
         [SerializeField] private TownOffscreenState offscreenState = new();
+        [SerializeField] private List<CommunityEventRecord> recentCommunityEvents = new();
 
         public IReadOnlyList<LotPopulationSnapshot> LotPopulations => lotPopulations;
         public IReadOnlyList<DistrictActivitySnapshot> DistrictActivity => districtActivity;
         public TownOffscreenState OffscreenState => offscreenState;
+        public IReadOnlyList<CommunityEventRecord> RecentCommunityEvents => recentCommunityEvents;
 
         public float GetTownPressureScore()
         {
@@ -127,6 +139,41 @@ namespace Survivebest.Location
                 autonomousStoryGenerator?.TryGenerateIncident(50f);
                 PublishTownEvent("TownIncident", "Daily town incident roll triggered", day, SimulationEventSeverity.Warning);
             }
+
+            if (UnityEngine.Random.value <= dailyCommunityEventChance)
+            {
+                TriggerCommunityEvent(day);
+            }
+        }
+
+        private void TriggerCommunityEvent(int day)
+        {
+            string[] eventLabels =
+            {
+                "Farmers market",
+                "Festival",
+                "Town meeting",
+                "Emergency alert",
+                "Holiday celebration"
+            };
+
+            string districtId = districtActivity.Count > 0 ? districtActivity[UnityEngine.Random.Range(0, districtActivity.Count)].DistrictId : "district_default";
+            string label = eventLabels[UnityEngine.Random.Range(0, eventLabels.Length)];
+            recentCommunityEvents.Add(new CommunityEventRecord
+            {
+                EventId = Guid.NewGuid().ToString("N"),
+                Label = label,
+                DistrictId = districtId,
+                TriggeredDay = day
+            });
+
+            if (recentCommunityEvents.Count > 30)
+            {
+                recentCommunityEvents.RemoveAt(0);
+            }
+
+            autonomousStoryGenerator?.ForceGenerateIncident(StoryIncidentType.NeighborhoodEvent, 55f);
+            PublishTownEvent("CommunityEvent", $"{label} started in {districtId}", day, SimulationEventSeverity.Info);
         }
 
         private void BuildLotPopulationSnapshots()

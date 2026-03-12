@@ -8,6 +8,24 @@ using Survivebest.Events;
 
 namespace Survivebest.Needs
 {
+    public enum BurnoutStage
+    {
+        Stable,
+        Fatigued,
+        Demotivated,
+        Burnout,
+        Recovering
+    }
+
+    public enum CravingType
+    {
+        None,
+        Sweets,
+        ComfortFood,
+        Caffeine,
+        SaltySnacks
+    }
+
     [Serializable]
     public class NeedsSnapshot
     {
@@ -19,6 +37,18 @@ namespace Survivebest.Needs
         public float Hydration;
         public float Grooming;
         public float Appearance;
+        public float Boredom;
+        public float InterestLevel;
+        public float RoutineFatigue;
+        public float SleepDebt;
+        public float SleepQuality;
+        public float CircadianRhythm;
+        public float MentalFatigue;
+        public float Focus;
+        public float BurnoutRisk;
+        public float Motivation;
+        public CravingType ActiveCraving;
+        public BurnoutStage BurnoutStage;
     }
 
     public class NeedsSystem : MonoBehaviour
@@ -33,6 +63,18 @@ namespace Survivebest.Needs
         [SerializeField, Range(0f, 100f)] private float hydration = 100f;
         [SerializeField, Range(0f, 100f)] private float grooming = 100f;
         [SerializeField, Range(0f, 100f)] private float appearance = 100f;
+        [SerializeField, Range(0f, 100f)] private float boredom;
+        [SerializeField, Range(0f, 100f)] private float interestLevel = 60f;
+        [SerializeField, Range(0f, 100f)] private float routineFatigue;
+        [SerializeField, Range(0f, 100f)] private float sleepDebt;
+        [SerializeField, Range(0f, 100f)] private float sleepQuality = 75f;
+        [SerializeField, Range(0f, 100f)] private float circadianRhythm = 65f;
+        [SerializeField, Range(0f, 100f)] private float mentalFatigue;
+        [SerializeField, Range(0f, 100f)] private float focus = 80f;
+        [SerializeField, Range(0f, 100f)] private float burnoutRisk;
+        [SerializeField, Range(0f, 100f)] private float motivation = 70f;
+        [SerializeField] private CravingType activeCraving;
+        [SerializeField] private BurnoutStage burnoutStage;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
 
@@ -44,6 +86,8 @@ namespace Survivebest.Needs
         [SerializeField, Min(0f)] private float hydrationLossPerHour = 3f;
         [SerializeField, Min(0f)] private float groomingLossPerHour = 0.8f;
         [SerializeField, Min(0f)] private float appearanceLossPerHour = 0.6f;
+        [SerializeField, Min(0f)] private float boredomGainPerHour = 1.6f;
+        [SerializeField, Min(0f)] private float mentalFatigueGainPerHour = 1.2f;
 
         public event Action<float> OnHungerChanged;
         public event Action<float> OnBladderChanged;
@@ -53,6 +97,9 @@ namespace Survivebest.Needs
         public event Action<float> OnHydrationChanged;
         public event Action<float> OnGroomingChanged;
         public event Action<float> OnAppearanceChanged;
+        public event Action<float> OnBoredomChanged;
+        public event Action<float> OnMentalFatigueChanged;
+        public event Action<BurnoutStage> OnBurnoutStageChanged;
         public event Action OnHourlyNeedDecay;
         public event Action OnBladderAccident;
 
@@ -69,7 +116,19 @@ namespace Survivebest.Needs
                 Mood = mood,
                 Hydration = hydration,
                 Grooming = grooming,
-                Appearance = appearance
+                Appearance = appearance,
+                Boredom = boredom,
+                InterestLevel = interestLevel,
+                RoutineFatigue = routineFatigue,
+                SleepDebt = sleepDebt,
+                SleepQuality = sleepQuality,
+                CircadianRhythm = circadianRhythm,
+                MentalFatigue = mentalFatigue,
+                Focus = focus,
+                BurnoutRisk = burnoutRisk,
+                Motivation = motivation,
+                ActiveCraving = activeCraving,
+                BurnoutStage = burnoutStage
             };
         }
 
@@ -88,6 +147,18 @@ namespace Survivebest.Needs
             SetHydration(snapshot.Hydration);
             SetGrooming(snapshot.Grooming);
             SetAppearance(snapshot.Appearance);
+            SetBoredom(snapshot.Boredom);
+            interestLevel = Mathf.Clamp(snapshot.InterestLevel, 0f, 100f);
+            routineFatigue = Mathf.Clamp(snapshot.RoutineFatigue, 0f, 100f);
+            sleepDebt = Mathf.Clamp(snapshot.SleepDebt, 0f, 100f);
+            sleepQuality = Mathf.Clamp(snapshot.SleepQuality, 0f, 100f);
+            circadianRhythm = Mathf.Clamp(snapshot.CircadianRhythm, 0f, 100f);
+            SetMentalFatigue(snapshot.MentalFatigue);
+            focus = Mathf.Clamp(snapshot.Focus, 0f, 100f);
+            burnoutRisk = Mathf.Clamp(snapshot.BurnoutRisk, 0f, 100f);
+            motivation = Mathf.Clamp(snapshot.Motivation, 0f, 100f);
+            activeCraving = snapshot.ActiveCraving;
+            SetBurnoutStage(snapshot.BurnoutStage);
         }
 
         public float Bladder => bladder;
@@ -97,6 +168,11 @@ namespace Survivebest.Needs
         public float Hydration => hydration;
         public float Grooming => grooming;
         public float Appearance => appearance;
+        public float Boredom => boredom;
+        public float MentalFatigue => mentalFatigue;
+        public float Motivation => motivation;
+        public BurnoutStage CurrentBurnoutStage => burnoutStage;
+        public CravingType ActiveCraving => activeCraving;
 
         private void OnEnable()
         {
@@ -130,6 +206,34 @@ namespace Survivebest.Needs
         public void ModifyMood(float amount) => SetMood(mood + amount);
         public void ModifyGrooming(float amount) => SetGrooming(grooming + amount);
         public void ModifyAppearance(float amount) => SetAppearance(appearance + amount);
+        public void ModifyBoredom(float amount) => SetBoredom(boredom + amount);
+        public void ModifyMentalFatigue(float amount) => SetMentalFatigue(mentalFatigue + amount);
+        public void ModifyMotivation(float amount) => motivation = Mathf.Clamp(motivation + amount, 0f, 100f);
+
+        public void ApplyActivityStimulation(float novelty, float social, float workload)
+        {
+            SetBoredom(boredom - novelty * 6f - social * 4f + workload * 2f);
+            routineFatigue = Mathf.Clamp(routineFatigue + Mathf.Max(0f, workload - novelty) * 2f, 0f, 100f);
+            interestLevel = Mathf.Clamp(interestLevel + novelty * 3f + social * 2f - workload, 0f, 100f);
+            SetMentalFatigue(mentalFatigue + workload * 4f - novelty * 2f);
+            focus = Mathf.Clamp(focus + novelty * 1.5f - workload * 1.2f, 0f, 100f);
+        }
+
+        public void SetActiveCraving(CravingType craving)
+        {
+            activeCraving = craving;
+        }
+
+        public void ResolveCraving(CravingType craving, bool satisfied)
+        {
+            if (activeCraving != craving)
+            {
+                return;
+            }
+
+            ModifyMood(satisfied ? 6f : -4f);
+            activeCraving = CravingType.None;
+        }
 
         public void ApplyFoodEffects(FoodItem food, HealthSystem healthSystem = null)
         {
@@ -232,8 +336,39 @@ namespace Survivebest.Needs
             SetHydration(hydration - hydrationLossPerHour * m);
             SetGrooming(grooming - groomingLossPerHour * m);
             SetAppearance(appearance - appearanceLossPerHour * m);
+            SetBoredom(boredom + boredomGainPerHour * m);
+            SetMentalFatigue(mentalFatigue + mentalFatigueGainPerHour * m);
+            sleepDebt = Mathf.Clamp(sleepDebt + (energy < 45f ? 2f : 0.5f), 0f, 100f);
+            circadianRhythm = Mathf.Clamp(circadianRhythm + (hour >= 22 || hour <= 5 ? -0.8f : 0.3f), 0f, 100f);
+            burnoutRisk = Mathf.Clamp(burnoutRisk + mentalFatigue * 0.01f + stressProxy() * 0.02f, 0f, 100f);
+            UpdateBurnoutStage();
             SetMood(mood - 0.5f * m);
             OnHourlyNeedDecay?.Invoke();
+
+            if (activeCraving == CravingType.None && UnityEngine.Random.value < 0.08f)
+            {
+                activeCraving = (CravingType)UnityEngine.Random.Range(1, Enum.GetValues(typeof(CravingType)).Length);
+            }
+        }
+
+        private float stressProxy() => Mathf.Clamp01((100f - mood) / 100f) * 100f;
+
+        private void UpdateBurnoutStage()
+        {
+            BurnoutStage next = burnoutRisk switch
+            {
+                >= 80f => BurnoutStage.Burnout,
+                >= 60f => BurnoutStage.Demotivated,
+                >= 35f => BurnoutStage.Fatigued,
+                _ => burnoutStage == BurnoutStage.Burnout ? BurnoutStage.Recovering : BurnoutStage.Stable
+            };
+
+            SetBurnoutStage(next);
+            if (next == BurnoutStage.Burnout)
+            {
+                ModifyMotivation(-1.5f);
+                SetBoredom(boredom + 1f);
+            }
         }
 
         private void PublishNeedCritical(string needName, float value, string reason)
@@ -308,6 +443,30 @@ namespace Survivebest.Needs
             appearance = Mathf.Clamp(value, 0f, 100f);
             OnAppearanceChanged?.Invoke(appearance);
             PublishNeedCritical(nameof(appearance), appearance, "Appearance dropped to critical threshold");
+        }
+
+        private void SetBoredom(float value)
+        {
+            boredom = Mathf.Clamp(value, 0f, 100f);
+            OnBoredomChanged?.Invoke(boredom);
+            PublishNeedCritical(nameof(boredom), 100f - boredom, "Boredom reached high threshold");
+        }
+
+        private void SetMentalFatigue(float value)
+        {
+            mentalFatigue = Mathf.Clamp(value, 0f, 100f);
+            OnMentalFatigueChanged?.Invoke(mentalFatigue);
+        }
+
+        private void SetBurnoutStage(BurnoutStage stage)
+        {
+            if (burnoutStage == stage)
+            {
+                return;
+            }
+
+            burnoutStage = stage;
+            OnBurnoutStageChanged?.Invoke(stage);
         }
     }
 }

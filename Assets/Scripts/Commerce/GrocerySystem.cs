@@ -5,6 +5,7 @@ using UnityEngine;
 using Survivebest.Catalog;
 using Survivebest.Events;
 using Survivebest.Economy;
+using Survivebest.World;
 
 namespace Survivebest.Commerce
 {
@@ -24,6 +25,7 @@ namespace Survivebest.Commerce
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
         [SerializeField] private InventoryManager inventoryManager;
         [SerializeField] private EconomyManager economyManager;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField, Min(1)] private int defaultIngredientUnitPrice = 3;
 
         public event Action<string, int> OnInventoryChanged;
@@ -38,6 +40,13 @@ namespace Survivebest.Commerce
             }
 
             int totalCost = defaultIngredientUnitPrice * quantity;
+            totalCost = Mathf.RoundToInt(totalCost * GetSeasonalPriceMultiplier(name));
+
+            if (!IsSeasonallyAvailable(name))
+            {
+                PublishInventoryEvent(name, GetIngredientQuantity(name), "Ingredient currently out of season");
+                return;
+            }
             bool paid = true;
             if (economyManager != null)
             {
@@ -137,6 +146,49 @@ namespace Survivebest.Commerce
                                 supplyCatalog.Supplies.Any(s => s.Name == name);
 
             return ingredientExists || supplyExists;
+        }
+
+        private float GetSeasonalPriceMultiplier(string ingredientName)
+        {
+            if (worldClock == null || ingredientCatalog == null)
+            {
+                return 1f;
+            }
+
+            IngredientItem ingredient = ingredientCatalog.GetIngredient(ingredientName);
+            if (ingredient == null)
+            {
+                return 1f;
+            }
+
+            return worldClock.CurrentSeason switch
+            {
+                Season.Summer when ingredient.Category == IngredientCategory.Produce => 0.85f,
+                Season.Winter when ingredient.Category == IngredientCategory.Produce => 1.25f,
+                Season.Winter when ingredient.Category == IngredientCategory.Seafood => 1.15f,
+                _ => 1f
+            };
+        }
+
+        private bool IsSeasonallyAvailable(string ingredientName)
+        {
+            if (worldClock == null || ingredientCatalog == null)
+            {
+                return true;
+            }
+
+            IngredientItem ingredient = ingredientCatalog.GetIngredient(ingredientName);
+            if (ingredient == null)
+            {
+                return true;
+            }
+
+            if (worldClock.CurrentSeason == Season.Winter && ingredient.Category == IngredientCategory.Produce)
+            {
+                return UnityEngine.Random.value > 0.2f;
+            }
+
+            return true;
         }
     }
 }

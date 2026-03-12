@@ -16,11 +16,44 @@ namespace Survivebest.Catalog
         Dessert
     }
 
+    public enum IngredientCategory
+    {
+        Produce,
+        Meats,
+        Seafood,
+        Dairy,
+        Grains,
+        Legumes,
+        Nuts,
+        Herbs,
+        Spices,
+        Oils,
+        Sugars,
+        Condiments,
+        BakingIngredients,
+        Liquids,
+        Alcohol,
+        PreparedFoods,
+        FrozenFoods,
+        Snacks,
+        Beverages
+    }
+
     [Serializable]
     public class IngredientItem
     {
+        public string Id;
         public string Name;
         public IngredientGroup Group;
+        public IngredientCategory Category;
+        public List<string> Tags = new();
+        public bool IsPerishable = true;
+        [Min(1f)] public float SpoilTimeHours = 72f;
+        [Range(0f, 3000f)] public float Calories = 40f;
+        [Range(0f, 100f)] public float Protein;
+        [Range(0f, 100f)] public float Fat;
+        [Range(0f, 100f)] public float Carbs;
+        [Range(0f, 100f)] public float Hydration;
     }
 
     public class IngredientCatalog : MonoBehaviour
@@ -141,9 +174,85 @@ namespace Survivebest.Catalog
 
         public IReadOnlyList<IngredientItem> Ingredients => ingredients;
 
+        private void Awake()
+        {
+            for (int i = 0; i < ingredients.Count; i++)
+            {
+                IngredientItem item = ingredients[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(item.Id))
+                {
+                    item.Id = item.Name?.Trim().ToLowerInvariant().Replace(" ", "_");
+                }
+
+                if (item.Category == 0)
+                {
+                    item.Category = InferCategory(item.Group);
+                }
+
+                if (item.Tags == null || item.Tags.Count == 0)
+                {
+                    item.Tags = BuildDefaultTags(item.Group);
+                }
+            }
+        }
+
         public List<IngredientItem> GetByGroup(IngredientGroup group)
         {
             return ingredients.FindAll(i => i.Group == group);
+        }
+
+        public IngredientItem GetIngredient(string nameOrId)
+        {
+            if (string.IsNullOrWhiteSpace(nameOrId))
+            {
+                return null;
+            }
+
+            return ingredients.Find(i => i != null &&
+                (string.Equals(i.Name, nameOrId, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(i.Id, nameOrId, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        public bool HasTag(string nameOrId, string tag)
+        {
+            IngredientItem ingredient = GetIngredient(nameOrId);
+            return ingredient != null && ingredient.Tags != null && ingredient.Tags.Exists(t => string.Equals(t, tag, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static IngredientCategory InferCategory(IngredientGroup group)
+        {
+            return group switch
+            {
+                IngredientGroup.Meat => IngredientCategory.Meats,
+                IngredientGroup.Vegetable or IngredientGroup.Fruit => IngredientCategory.Produce,
+                IngredientGroup.Spice => IngredientCategory.Spices,
+                IngredientGroup.NutSeed => IngredientCategory.Nuts,
+                IngredientGroup.Legume => IngredientCategory.Legumes,
+                IngredientGroup.Snack => IngredientCategory.Snacks,
+                IngredientGroup.Dessert => IngredientCategory.PreparedFoods,
+                _ => IngredientCategory.PreparedFoods
+            };
+        }
+
+        private static List<string> BuildDefaultTags(IngredientGroup group)
+        {
+            return group switch
+            {
+                IngredientGroup.Meat => new List<string> { "protein", "savory" },
+                IngredientGroup.Vegetable => new List<string> { "savory", "fiber" },
+                IngredientGroup.Fruit => new List<string> { "sweet", "acidic" },
+                IngredientGroup.Spice => new List<string> { "spicy", "aromatic" },
+                IngredientGroup.NutSeed => new List<string> { "fat", "crunchy" },
+                IngredientGroup.Legume => new List<string> { "protein", "carb" },
+                IngredientGroup.Snack => new List<string> { "carb", "quick" },
+                IngredientGroup.Dessert => new List<string> { "sweet", "comfort" },
+                _ => new List<string>()
+            };
         }
     }
 }

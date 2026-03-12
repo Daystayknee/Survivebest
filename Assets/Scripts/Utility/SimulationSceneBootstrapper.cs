@@ -38,6 +38,7 @@ namespace Survivebest.Utility
             EnsureSingleton<WorldClock>("WorldClock");
             EnsureSingleton<WeatherManager>("WeatherManager");
             EnsureSingleton<HouseholdManager>("HouseholdManager");
+            EnsureSingleton<LifestyleBehaviorSystem>("LifestyleBehaviorSystem");
             EnsureSingleton<LocationManager>("LocationManager");
             EnsureSingleton<TownSimulationSystem>("TownSimulationSystem");
             EnsureSingleton<TownSimulationManager>("TownSimulationManager");
@@ -60,6 +61,7 @@ namespace Survivebest.Utility
             EnsureSingleton<LongTermProgressionSystem>("LongTermProgressionSystem");
             EnsureSingleton<PersonalityDecisionSystem>("PersonalityDecisionSystem");
             EnsureSingleton<AdvancedHealthRecoverySystem>("AdvancedHealthRecoverySystem");
+            EnsureSingleton<SeasonalAllergySystem>("SeasonalAllergySystem");
             EnsureSingleton<HousingPropertySystem>("HousingPropertySystem");
             EnsureSingleton<CraftingProfessionSystem>("CraftingProfessionSystem");
             EnsureSingleton<AutonomousStoryGenerator>("AutonomousStoryGenerator");

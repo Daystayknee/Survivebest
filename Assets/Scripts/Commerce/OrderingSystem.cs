@@ -17,6 +17,9 @@ namespace Survivebest.Commerce
         public FoodItem Food;
         public int Price;
         public int DeliveryMinutes = 30;
+        public CuisineType CuisineType = CuisineType.Comfort;
+        public bool IsDailySpecial;
+        [Range(0.5f, 3f)] public float TipMultiplier = 1f;
     }
 
     [Serializable]
@@ -127,7 +130,10 @@ namespace Survivebest.Commerce
             if (worldClock != null)
             {
                 worldClock.OnMinutePassed += HandleMinutePassed;
+                worldClock.OnDayPassed += HandleDayPassed;
             }
+
+            BuildProceduralDailyMenu();
         }
 
         private void OnDisable()
@@ -135,7 +141,64 @@ namespace Survivebest.Commerce
             if (worldClock != null)
             {
                 worldClock.OnMinutePassed -= HandleMinutePassed;
+                worldClock.OnDayPassed -= HandleDayPassed;
             }
+        }
+
+        public void BuildProceduralDailyMenu()
+        {
+            if (menu == null || menu.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < menu.Count; i++)
+            {
+                MenuItem item = menu[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                item.IsDailySpecial = false;
+                item.CuisineType = item.Food != null ? item.Food.CuisineType : CuisineType.Comfort;
+            }
+
+            int specials = Mathf.Clamp(menu.Count / 4, 1, 4);
+            for (int i = 0; i < specials; i++)
+            {
+                MenuItem selected = menu[UnityEngine.Random.Range(0, menu.Count)];
+                if (selected == null)
+                {
+                    continue;
+                }
+
+                selected.IsDailySpecial = true;
+                selected.Price = Mathf.Max(1, Mathf.RoundToInt(selected.Price * 0.85f));
+                selected.DeliveryMinutes = Mathf.Max(8, selected.DeliveryMinutes - 4);
+            }
+        }
+
+        public List<MenuItem> GetRecommendations(CuisineType preferredCuisine, bool likesComfortFood)
+        {
+            List<MenuItem> recommendations = new();
+            for (int i = 0; i < menu.Count; i++)
+            {
+                MenuItem item = menu[i];
+                if (item?.Food == null)
+                {
+                    continue;
+                }
+
+                bool cuisineMatch = item.CuisineType == preferredCuisine;
+                bool comfortMatch = likesComfortFood && item.Food.Category == FoodCategory.Comfort;
+                if (cuisineMatch || comfortMatch || item.IsDailySpecial)
+                {
+                    recommendations.Add(item);
+                }
+            }
+
+            return recommendations;
         }
 
         public void AddFunds(float amount)
@@ -259,6 +322,11 @@ namespace Survivebest.Commerce
             });
 
             return true;
+        }
+
+        private void HandleDayPassed(int day)
+        {
+            BuildProceduralDailyMenu();
         }
 
         private void HandleMinutePassed(int hour, int minute)

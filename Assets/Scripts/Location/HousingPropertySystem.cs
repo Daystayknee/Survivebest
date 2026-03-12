@@ -431,16 +431,31 @@ namespace Survivebest.Location
                         case WeatherState.Blizzard:
                             property.IndoorTemperature = Mathf.Clamp(property.IndoorTemperature - 0.35f, -20f, 45f);
                             RegisterUtilityUsage(property.PropertyId, 0.9f, 0f, 0.6f, 0f, 0f);
+                            if (weatherManager.CurrentWeather == WeatherState.Blizzard && UnityEngine.Random.value < 0.05f)
+                            {
+                                property.VehicleCondition = Mathf.Clamp(property.VehicleCondition - 6f, 0f, 100f);
+                                PublishPropertyEvent(property, "Blizzard damaged parked vehicle", SimulationEventSeverity.Warning, 6f);
+                            }
                             break;
                         case WeatherState.Heatwave:
                             property.IndoorTemperature = Mathf.Clamp(property.IndoorTemperature + 0.5f, -20f, 45f);
                             RegisterUtilityUsage(property.PropertyId, 1.1f, 0.1f, 0f, 0f, 0f);
+                            if (UnityEngine.Random.value < 0.06f)
+                            {
+                                SubmitRepairRequest(property.PropertyId, "Appliance overload due to heatwave", UnityEngine.Random.Range(18f, 40f), UnityEngine.Random.Range(30, 120));
+                            }
+
                             break;
                         case WeatherState.Stormy:
                             if (UnityEngine.Random.value < 0.05f)
                             {
                                 property.ElectricityOn = false;
                                 PublishPropertyEvent(property, "Storm caused temporary power outage", SimulationEventSeverity.Warning, 1f);
+                            }
+
+                            if (UnityEngine.Random.value < 0.07f)
+                            {
+                                SubmitRepairRequest(property.PropertyId, "Roof leak after storm", UnityEngine.Random.Range(22f, 55f), UnityEngine.Random.Range(35, 140));
                             }
 
                             break;

@@ -37,12 +37,22 @@ namespace Survivebest.Economy
     }
 
     [Serializable]
+    public enum FoodFreshnessState
+    {
+        Fresh,
+        Stale,
+        Spoiled,
+        Rotten
+    }
+
+    [Serializable]
     public class FoodStackState
     {
         public string ContainerId;
         public string ItemId;
         [Range(0f, 100f)] public float Freshness = 100f;
         public bool Refrigerated;
+        public FoodFreshnessState FreshnessState = FoodFreshnessState.Fresh;
     }
 
     public class InventoryManager : MonoBehaviour
@@ -269,6 +279,7 @@ namespace Survivebest.Economy
 
                 float decay = foodSpoilagePerHour * (state.Refrigerated ? refrigeratedSpoilageMultiplier : 1f);
                 state.Freshness = Mathf.Clamp(state.Freshness - decay, 0f, 100f);
+                state.FreshnessState = EvaluateFreshnessState(state.Freshness);
 
                 if (state.Freshness <= 0f)
                 {
@@ -299,7 +310,8 @@ namespace Survivebest.Economy
                 ContainerId = containerId,
                 ItemId = itemId,
                 Freshness = 100f,
-                Refrigerated = false
+                Refrigerated = false,
+                FreshnessState = FoodFreshnessState.Fresh
             };
 
             foodStackStates.Add(created);
@@ -311,6 +323,22 @@ namespace Survivebest.Economy
             foodStackStates.RemoveAll(x => x != null &&
                 string.Equals(x.ContainerId, containerId, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(x.ItemId, itemId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public FoodFreshnessState GetFreshnessState(string containerId, string itemId)
+        {
+            FoodStackState state = foodStackStates.Find(x => x != null &&
+                string.Equals(x.ContainerId, containerId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(x.ItemId, itemId, StringComparison.OrdinalIgnoreCase));
+            return state != null ? state.FreshnessState : FoodFreshnessState.Fresh;
+        }
+
+        private static FoodFreshnessState EvaluateFreshnessState(float freshness)
+        {
+            if (freshness <= 0f) return FoodFreshnessState.Rotten;
+            if (freshness < 25f) return FoodFreshnessState.Spoiled;
+            if (freshness < 55f) return FoodFreshnessState.Stale;
+            return FoodFreshnessState.Fresh;
         }
 
         public void ReleaseReservation(string recipeId)

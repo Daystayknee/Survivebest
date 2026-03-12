@@ -2,6 +2,20 @@
 
 This file is a comprehensive implementation inventory for the current codebase.
 
+## Development Snapshot (What is done so far)
+
+### Completed in code
+- Core manager architecture, simulation runtime systems, and event backbone are implemented.
+- Economy/inventory ownership is centralized and connected to grocery, ordering, and recipes.
+- NPC/town/story manager stack is implemented with deterministic hooks and event output.
+- Home-life and food-depth feature expansions have been integrated into existing systems.
+- Extensive EditMode tests exist across many subsystems.
+
+### Pending before production-ready Alpha runs
+- Final Unity prefab/inspector wiring and scene-level integration validation.
+- Full PlayMode coverage and balancing passes in a Unity CI runner.
+- Final save/load and long-run lifecycle parity verification across all active subsystems.
+
 ## 1) Implemented Runtime Systems (by script)
 
 ### Events
@@ -405,6 +419,14 @@ Additional progress this pass:
 - Added deeper home-life simulation extensions: laundry state machine, dish lifecycle pressure, appliance-specific wear, utility usage/billing-cycle metering, and weather-driven home-state impact (`HousingPropertySystem`).
 - Extended `NeedsSystem` with grooming/appearance values for personal-care feedback loops.
 - Extended inventory/food spoilage handling with refrigeration-aware decay metadata and stack-level spoilage tracking (`FoodDatabase`, `InventoryManager`, `EconomyInventorySystem`).
+- Extended core life-loop simulation with boredom/cravings/mental-fatigue/burnout/motivation and grooming/appearance pressure in `NeedsSystem`.
+- Added `LifestyleBehaviorSystem` for habits, personal preferences, and finance-behavior gating tied into routine/emotion/event flow.
+- Expanded `LifestyleBehaviorSystem` with personal goals, evolving identity tracks, random life annoyances, and random acts of kindness that emit social memory updates.
+- Added `SeasonalAllergySystem` for weather/season-triggered symptom simulation and status application.
+- Expanded `RelationshipMemorySystem` reputation layering with `Town` and `Work` scopes and explicit neighborhood gossip spread hooks.
+- Expanded `EmotionSystem` with weather mood response, social-energy/loneliness signals, and mood-drift updates; expanded `ConflictSystem` with staged escalation tracking.
+- Added lightweight community-event rolling in `TownSimulationManager` and travel-friction/weather-wear realism in `CarSystem`.
+- Expanded food/cooking depth on existing systems: ingredient taxonomy metadata (`IngredientCatalog`), recipe method/equipment/cuisine/quality/discovery + daily specials (`RecipeSystem`), seasonal grocery availability/pricing (`GrocerySystem`), procedural daily order specials/recommendations (`OrderingSystem`), and explicit freshness states (`InventoryManager`).
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 

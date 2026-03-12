@@ -71,6 +71,7 @@ namespace Survivebest.Activity
                 case ActivityType.Rest:
                     needsSystem.ModifyEnergy(20f);
                     needsSystem.ModifyMood(4f);
+                    needsSystem.ApplyActivityStimulation(0.2f, 0f, 0.1f);
                     skillSystem?.AddExperience("Fitness", 0.5f);
                     break;
                 case ActivityType.Workout:
@@ -78,12 +79,14 @@ namespace Survivebest.Activity
                     needsSystem.ModifyHygiene(-10f);
                     needsSystem.ModifyMood(3f);
                     needsSystem.RestoreHydration(-6f);
+                    needsSystem.ApplyActivityStimulation(0.55f, 0f, 0.8f);
                     healthSystem?.Heal(1f);
                     skillSystem?.AddExperience("Fitness", 3f);
                     break;
                 case ActivityType.Read:
                     needsSystem.ModifyEnergy(-4f);
                     needsSystem.ModifyMood(6f);
+                    needsSystem.ApplyActivityStimulation(0.65f, 0.1f, 0.35f);
                     skillSystem?.AddExperience("Writing", 2f);
                     skillSystem?.AddExperience("Storytelling", 1f);
                     break;
@@ -97,24 +100,38 @@ namespace Survivebest.Activity
                 {
                     DrinkItem drink = drinkDatabase != null ? drinkDatabase.GetRandomDrink() : null;
                     needsSystem.ApplyDrinkEffects(drink, healthSystem);
+                    needsSystem.ResolveCraving(CravingType.Caffeine, true);
                     break;
                 }
                 case ActivityType.Cook:
                 {
                     FoodItem meal = foodDatabase != null ? foodDatabase.GetRandomFood() : null;
                     needsSystem.ApplyFoodEffects(meal, healthSystem);
+                    if (meal != null && meal.Category == FoodCategory.Dessert)
+                    {
+                        needsSystem.ResolveCraving(CravingType.Sweets, true);
+                    }
+
+                    if (meal != null && meal.Category == FoodCategory.Comfort)
+                    {
+                        needsSystem.ResolveCraving(CravingType.ComfortFood, true);
+                    }
                     skillSystem?.AddExperience("Cooking", 3f);
                     break;
                 }
                 case ActivityType.Socialize:
                     needsSystem.ModifyMood(8f);
+                    needsSystem.ApplyActivityStimulation(0.45f, 0.9f, 0.25f);
                     emotionSystem?.ModifyAffection(3f);
                     emotionSystem?.ModifyStress(-2f);
+                    emotionSystem?.ApplySocialInteraction(0.8f);
                     skillSystem?.AddExperience("Public speaking", 1.5f);
                     break;
                 case ActivityType.SmallTalk:
                     needsSystem.ModifyMood(3f);
+                    needsSystem.ApplyActivityStimulation(0.25f, 0.6f, 0.2f);
                     emotionSystem?.ModifyStress(-1.5f);
+                    emotionSystem?.ApplySocialInteraction(0.35f);
                     skillSystem?.AddExperience("Social", 1f);
                     break;
                 case ActivityType.Flirt:
@@ -132,6 +149,7 @@ namespace Survivebest.Activity
                 case ActivityType.HobbyPractice:
                     needsSystem.ModifyEnergy(-8f);
                     needsSystem.ModifyMood(7f);
+                    needsSystem.ApplyActivityStimulation(0.95f, 0.2f, 0.4f);
                     skillSystem?.AddExperience("Painting", 2f);
                     skillSystem?.AddExperience("Music composition", 1.5f);
                     break;
@@ -139,13 +157,17 @@ namespace Survivebest.Activity
                     needsSystem.ModifyEnergy(-10f);
                     needsSystem.ModifyHygiene(-6f);
                     needsSystem.ModifyMood(-1f);
+                    needsSystem.ApplyActivityStimulation(0.15f, 0f, 0.65f);
                     skillSystem?.AddExperience("Engineering", 1.2f);
                     break;
                 case ActivityType.Sleep:
                     needsSystem.ModifyEnergy(35f);
                     needsSystem.ModifyMood(4f);
+                    needsSystem.ModifyMentalFatigue(-10f);
+                    needsSystem.ModifyMotivation(2f);
                     needsSystem.RestoreHydration(-2f);
                     emotionSystem?.ModifyStress(-5f);
+                    emotionSystem?.RecoverSocialEnergy(5f);
                     break;
                 case ActivityType.Party:
                     needsSystem.ModifyEnergy(-12f);

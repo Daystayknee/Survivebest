@@ -5,6 +5,7 @@ using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.Location;
 using Survivebest.Needs;
+using Survivebest.World;
 
 namespace Survivebest.Transport
 {
@@ -31,6 +32,8 @@ namespace Survivebest.Transport
     {
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private LocationManager locationManager;
+        [SerializeField] private WorldClock worldClock;
+        [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<Car> householdCars = new();
         [SerializeField, Min(0f)] private float baseFuelCostPerTrip = 8f;
@@ -40,6 +43,22 @@ namespace Survivebest.Transport
         public event Action<Car, string, bool> OnCarTripCompleted;
 
         public IReadOnlyList<Car> Cars => householdCars;
+
+        private void OnEnable()
+        {
+            if (worldClock != null)
+            {
+                worldClock.OnDayPassed += HandleDayPassed;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (worldClock != null)
+            {
+                worldClock.OnDayPassed -= HandleDayPassed;
+            }
+        }
 
         public bool DriveToRoom(string roomName, int carIndex = 0)
         {
@@ -58,6 +77,8 @@ namespace Survivebest.Transport
             }
 
             float tripFuel = CalculateTripFuelCost(car, roomName);
+            float travelFriction = GetTravelFrictionMultiplier(car);
+            tripFuel *= travelFriction;
             if (car.Fuel < tripFuel || car.Condition <= 0f)
             {
                 PublishTripEvent(active, car, roomName, false, "Trip failed due to low fuel or broken car", -2f);
@@ -71,9 +92,10 @@ namespace Survivebest.Transport
 
             if (needs != null)
             {
-                needs.ModifyEnergy(-Mathf.Lerp(2f, 7f, tripFuel / 20f));
+                needs.ModifyEnergy(-Mathf.Lerp(2f, 7f, tripFuel / 20f) * travelFriction);
                 needs.RestoreHydration(-1.5f);
                 needs.ModifyMood(CalculateTripMoodDelta(car));
+                needs.ModifyMentalFatigue(Mathf.Lerp(0.5f, 2.5f, Mathf.Clamp01(travelFriction - 1f)));
             }
 
             OnCarTripStarted?.Invoke(car, roomName);
@@ -141,6 +163,55 @@ namespace Survivebest.Transport
             float distanceMult = GetDistanceMultiplier(roomName);
             float conditionPenalty = Mathf.Lerp(0.9f, 1.3f, 1f - (car.Condition / 100f));
             return baseFuelCostPerTrip * typeMult * distanceMult * conditionPenalty;
+        }
+
+        private float GetTravelFrictionMultiplier(Car car)
+        {
+            float friction = 1f;
+            if (UnityEngine.Random.value < 0.12f)
+            {
+                friction += 0.22f; // traffic
+            }
+
+            if (UnityEngine.Random.value < 0.05f)
+            {
+                friction += 0.3f; // fuel shortage day
+            }
+
+            if (car.Condition < 35f && UnityEngine.Random.value < 0.08f)
+            {
+                friction += 0.45f; // partial breakdown drag
+                car.Condition = Mathf.Max(0f, car.Condition - 4f);
+            }
+
+            return friction;
+        }
+
+        private void HandleDayPassed(int day)
+        {
+            if (weatherManager == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < householdCars.Count; i++)
+            {
+                Car car = householdCars[i];
+                if (car == null)
+                {
+                    continue;
+                }
+
+                float weatherWear = weatherManager.CurrentWeather switch
+                {
+                    WeatherState.Stormy => 1.8f,
+                    WeatherState.Heatwave => 1.2f,
+                    WeatherState.Blizzard => 2.1f,
+                    _ => 0.35f
+                };
+
+                car.Condition = Mathf.Clamp(car.Condition - weatherWear, 0f, 100f);
+            }
         }
 
         private static float GetDistanceMultiplier(string roomName)

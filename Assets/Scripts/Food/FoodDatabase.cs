@@ -15,6 +15,88 @@ namespace Survivebest.Food
         Drink
     }
 
+    public enum CookingMethod
+    {
+        Boil,
+        Fry,
+        Bake,
+        Roast,
+        Grill,
+        Steam,
+        Blend,
+        Mix,
+        Assemble,
+        Brew
+    }
+
+    public enum KitchenEquipment
+    {
+        Stove,
+        Oven,
+        Microwave,
+        Blender,
+        CoffeeMachine,
+        Kettle,
+        Toaster,
+        Grill
+    }
+
+    public enum CuisineType
+    {
+        American,
+        Italian,
+        Mexican,
+        Japanese,
+        Indian,
+        Chinese,
+        French,
+        Thai,
+        Mediterranean,
+        Comfort,
+        StreetFood,
+        FastFood
+    }
+
+    public enum FoodQuality
+    {
+        Burnt,
+        Poor,
+        Normal,
+        Good,
+        Great,
+        Perfect
+    }
+
+    [Serializable]
+    public class FoodNutrition
+    {
+        public float Calories;
+        public float Protein;
+        public float Fat;
+        public float Carbs;
+        public float Hydration;
+        public float Vitamins;
+        public float Sugar;
+        public float Salt;
+    }
+
+    [Serializable]
+    public class FoodRecipeDefinition
+    {
+        public string Id;
+        public string Name;
+        public List<string> IngredientRequirements = new();
+        public List<string> Steps = new();
+        public CookingMethod CookingMethod;
+        public KitchenEquipment RequiredEquipment = KitchenEquipment.Stove;
+        [Range(0f, 100f)] public float Difficulty = 20f;
+        [Min(0)] public int PrepTimeMinutes = 5;
+        [Min(0)] public int CookTimeMinutes = 8;
+        public CuisineType CuisineType = CuisineType.Comfort;
+        public List<string> TasteProfile = new();
+        public FoodNutrition Nutrition = new();
+    }
+
     [Serializable]
     public class FoodItem
     {
@@ -29,6 +111,10 @@ namespace Survivebest.Food
         [Range(0f, 5f)] public float SpiceIntensity;
         [Range(0f, 1f)] public float SpoilagePerDay = 0.08f;
         [Range(0.1f, 1f)] public float RefrigerationBonus = 0.4f;
+        public CuisineType CuisineType = CuisineType.Comfort;
+        public CookingMethod CookingMethod = CookingMethod.Mix;
+        public FoodNutrition Nutrition = new();
+        [Range(0f, 100f)] public float ComfortValue = 45f;
     }
 
     public class FoodDatabase : MonoBehaviour
@@ -59,7 +145,42 @@ namespace Survivebest.Food
             new FoodItem { Name = "Meal Replacement", Category = FoodCategory.Drink, HungerRestore = 28f, EnergyDelta = 8f, MoodDelta = 1f, HygieneDelta = 0f, VitalityDelta = 1f, IsSpicy = false, SpiceIntensity = 0f }
         };
 
+        [SerializeField] private List<FoodRecipeDefinition> recipeDefinitions = new()
+        {
+            new FoodRecipeDefinition
+            {
+                Id = "scrambled_eggs",
+                Name = "Scrambled Eggs",
+                IngredientRequirements = new List<string> { "Egg", "Butter", "Salt" },
+                Steps = new List<string> { "Crack eggs", "Whisk", "Heat pan", "Stir until set" },
+                CookingMethod = CookingMethod.Fry,
+                RequiredEquipment = KitchenEquipment.Stove,
+                Difficulty = 14f,
+                PrepTimeMinutes = 2,
+                CookTimeMinutes = 4,
+                CuisineType = CuisineType.American,
+                TasteProfile = new List<string> { "savory", "creamy" },
+                Nutrition = new FoodNutrition { Calories = 220f, Protein = 13f, Fat = 16f, Carbs = 2f, Vitamins = 6f }
+            },
+            new FoodRecipeDefinition
+            {
+                Id = "tomato_pasta",
+                Name = "Tomato Pasta",
+                IngredientRequirements = new List<string> { "Pasta", "Tomato", "Olive oil", "Garlic", "Basil" },
+                Steps = new List<string> { "Boil pasta", "Cook sauce", "Combine and plate" },
+                CookingMethod = CookingMethod.Boil,
+                RequiredEquipment = KitchenEquipment.Stove,
+                Difficulty = 28f,
+                PrepTimeMinutes = 6,
+                CookTimeMinutes = 10,
+                CuisineType = CuisineType.Italian,
+                TasteProfile = new List<string> { "savory", "acidic" },
+                Nutrition = new FoodNutrition { Calories = 480f, Protein = 14f, Fat = 12f, Carbs = 76f, Vitamins = 8f, Salt = 3f }
+            }
+        };
+
         public IReadOnlyList<FoodItem> Foods => foods;
+        public IReadOnlyList<FoodRecipeDefinition> RecipeDefinitions => recipeDefinitions;
 
         public FoodItem GetRandomFood()
         {
@@ -69,6 +190,28 @@ namespace Survivebest.Food
             }
 
             return foods[UnityEngine.Random.Range(0, foods.Count)];
+        }
+
+        public FoodRecipeDefinition GetRecipe(string idOrName)
+        {
+            if (string.IsNullOrWhiteSpace(idOrName))
+            {
+                return null;
+            }
+
+            return recipeDefinitions.Find(r => r != null &&
+                (string.Equals(r.Id, idOrName, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(r.Name, idOrName, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        public FoodItem GetFood(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return null;
+            }
+
+            return foods.Find(f => f != null && string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

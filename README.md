@@ -28,6 +28,31 @@ The project currently focuses on **foundational gameplay architecture**: world t
 
 > Tip: use `PlaceholderGenerator` if sprite slots are empty so UI portraits/world placeholders are still visible during setup.
 
+## Development Status Snapshot (Done So Far)
+
+_Last updated: current branch state._
+
+### ✅ Implemented and in repository
+- Core simulation backbone (clock, weather, day slices, event hub, bootstrap, stability monitor).
+- Character simulation layers (needs, health/medical/status, emotion/conflict, social memory).
+- Economy and inventory authority (economy, unified inventory instances/stacks, grocery/order/recipe/crafting).
+- Town and NPC simulation (schedule/autonomy/career/town manager/system, off-screen persistence/culling).
+- Story pacing systems (autonomous story generation + AI director + community incidents).
+- Home-life and realism extensions (chores, hygiene environment, utilities, repairs, appliance wear, weather home impact).
+- Food-depth extensions (ingredient taxonomy metadata, recipe quality/discovery, daily specials, seasonal grocery prices/availability, freshness states).
+- UI/controller foundation and scene tools (menus, HUD/feed/panels, action popups, readiness/bootstrap helpers).
+- Broad EditMode test coverage across major domains (core/economy/social/story/home-life/food extensions).
+
+### ⚠️ Partially complete (code ready, Unity wiring/balancing pending)
+- Full scene/prefab assignment for all optional UI references and polish transitions.
+- End-to-end PlayMode validation across all manager interactions in one authored gameplay scene.
+- Balance pass for economy pacing, illness/escalation cadence, and story incident frequency.
+
+### 🎯 Next high-impact steps
+1. Run complete EditMode + PlayMode suites in Unity CI and fix any compile/runtime regressions.
+2. Finalize save/load coverage matrix for every active subsystem state in long runs.
+3. Complete prefab/inspector hookup docs and lock Alpha-1 “definition of done” checklist.
+
 ## Current Included Systems
 
 ## Front-End Flow (Menu Vision)
@@ -145,6 +170,13 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added expanded home-life loop systems: laundry state flow (`Dirty -> Wet -> Drying -> Clean`), dish lifecycle pressure, appliance-specific wear (washer/dryer/fridge/stove/vehicle), utility usage metering (electric/water/gas/internet/trash) with billing-cycle charges, and weather-home impact hooks in `HousingPropertySystem`.
 - `NeedsSystem` now includes `Grooming` and `Appearance` values for personal-care gameplay and social confidence penalties/bonuses.
 - Food spoilage now supports refrigeration-aware decay in inventory flows (`InventoryManager` stack spoilage states + `EconomyInventorySystem` refrigerated instance multiplier) and `FoodDatabase` now includes spoilage/refrigeration metadata per food item.
+- Added behavior-depth extensions compatible with existing systems: boredom/mental-fatigue/burnout/motivation/cravings in `NeedsSystem`, plus `LifestyleBehaviorSystem` for habits/preferences/finance behavior hooks connected to routine and emotion updates.
+- `EmotionSystem` now includes weather mood impact, social energy (social battery/loneliness/exhaustion), and hourly mood drift so mood responds to weather, isolation, and life pressure over time.
+- `LifestyleBehaviorSystem` now tracks personal goals/identity progression, random life annoyances, and occasional random acts of kindness that feed into relationship memory.
+- Added `SeasonalAllergySystem` integrating `WeatherManager`, `StatusEffectSystem`, and `NeedsSystem` to produce weather/season-triggered allergy fatigue events.
+- `RelationshipMemorySystem` now supports neighborhood gossip propagation into layered reputation scopes including `Town` and `Work`.
+- `ConflictSystem` now supports staged escalation (annoyance → argument → fight → relationship damage) and `TownSimulationManager` now rolls lightweight community events that can trigger narrative incidents.
+- Food systems were expanded in-place (no architecture replacement): `IngredientCatalog` now carries category/tag/perishability/nutrition metadata; `RecipeSystem` now tracks method/equipment/cuisine/difficulty/taste profile, cooking quality outcomes, discovery, and daily specials; `OrderingSystem` now rotates procedural daily specials and recommendations; `GrocerySystem` now applies seasonality for price/availability; `InventoryManager` now exposes freshness-state transitions (fresh/stale/spoiled/rotten).
 - Added `WorldPersistenceCullingSystem` for off-screen simulation rules, lot activation/deactivation budget, remote NPC catch-up summaries, and story-priority simulation scaling.
 - Added `AIDirectorDramaManager` to monitor boredom/tension and inject disruption or recovery beats so major moments are paced rather than random.
 - Added `AnimationFeedbackJuiceSystem` to translate simulation events into animation/SFX/VFX/UI cue payloads for stronger moment-to-moment feedback and readability.
@@ -190,5 +222,4 @@ See also:
 
 ## Current Status
 
-This repository is currently a **feature-rich foundation** rather than a fully content-complete game.  
-It is designed to be extended with scene/prefab wiring, balancing, art assets, save/load, and polish.
+This repository is currently a **feature-rich, code-complete foundation** with substantial subsystem and test coverage, but still requires final Unity scene wiring, balancing, and content/art completion before production-ready Alpha playthroughs.
