@@ -190,6 +190,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added Unity-ready 2D avatar layer contracts (`AvatarLayerProfile`) for head/face/hair families and body-region scales (neck/chest/waist/hips/thighs/calves/hands/feet) to support future layered portrait/paper-doll rendering.
 - `AppearanceManager` now includes context-menu tools to auto-bind portrait layers by child name and validate missing layer references for Unity setup speed.
 - Furniture store purchase flow with wallet spend + instant placement spawn + build-mode handoff (`FurnitureStoreController`).
+- Added `ExperiencePacingOrchestrator` as a cross-system cadence layer to monitor survival/social/progression/expression/risk pillars and inject dynamic beats (director spikes, emergency opportunities, social memory beats, progression minigame nudges) when play gets too quiet.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

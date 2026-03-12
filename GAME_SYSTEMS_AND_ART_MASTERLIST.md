@@ -43,6 +43,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/DaySliceManager.cs`
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
 - `Assets/Scripts/Core/PersonalityDecisionSystem.cs`
+- `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
 
 ### Needs / Health / Medical / Status
 - `Assets/Scripts/Needs/NeedsSystem.cs`
@@ -434,6 +435,7 @@ Additional progress this pass:
 - Deepened phenotype variation coverage (face/body region morphs, skin condition overlays, hair front/side/back density contracts, body fat/muscle expression) for believable family resemblance and 2D layer-driven rendering.
 - Updated `GeneticsSystem` to resolve phenotype outputs into portrait, body morph, skin-state overlays, and body composition so genetics feed both visuals and simulation tendencies.
 - Extended save/load contracts (`SaveGameManager`) to persist `GeneticProfile` + `PhenotypeProfile` alongside core character state for future-proof inheritance and art pipeline stability.
+- Added `ExperiencePacingOrchestrator` to coordinate AI drama, quests, minigames, dialogue, and social memory into consistent high-intensity loop cadence across survival/social/progression pillars.
 
 
 ### Updated completion snapshot
