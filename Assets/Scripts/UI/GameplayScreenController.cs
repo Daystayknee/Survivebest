@@ -482,7 +482,7 @@ namespace Survivebest.UI
             }
 
             builder.Clear();
-            builder.AppendLine("Immediate pressures:");
+            builder.AppendLine($"Immediate pressures ({EstimatePressureTier()}):");
             for (int i = 0; i < Mathf.Min(4, pressures.Count); i++)
             {
                 builder.AppendLine($"• {pressures[i]}");
@@ -535,10 +535,10 @@ namespace Survivebest.UI
 
             if (humanLifeExperienceLayerSystem != null && currentCharacter != null)
             {
-                List<ThoughtMessage> thoughts = humanLifeExperienceLayerSystem.GetRecentThoughts(currentCharacter.CharacterId, 1);
-                if (thoughts.Count > 0)
+                string summary = humanLifeExperienceLayerSystem.BuildLifePulseSummary(currentCharacter.CharacterId);
+                if (!string.IsNullOrWhiteSpace(summary))
                 {
-                    builder.AppendLine($"• Thought: {thoughts[0].Body}");
+                    builder.AppendLine($"• Thought: {summary}");
                 }
             }
 
@@ -553,6 +553,41 @@ namespace Survivebest.UI
             }
 
             return builder.ToString().TrimEnd();
+        }
+
+        private string EstimatePressureTier()
+        {
+            int pressureCount = 0;
+            if (currentNeeds != null)
+            {
+                if (currentNeeds.Hunger < 35f) pressureCount++;
+                if (currentNeeds.Energy < 35f) pressureCount++;
+                if (currentNeeds.Hydration < 35f) pressureCount++;
+                if (currentNeeds.Mood < 35f) pressureCount++;
+                if (currentNeeds.Hygiene < 30f || currentNeeds.Grooming < 30f) pressureCount++;
+            }
+
+            if (currentHealth != null && currentHealth.Vitality < 40f)
+            {
+                pressureCount++;
+            }
+
+            if (currentMedical != null && currentMedical.ActiveConditions != null)
+            {
+                pressureCount += Mathf.Min(2, currentMedical.ActiveConditions.Count);
+            }
+
+            if (pressureCount >= 4)
+            {
+                return "High";
+            }
+
+            if (pressureCount >= 2)
+            {
+                return "Medium";
+            }
+
+            return "Low";
         }
 
         private static void TryAddPressure(List<string> pressures, string label, float value)

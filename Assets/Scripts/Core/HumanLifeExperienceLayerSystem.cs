@@ -151,6 +151,57 @@ namespace Survivebest.Core
             return result;
         }
 
+        public PlaceAttachmentState GetStrongestAttachment(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || placeAttachments == null)
+            {
+                return null;
+            }
+
+            PlaceAttachmentState best = null;
+            float bestScore = float.MinValue;
+            for (int i = 0; i < placeAttachments.Count; i++)
+            {
+                PlaceAttachmentState state = placeAttachments[i];
+                if (state == null || state.CharacterId != characterId)
+                {
+                    continue;
+                }
+
+                float score = (state.Familiarity * 0.6f) + (Mathf.Abs(state.Attachment) * 0.4f);
+                if (score > bestScore)
+                {
+                    best = state;
+                    bestScore = score;
+                }
+            }
+
+            return best;
+        }
+
+        public string BuildLifePulseSummary(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No life pulse available.";
+            }
+
+            List<ThoughtMessage> thoughts = GetRecentThoughts(characterId, 1);
+            if (thoughts.Count > 0 && !string.IsNullOrWhiteSpace(thoughts[0].Body))
+            {
+                return thoughts[0].Body;
+            }
+
+            PlaceAttachmentState attachment = GetStrongestAttachment(characterId);
+            if (attachment != null && !string.IsNullOrWhiteSpace(attachment.PlaceId))
+            {
+                string tone = attachment.Attachment >= 0f ? "comfort" : "tension";
+                return $"You carry {tone} tied to {attachment.PlaceId}.";
+            }
+
+            return "Your day feels open. Choose a routine to anchor it.";
+        }
+
         private PlaceAttachmentState GetOrCreateAttachment(string characterId, string placeId)
         {
             PlaceAttachmentState existing = placeAttachments.Find(x => x != null && x.CharacterId == characterId && x.PlaceId == placeId);

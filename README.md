@@ -196,6 +196,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `TaskInteractionManager` pipeline for **Optional Interactive Task Actions** (Auto vs Interactive mode) with step-based task sessions and result routing (`TaskDatabase`, `AutoTaskRunner`, `InteractiveTaskRunner`, `TaskResultSpawner`, `TaskStateUpdater`) so life tasks can be performed manually without score/rank mechanics.
 - Added `HumanLifeExperienceLayerSystem` to bridge portrait/dashboard-first simulation loops with routine completion signals, embodiment prompts, thought-message logging, and place-attachment tracking for non-walking life-sim flow.
 - Upgraded `GameplayScreenController` into a readable daily-life dashboard layer with top-state (time/weather/location), immediate pressure summaries, suggested next actions, and world-pulse snippets (latest event + thought) so the main loop is legible at a glance.
+- Refined `JournalFeedUI` and `HumanLifeExperienceLayerSystem` messaging so event cards and world pulse text read like a human-facing life feed (named character context, richer event titles, strongest thought/place summary) rather than raw debug output.
 - Added dyed-vs-natural hair controls (checkbox + RGB/ombre/highlight sliders) so genetics updates only the **natural** hair gene color while user dye choices remain cosmetic overlays.
 
 ### Implemented but Scene-Wiring Dependent

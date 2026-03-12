@@ -49,7 +49,7 @@ namespace Survivebest.UI
 
             JournalCardView card = Instantiate(cardPrefab, cardContainer);
             string title = GetTitle(simulationEvent);
-            string body = GetBody(simulationEvent);
+            string body = GetBody(simulationEvent, ResolveDisplayName(simulationEvent.SourceCharacterId));
             string timestamp = $"Y{simulationEvent.Year} M{simulationEvent.Month} D{simulationEvent.Day} {simulationEvent.Hour:00}:00";
             Sprite portrait = ResolvePortrait(simulationEvent.SourceCharacterId);
             Color severityColor = ResolveSeverityColor(simulationEvent.Severity);
@@ -108,19 +108,43 @@ namespace Survivebest.UI
                 SimulationEventType.OrderPlaced => "🛒 Order Placed",
                 SimulationEventType.OrderDelivered => "📦 Delivery Arrived",
                 SimulationEventType.RelationshipChanged => "💬 Relationship Shift",
+                SimulationEventType.ActivityStarted => "▶ Activity Started",
+                SimulationEventType.ActivityCompleted => "✅ Activity Completed",
+                SimulationEventType.NarrativePromptGenerated => "🧠 Inner Thought",
+                SimulationEventType.StatusEffectChanged => "⚕ Status Update",
                 SimulationEventType.CharacterDied => "🕯 Character Died",
                 _ => simulationEvent.Type.ToString()
             };
         }
 
-        private static string GetBody(SimulationEvent simulationEvent)
+        private static string GetBody(SimulationEvent simulationEvent, string sourceName)
         {
+            string prefix = string.IsNullOrWhiteSpace(sourceName) ? string.Empty : $"{sourceName}: ";
             if (!string.IsNullOrWhiteSpace(simulationEvent.Reason))
             {
-                return simulationEvent.Reason;
+                return prefix + simulationEvent.Reason;
             }
 
-            return $"{simulationEvent.SystemName} changed {simulationEvent.ChangeKey} by {simulationEvent.Magnitude:0.#}.";
+            return $"{prefix}{simulationEvent.SystemName} changed {simulationEvent.ChangeKey} by {simulationEvent.Magnitude:0.#}.";
+        }
+
+        private string ResolveDisplayName(string sourceCharacterId)
+        {
+            if (householdManager == null || string.IsNullOrWhiteSpace(sourceCharacterId))
+            {
+                return null;
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member != null && member.CharacterId == sourceCharacterId)
+                {
+                    return member.DisplayName;
+                }
+            }
+
+            return null;
         }
 
         private Color ResolveSeverityColor(SimulationEventSeverity severity)

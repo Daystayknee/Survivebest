@@ -451,6 +451,7 @@ Additional progress this pass:
 - Added Optional Interactive Task Actions framework (`TaskInteractionManager`) to support Auto vs Interactive daily-task flow with tactile step sequences and result spawning/state updates (inventory, appearance, world-state, service outcomes) without arcade scoring.
 - Added `HumanLifeExperienceLayerSystem` as a portrait/dashboard-first integration layer for daily routines, embodiment feedback, introspective thought prompts, and place attachment progression without requiring direct walking-avatar navigation.
 - Refined `GameplayScreenController` into a vertical-slice readability hub: top state strip (time/weather/location), immediate pressure panel, suggested next actions, and world pulse feed that bridges simulation output into player-facing sensation.
+- Improved simulation-to-sensation translation in `JournalFeedUI` and `HumanLifeExperienceLayerSystem` with character-attributed life-feed text, richer event-card title mapping, pressure-tier hints, and stronger world-pulse summaries for the main dashboard loop.
 
 
 ### Updated completion snapshot
