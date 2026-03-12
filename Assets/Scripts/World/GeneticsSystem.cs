@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using Survivebest.Appearance;
 using Survivebest.Core;
@@ -6,42 +5,38 @@ using Survivebest.LifeStage;
 
 namespace Survivebest.World
 {
-    [Serializable]
-    public class GeneticProfile
-    {
-        [Range(0f, 1f)] public float MelaninLevel;
-        [Range(0f, 1f)] public float HairPigment;
-        [Range(0f, 1f)] public float EyePigment;
-        [Range(0f, 1f)] public float HeightPotential;
-        [Range(0f, 1f)] public float BodyMassPotential;
-        [Range(0f, 1f)] public float JawDefinition;
-        [Range(0f, 1f)] public float NoseWidth;
-        [Range(0f, 1f)] public float LipFullness;
-    }
-
     public class GeneticsSystem : MonoBehaviour
     {
         [SerializeField] private CharacterCore owner;
         [SerializeField] private AppearanceManager appearanceManager;
         [SerializeField] private VisualGenome visualGenome;
         [SerializeField] private LifeStageManager lifeStageManager;
+        [SerializeField] private BodyCompositionSystem bodyCompositionSystem;
 
         [Header("Parent Optional References")]
         [SerializeField] private GeneticsSystem parentA;
         [SerializeField] private GeneticsSystem parentB;
 
-        [Header("Genes")]
+        [Header("Genetics Model")]
+        [SerializeField] private BodySchema founderBodySchema = BodySchema.Neutral;
         [SerializeField] private GeneticProfile geneticProfile = new();
-        [SerializeField] private float mutationChance = 0.08f;
+        [SerializeField] private PhenotypeProfile phenotypeProfile = new();
+        [SerializeField, Range(0f, 0.3f)] private float mutationChance = 0.08f;
+        [SerializeField, Range(0f, 1f)] private float environmentPressure;
 
         public GeneticProfile Profile => geneticProfile;
+        public PhenotypeProfile Phenotype => phenotypeProfile;
+        public HealthPredispositionProfile HealthPredisposition => phenotypeProfile?.Health;
 
         private void Awake()
         {
-            if (geneticProfile.HeightPotential <= 0f && geneticProfile.BodyMassPotential <= 0f)
+            if (geneticProfile.Seed == 0)
             {
                 GenerateFounderGenes();
+                return;
             }
+
+            ResolveAndApplyPhenotype();
         }
 
         private void OnEnable()
@@ -63,21 +58,12 @@ namespace Survivebest.World
         [ContextMenu("Generate Founder Genes")]
         public void GenerateFounderGenes()
         {
-            geneticProfile = new GeneticProfile
-            {
-                MelaninLevel = UnityEngine.Random.value,
-                HairPigment = UnityEngine.Random.value,
-                EyePigment = UnityEngine.Random.value,
-                HeightPotential = UnityEngine.Random.value,
-                BodyMassPotential = UnityEngine.Random.value,
-                JawDefinition = UnityEngine.Random.value,
-                NoseWidth = UnityEngine.Random.value,
-                LipFullness = UnityEngine.Random.value
-            };
-
-            ApplyGeneticsToSystems();
+            int seed = Random.Range(1, int.MaxValue);
+            geneticProfile = InheritanceResolver.BuildFounder(seed, founderBodySchema);
+            ResolveAndApplyPhenotype();
         }
 
+        [ContextMenu("Inherit From Parent References")]
         public void InheritFromParents()
         {
             if (parentA == null || parentB == null)
@@ -86,96 +72,151 @@ namespace Survivebest.World
                 return;
             }
 
-            geneticProfile = new GeneticProfile
-            {
-                MelaninLevel = InheritScalar(parentA.Profile.MelaninLevel, parentB.Profile.MelaninLevel),
-                HairPigment = InheritScalar(parentA.Profile.HairPigment, parentB.Profile.HairPigment),
-                EyePigment = InheritScalar(parentA.Profile.EyePigment, parentB.Profile.EyePigment),
-                HeightPotential = InheritScalar(parentA.Profile.HeightPotential, parentB.Profile.HeightPotential),
-                BodyMassPotential = InheritScalar(parentA.Profile.BodyMassPotential, parentB.Profile.BodyMassPotential),
-                JawDefinition = InheritScalar(parentA.Profile.JawDefinition, parentB.Profile.JawDefinition),
-                NoseWidth = InheritScalar(parentA.Profile.NoseWidth, parentB.Profile.NoseWidth),
-                LipFullness = InheritScalar(parentA.Profile.LipFullness, parentB.Profile.LipFullness)
-            };
-
-            ApplyGeneticsToSystems();
+            geneticProfile = InheritanceResolver.Inherit(parentA.Profile, parentB.Profile, mutationChance);
+            geneticProfile.Seed = Random.Range(1, int.MaxValue);
+            ResolveAndApplyPhenotype();
         }
 
         [ContextMenu("Apply Genetics To Character")]
         public void ApplyGeneticsToSystems()
         {
+            ResolveAndApplyPhenotype();
+        }
+
+        public void SetEnvironmentPressure(float pressure01)
+        {
+            environmentPressure = Mathf.Clamp01(pressure01);
+            ResolveAndApplyPhenotype();
+        }
+
+        public void OverrideGenetics(GeneticProfile profile, bool reapply = true)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            geneticProfile = profile;
+            geneticProfile.ClampToNormalizedRange();
+            if (reapply)
+            {
+                ResolveAndApplyPhenotype();
+            }
+        }
+
+        private void ResolveAndApplyPhenotype()
+        {
+            LifeStage stage = owner != null ? owner.CurrentLifeStage : LifeStage.YoungAdult;
+            phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, environmentPressure);
+            ApplyResolvedPhenotype(phenotypeProfile);
+        }
+
+        private void ApplyResolvedPhenotype(PhenotypeProfile phenotype)
+        {
+            if (phenotype == null)
+            {
+                return;
+            }
+
             if (owner != null)
             {
                 owner.SetFacialFeatureData(
-                    ToJawShape(geneticProfile.JawDefinition),
-                    ToNoseShape(geneticProfile.NoseWidth),
-                    ToLipShape(geneticProfile.LipFullness));
+                    ToJawShape(phenotype.Face.JawWidth),
+                    ToNoseShape(phenotype.Face.NoseBridgeHeight),
+                    ToLipShape(phenotype.Face.LipFullness));
 
                 owner.SetPortraitData(
-                    ToFaceShape(geneticProfile.JawDefinition, geneticProfile.NoseWidth),
+                    ToFaceShape(phenotype.Face.FaceWidth, phenotype.Face.JawWidth),
                     owner.EyeShape,
-                    ToBodyType(geneticProfile.BodyMassPotential),
+                    ToBodyType(phenotype.Body.FrameSize),
                     owner.ClothingStyle);
             }
 
             if (appearanceManager != null)
             {
                 AppearanceProfile profile = appearanceManager.CurrentProfile ?? new AppearanceProfile();
-                profile.SkinTone = ToSkinTone(geneticProfile.MelaninLevel);
-                profile.HairColor = Color.Lerp(new Color(0.12f, 0.08f, 0.06f), new Color(0.85f, 0.72f, 0.45f), geneticProfile.HairPigment);
-                profile.EyeColor = ToEyeColor(geneticProfile.EyePigment);
+                profile.SkinTone = ToSkinTone(phenotype.Skin.Tone);
+                profile.EyeColor = ToEyeColor(Mathf.Lerp(phenotype.Face.EyeSize, phenotype.Face.NoseBridgeHeight, 0.5f));
+
+                Color geneticallyResolvedHair = ResolveHairColor(phenotype.Hair, phenotype.Skin);
+                profile.HairColor = geneticallyResolvedHair;
+
+                float vitiligo = phenotype.Skin.Overlays != null ? phenotype.Skin.Overlays.Vitiligo : 0f;
+                profile.SkinIssue = vitiligo > 0.12f
+                    ? SkinIssueType.Vitiligo
+                    : phenotype.Skin.Overlays.Acne > 0.45f
+                        ? SkinIssueType.Acne
+                        : phenotype.Skin.Overlays.Freckles > 0.4f
+                            ? SkinIssueType.Freckles
+                            : phenotype.Skin.Overlays.Hyperpigmentation > 0.45f
+                                ? SkinIssueType.Hyperpigmentation
+                                : SkinIssueType.None;
+                profile.HasBeautyMark = phenotype.Skin.Overlays.BeautyMarks > 0.45f || phenotype.Skin.Overlays.Moles > 0.5f;
                 appearanceManager.ApplyAppearance(profile);
+
+                Survivebest.Appearance.HairProfile scalpHair = appearanceManager.ScalpHairProfile;
+                scalpHair.NaturalHairColor = geneticallyResolvedHair;
+                if (!scalpHair.UseDyedColor)
+                {
+                    scalpHair.HairColor = geneticallyResolvedHair;
+                }
+
+                appearanceManager.SetHairProfile(scalpHair);
             }
 
             if (visualGenome != null)
             {
-                PhysicalTraits traits = visualGenome.GenerateRandomDNA();
-                float heightScale = Mathf.Lerp(0.9f, 1.15f, geneticProfile.HeightPotential);
-                float massScale = Mathf.Lerp(0.85f, 1.15f, geneticProfile.BodyMassPotential);
-                traits.Height = heightScale;
-                traits.ShoulderWidth = massScale;
-                traits.HipWidth = Mathf.Lerp(0.85f, 1.2f, geneticProfile.BodyMassPotential);
-                traits.ArmThickness = Mathf.Lerp(0.85f, 1.2f, geneticProfile.BodyMassPotential);
-                traits.ThighGirth = Mathf.Lerp(0.85f, 1.25f, geneticProfile.BodyMassPotential);
-                traits.CalfGirth = Mathf.Lerp(0.85f, 1.2f, geneticProfile.BodyMassPotential);
+                PhysicalTraits traits = visualGenome.CurrentTraits;
+                traits.NeckLength = Mathf.Lerp(0.82f, 1.25f, phenotype.Body.Neck);
+                traits.Height = Mathf.Lerp(0.8f, 1.25f, phenotype.Body.Height);
+                traits.ShoulderWidth = Mathf.Lerp(0.75f, 1.3f, phenotype.Body.Shoulders);
+                traits.BustSize = Mathf.Lerp(0.68f, 1.35f, phenotype.Body.ChestBustPresentation);
+                traits.HipWidth = Mathf.Lerp(0.7f, 1.38f, phenotype.Body.Hips);
+                traits.BootySize = Mathf.Lerp(0.7f, 1.4f, phenotype.Body.Hips);
+                traits.ArmThickness = Mathf.Lerp(0.65f, 1.35f, phenotype.Body.MuscleExpression * 0.68f + phenotype.Body.FatExpression * 0.32f);
+                traits.ThighGirth = Mathf.Lerp(0.68f, 1.38f, phenotype.Body.Thighs);
+                traits.CalfGirth = Mathf.Lerp(0.66f, 1.3f, phenotype.Body.Calves);
+                traits.ChestDepth = Mathf.Lerp(0.78f, 1.24f, phenotype.Body.Stomach * 0.4f + phenotype.Body.FrameSize * 0.6f);
                 visualGenome.ApplyPhysicalTraits(traits);
+            }
+
+            if (bodyCompositionSystem != null)
+            {
+                BodyGenetics bodyGenetics = new BodyGenetics
+                {
+                    AdultHeightCm = Mathf.Lerp(150f, 205f, phenotype.Body.Height),
+                    AdultWeightKg = Mathf.Lerp(45f, 138f, phenotype.Body.FrameSize),
+                    BodyFatPotential = Mathf.Lerp(0.08f, 0.48f, phenotype.Body.FatExpression),
+                    MusclePotential = Mathf.Lerp(0.1f, 0.95f, phenotype.Body.MuscleExpression)
+                };
+
+                bodyCompositionSystem.ApplyGenetics(bodyGenetics);
             }
         }
 
-        private void HandleLifeStageChanged(CharacterCore character, int ageYears, Core.LifeStage stage)
+        private void HandleLifeStageChanged(CharacterCore character, int _, LifeStage __)
         {
             if (character != owner)
             {
                 return;
             }
 
-            float maturity = stage switch
-            {
-                Core.LifeStage.Baby => 0.35f,
-                Core.LifeStage.Infant => 0.45f,
-                Core.LifeStage.Toddler => 0.55f,
-                Core.LifeStage.Child => 0.7f,
-                Core.LifeStage.Preteen => 0.82f,
-                Core.LifeStage.Teen => 0.92f,
-                _ => 1f
-            };
-
-            geneticProfile.JawDefinition = Mathf.Clamp01(geneticProfile.JawDefinition * maturity + 0.05f);
-            geneticProfile.NoseWidth = Mathf.Clamp01(geneticProfile.NoseWidth * 0.95f + 0.03f);
-            ApplyGeneticsToSystems();
+            ResolveAndApplyPhenotype();
         }
 
-        private float InheritScalar(float a, float b)
+
+        public AvatarLayerProfile BuildAvatarLayerContract()
         {
-            float dominantRoll = UnityEngine.Random.value;
-            float blended = dominantRoll < 0.45f ? a : dominantRoll < 0.9f ? b : (a + b) * 0.5f;
+            return phenotypeProfile != null ? phenotypeProfile.AvatarLayers : new AvatarLayerProfile();
+        }
 
-            if (UnityEngine.Random.value <= mutationChance)
-            {
-                blended += UnityEngine.Random.Range(-0.08f, 0.08f);
-            }
-
-            return Mathf.Clamp01(blended);
+        private static Color ResolveHairColor(HairProfile hair, SkinProfile skin)
+        {
+            Color baseHair = Color.Lerp(new Color(0.09f, 0.05f, 0.03f), new Color(0.9f, 0.78f, 0.52f), hair.Pigment);
+            float grayMix = Mathf.Clamp01(hair.Graying);
+            Color grayed = Color.Lerp(baseHair, new Color(0.72f, 0.72f, 0.74f), grayMix);
+            float undertoneWarm = Mathf.Lerp(0.92f, 1.08f, skin.Undertone);
+            return grayed * new Color(undertoneWarm, 1f, 1f);
         }
 
         private static EyeColorType ToEyeColor(float pigment)
@@ -199,21 +240,22 @@ namespace Survivebest.World
             return SkinToneType.Deep;
         }
 
-        private static FaceShapeType ToFaceShape(float jaw, float noseWidth)
+        private static FaceShapeType ToFaceShape(float faceWidth, float jawWidth)
         {
-            if (jaw < 0.2f) return FaceShapeType.Heart;
-            if (jaw < 0.4f) return FaceShapeType.Oval;
-            if (jaw < 0.6f) return noseWidth > 0.5f ? FaceShapeType.Round : FaceShapeType.Diamond;
-            if (jaw < 0.8f) return FaceShapeType.Square;
+            float blend = (faceWidth + jawWidth) * 0.5f;
+            if (blend < 0.2f) return FaceShapeType.Heart;
+            if (blend < 0.4f) return FaceShapeType.Oval;
+            if (blend < 0.6f) return faceWidth > 0.5f ? FaceShapeType.Round : FaceShapeType.Diamond;
+            if (blend < 0.8f) return FaceShapeType.Square;
             return FaceShapeType.Diamond;
         }
 
-        private static BodyType ToBodyType(float mass)
+        private static BodyType ToBodyType(float frame)
         {
-            if (mass < 0.2f) return BodyType.Slim;
-            if (mass < 0.45f) return BodyType.Average;
-            if (mass < 0.65f) return BodyType.Curvy;
-            if (mass < 0.82f) return BodyType.Muscular;
+            if (frame < 0.2f) return BodyType.Slim;
+            if (frame < 0.45f) return BodyType.Average;
+            if (frame < 0.65f) return BodyType.Curvy;
+            if (frame < 0.82f) return BodyType.Muscular;
             return BodyType.Heavy;
         }
 
@@ -225,12 +267,12 @@ namespace Survivebest.World
             return JawShapeType.Angular;
         }
 
-        private static NoseShapeType ToNoseShape(float width)
+        private static NoseShapeType ToNoseShape(float height)
         {
-            if (width < 0.2f) return NoseShapeType.Petite;
-            if (width < 0.4f) return NoseShapeType.Button;
-            if (width < 0.6f) return NoseShapeType.Straight;
-            if (width < 0.8f) return NoseShapeType.Aquiline;
+            if (height < 0.2f) return NoseShapeType.Petite;
+            if (height < 0.4f) return NoseShapeType.Button;
+            if (height < 0.6f) return NoseShapeType.Straight;
+            if (height < 0.8f) return NoseShapeType.Aquiline;
             return NoseShapeType.Broad;
         }
 

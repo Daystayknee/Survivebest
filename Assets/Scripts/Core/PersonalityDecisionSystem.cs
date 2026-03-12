@@ -4,6 +4,8 @@ using UnityEngine;
 using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Needs;
+using Survivebest.World;
+using Survivebest.Social;
 
 namespace Survivebest.Core
 {
@@ -65,7 +67,13 @@ namespace Survivebest.Core
     public class PersonalityDecisionSystem : MonoBehaviour
     {
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private PersonalityArchetypeSystem personalityArchetypeSystem;
+        [SerializeField] private MoralValueSystem moralValueSystem;
+        [SerializeField] private PreferenceSystem preferenceSystem;
+        [SerializeField] private PersonalityMatrixSystem personalityMatrixSystem;
+        [SerializeField] private RelationshipCompatibilityEngine relationshipCompatibilityEngine;
         [SerializeField] private List<PersonalityProfile> profiles = new();
         [SerializeField] private List<SocialCompatibility> compatibilities = new();
         [SerializeField] private List<JobFitScore> jobFitScores = new();
@@ -110,6 +118,7 @@ namespace Survivebest.Core
             chance += inCrowdedVenue ? 0.12f : -0.05f;
             chance += profile.EmotionalSensitivity * 0.2f;
             chance -= profile.StressResilience * 0.18f;
+            chance += personalityMatrixSystem != null ? personalityMatrixSystem.GetFightEscalationBias(characterId) : 0f;
             return Mathf.Clamp01(chance);
         }
 
@@ -142,6 +151,10 @@ namespace Survivebest.Core
             };
 
             ApplyTraitBiases(profile, weights);
+            ApplyArchetypeBiases(character.CharacterId, weights);
+            ApplyMoralBiases(character.CharacterId, weights);
+            ApplyPreferenceBiases(character.CharacterId, weights);
+            ApplyPersonalityMatrixBiases(character.CharacterId, profile, weights, mood);
 
             AutonomousActionType decision = PickWeighted(weights);
             float confidence = Mathf.Clamp01(weights[decision] / 140f);
@@ -166,7 +179,26 @@ namespace Survivebest.Core
             SocialCompatibility existing = compatibilities.Find(x => x != null &&
                 ((x.CharacterAId == characterAId && x.CharacterBId == characterBId) ||
                  (x.CharacterAId == characterBId && x.CharacterBId == characterAId)));
-            return existing != null ? existing.Score : 0f;
+            if (existing != null)
+            {
+                return existing.Score;
+            }
+
+            if (relationshipCompatibilityEngine != null)
+            {
+                RelationshipCompatibilityProfile pair = relationshipCompatibilityEngine.GetOrCreateProfile(characterAId, characterBId);
+                if (pair != null)
+                {
+                    return pair.CompatibilityScore - 50f;
+                }
+            }
+
+            if (personalityMatrixSystem == null)
+            {
+                return 0f;
+            }
+
+            return (personalityMatrixSystem.ComputeCompatibility(characterAId, characterBId) * 200f) - 100f;
         }
 
         public float ComputeJobFit(string characterId, string professionId)
@@ -199,6 +231,78 @@ namespace Survivebest.Core
                 weights[AutonomousActionType.Socialize] += 12f;
                 weights[AutonomousActionType.Rest] *= 0.75f;
             }
+        }
+
+
+
+        private void ApplyArchetypeBiases(string characterId, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (personalityArchetypeSystem == null)
+            {
+                return;
+            }
+
+            foreach (AutonomousActionType actionType in weights.Keys)
+            {
+                weights[actionType] += personalityArchetypeSystem.GetActionBias(characterId, actionType) * 100f;
+            }
+        }
+
+        private void ApplyMoralBiases(string characterId, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (moralValueSystem == null)
+            {
+                return;
+            }
+
+            float resistance = moralValueSystem.EvaluateCrimeResistance(characterId);
+            weights[AutonomousActionType.Work] += resistance * 10f;
+            weights[AutonomousActionType.Craft] += resistance * 6f;
+            weights[AutonomousActionType.Explore] -= resistance * 6f;
+        }
+
+        private void ApplyPreferenceBiases(string characterId, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (preferenceSystem == null)
+            {
+                return;
+            }
+
+            string weather = worldClock != null ? worldClock.CurrentSeason.ToString() : string.Empty;
+            float weatherMood = preferenceSystem.GetMoodModifierForWeather(characterId, weather);
+            if (weatherMood > 0f)
+            {
+                weights[AutonomousActionType.Explore] += weatherMood * 2f;
+                weights[AutonomousActionType.Socialize] += weatherMood;
+                preferenceSystem.PublishPreferenceHit(characterId, "Favorite weather matched", weatherMood);
+                return;
+            }
+
+            if (weatherMood < 0f)
+            {
+                weights[AutonomousActionType.Rest] += Mathf.Abs(weatherMood) * 2f;
+                weights[AutonomousActionType.Sleep] += Mathf.Abs(weatherMood);
+            }
+        }
+
+
+        private void ApplyPersonalityMatrixBiases(string characterId, PersonalityProfile baseProfile, Dictionary<AutonomousActionType, float> weights, float mood)
+        {
+            if (personalityMatrixSystem == null)
+            {
+                return;
+            }
+
+            float stressNormalized = Mathf.Clamp01((100f - mood) / 100f);
+            foreach (AutonomousActionType actionType in weights.Keys)
+            {
+                weights[actionType] += personalityMatrixSystem.GetActionAdjustment(characterId, actionType, stressNormalized) * 100f;
+            }
+
+            PersonalityMatrixProfile matrix = personalityMatrixSystem.GetOrCreateProfile(characterId);
+            baseProfile.RiskTolerance = Mathf.Clamp01((baseProfile.RiskTolerance * 0.7f) + ((matrix.RiskTaking / 100f) * 0.3f));
+            baseProfile.RoutinePreference = Mathf.Clamp01((baseProfile.RoutinePreference * 0.7f) + ((matrix.Discipline / 100f) * 0.3f));
+            baseProfile.AddictionSusceptibility = Mathf.Clamp01((baseProfile.AddictionSusceptibility * 0.65f) + ((matrix.AddictionVulnerability / 100f) * 0.35f));
         }
 
         private static bool HasTrait(PersonalityProfile profile, PersonalityTrait trait)
