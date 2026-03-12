@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.World;
+using Survivebest.Social;
 
 namespace Survivebest.Core
 {
@@ -38,16 +39,40 @@ namespace Survivebest.Core
         [Range(-1f, 1f)] public float LastVisitMoodDelta = 0f;
     }
 
+    [Serializable]
+    public class ProceduralLifeMoment
+    {
+        public string MomentId;
+        public string CharacterId;
+        public string Source;
+        public string Headline;
+        public string PlaceId;
+        [Range(0f, 1f)] public float Intensity;
+    }
+
+    public enum LifeReflectionType
+    {
+        Gratitude,
+        Regret,
+        Pride,
+        Nostalgia,
+        Fear,
+        Hope
+    }
+
     /// <summary>
     /// Lightweight orchestration layer for dashboard/portrait-first life simulation.
-    /// Tracks routine identity signals, embodiment prompts, thought messages, and place attachment.
-    /// This does not replace deeper systems; it provides a central integration contract for them.
+    /// Tracks routine identity signals, embodiment prompts, thought messages, place attachment,
+    /// and procedural day-to-day life moments to keep everyday simulation rich and continuous.
     /// </summary>
     public class HumanLifeExperienceLayerSystem : MonoBehaviour
     {
         [Header("Wiring")]
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
+        [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
 
         [Header("Routine Templates")]
         [SerializeField] private List<DailyRoutineAction> morningRoutine = new();
@@ -58,12 +83,16 @@ namespace Survivebest.Core
         [Header("Runtime")]
         [SerializeField] private List<PlaceAttachmentState> placeAttachments = new();
         [SerializeField] private List<ThoughtMessage> recentThoughts = new();
+        [SerializeField] private List<ProceduralLifeMoment> recentMoments = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
+        [SerializeField, Min(10)] private int maxMoments = 300;
 
         public IReadOnlyList<PlaceAttachmentState> PlaceAttachments => placeAttachments;
         public IReadOnlyList<ThoughtMessage> RecentThoughts => recentThoughts;
+        public IReadOnlyList<ProceduralLifeMoment> RecentMoments => recentMoments;
 
         public event Action<ThoughtMessage> OnThoughtLogged;
+        public event Action<ProceduralLifeMoment> OnMomentGenerated;
 
         public void LogRoutineCompletion(CharacterCore actor, string actionId, float quality = 1f)
         {
@@ -78,6 +107,11 @@ namespace Survivebest.Core
                 : $"{actionId} got done, but something still feels off.";
 
             AppendThought(actor, "routine", thought, clampedQuality, null);
+            if (clampedQuality < 0.45f)
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.CareerPressure, 0.35f);
+            }
+
             PublishEvent(actor.CharacterId, SimulationEventType.ActivityCompleted, actionId, "Routine completed", clampedQuality);
         }
 
@@ -108,7 +142,141 @@ namespace Survivebest.Core
 
             string descriptor = comfortDelta >= 0f ? "more connected" : "a little uneasy";
             AppendThought(actor, "place", $"{placeId} feels {descriptor} today.", Mathf.Abs(comfortDelta), placeId);
+
+            if (comfortDelta >= 0.2f)
+            {
+                worldCultureSocietyEngine?.RegisterTraditionParticipation(actor.CharacterId, "town_default", "community_gathering", Mathf.Clamp01(comfortDelta));
+            }
+
             PublishEvent(actor.CharacterId, SimulationEventType.ActivityStarted, placeId, "Place visit", Mathf.Abs(comfortDelta));
+        }
+
+        public void LogReflection(CharacterCore actor, LifeReflectionType reflectionType, float intensity)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            float i = Mathf.Clamp01(intensity);
+            string thought = reflectionType switch
+            {
+                LifeReflectionType.Gratitude => "You pause and feel thankful for the people holding you up.",
+                LifeReflectionType.Regret => "A choice lingers in your chest, asking to be understood.",
+                LifeReflectionType.Pride => "You recognize your growth and feel quietly proud.",
+                LifeReflectionType.Nostalgia => "A memory returns and softens the edge of today.",
+                LifeReflectionType.Fear => "Worry circles in your mind, asking for reassurance.",
+                _ => "You feel a spark of hope about where life can go next."
+            };
+
+            AppendThought(actor, "reflection", thought, i, null);
+
+            switch (reflectionType)
+            {
+                case LifeReflectionType.Gratitude:
+                case LifeReflectionType.Hope:
+                case LifeReflectionType.Pride:
+                    psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.Reflection, 0.8f + i * 0.5f);
+                    break;
+                case LifeReflectionType.Regret:
+                case LifeReflectionType.Fear:
+                    psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.CareerPressure, 0.3f + i * 0.5f);
+                    break;
+                case LifeReflectionType.Nostalgia:
+                    psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.SocialSupport, 0.2f + i * 0.4f);
+                    break;
+            }
+        }
+
+        public void SimulateHourPulse(CharacterCore actor, int hour, float pressureLevel, float socialConnection, float accomplishment)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            float pressure = Mathf.Clamp01(pressureLevel);
+            float connection = Mathf.Clamp01(socialConnection);
+            float progress = Mathf.Clamp01(accomplishment);
+
+            if (pressure > 0.65f)
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.CareerPressure, pressure);
+                AppendThought(actor, "hourly_pulse", "The day feels heavy and demanding.", pressure, null);
+            }
+            else if (progress > 0.7f)
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.Milestone, progress * 0.6f);
+                AppendThought(actor, "hourly_pulse", "You feel momentum from small wins stacking up.", progress, null);
+            }
+
+            if (connection > 0.65f)
+            {
+                relationshipMemorySystem?.RecordPersonalMemory(actor.CharacterId, actor.CharacterId, PersonalMemoryKind.Kindness, Mathf.RoundToInt(connection * 12f), true, "town_default");
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.SocialSupport, connection);
+            }
+
+            PublishEvent(actor.CharacterId, SimulationEventType.DayStageChanged, $"hour_{hour}", "Hourly life pulse simulated", (pressure + connection + progress) / 3f);
+        }
+
+        public List<ProceduralLifeMoment> GenerateProceduralLifeMoments(CharacterCore actor, int seed, int count = 6, bool appendAsThoughts = true)
+        {
+            List<ProceduralLifeMoment> generated = new();
+            if (actor == null)
+            {
+                return generated;
+            }
+
+            string[] sources = { "family", "work", "community", "self", "health", "finance", "romance", "identity" };
+            string[] actions =
+            {
+                "shared breakfast and laughed",
+                "missed a bus and had to adapt",
+                "helped a neighbor with groceries",
+                "felt judged in public",
+                "finished a task earlier than expected",
+                "argued, then apologized",
+                "received a supportive message",
+                "worried about bills"
+            };
+            string[] places = { "home", "market", "street", "clinic", "workshop", "park", "cafe", "community hall" };
+
+            System.Random rng = new System.Random(seed);
+            int total = Mathf.Clamp(count, 1, 48);
+            for (int i = 0; i < total; i++)
+            {
+                string source = sources[rng.Next(sources.Length)];
+                string action = actions[rng.Next(actions.Length)];
+                string place = places[rng.Next(places.Length)];
+                float intensity = Mathf.Clamp01((float)rng.NextDouble());
+
+                ProceduralLifeMoment moment = new ProceduralLifeMoment
+                {
+                    MomentId = $"{actor.CharacterId}_{seed}_{i}",
+                    CharacterId = actor.CharacterId,
+                    Source = source,
+                    Headline = $"You {action} at the {place}.",
+                    PlaceId = place,
+                    Intensity = intensity
+                };
+
+                generated.Add(moment);
+                recentMoments.Add(moment);
+                while (recentMoments.Count > maxMoments)
+                {
+                    recentMoments.RemoveAt(0);
+                }
+
+                if (appendAsThoughts)
+                {
+                    AppendThought(actor, $"moment_{source}", moment.Headline, intensity, place);
+                }
+
+                ApplyMomentConsequences(actor, moment);
+                OnMomentGenerated?.Invoke(moment);
+            }
+
+            return generated;
         }
 
         public List<DailyRoutineAction> GetRoutineForHour(int hour)
@@ -200,6 +368,37 @@ namespace Survivebest.Core
             }
 
             return "Your day feels open. Choose a routine to anchor it.";
+        }
+
+        private void ApplyMomentConsequences(CharacterCore actor, ProceduralLifeMoment moment)
+        {
+            if (actor == null || moment == null)
+            {
+                return;
+            }
+
+            string text = moment.Headline ?? string.Empty;
+            float intensity = Mathf.Clamp01(moment.Intensity);
+
+            if (text.Contains("worried", StringComparison.OrdinalIgnoreCase) || text.Contains("judged", StringComparison.OrdinalIgnoreCase))
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.FinancialPressure, 0.4f + intensity * 0.7f);
+            }
+            else if (text.Contains("supportive", StringComparison.OrdinalIgnoreCase) || text.Contains("helped", StringComparison.OrdinalIgnoreCase))
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.SocialSupport, 0.35f + intensity * 0.6f);
+                worldCultureSocietyEngine?.RegisterTraditionParticipation(actor.CharacterId, "town_default", "community_gathering", intensity);
+            }
+            else if (text.Contains("argued", StringComparison.OrdinalIgnoreCase))
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.FamilyConflict, 0.25f + intensity * 0.8f);
+                worldCultureSocietyEngine?.EvaluateNormReaction(actor.CharacterId, "town_default", "formal_greeting", true);
+            }
+            else if (text.Contains("finished", StringComparison.OrdinalIgnoreCase))
+            {
+                psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.Milestone, 0.25f + intensity * 0.6f);
+                worldCultureSocietyEngine?.EvaluateNormReaction(actor.CharacterId, "town_default", "career_prestige", false);
+            }
         }
 
         private PlaceAttachmentState GetOrCreateAttachment(string characterId, string placeId)
