@@ -84,7 +84,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `CharacterCore` with life stage, talent, portrait traits, birth date, death events
 - `FamilyManager`, `HouseholdManager`, `LegacyManager`
 - `LifeStageManager`, `BodyCompositionSystem`, `VisualGenome`
-- `PersonalityArchetypeSystem`, `MoralValueSystem`, `PreferenceSystem` (deep personality/value/preference profiles and evolution hooks).
+- `PersonalityArchetypeSystem`, `PersonalityMatrixSystem`, `MoralValueSystem`, `PreferenceSystem` (deep personality/value/preference profiles and evolution hooks).
 
 ### Needs / Health / Emotion
 - `NeedsSystem`, `HealthSystem`, `MedicalConditionSystem`
@@ -205,7 +205,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added simplified personal drug-cycle systems (`CravingSystem`, `RehabilitationSystem`) and expanded `SubstanceSystem` integration (personality susceptibility, social-memory consequences, contextual legal risk like public use/DUI/distribution) to reinforce the temptation→use→withdrawal→consequence→recovery loop.
 - Added `CravingSystem` and `RehabilitationSystem` to complete the personal addiction loop (temptation/use/tolerance/withdrawal/recovery), and wired dashboard guidance (`GameplayScreenController`) to surface cravings and recovery-program status as actionable play signals.
 - Added dyed-vs-natural hair controls (checkbox + RGB/ombre/highlight sliders) so genetics updates only the **natural** hair gene color while user dye choices remain cosmetic overlays.
-- Added deep personality and identity-expression foundations: MBTI-inspired archetype profiles, moral values, love languages, and post-creation style editing (fashion/tattoos/hair dye) while keeping genetics-derived natural traits locked.
+- Added deep personality and identity-expression foundations: MBTI-inspired archetype profiles, a full multi-domain personality matrix, moral values, love languages, and post-creation style editing (fashion/tattoos/hair dye) while keeping genetics-derived natural traits locked.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

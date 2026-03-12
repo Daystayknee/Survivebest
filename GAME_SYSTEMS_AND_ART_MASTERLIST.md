@@ -46,6 +46,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/PreferenceSystem.cs`
 - `Assets/Scripts/Core/MoralValueSystem.cs`
 - `Assets/Scripts/Core/PersonalityArchetypeSystem.cs`
+- `Assets/Scripts/Core/PersonalityMatrixSystem.cs`
 - `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
 - `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
 - `Assets/Scripts/Tasking/TaskModels.cs`
@@ -170,6 +171,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/QuestOpportunitySystemTests.cs`
 - `Assets/Tests/EditMode/LongTermProgressionSystemTests.cs`
 - `Assets/Tests/EditMode/PersonalityDecisionSystemTests.cs`
+- `Assets/Tests/EditMode/PersonalityMatrixSystemTests.cs`
 - `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
 
 ---
