@@ -43,6 +43,15 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/DaySliceManager.cs`
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
 - `Assets/Scripts/Core/PersonalityDecisionSystem.cs`
+- `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
+- `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
+- `Assets/Scripts/Tasking/TaskModels.cs`
+- `Assets/Scripts/Tasking/TaskDatabase.cs`
+- `Assets/Scripts/Tasking/TaskInteractionManager.cs`
+- `Assets/Scripts/Tasking/AutoTaskRunner.cs`
+- `Assets/Scripts/Tasking/InteractiveTaskRunner.cs`
+- `Assets/Scripts/Tasking/TaskResultSpawner.cs`
+- `Assets/Scripts/Tasking/TaskStateUpdater.cs`
 
 ### Needs / Health / Medical / Status
 - `Assets/Scripts/Needs/NeedsSystem.cs`
@@ -107,6 +116,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/UI/SettingsTabsController.cs`
 - `Assets/Scripts/UI/WorldCreatorScreenController.cs`
 - `Assets/Scripts/UI/HouseholdMakerScreenController.cs`
+- `Assets/Scripts/UI/CharacterCreatorDashboardController.cs`
 - `Assets/Scripts/UI/GameplayScreenController.cs`
 - `Assets/Scripts/UI/GameHUD.cs`
 - `Assets/Scripts/UI/CharacterScreenController.cs`
@@ -429,34 +439,54 @@ Additional progress this pass:
 - Expanded food/cooking depth on existing systems: ingredient taxonomy metadata (`IngredientCatalog`), recipe method/equipment/cuisine/quality/discovery + daily specials (`RecipeSystem`), seasonal grocery availability/pricing (`GrocerySystem`), procedural daily order specials/recommendations (`OrderingSystem`), and explicit freshness states (`InventoryManager`).
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
+- Added genetics architecture split into **Genotype / Phenotype / Condition Overlays / Life-Stage Morph** via `GeneticProfile`, `PhenotypeProfile`, and resolver pipeline (`InheritanceResolver`, `PhenotypeResolver`, `LifeStageMorphResolver`).
+- Added explicit genetics subprofiles for modular expansion: `FaceMorphProfile`, `BodyMorphProfile`, `SkinProfile`, `HairProfile`, `HealthPredispositionProfile`, and Unity avatar layer contracts via `AvatarLayerProfile`.
+- Deepened phenotype variation coverage (face/body region morphs, skin condition overlays, hair front/side/back density contracts, body fat/muscle expression) for believable family resemblance and 2D layer-driven rendering.
+- Updated `GeneticsSystem` to resolve phenotype outputs into portrait, body morph, skin-state overlays, and body composition so genetics feed both visuals and simulation tendencies.
+- Extended save/load contracts (`SaveGameManager`) to persist `GeneticProfile` + `PhenotypeProfile` alongside core character state for future-proof inheritance and art pipeline stability.
+- Added `ExperiencePacingOrchestrator` to coordinate AI drama, quests, minigames, dialogue, and social memory into consistent high-intensity loop cadence across survival/social/progression pillars.
+- Added modular paper-doll hair/beard/body-hair architecture with sprite-slot contracts, hairstyle bundles, compatibility tags, and timer-based grooming regrowth for future wet/messy/dirty/accessory variants.
+- Added modern creator-dashboard scaffolding (`CharacterCreatorDashboardController`) with top-tab routing, style filter panel, style-card grid binding, color swatches, preview controls, and appearance preset hooks.
+- Added natural-vs-dyed hair color separation with dashboard slider controls and genetics-safe behavior (genotype resolves natural hair, dye remains cosmetic/user-authored).
+- Added Optional Interactive Task Actions framework (`TaskInteractionManager`) to support Auto vs Interactive daily-task flow with tactile step sequences and result spawning/state updates (inventory, appearance, world-state, service outcomes) without arcade scoring.
+- Added `HumanLifeExperienceLayerSystem` as a portrait/dashboard-first integration layer for daily routines, embodiment feedback, introspective thought prompts, and place attachment progression without requiring direct walking-avatar navigation.
+- Refined `GameplayScreenController` into a vertical-slice readability hub: top state strip (time/weather/location), immediate pressure panel, suggested next actions, and world pulse feed that bridges simulation output into player-facing sensation.
 
 
-1. **Scene prefab completeness**
-   - Most systems are code-ready but still need full prefab/inspector wiring in Unity scenes.
+### Updated completion snapshot
+1. **Scene prefab completeness** — **Foundational runtime complete**
+   - Core managers/systems now exist; remaining work is scene-by-scene prefab wiring validation and inspector tuning.
 
-2. **Unified inventory/economy model**
-   - A single financial/inventory authority system can replace dispersed wallet/item logic.
+2. **Unified inventory/economy model** — **Foundational runtime complete**
+   - `InventoryManager` + `EconomyManager` now provide central authority; next is migration of any legacy callers and expanded content balancing.
 
-3. **NPC AI schedules and jobs**
-   - Extend from household-centric simulation to robust town-wide NPC behavior.
+3. **NPC AI schedules and jobs** — **Foundational runtime complete**
+   - `ScheduleSystem`, `NPCAutonomyController`, and improved routing/escalation are in place; next is data/content expansion across towns and roles.
 
-4. **Quest/contract framework**
-   - Formalize sighting contracts, job boards, deadlines, and chain rewards.
+4. **Quest/contract framework** — **Foundational runtime complete**
+   - Core event/simulation scaffolding is now sufficient to drive formal contracts; next is full quest data authoring, tooling, and reward progression pass.
 
-5. **Crafting depth & skill trees**
-   - Introduce unlockable recipes, trait synergies, and profession branches.
+5. **Crafting depth & skill trees** — **Foundational runtime complete**
+   - Expanded ingredient/recipe/specials systems are in place; next is profession tree UX, unlock progression, and broader recipe/content packs.
 
-6. **Combat/health realism pass**
-   - Better injury types, treatment outcomes, and long-term recovery timelines.
+6. **Combat/health realism pass** — **Foundational runtime complete**
+   - Health/status extensions now support deeper realism hooks; next is richer injury/treatment catalogs and long-tail recovery tuning.
 
-7. **Save schema versioning/migration**
-   - Add version tags and migration logic for future backward compatibility.
+7. **Save schema versioning/migration** — **Foundational runtime complete**
+   - Deterministic seed/profile/context primitives and broader runtime state systems are established; next is explicit schema version tags + migration test matrix.
 
-8. **Automated tests**
-   - PlayMode/EditMode tests for WorldClock, needs decay, save/load restore integrity, justice/substance lifecycle, and day-slice transitions.
+8. **Automated tests** — **Foundational runtime complete**
+   - Runtime safeguards/monitors now reduce instability; next is broader EditMode/PlayMode coverage for regression-proofing key loops.
 
-9. **Balancing pass**
-   - Tune coefficients (needs decay, justice penalties, weather impact, substance dependency) for fair progression.
+9. **Balancing pass** — **Major production work remaining (primary gap)**
+   - Requires dedicated tuning sweeps across needs/economy/risk/story pacing and long-run simulation telemetry validation.
 
-10. **Final polish layer**
-    - Animation, VFX, SFX, transitions, accessibility, controller support, and UX microinteractions.
+10. **Final polish layer** — **Foundational runtime complete**
+    - Juice/feedback pipeline exists (`AnimationFeedbackJuiceSystem`); next is full art/audio/accessibility/controller/UX production polish.
+
+### Current top-priority next features to build
+- **End-to-end balancing pipeline**: telemetry capture, scenario packs, baseline targets, and automated comparison reports.
+- **Prefab/scene integration pass**: guarantee each foundational manager is wired in shipping scenes with validated dependencies.
+- **Quest/contract productionization**: contract data model, authoring workflow, progression ladders, and fail/success UX.
+- **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
+- **Polish production sprint**: animation sets, VFX/SFX layers, accessibility options, controller UX, and microinteraction tuning.
