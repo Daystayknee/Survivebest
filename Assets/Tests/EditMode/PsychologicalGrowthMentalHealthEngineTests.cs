@@ -60,6 +60,33 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+
+        [Test]
+        public void LifeSatisfactionAndRiskFlags_RespondToDistressLevels()
+        {
+            GameObject go = new GameObject("MentalRiskFlags");
+            PsychologicalGrowthMentalHealthEngine engine = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+
+            const string healthy = "char_healthy";
+            const string struggling = "char_struggling";
+
+            engine.RecordLifeEvent(healthy, MentalHealthEventType.SocialSupport, 1.2f);
+            engine.RecordLifeEvent(healthy, MentalHealthEventType.Exercise, 1f);
+
+            engine.RecordLifeEvent(struggling, MentalHealthEventType.Crisis, 1.5f);
+            engine.RecordLifeEvent(struggling, MentalHealthEventType.Trauma, 1.2f);
+
+            float healthySatisfaction = engine.GetLifeSatisfactionIndex(healthy);
+            float strugglingSatisfaction = engine.GetLifeSatisfactionIndex(struggling);
+            var flags = engine.GetMentalHealthRiskFlags(struggling);
+
+            Assert.Greater(healthySatisfaction, strugglingSatisfaction);
+            Assert.Greater(flags.Count, 0);
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void UpdatesPersonalityBridge_FromMentalHealthState()
         {

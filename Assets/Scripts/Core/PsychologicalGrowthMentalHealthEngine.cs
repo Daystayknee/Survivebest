@@ -254,6 +254,31 @@ namespace Survivebest.Core
             return Mathf.Clamp(value, 0.4f, 2.2f);
         }
 
+
+        public float GetLifeSatisfactionIndex(string characterId)
+        {
+            MentalHealthProfile p = GetOrCreateProfile(characterId);
+            float positive = (p.SelfEsteem + p.EmotionalResilience + p.SenseOfPurpose + (100f - p.Loneliness)) / 4f;
+            float negative = (p.StressLevel + p.AnxietyLevel + p.DepressionLevel + p.BurnoutLevel + p.TraumaLoad) / 5f;
+            return Mathf.Clamp((positive * 0.62f) + ((100f - negative) * 0.38f), 0f, 100f);
+        }
+
+        public List<string> GetMentalHealthRiskFlags(string characterId)
+        {
+            List<string> flags = new();
+            MentalHealthProfile p = GetOrCreateProfile(characterId);
+
+            if (p.StressLevel >= 75f) flags.Add("HighStress");
+            if (p.AnxietyLevel >= 70f) flags.Add("AnxietySpike");
+            if (p.DepressionLevel >= 70f) flags.Add("DepressiveRisk");
+            if (p.BurnoutLevel >= 68f) flags.Add("BurnoutRisk");
+            if (p.Loneliness >= 72f) flags.Add("IsolationRisk");
+            if (p.TraumaLoad >= 60f) flags.Add("TraumaTriggerRisk");
+            if (p.InEmotionalCrisis) flags.Add("CrisisState");
+
+            return flags;
+        }
+
         public float GetPersonalityEvolutionMomentum(string characterId)
         {
             MentalHealthProfile p = GetOrCreateProfile(characterId);

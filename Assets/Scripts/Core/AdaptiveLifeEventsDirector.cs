@@ -88,7 +88,13 @@ namespace Survivebest.Core
             float pressure = ComputePressure(actor);
             float support = ComputeSupport(actor);
             float infrastructureStress = ComputeInfrastructureStress();
-            DirectedLifeBeatType type = ResolveBeatType(pressure, support, infrastructureStress, hour);
+            float satisfaction = psychologicalGrowthMentalHealthEngine != null
+                ? psychologicalGrowthMentalHealthEngine.GetLifeSatisfactionIndex(actor.CharacterId) / 100f
+                : 0.5f;
+            List<string> riskFlags = psychologicalGrowthMentalHealthEngine != null
+                ? psychologicalGrowthMentalHealthEngine.GetMentalHealthRiskFlags(actor.CharacterId)
+                : new List<string>();
+            DirectedLifeBeatType type = ResolveBeatType(pressure, support, infrastructureStress, satisfaction, riskFlags, hour);
 
             DirectedLifeBeat beat = new DirectedLifeBeat
             {
@@ -96,8 +102,8 @@ namespace Survivebest.Core
                 CharacterId = actor.CharacterId,
                 Type = type,
                 Label = BuildBeatLabel(type),
-                Reason = BuildBeatReason(type, pressure, support, infrastructureStress),
-                Intensity = Mathf.Clamp01((pressure * 0.5f) + ((1f - support) * 0.3f) + (infrastructureStress * 0.2f)),
+                Reason = BuildBeatReason(type, pressure, support, infrastructureStress, satisfaction, riskFlags),
+                Intensity = Mathf.Clamp01((pressure * 0.45f) + ((1f - support) * 0.25f) + (infrastructureStress * 0.15f) + ((1f - satisfaction) * 0.15f)),
                 Day = worldClock != null ? worldClock.Day : 0,
                 Hour = hour
             };
@@ -198,9 +204,10 @@ namespace Survivebest.Core
             return Mathf.Clamp01(service / count);
         }
 
-        private static DirectedLifeBeatType ResolveBeatType(float pressure, float support, float infrastructureStress, int hour)
+        private static DirectedLifeBeatType ResolveBeatType(float pressure, float support, float infrastructureStress, float satisfaction, List<string> riskFlags, int hour)
         {
-            if (pressure > 0.76f && support < 0.4f)
+            bool crisis = riskFlags != null && (riskFlags.Contains("CrisisState") || riskFlags.Contains("DepressiveRisk"));
+            if (crisis || (pressure > 0.76f && support < 0.4f))
             {
                 return DirectedLifeBeatType.HighRiskMoment;
             }
@@ -210,12 +217,12 @@ namespace Survivebest.Core
                 return DirectedLifeBeatType.InfrastructureDisruption;
             }
 
-            if (pressure > 0.65f)
+            if (pressure > 0.65f || (riskFlags != null && riskFlags.Contains("BurnoutRisk")))
             {
                 return DirectedLifeBeatType.RecoveryWindow;
             }
 
-            if (hour >= 17 && support > 0.6f)
+            if (hour >= 17 && support > 0.6f && satisfaction < 0.75f)
             {
                 return DirectedLifeBeatType.SupportOpportunity;
             }
@@ -241,9 +248,10 @@ namespace Survivebest.Core
             };
         }
 
-        private static string BuildBeatReason(DirectedLifeBeatType type, float pressure, float support, float infrastructureStress)
+        private static string BuildBeatReason(DirectedLifeBeatType type, float pressure, float support, float infrastructureStress, float satisfaction, List<string> riskFlags)
         {
-            return $"{type} (pressure={pressure:0.00}, support={support:0.00}, infra={infrastructureStress:0.00})";
+            string flags = riskFlags == null || riskFlags.Count == 0 ? "none" : string.Join(",", riskFlags);
+            return $"{type} (pressure={pressure:0.00}, support={support:0.00}, infra={infrastructureStress:0.00}, satisfaction={satisfaction:0.00}, flags={flags})";
         }
 
         private void ApplyBeatConsequences(CharacterCore actor, DirectedLifeBeat beat)

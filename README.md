@@ -221,6 +221,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `GameplayLifeLoopOrchestrator` to continuously run the practical daily human loop (wake/check/decide/world pulse/reflect/sleep) by coordinating decision, infrastructure, presentation feedback, and life-timeline updates each hour.
 - Added `AdaptiveLifeEventsDirector` to inject context-aware support/growth/complication/disruption/recovery/high-risk beats based on mental pressure, social support, and infrastructure stress, so long runs keep producing human-feeling turning points.
 - Deepened `LivingWorldInfrastructureEngine` with itemized supply-chain state (`SupplyItemType` stocks, availability/price pressure/volatility) and business supply dependency so shortages now propagate into service quality, demand pressure, and district stress.
+- Extended `PsychologicalGrowthMentalHealthEngine` with life-satisfaction scoring and explicit risk-flag outputs so other directors/systems can respond consistently to crisis, burnout, and isolation states.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
