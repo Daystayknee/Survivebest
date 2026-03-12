@@ -27,6 +27,11 @@ namespace Survivebest.Interaction
         TV,
         WorkoutCorner,
         Pantry,
+        RecyclingBin,
+        LaundryBasket,
+        CleaningStation,
+        GroomingStation,
+        Closet,
         Generic
     }
 
@@ -42,6 +47,9 @@ namespace Survivebest.Interaction
         [SerializeField] private GrocerySystem grocerySystem;
         [SerializeField] private BuildModeManager buildModeManager;
         [SerializeField] private FurnitureStoreController furnitureStoreController;
+        [SerializeField] private HousingPropertySystem housingPropertySystem;
+        [SerializeField] private HouseholdChoreSystem householdChoreSystem;
+        [SerializeField] private string propertyId = "home_property";
         [SerializeField] private GameEventHub gameEventHub;
 
         public bool Execute()
@@ -68,6 +76,11 @@ namespace Survivebest.Interaction
                 HomeHotspotType.TV => ExecuteTV(needs, status),
                 HomeHotspotType.WorkoutCorner => ExecuteWorkout(needs, health, status),
                 HomeHotspotType.Pantry => ExecutePantry(needs, status),
+                HomeHotspotType.RecyclingBin => ExecuteRecycling(status),
+                HomeHotspotType.LaundryBasket => ExecuteLaundry(status),
+                HomeHotspotType.CleaningStation => ExecuteCleaningStation(status),
+                HomeHotspotType.GroomingStation => ExecuteGroomingStation(needs, status),
+                HomeHotspotType.Closet => ExecuteClosetChange(needs, status),
                 _ => ExecuteGeneric(status)
             };
 
@@ -89,11 +102,87 @@ namespace Survivebest.Interaction
             bool ok = grocerySystem.ConsumeIngredient(discardItemName, Mathf.Max(1, discardQuantity));
             if (ok)
             {
+                if (housingPropertySystem != null)
+                {
+                    housingPropertySystem.RegisterWaste(propertyId, WasteItemState.Waste, discardQuantity);
+                    housingPropertySystem.RegisterUtilityUsage(propertyId, 0f, 0f, 0f, 0f, discardQuantity * 0.8f);
+                }
+
                 status?.ApplyRandomStatus(false);
                 Publish(SimulationEventSeverity.Info, "ItemDiscarded", $"Discarded {discardQuantity}x {discardItemName}", discardQuantity);
             }
 
             return ok;
+        }
+
+        private bool ExecuteRecycling(StatusEffectSystem status)
+        {
+            if (housingPropertySystem == null)
+            {
+                return false;
+            }
+
+            housingPropertySystem.ProcessBinDisposal(propertyId, recycle: true);
+            householdChoreSystem?.TryCompleteHighestPriorityChore();
+            status?.ApplyStatusById("status_160", 2);
+            return true;
+        }
+
+        private bool ExecuteLaundry(StatusEffectSystem status)
+        {
+            if (housingPropertySystem == null)
+            {
+                return false;
+            }
+
+            housingPropertySystem.ProcessLaundry(propertyId);
+            householdChoreSystem?.TryCompleteHighestPriorityChore();
+            status?.ApplyStatusById("status_170", 3);
+            return true;
+        }
+
+        private bool ExecuteCleaningStation(StatusEffectSystem status)
+        {
+            if (housingPropertySystem == null)
+            {
+                return false;
+            }
+
+            housingPropertySystem.ApplyRoomMaintenance(propertyId, 8f, 3f);
+            housingPropertySystem.ProcessDishes(propertyId);
+            housingPropertySystem.RegisterUtilityUsage(propertyId, 1.2f, 1.4f, 0f, 0f, 0f);
+            householdChoreSystem?.TryCompleteHighestPriorityChore();
+            status?.ApplyStatusById("status_180", 3);
+            return true;
+        }
+
+        private bool ExecuteGroomingStation(NeedsSystem needs, StatusEffectSystem status)
+        {
+            if (needs == null)
+            {
+                return false;
+            }
+
+            needs.ModifyGrooming(20f);
+            needs.ModifyAppearance(12f);
+            needs.ModifyMood(5f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 0.4f, 0.8f, 0f, 0f, 0f);
+            status?.ApplyStatusById("status_190", 4);
+            return true;
+        }
+
+        private bool ExecuteClosetChange(NeedsSystem needs, StatusEffectSystem status)
+        {
+            if (needs == null)
+            {
+                return false;
+            }
+
+            needs.ModifyAppearance(14f);
+            needs.ModifyMood(4f);
+            housingPropertySystem?.AddLaundry(propertyId, 2f);
+            status?.ApplyStatusById("status_200", 3);
+            return true;
         }
 
         private bool ExecuteDoorway(StatusEffectSystem status)
@@ -133,7 +222,7 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private static bool ExecuteShower(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteShower(NeedsSystem needs, StatusEffectSystem status)
         {
             if (needs == null)
             {
@@ -141,13 +230,16 @@ namespace Survivebest.Interaction
             }
 
             needs.ModifyHygiene(30f);
+            needs.ModifyGrooming(6f);
+            needs.ModifyAppearance(4f);
             needs.ModifyMood(8f);
             needs.ModifyEnergy(2f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 0.5f, 2.2f, 0f, 0f, 0f);
             status?.ApplyStatusById("status_040", 6);
             return true;
         }
 
-        private static bool ExecuteFridge(NeedsSystem needs, HealthSystem health, StatusEffectSystem status)
+        private bool ExecuteFridge(NeedsSystem needs, HealthSystem health, StatusEffectSystem status)
         {
             if (needs == null)
             {
@@ -157,12 +249,14 @@ namespace Survivebest.Interaction
             needs.RestoreHunger(20f);
             needs.ModifyMood(5f);
             needs.RestoreHydration(6f);
+            housingPropertySystem?.AddDishStack(propertyId, 1f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 0.8f, 0f, 0f, 0f, 0.2f);
             health?.Heal(1.5f);
             status?.ApplyStatusById("status_060", 5);
             return true;
         }
 
-        private static bool ExecuteWaterCooler(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteWaterCooler(NeedsSystem needs, StatusEffectSystem status)
         {
             if (needs == null)
             {
@@ -171,6 +265,7 @@ namespace Survivebest.Interaction
 
             needs.RestoreHydration(22f);
             needs.ModifyMood(3f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 0.2f, 0.5f, 0f, 0f, 0f);
             status?.ApplyStatusById("status_080", 3);
             return true;
         }
@@ -243,7 +338,7 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private static bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status)
         {
             if (needs == null)
             {
@@ -253,6 +348,7 @@ namespace Survivebest.Interaction
             needs.ModifyMood(9f);
             needs.ModifyEnergy(-2f);
             needs.ModifyHygiene(-1f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 1.3f, 0f, 0f, 0.9f, 0f);
             status?.ApplyRandomStatus(UnityEngine.Random.value < 0.35f);
             return true;
         }
@@ -273,7 +369,7 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private static bool ExecutePantry(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecutePantry(NeedsSystem needs, StatusEffectSystem status)
         {
             if (needs == null)
             {
@@ -283,6 +379,8 @@ namespace Survivebest.Interaction
             needs.RestoreHunger(14f);
             needs.RestoreHydration(-2f);
             needs.ModifyMood(2f);
+            housingPropertySystem?.AddDishStack(propertyId, 0.6f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 0f, 0f, 1.1f, 0f, 0.1f);
             status?.ApplyRandomStatus(UnityEngine.Random.value < 0.5f);
             return true;
         }

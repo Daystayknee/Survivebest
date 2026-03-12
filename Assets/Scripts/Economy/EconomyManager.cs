@@ -233,6 +233,26 @@ namespace Survivebest.Economy
             RecordTransaction(EconomyTransactionType.Paycheck, employerAccountId, employeeAccountId, null, reason, grossPay, tax, 0f);
         }
 
+        public bool ProcessUtilityBill(string accountId, float electric, float water, float gas, float internet, float trash, bool allowDebt = true)
+        {
+            float total = Mathf.Max(0f, electric) + Mathf.Max(0f, water) + Mathf.Max(0f, gas) + Mathf.Max(0f, internet) + Mathf.Max(0f, trash);
+            if (total <= 0f)
+            {
+                return true;
+            }
+
+            bool paid = TryCharge(accountId, total, "Utility bill", allowDebt);
+            if (!paid)
+            {
+                return false;
+            }
+
+            RecordTransaction(EconomyTransactionType.ServiceFee, accountId, null, null,
+                $"Utility bill (E:{electric:0.0},W:{water:0.0},G:{gas:0.0},I:{internet:0.0},T:{trash:0.0})",
+                total, 0f, 0f);
+            return true;
+        }
+
         public void SetPricingModifier(string itemId, float multiplier, string reason)
         {
             if (string.IsNullOrWhiteSpace(itemId))

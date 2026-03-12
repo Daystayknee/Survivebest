@@ -4,6 +4,7 @@ using Survivebest.Core;
 using Survivebest.World;
 using Survivebest.Needs;
 using Survivebest.Emotion;
+using Survivebest.Location;
 
 namespace Survivebest.Activity
 {
@@ -15,6 +16,7 @@ namespace Survivebest.Activity
         [SerializeField] private EmotionSystem emotionSystem;
         [SerializeField] private ActivitySystem activitySystem;
         [SerializeField] private SocialSystem socialSystem;
+        [SerializeField] private HouseholdChoreSystem householdChoreSystem;
 
         [SerializeField, Range(0f, 1f)] private float autonomousActionChancePerHour = 0.45f;
 
@@ -57,6 +59,11 @@ namespace Survivebest.Activity
             }
 
             activitySystem.PerformActivity(selected);
+            if (selected == ActivityType.Chore)
+            {
+                householdChoreSystem?.TryCompleteHighestPriorityChore();
+            }
+
             OnAutonomousActivityPerformed?.Invoke(selected, hour);
         }
 
@@ -75,6 +82,37 @@ namespace Survivebest.Activity
             if (hour >= 22 || hour <= 5)
             {
                 return ActivityType.Sleep;
+            }
+
+            if (hour >= 6 && hour <= 9)
+            {
+                if (needsSystem.Hygiene < 65f)
+                {
+                    return ActivityType.Chore;
+                }
+
+                if (needsSystem.Hunger < 75f)
+                {
+                    return ActivityType.Cook;
+                }
+            }
+
+            if (hour >= 18 && hour <= 21)
+            {
+                if (needsSystem.Hunger < 65f)
+                {
+                    return ActivityType.Cook;
+                }
+
+                if (needsSystem.Hygiene < 55f)
+                {
+                    return ActivityType.Chore;
+                }
+
+                if (emotionSystem != null && emotionSystem.Stress > 50f)
+                {
+                    return ActivityType.Socialize;
+                }
             }
 
             if (needsSystem.Energy < 25f)

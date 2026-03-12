@@ -139,6 +139,12 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `TownSimulationManager` now computes a reusable town pressure score (crowding + district activity + off-screen strain) that can drive director pacing and incident escalation.
 - `AIDirectorDramaManager` now considers town pressure and vibe profile when selecting disruption/recovery incident types, improving authored-feeling pacing without scripted rails.
 - Added procedural-foundation primitives in `Survivebest.Core.Procedural`: `RunSeed`, `SeededRandomService` (`IRandomService`), `SimulationProfile`, `ScenarioContext`, and `WeightedTable<T>` so runs can be reproducible and profile-driven before full scenario-runner rollout.
+- Added `HouseholdChoreSystem` to generate/track daily home chores (trash, dishes, laundry, cleaning, organization) and hook chore completion into routine activity and housing state outcomes.
+- `HousingPropertySystem` now tracks environmental hygiene metrics (`TrashLevel`, `DishStack`, `LaundryPile`, `OdorLevel`, room cleanliness/clutter mirrors) with daily decay/overflow consequences and disposal/cleanup actions.
+- `HomeInteractionHotspot` now includes `RecyclingBin`, `LaundryBasket`, and `CleaningStation` interactions that plug directly into housing hygiene and chore progression.
+- Added expanded home-life loop systems: laundry state flow (`Dirty -> Wet -> Drying -> Clean`), dish lifecycle pressure, appliance-specific wear (washer/dryer/fridge/stove/vehicle), utility usage metering (electric/water/gas/internet/trash) with billing-cycle charges, and weather-home impact hooks in `HousingPropertySystem`.
+- `NeedsSystem` now includes `Grooming` and `Appearance` values for personal-care gameplay and social confidence penalties/bonuses.
+- Food spoilage now supports refrigeration-aware decay in inventory flows (`InventoryManager` stack spoilage states + `EconomyInventorySystem` refrigerated instance multiplier) and `FoodDatabase` now includes spoilage/refrigeration metadata per food item.
 - Added `WorldPersistenceCullingSystem` for off-screen simulation rules, lot activation/deactivation budget, remote NPC catch-up summaries, and story-priority simulation scaling.
 - Added `AIDirectorDramaManager` to monitor boredom/tension and inject disruption or recovery beats so major moments are paced rather than random.
 - Added `AnimationFeedbackJuiceSystem` to translate simulation events into animation/SFX/VFX/UI cue payloads for stronger moment-to-moment feedback and readability.
