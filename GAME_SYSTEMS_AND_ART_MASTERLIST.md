@@ -126,6 +126,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Location/LocationManager.cs`
 - `Assets/Scripts/Location/TownSimulationSystem.cs`
 - `Assets/Scripts/Location/HousingPropertySystem.cs`
+- `Assets/Scripts/Location/LivingWorldInfrastructureEngine.cs`
 - `Assets/Scripts/Interaction/Interactable.cs`
 - `Assets/Scripts/Interaction/InteractionController.cs`
 - `Assets/Scripts/Interaction/HomeInteractionHotspot.cs`
@@ -185,6 +186,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
 - `Assets/Tests/EditMode/HumanLifeExperienceLayerSystemTests.cs`
 - `Assets/Tests/EditMode/WorldCultureSocietyEngineTests.cs`
+- `Assets/Tests/EditMode/LivingWorldInfrastructureEngineTests.cs`
 
 ---
 

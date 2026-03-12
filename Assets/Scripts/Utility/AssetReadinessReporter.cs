@@ -57,7 +57,8 @@ namespace Survivebest.Utility
             new("AIDirectorDramaManager", typeof(AIDirectorDramaManager), false),
             new("SimulationStabilityMonitor", typeof(SimulationStabilityMonitor), false),
             new("PsychologicalGrowthMentalHealthEngine", typeof(PsychologicalGrowthMentalHealthEngine), true),
-            new("WorldCultureSocietyEngine", typeof(WorldCultureSocietyEngine), false)
+            new("WorldCultureSocietyEngine", typeof(WorldCultureSocietyEngine), false),
+            new("LivingWorldInfrastructureEngine", typeof(LivingWorldInfrastructureEngine), true)
         };
 
         [Header("Optional Key UI Controllers")]
@@ -102,6 +103,7 @@ namespace Survivebest.Utility
         [SerializeField] private SimulationStabilityMonitor simulationStabilityMonitor;
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
         [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
+        [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -153,6 +155,7 @@ namespace Survivebest.Utility
             missing += CheckNull(simulationStabilityMonitor, nameof(simulationStabilityMonitor));
             missing += CheckNull(psychologicalGrowthMentalHealthEngine, nameof(psychologicalGrowthMentalHealthEngine));
             missing += CheckNull(worldCultureSocietyEngine, nameof(worldCultureSocietyEngine));
+            missing += CheckNull(livingWorldInfrastructureEngine, nameof(livingWorldInfrastructureEngine));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -236,6 +239,7 @@ namespace Survivebest.Utility
             simulationStabilityMonitor ??= FindObjectOfType<SimulationStabilityMonitor>(true);
             psychologicalGrowthMentalHealthEngine ??= FindObjectOfType<PsychologicalGrowthMentalHealthEngine>(true);
             worldCultureSocietyEngine ??= FindObjectOfType<WorldCultureSocietyEngine>(true);
+            livingWorldInfrastructureEngine ??= FindObjectOfType<LivingWorldInfrastructureEngine>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
