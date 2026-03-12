@@ -1,0 +1,573 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+using UnityEngine.UI;
+using Survivebest.Commerce;
+using Survivebest.Core;
+using Survivebest.Events;
+using Survivebest.Health;
+using Survivebest.Needs;
+using Survivebest.Status;
+
+namespace Survivebest.UI
+{
+    [Serializable]
+    public class AnimalSightingEncounter
+    {
+        public string SightingName;
+        public string AnimalName;
+        public string AnimalSpecies;
+        [TextArea] public string Description;
+        [Range(0f, 1f)] public float Difficulty = 0.4f;
+        [Min(0)] public int Payment = 35;
+        [Range(-20f, 20f)] public float EnergyDelta = -6f;
+        [Range(-20f, 20f)] public float HygieneDelta = -4f;
+        [Range(-20f, 20f)] public float MoodDelta = 8f;
+        [Range(-20f, 20f)] public float HydrationDelta = -2f;
+        public string RewardStatusId = "status_020";
+        public string PenaltyStatusId = "status_200";
+        public Sprite AnimalPreview;
+    }
+
+    public class ActionPopupController : MonoBehaviour
+    {
+        [SerializeField] private SidebarContextMenu sidebarContextMenu;
+        [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private GrocerySystem grocerySystem;
+        [SerializeField] private OrderingSystem orderingSystem;
+        [SerializeField] private RecipeSystem recipeSystem;
+        [SerializeField] private GameEventHub gameEventHub;
+
+        [Header("Popup UI")]
+        [SerializeField] private GameObject popupRoot;
+        [SerializeField] private Text titleText;
+        [SerializeField] private Text bodyText;
+        [SerializeField] private Text optionsText;
+        [SerializeField] private Image animalPreviewImage;
+        [SerializeField] private Text animalPreviewLabel;
+
+        [Header("Animal Sightings")]
+        [SerializeField] private List<AnimalSightingEncounter> animalSightingEncounters = new()
+        {
+            new AnimalSightingEncounter
+            {
+                SightingName = "Dawn Deer Crossing",
+                AnimalName = "White-tail Doe",
+                AnimalSpecies = "Deer",
+                Description = "Track hoof marks near the creek and quietly observe the herd at sunrise.",
+                Difficulty = 0.25f,
+                Payment = 30,
+                EnergyDelta = -3f,
+                HygieneDelta = -1f,
+                MoodDelta = 8f,
+                HydrationDelta = -1f,
+                RewardStatusId = "status_020",
+                PenaltyStatusId = "status_205"
+            },
+            new AnimalSightingEncounter
+            {
+                SightingName = "Night Owl Watch",
+                AnimalName = "Barn Owl",
+                AnimalSpecies = "Bird",
+                Description = "Stay quiet near the old mill and capture a clean sighting at dusk.",
+                Difficulty = 0.45f,
+                Payment = 44,
+                EnergyDelta = -6f,
+                HygieneDelta = -2f,
+                MoodDelta = 10f,
+                HydrationDelta = -2f,
+                RewardStatusId = "status_060",
+                PenaltyStatusId = "status_210"
+            },
+            new AnimalSightingEncounter
+            {
+                SightingName = "Wetland Croc Survey",
+                AnimalName = "Marsh Crocodile",
+                AnimalSpecies = "Reptile",
+                Description = "Log movement patterns from a safe ridge without startling the animal.",
+                Difficulty = 0.62f,
+                Payment = 62,
+                EnergyDelta = -7f,
+                HygieneDelta = -3f,
+                MoodDelta = 9f,
+                HydrationDelta = -2f,
+                RewardStatusId = "status_080",
+                PenaltyStatusId = "status_215"
+            },
+            new AnimalSightingEncounter
+            {
+                SightingName = "Mountain Fox Trail",
+                AnimalName = "Silver Fox",
+                AnimalSpecies = "Mammal",
+                Description = "Follow tracks in the highlands and report a verified visual sighting.",
+                Difficulty = 0.55f,
+                Payment = 57,
+                EnergyDelta = -9f,
+                HygieneDelta = -4f,
+                MoodDelta = 11f,
+                HydrationDelta = -3f,
+                RewardStatusId = "status_100",
+                PenaltyStatusId = "status_220"
+            }
+        };
+
+        private string currentActionKey;
+        private AnimalSightingEncounter currentSighting;
+        private readonly StringBuilder builder = new();
+
+        private void OnEnable()
+        {
+            if (sidebarContextMenu != null)
+            {
+                sidebarContextMenu.OnSidebarOptionSelected += HandleSidebarOption;
+            }
+
+            SetPopupVisible(false);
+        }
+
+        private void OnDisable()
+        {
+            if (sidebarContextMenu != null)
+            {
+                sidebarContextMenu.OnSidebarOptionSelected -= HandleSidebarOption;
+            }
+        }
+
+        private void HandleSidebarOption(string actionKey)
+        {
+            currentActionKey = actionKey;
+            currentSighting = actionKey == "animal_sight" ? PickSighting() : null;
+            SetPopupVisible(true);
+            RefreshPopupContent(actionKey);
+        }
+
+        public void ConfirmAction()
+        {
+            if (string.IsNullOrWhiteSpace(currentActionKey))
+            {
+                return;
+            }
+
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            string reason;
+            float magnitude = 1f;
+
+            switch (currentActionKey)
+            {
+                case "buy":
+                    reason = DoBuy();
+                    break;
+                case "sell":
+                    reason = DoSell();
+                    break;
+                case "trade":
+                    reason = "Trade completed. Reputation changed slightly.";
+                    magnitude = 2f;
+                    break;
+                case "get_meds":
+                    reason = ApplyMedicalAid(active);
+                    magnitude = 4f;
+                    break;
+                case "see_doctor":
+                    reason = "Doctor consult completed. Recovery plan added.";
+                    magnitude = 3f;
+                    break;
+                case "forage":
+                    reason = DoForage();
+                    magnitude = 2f;
+                    break;
+                case "camp":
+                    reason = "Camp setup complete. Energy recovery boosted tonight.";
+                    magnitude = 2f;
+                    break;
+                case "practice_skill":
+                    reason = PracticeSkill(active, "Cooking", 4f);
+                    magnitude = 4f;
+                    break;
+                case "train_skill":
+                    reason = PracticeSkill(active, "Survival skills", 5f);
+                    magnitude = 5f;
+                    break;
+                case "animal_sight":
+                    reason = ResolveAnimalSighting(active, out magnitude);
+                    break;
+                case "talk_coworkers":
+                    reason = "Coworker social interaction finished.";
+                    magnitude = 1f;
+                    break;
+                case "schmooze_boss":
+                    reason = "Boss relationship attempt performed.";
+                    magnitude = 2f;
+                    break;
+                default:
+                    reason = "Action completed.";
+                    break;
+            }
+
+            PublishActionEvent(reason, magnitude);
+            SetPopupVisible(false);
+        }
+
+        public void CancelAction()
+        {
+            SetPopupVisible(false);
+        }
+
+        private void RefreshPopupContent(string actionKey)
+        {
+            if (titleText != null)
+            {
+                titleText.text = BuildTitle(actionKey);
+            }
+
+            if (bodyText != null)
+            {
+                bodyText.text = BuildDescription(actionKey);
+            }
+
+            if (optionsText != null)
+            {
+                optionsText.text = BuildOptionsPreview(actionKey);
+            }
+
+            RefreshAnimalPreview();
+        }
+
+        private string BuildTitle(string actionKey)
+        {
+            return actionKey switch
+            {
+                "buy" => "Store: Buy Items",
+                "sell" => "Store: Sell Items",
+                "trade" => "Trade Interaction",
+                "get_meds" => "Medical: Get Meds",
+                "see_doctor" => "Medical: See Doctor",
+                "forage" => "Nature: Forage",
+                "camp" => "Nature: Camp",
+                "animal_sight" => currentSighting != null ? $"Animal Sighting: {currentSighting.SightingName}" : "Animal Sighting",
+                "practice_skill" => "Skill Practice",
+                "train_skill" => "Skill Training",
+                _ => "Action"
+            };
+        }
+
+        private string BuildDescription(string actionKey)
+        {
+            return actionKey switch
+            {
+                "buy" => "Purchase food/supplies and add them to your pantry.",
+                "sell" => "Sell selected pantry goods for money.",
+                "trade" => "Exchange goods/social favor with NPC vendors.",
+                "get_meds" => "Apply medicine effects and stabilize condition severity.",
+                "see_doctor" => "Schedule a doctor consultation for diagnostics.",
+                "forage" => "Explore wild zones and gather random ingredients.",
+                "camp" => "Set camp to restore comfort and safety overnight.",
+                "animal_sight" => BuildAnimalSightingDescription(),
+                "practice_skill" => "Spend time to gain XP in an applied skill.",
+                "train_skill" => "Focused training to gain bigger XP rewards.",
+                _ => "Confirm to execute this action."
+            };
+        }
+
+        private string BuildAnimalSightingDescription()
+        {
+            if (currentSighting == null)
+            {
+                return "Track a wildlife encounter for finder payout, mood boosts, and skill growth.";
+            }
+
+            return $"Care for {currentSighting.AnimalName} ({currentSighting.AnimalSpecies}). {currentSighting.Description}\nFinder payout: ${currentSighting.Payment}.";
+        }
+
+        private string BuildOptionsPreview(string actionKey)
+        {
+            builder.Clear();
+            switch (actionKey)
+            {
+                case "buy":
+                    builder.AppendLine("Preview Items:");
+                    AppendTopCatalogItems(builder, 5);
+                    break;
+                case "sell":
+                    builder.AppendLine("Pantry Items:");
+                    AppendPantryItems(builder, 5);
+                    break;
+                case "animal_sight":
+                    AppendAnimalSightingPreview(builder);
+                    break;
+                case "practice_skill":
+                case "train_skill":
+                    builder.AppendLine("Skill Actions:");
+                    builder.AppendLine("• Cooking");
+                    builder.AppendLine("• Survival skills");
+                    builder.AppendLine("• Negotiation");
+                    if (recipeSystem != null && recipeSystem.Recipes != null && recipeSystem.Recipes.Count > 0)
+                    {
+                        builder.AppendLine($"• Recipe Focus: {recipeSystem.Recipes[0].RecipeName}");
+                    }
+                    break;
+                default:
+                    builder.AppendLine("Press Confirm to continue.");
+                    break;
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private void AppendAnimalSightingPreview(StringBuilder sb)
+        {
+            if (currentSighting == null)
+            {
+                sb.AppendLine("• No gig selected.");
+                return;
+            }
+
+            sb.AppendLine($"Target: {currentSighting.AnimalName} ({currentSighting.AnimalSpecies})");
+            sb.AppendLine($"Difficulty: {(int)(currentSighting.Difficulty * 100f)}%");
+            sb.AppendLine($"Payout: ${currentSighting.Payment}");
+            sb.AppendLine($"Need impact: Energy {currentSighting.EnergyDelta:+0;-0;0}, Hygiene {currentSighting.HygieneDelta:+0;-0;0}, Mood {currentSighting.MoodDelta:+0;-0;0}");
+            sb.AppendLine("Confirm to attempt the wildlife sighting.");
+        }
+
+        private void RefreshAnimalPreview()
+        {
+            bool show = currentActionKey == "animal_sight" && currentSighting != null;
+
+            if (animalPreviewImage != null)
+            {
+                animalPreviewImage.gameObject.SetActive(show);
+                if (show)
+                {
+                    animalPreviewImage.sprite = currentSighting.AnimalPreview;
+                    animalPreviewImage.color = currentSighting.AnimalPreview != null ? Color.white : new Color(1f, 1f, 1f, 0.15f);
+                }
+            }
+
+            if (animalPreviewLabel != null)
+            {
+                animalPreviewLabel.gameObject.SetActive(show);
+                if (show)
+                {
+                    animalPreviewLabel.text = currentSighting.AnimalPreview != null
+                        ? $"{currentSighting.AnimalName} • {currentSighting.AnimalSpecies}"
+                        : $"{currentSighting.AnimalName} • {currentSighting.AnimalSpecies} (assign preview image)";
+                }
+            }
+        }
+
+        private AnimalSightingEncounter PickSighting()
+        {
+            if (animalSightingEncounters == null || animalSightingEncounters.Count == 0)
+            {
+                return null;
+            }
+
+            int index = UnityEngine.Random.Range(0, animalSightingEncounters.Count);
+            return animalSightingEncounters[index];
+        }
+
+        private string ResolveAnimalSighting(CharacterCore active, out float magnitude)
+        {
+            magnitude = 2f;
+            if (active == null)
+            {
+                return "No active character available for animal sighting.";
+            }
+
+            AnimalSightingEncounter gig = currentSighting ?? PickSighting();
+            if (gig == null)
+            {
+                return "No animal sighting encounters are configured.";
+            }
+
+            NeedsSystem needs = active.GetComponent<NeedsSystem>();
+            SkillSystem skills = active.GetComponent<SkillSystem>();
+            StatusEffectSystem status = active.GetComponent<StatusEffectSystem>();
+
+            float handlingSkill = 0f;
+            if (skills != null && skills.SkillLevels.TryGetValue("Animal care", out float value))
+            {
+                handlingSkill = Mathf.Clamp01(value / 100f);
+            }
+
+            float moodBonus = needs != null ? Mathf.Clamp01(needs.Mood / 100f) * 0.08f : 0f;
+            float successChance = Mathf.Clamp01(0.52f + handlingSkill * 0.35f + moodBonus - gig.Difficulty * 0.28f);
+            bool success = UnityEngine.Random.value <= successChance;
+
+            if (needs != null)
+            {
+                needs.ModifyEnergy(gig.EnergyDelta);
+                needs.ModifyHygiene(gig.HygieneDelta);
+                needs.ModifyMood(success ? gig.MoodDelta : -Mathf.Abs(gig.MoodDelta) * 0.6f);
+                needs.RestoreHydration(gig.HydrationDelta);
+            }
+
+            if (skills != null)
+            {
+                skills.AddExperience("Animal care", success ? 5f : 2f);
+                skills.AddExperience("Survival skills", success ? 2f : 1f);
+            }
+
+            if (orderingSystem != null && success)
+            {
+                orderingSystem.AddFunds(gig.Payment);
+            }
+
+            if (status != null)
+            {
+                if (success && !string.IsNullOrWhiteSpace(gig.RewardStatusId))
+                {
+                    status.ApplyStatusById(gig.RewardStatusId, 6);
+                }
+                else if (!success && !string.IsNullOrWhiteSpace(gig.PenaltyStatusId))
+                {
+                    status.ApplyStatusById(gig.PenaltyStatusId, 6);
+                }
+            }
+
+            magnitude = success ? gig.Payment : -gig.Difficulty * 10f;
+            return success
+                ? $"Animal sighting success: {gig.AnimalName} is happy. Earned ${gig.Payment}."
+                : $"Animal sighting failed: {gig.AnimalName} became stressed. Partial progress only.";
+        }
+
+        private void AppendTopCatalogItems(StringBuilder sb, int count)
+        {
+            string[] defaults = { "Bread", "Rice", "Chicken", "Tomato", "Milk" };
+            for (int i = 0; i < count; i++)
+            {
+                string name = defaults[i % defaults.Length];
+                sb.AppendLine($"• {name}");
+            }
+        }
+
+        private void AppendPantryItems(StringBuilder sb, int count)
+        {
+            if (grocerySystem == null || grocerySystem.Pantry == null || grocerySystem.Pantry.Count == 0)
+            {
+                sb.AppendLine("• No pantry items yet");
+                return;
+            }
+
+            int max = Mathf.Min(count, grocerySystem.Pantry.Count);
+            for (int i = 0; i < max; i++)
+            {
+                InventoryEntry entry = grocerySystem.Pantry[i];
+                if (entry != null)
+                {
+                    sb.AppendLine($"• {entry.ItemName} x{entry.Quantity}");
+                }
+            }
+        }
+
+        private string DoBuy()
+        {
+            if (grocerySystem == null)
+            {
+                return "No grocery system connected.";
+            }
+
+            string[] staples = { "Bread", "Rice", "Chicken", "Tomato", "Onion" };
+            string selected = staples[UnityEngine.Random.Range(0, staples.Length)];
+            grocerySystem.BuyIngredient(selected, UnityEngine.Random.Range(1, 4));
+            bool paid = orderingSystem == null || orderingSystem.SpendFunds(5f);
+            return paid
+                ? $"Bought {selected} and added to pantry."
+                : "Not enough money to buy right now.";
+        }
+
+        private string DoSell()
+        {
+            if (grocerySystem == null || grocerySystem.Pantry == null || grocerySystem.Pantry.Count == 0)
+            {
+                return "Nothing to sell.";
+            }
+
+            InventoryEntry item = grocerySystem.Pantry.FirstOrDefault(x => x != null && x.Quantity > 0);
+            if (item == null)
+            {
+                return "No valid pantry item to sell.";
+            }
+
+            grocerySystem.ConsumeIngredient(item.ItemName, 1);
+            orderingSystem?.AddFunds(8f);
+            return $"Sold 1x {item.ItemName}.";
+        }
+
+        private string DoForage()
+        {
+            if (grocerySystem == null)
+            {
+                return "No inventory available for forage rewards.";
+            }
+
+            string[] forageItems = { "Mushroom", "Berry", "Herbs", "Wild onion", "Chestnut" };
+            string gathered = forageItems[UnityEngine.Random.Range(0, forageItems.Length)];
+            grocerySystem.BuyIngredient(gathered, UnityEngine.Random.Range(1, 3));
+            return $"Foraged {gathered}.";
+        }
+
+        private string ApplyMedicalAid(CharacterCore active)
+        {
+            if (active == null)
+            {
+                return "No active character for medical aid.";
+            }
+
+            HealthSystem health = active.GetComponent<HealthSystem>();
+            health?.Heal(4f);
+
+            MedicalConditionSystem med = active.GetComponent<MedicalConditionSystem>();
+            if (med != null && med.ActiveConditions.Count > 0)
+            {
+                med.HealCondition(med.ActiveConditions[0].Id, 8);
+                return "Applied medication and reduced ailment duration.";
+            }
+
+            return "Applied preventive medicine. No active ailment found.";
+        }
+
+        private static string PracticeSkill(CharacterCore active, string skillName, float xp)
+        {
+            if (active == null)
+            {
+                return "No active character for skill practice.";
+            }
+
+            SkillSystem skill = active.GetComponent<SkillSystem>();
+            if (skill == null)
+            {
+                return "No skill system found on active character.";
+            }
+
+            skill.AddExperience(skillName, xp);
+            return $"{skillName} improved by practice.";
+        }
+
+        private void PublishActionEvent(string reason, float magnitude)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityCompleted,
+                Severity = magnitude < 0f ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(ActionPopupController),
+                SourceCharacterId = householdManager != null && householdManager.ActiveCharacter != null
+                    ? householdManager.ActiveCharacter.CharacterId
+                    : null,
+                ChangeKey = currentActionKey,
+                Reason = reason,
+                Magnitude = magnitude
+            });
+        }
+
+        private void SetPopupVisible(bool visible)
+        {
+            if (popupRoot != null)
+            {
+                popupRoot.SetActive(visible);
+            }
+        }
+    }
+}
