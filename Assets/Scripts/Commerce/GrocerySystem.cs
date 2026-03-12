@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Survivebest.Catalog;
 using Survivebest.Events;
+using Survivebest.Economy;
 
 namespace Survivebest.Commerce
 {
@@ -20,6 +21,8 @@ namespace Survivebest.Commerce
         [SerializeField] private SupplyCatalog supplyCatalog;
         [SerializeField] private List<InventoryEntry> pantry = new();
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField, Min(1)] private int defaultIngredientUnitPrice = 3;
 
         public event Action<string, int> OnInventoryChanged;
 
@@ -27,8 +30,18 @@ namespace Survivebest.Commerce
 
         public void BuyIngredient(string name, int quantity = 1)
         {
-            if (quantity <= 0) return;
-            if (!ExistsInCatalog(name)) return;
+            if (quantity <= 0 || !ExistsInCatalog(name))
+            {
+                return;
+            }
+
+            int totalCost = defaultIngredientUnitPrice * quantity;
+            if (economyInventorySystem != null && !economyInventorySystem.TrySpend(totalCost, $"Purchased {quantity}x {name}"))
+            {
+                PublishInventoryEvent(name, GetIngredientQuantity(name), "Purchase failed due to insufficient funds");
+                return;
+            }
+
             AddToPantry(name, quantity);
         }
 

@@ -4,6 +4,12 @@ using UnityEngine.UI;
 using Survivebest.UI;
 using Survivebest.Status;
 using Survivebest.World;
+using Survivebest.Core;
+using Survivebest.Commerce;
+using Survivebest.Economy;
+using Survivebest.Quest;
+using Survivebest.NPC;
+using Survivebest.Health;
 
 namespace Survivebest.Utility
 {
@@ -24,6 +30,10 @@ namespace Survivebest.Utility
         [SerializeField] private StatusEffectSystem statusEffectSystem;
         [SerializeField] private GeneticsSystem geneticsSystem;
         [SerializeField] private WeatherEffectSystem weatherEffectSystem;
+        [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private ContractBoardSystem contractBoardSystem;
+        [SerializeField] private NpcScheduleSystem npcScheduleSystem;
+        [SerializeField] private InjuryRecoverySystem injuryRecoverySystem;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -48,6 +58,10 @@ namespace Survivebest.Utility
             missing += CheckNull(statusEffectSystem, nameof(statusEffectSystem));
             missing += CheckNull(geneticsSystem, nameof(geneticsSystem));
             missing += CheckNull(weatherEffectSystem, nameof(weatherEffectSystem));
+            missing += CheckNull(economyInventorySystem, nameof(economyInventorySystem));
+            missing += CheckNull(contractBoardSystem, nameof(contractBoardSystem));
+            missing += CheckNull(npcScheduleSystem, nameof(npcScheduleSystem));
+            missing += CheckNull(injuryRecoverySystem, nameof(injuryRecoverySystem));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -84,6 +98,32 @@ namespace Survivebest.Utility
             {
                 Debug.LogWarning($"[AssetReadiness] Found {missing} missing/empty references. See warnings above.", this);
             }
+        }
+
+
+        [ContextMenu("Auto Wire Known References")]
+        public void AutoWireKnownReferences()
+        {
+            splashScreenController ??= FindObjectOfType<SplashScreenController>(true);
+            mainMenuFlowController ??= FindObjectOfType<MainMenuFlowController>(true);
+            loadGameScreenController ??= FindObjectOfType<LoadGameScreenController>(true);
+            settingsPageController ??= FindObjectOfType<SettingsPageController>(true);
+            worldCreatorScreenController ??= FindObjectOfType<WorldCreatorScreenController>(true);
+            householdMakerScreenController ??= FindObjectOfType<HouseholdMakerScreenController>(true);
+            characterScreenController ??= FindObjectOfType<CharacterScreenController>(true);
+            gameplayScreenController ??= FindObjectOfType<GameplayScreenController>(true);
+            actionPopupController ??= FindObjectOfType<ActionPopupController>(true);
+            buildModeManager ??= FindObjectOfType<BuildModeManager>(true);
+            furnitureStoreController ??= FindObjectOfType<FurnitureStoreController>(true);
+            statusEffectSystem ??= FindObjectOfType<StatusEffectSystem>(true);
+            geneticsSystem ??= FindObjectOfType<GeneticsSystem>(true);
+            weatherEffectSystem ??= FindObjectOfType<WeatherEffectSystem>(true);
+            economyInventorySystem ??= FindObjectOfType<EconomyInventorySystem>(true);
+            contractBoardSystem ??= FindObjectOfType<ContractBoardSystem>(true);
+            npcScheduleSystem ??= FindObjectOfType<NpcScheduleSystem>(true);
+            injuryRecoverySystem ??= FindObjectOfType<InjuryRecoverySystem>(true);
+
+            Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
 
         private int CheckNull(Object value, string fieldName)

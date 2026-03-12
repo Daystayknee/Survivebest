@@ -7,6 +7,7 @@ using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Status;
 using Survivebest.World;
+using Survivebest.Economy;
 
 namespace Survivebest.Core
 {
@@ -46,7 +47,9 @@ namespace Survivebest.Core
     [Serializable]
     public class SaveSlotPayload
     {
+        public int SchemaVersion = 1;
         public string WorldName;
+        public EconomySnapshot Economy;
         public string ActiveRoomName;
         public WorldSnapshot World = new();
         public List<CharacterSnapshot> HouseholdCharacters = new();
@@ -54,10 +57,14 @@ namespace Survivebest.Core
 
     public class SaveGameManager : MonoBehaviour
     {
+        private const int CurrentSchemaVersion = 3;
+        private const int LegacySchemaVersion = 1;
+
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private EconomyInventorySystem economyInventorySystem;
 
         public bool SaveToSlot(int slotIndex, string worldName)
         {
@@ -101,7 +108,8 @@ namespace Survivebest.Core
             if (!string.IsNullOrWhiteSpace(payloadJson))
             {
                 SaveSlotPayload payload = JsonUtility.FromJson<SaveSlotPayload>(payloadJson);
-                ApplyPayload(payload);
+                SaveSlotPayload migrated = MigratePayloadIfNeeded(payload);
+                ApplyPayload(migrated);
             }
             else
             {
@@ -166,6 +174,7 @@ namespace Survivebest.Core
         {
             SaveSlotPayload payload = new SaveSlotPayload
             {
+                SchemaVersion = CurrentSchemaVersion,
                 WorldName = worldName,
                 ActiveRoomName = locationManager != null && locationManager.CurrentRoom != null
                     ? locationManager.CurrentRoom.RoomName
@@ -177,7 +186,8 @@ namespace Survivebest.Core
                     Day = worldClock != null ? worldClock.Day : 1,
                     Hour = worldClock != null ? worldClock.Hour : 8,
                     Minute = worldClock != null ? worldClock.Minute : 0
-                }
+                },
+                Economy = economyInventorySystem != null ? economyInventorySystem.CaptureSnapshot() : null
             };
 
             if (householdManager == null || householdManager.Members == null)
@@ -231,6 +241,8 @@ namespace Survivebest.Core
                 locationManager.NavigateToRoom(payload.ActiveRoomName);
             }
 
+            economyInventorySystem?.ApplySnapshot(payload.Economy);
+
             if (householdManager == null || householdManager.Members == null || payload.HouseholdCharacters == null)
             {
                 return;
@@ -276,6 +288,42 @@ namespace Survivebest.Core
                 householdManager.SetActiveCharacter(activeToSet);
             }
         }
+
+        private SaveSlotPayload MigratePayloadIfNeeded(SaveSlotPayload payload)
+        {
+            if (payload == null)
+            {
+                return null;
+            }
+
+            if (payload.SchemaVersion <= 0)
+            {
+                payload.SchemaVersion = LegacySchemaVersion;
+            }
+
+            if (payload.SchemaVersion == CurrentSchemaVersion)
+            {
+                return payload;
+            }
+
+            if (payload.SchemaVersion == LegacySchemaVersion)
+            {
+                // Legacy payloads did not define schema; all existing data maps 1:1 for now.
+                payload.SchemaVersion = 2;
+            }
+
+            if (payload.SchemaVersion == 2)
+            {
+                // v2 payload had no shared economy snapshot. Keep runtime defaults and upgrade marker.
+                payload.SchemaVersion = CurrentSchemaVersion;
+                return payload;
+            }
+
+            Debug.LogWarning($"[SaveGameManager] Unknown save schema version {payload.SchemaVersion}. Attempting best-effort load.", this);
+            payload.SchemaVersion = CurrentSchemaVersion;
+            return payload;
+        }
+
 
         private void PublishSaveEvent(SimulationEventType eventType, int slotIndex, string worldName)
         {

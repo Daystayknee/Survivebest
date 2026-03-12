@@ -490,6 +490,12 @@ Always-visible character presence:
 - `SubstanceSystem` should track active substance states with durations/tolerance/dependency and apply start/tick/end consequences (including withdrawal) so usage has full lifecycle outcomes.
 - `WeatherEffectSystem` should apply immediate weather-state consequences and hourly weather ticks to needs/health so climate has persistent gameplay impact.
 - `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
+- `EconomyInventorySystem` should be the shared authority for wallet + inventory changes so grocery/order/contract systems can avoid fragmented balances.
+- `ContractBoardSystem` should formalize quest/contract loops (available → accepted → completed/failed/expired) with deadlines and rewards tied to world time.
+- `NpcScheduleSystem` should drive hourly job/schedule state transitions for non-household characters to build town-level simulation life.
+- `InjuryRecoverySystem` should extend health realism with severity-based injury progression, treatment impact, and recovery states.
+- `SkillTreeSystem` should provide unlockable profession branches tied to skill thresholds and prerequisite nodes.
+- `SaveGameManager` should maintain schema version + migration hooks for payload compatibility over future updates.
 
 - `SaveGameManager` should own save slot snapshot persistence (metadata + world time + room + per-character needs/health/skills/status restore) and publish save lifecycle events.
 - `CarSystem` should model meaningful travel outcomes (fuel economy, wear/cleanliness, distance multipliers, and driver-need impact) rather than simple location teleports.
@@ -500,4 +506,5 @@ Always-visible character presence:
 - `StatusEffectSystem` should own the long-tail modifiers library (220+ effects), ticking runtime effects into needs/health and publishing `StatusEffectChanged` events for HUD/journal surfaces.
 - `GeneticsSystem` should model trait inheritance from parents (with low mutation chance), map genes into face/body/skin/eyes, and re-apply morphing across life stages for believable aging progression.
 - `AppearanceManager` should support layered sprite auto-binding/validation to reduce manual image stacking errors in Unity portrait rigs.
+- `AssetReadinessReporter` should provide both diagnostics and auto-wire helpers (e.g., "Auto Wire Known References") to accelerate scene prefab completeness.
 - `FurnitureStoreController` should handle furniture purchase UI and spawn purchased placeables while transitioning player into build mode.

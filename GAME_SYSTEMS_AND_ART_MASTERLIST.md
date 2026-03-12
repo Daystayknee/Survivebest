@@ -25,12 +25,14 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/BodyCompositionSystem.cs`
 - `Assets/Scripts/Core/SaveGameManager.cs`
 - `Assets/Scripts/Core/SkillSystem.cs`
+- `Assets/Scripts/Core/SkillTreeSystem.cs`
 - `Assets/Scripts/Core/DaySliceManager.cs`
 
 ### Needs / Health / Medical / Status
 - `Assets/Scripts/Needs/NeedsSystem.cs`
 - `Assets/Scripts/Health/HealthSystem.cs`
 - `Assets/Scripts/Health/MedicalConditionSystem.cs`
+- `Assets/Scripts/Health/InjuryRecoverySystem.cs`
 - `Assets/Scripts/Status/StatusEffectSystem.cs`
 - `Assets/Scripts/Crime/SubstanceSystem.cs`
 
@@ -47,6 +49,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Minigames/MinigameManager.cs`
 
 ### Commerce / Inventory / Recipes / Ordering
+- `Assets/Scripts/Economy/EconomyInventorySystem.cs`
 - `Assets/Scripts/Catalog/IngredientCatalog.cs`
 - `Assets/Scripts/Catalog/SupplyCatalog.cs`
 - `Assets/Scripts/Food/FoodDatabase.cs`
@@ -54,6 +57,12 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Commerce/GrocerySystem.cs`
 - `Assets/Scripts/Commerce/RecipeSystem.cs`
 - `Assets/Scripts/Commerce/OrderingSystem.cs`
+
+### Quest / Contracts
+- `Assets/Scripts/Quest/ContractBoardSystem.cs`
+
+### NPC / Town Simulation
+- `Assets/Scripts/NPC/NpcScheduleSystem.cs`
 
 ### Law / Crime / Justice
 - `Assets/Scripts/Society/LawSystem.cs`
@@ -97,6 +106,10 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/View/ViewManager.cs`
 - `Assets/Scripts/Utility/AssetReadinessReporter.cs`
 - `Assets/Scripts/Utility/PlaceholderGenerator.cs`
+
+### Automated Tests
+- `Assets/Tests/EditMode/EconomyInventorySystemTests.cs`
+- `Assets/Tests/EditMode/SaveSchemaMigrationTests.cs`
 
 ---
 
@@ -204,6 +217,21 @@ This file is a comprehensive implementation inventory for the current codebase.
 34. **Succession flow**
     - Character death and successor handoff hooks.
 
+35. **Contract board flow**
+    - Contract spawn → accept → complete/fail/expire with timed deadlines and reward payout.
+
+36. **NPC schedule flow**
+    - Hourly schedule resolution for town NPC states by job archetype.
+
+37. **Skill tree flow**
+    - Skill XP progression unlocks node-based profession branches with prerequisites.
+
+38. **Injury treatment flow**
+    - Injury start → untreated/treated hourly outcomes → recovery.
+
+39. **Save schema migration flow**
+    - Load payload schema check → migrate legacy payloads → apply state safely.
+
 ---
 
 ## 3) State Lifecycles with Explicit Start/End (implemented)
@@ -293,6 +321,9 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 ---
 
 ## 5) What’s Still Missing / Next Features To Build
+
+Status update: items 2, 3, 4, 6, 7, and 8 now have foundational runtime systems; items 1, 5, 9, and 10 remain major production work.
+
 
 1. **Scene prefab completeness**
    - Most systems are code-ready but still need full prefab/inspector wiring in Unity scenes.

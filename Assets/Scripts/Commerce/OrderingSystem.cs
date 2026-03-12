@@ -6,6 +6,7 @@ using Survivebest.Needs;
 using Survivebest.Health;
 using Survivebest.World;
 using Survivebest.Events;
+using Survivebest.Economy;
 
 namespace Survivebest.Commerce
 {
@@ -106,6 +107,7 @@ namespace Survivebest.Commerce
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Min(0f)] private float wallet = 250f;
+        [SerializeField] private EconomyInventorySystem economyInventorySystem;
 
         private readonly List<PendingOrder> pendingOrders = new();
 
@@ -113,7 +115,7 @@ namespace Survivebest.Commerce
         public event Action<string, int> OnOrderPlaced;
         public event Action<float> OnWalletChanged;
 
-        public float Wallet => wallet;
+        public float Wallet => economyInventorySystem != null ? economyInventorySystem.Funds : wallet;
         public IReadOnlyList<PendingOrder> PendingOrders => pendingOrders;
         public IReadOnlyList<MenuItem> Menu => menu;
         public IReadOnlyList<FastFoodLocation> FastFoodLocations => fastFoodLocations;
@@ -141,14 +143,36 @@ namespace Survivebest.Commerce
                 return;
             }
 
+            if (economyInventorySystem != null)
+            {
+                economyInventorySystem.AddFunds(amount, "Ordering funds added");
+                OnWalletChanged?.Invoke(economyInventorySystem.Funds);
+                return;
+            }
+
             wallet += amount;
             OnWalletChanged?.Invoke(wallet);
         }
 
-
         public bool SpendFunds(float amount)
         {
-            if (amount <= 0f || wallet < amount)
+            if (amount <= 0f)
+            {
+                return false;
+            }
+
+            if (economyInventorySystem != null)
+            {
+                bool spent = economyInventorySystem.TrySpend(amount, "Ordering purchase");
+                if (spent)
+                {
+                    OnWalletChanged?.Invoke(economyInventorySystem.Funds);
+                }
+
+                return spent;
+            }
+
+            if (wallet < amount)
             {
                 return false;
             }
@@ -186,14 +210,11 @@ namespace Survivebest.Commerce
                 return false;
             }
 
-            if (wallet < item.Price)
+            if (!SpendFunds(item.Price))
             {
                 OnOrderCompleted?.Invoke(itemName, false);
                 return false;
             }
-
-            wallet -= item.Price;
-            OnWalletChanged?.Invoke(wallet);
 
             int dueMinute = GetCurrentTotalMinutes() + Mathf.Max(1, item.DeliveryMinutes);
             pendingOrders.Add(new PendingOrder
