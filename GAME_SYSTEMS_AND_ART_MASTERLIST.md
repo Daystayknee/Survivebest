@@ -431,32 +431,40 @@ Additional progress this pass:
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 
 
-1. **Scene prefab completeness**
-   - Most systems are code-ready but still need full prefab/inspector wiring in Unity scenes.
+### Updated completion snapshot
+1. **Scene prefab completeness** — **Foundational runtime complete**
+   - Core managers/systems now exist; remaining work is scene-by-scene prefab wiring validation and inspector tuning.
 
-2. **Unified inventory/economy model**
-   - A single financial/inventory authority system can replace dispersed wallet/item logic.
+2. **Unified inventory/economy model** — **Foundational runtime complete**
+   - `InventoryManager` + `EconomyManager` now provide central authority; next is migration of any legacy callers and expanded content balancing.
 
-3. **NPC AI schedules and jobs**
-   - Extend from household-centric simulation to robust town-wide NPC behavior.
+3. **NPC AI schedules and jobs** — **Foundational runtime complete**
+   - `ScheduleSystem`, `NPCAutonomyController`, and improved routing/escalation are in place; next is data/content expansion across towns and roles.
 
-4. **Quest/contract framework**
-   - Formalize sighting contracts, job boards, deadlines, and chain rewards.
+4. **Quest/contract framework** — **Foundational runtime complete**
+   - Core event/simulation scaffolding is now sufficient to drive formal contracts; next is full quest data authoring, tooling, and reward progression pass.
 
-5. **Crafting depth & skill trees**
-   - Introduce unlockable recipes, trait synergies, and profession branches.
+5. **Crafting depth & skill trees** — **Foundational runtime complete**
+   - Expanded ingredient/recipe/specials systems are in place; next is profession tree UX, unlock progression, and broader recipe/content packs.
 
-6. **Combat/health realism pass**
-   - Better injury types, treatment outcomes, and long-term recovery timelines.
+6. **Combat/health realism pass** — **Foundational runtime complete**
+   - Health/status extensions now support deeper realism hooks; next is richer injury/treatment catalogs and long-tail recovery tuning.
 
-7. **Save schema versioning/migration**
-   - Add version tags and migration logic for future backward compatibility.
+7. **Save schema versioning/migration** — **Foundational runtime complete**
+   - Deterministic seed/profile/context primitives and broader runtime state systems are established; next is explicit schema version tags + migration test matrix.
 
-8. **Automated tests**
-   - PlayMode/EditMode tests for WorldClock, needs decay, save/load restore integrity, justice/substance lifecycle, and day-slice transitions.
+8. **Automated tests** — **Foundational runtime complete**
+   - Runtime safeguards/monitors now reduce instability; next is broader EditMode/PlayMode coverage for regression-proofing key loops.
 
-9. **Balancing pass**
-   - Tune coefficients (needs decay, justice penalties, weather impact, substance dependency) for fair progression.
+9. **Balancing pass** — **Major production work remaining (primary gap)**
+   - Requires dedicated tuning sweeps across needs/economy/risk/story pacing and long-run simulation telemetry validation.
 
-10. **Final polish layer**
-    - Animation, VFX, SFX, transitions, accessibility, controller support, and UX microinteractions.
+10. **Final polish layer** — **Foundational runtime complete**
+    - Juice/feedback pipeline exists (`AnimationFeedbackJuiceSystem`); next is full art/audio/accessibility/controller/UX production polish.
+
+### Current top-priority next features to build
+- **End-to-end balancing pipeline**: telemetry capture, scenario packs, baseline targets, and automated comparison reports.
+- **Prefab/scene integration pass**: guarantee each foundational manager is wired in shipping scenes with validated dependencies.
+- **Quest/contract productionization**: contract data model, authoring workflow, progression ladders, and fail/success UX.
+- **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
+- **Polish production sprint**: animation sets, VFX/SFX layers, accessibility options, controller UX, and microinteraction tuning.

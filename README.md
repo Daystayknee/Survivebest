@@ -1,6 +1,6 @@
 # Survivebest (2D Life Sim Survival RPG Foundation)
 
-Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.  
+Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.
 The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play.
 
 ## Engine / Requirements
