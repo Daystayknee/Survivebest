@@ -175,6 +175,54 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void SetUseDyedHair(bool useDyed)
+        {
+            if (appearanceManager == null)
+            {
+                return;
+            }
+
+            appearanceManager.SetUseDyedHairColor(useDyed);
+            PublishUiEvent("DyedHairToggle", useDyed ? "Dyed hair enabled" : "Natural hair mode enabled", useDyed ? 1f : 0f);
+            RefreshPreview();
+        }
+
+        public void SetHairBaseR(float value)
+        {
+            appearanceManager?.SetHairColorChannels(baseR: value);
+            RefreshPreview();
+        }
+
+        public void SetHairBaseG(float value)
+        {
+            appearanceManager?.SetHairColorChannels(baseG: value);
+            RefreshPreview();
+        }
+
+        public void SetHairBaseB(float value)
+        {
+            appearanceManager?.SetHairColorChannels(baseB: value);
+            RefreshPreview();
+        }
+
+        public void SetHairHighlightIntensity(float value)
+        {
+            appearanceManager?.SetHairColorChannels(highlight: value);
+            RefreshPreview();
+        }
+
+        public void SetHairRootDepth(float value)
+        {
+            appearanceManager?.SetHairColorChannels(roots: value);
+            RefreshPreview();
+        }
+
+        public void SetHairOmbreAmount(float value)
+        {
+            appearanceManager?.SetHairColorChannels(ombre: value);
+            RefreshPreview();
+        }
+
         public void SetFrontHairSlider(float value)
         {
             if (appearanceManager == null)
@@ -363,6 +411,7 @@ namespace Survivebest.UI
 
         public CharacterCreatorDashboardViewModel CaptureViewModel()
         {
+            HairProfile hair = appearanceManager != null ? appearanceManager.ScalpHairProfile : null;
             return new CharacterCreatorDashboardViewModel
             {
                 ActiveTab = CurrentTab.ToString(),
@@ -370,7 +419,12 @@ namespace Survivebest.UI
                 HairLengthFilter = hairLengthFilter.ToString(),
                 FacialHairFilter = facialHairFilter.ToString(),
                 AvailableStyles = appearanceManager != null ? appearanceManager.GetHairstylesByFilter(hairTextureFilter, hairLengthFilter).Count : 0,
-                SavedPresetCount = savedHairPresets.Count
+                SavedPresetCount = savedHairPresets.Count,
+                UseDyedHair = hair != null && hair.UseDyedColor,
+                NaturalHairHex = hair != null ? ColorUtility.ToHtmlStringRGB(hair.NaturalHairColor) : "000000",
+                DyedHairHex = hair != null ? ColorUtility.ToHtmlStringRGB(hair.DyedHairColor) : "000000",
+                OmbreAmount = hair != null ? hair.OmbreAmount : 0f,
+                HighlightIntensity = hair != null ? hair.HighlightIntensity : 0f
             };
         }
 

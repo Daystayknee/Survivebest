@@ -98,11 +98,23 @@ namespace Survivebest.Appearance
         public string CurrentStyleId;
         public HairGrowthStage GrowthStage = HairGrowthStage.Short;
         public Color HairColor = Color.black;
+        public Color NaturalHairColor = Color.black;
+        public Color DyedHairColor = new Color(0.85f, 0.3f, 0.55f);
+        public Color HighlightColor = new Color(0.95f, 0.85f, 0.65f);
+        public Color RootColor = new Color(0.12f, 0.1f, 0.1f);
+        [Range(0f, 1f)] public float OmbreAmount;
+        [Range(0f, 1f)] public float HighlightIntensity;
+        public bool UseDyedColor;
         [Range(0f, 1f)] public float HairDensity = 0.6f;
         [Range(0f, 1f)] public float HairlineType = 0.5f;
         public bool IsWet;
         public bool IsMessy;
         public int LastTrimDay;
+
+        public Color GetEffectiveBaseColor()
+        {
+            return UseDyedColor ? DyedHairColor : NaturalHairColor;
+        }
     }
 
     [Serializable]
@@ -222,13 +234,20 @@ namespace Survivebest.Appearance
                 return contract;
             }
 
-            AddStylePiece(contract, pieces, style.DefaultBackPieceId, HairSlotType.HairBack, hair.HairColor, -3);
-            AddStylePiece(contract, pieces, style.DefaultSideLeftPieceId, HairSlotType.HairSideLeft, hair.HairColor, 1);
-            AddStylePiece(contract, pieces, style.DefaultSideRightPieceId, HairSlotType.HairSideRight, hair.HairColor, 1);
-            AddStylePiece(contract, pieces, style.DefaultFrontPieceId, HairSlotType.HairFront, hair.HairColor, 5);
-            AddStylePiece(contract, pieces, style.OptionalBangsPieceId, HairSlotType.HairBangs, hair.HairColor, 6);
-            AddStylePiece(contract, pieces, style.OptionalFlyawayPieceId, HairSlotType.HairFlyaways, hair.HairColor, 7);
-            AddStylePiece(contract, pieces, style.HairlinePieceId, HairSlotType.Hairline, hair.HairColor, 4);
+            Color backColor = ResolveSlotColor(hair, HairSlotType.HairBack);
+            Color sideColor = ResolveSlotColor(hair, HairSlotType.HairSideLeft);
+            Color frontColor = ResolveSlotColor(hair, HairSlotType.HairFront);
+            Color bangsColor = ResolveSlotColor(hair, HairSlotType.HairBangs);
+            Color flyawayColor = ResolveSlotColor(hair, HairSlotType.HairFlyaways);
+            Color hairlineColor = ResolveSlotColor(hair, HairSlotType.Hairline);
+
+            AddStylePiece(contract, pieces, style.DefaultBackPieceId, HairSlotType.HairBack, backColor, -3);
+            AddStylePiece(contract, pieces, style.DefaultSideLeftPieceId, HairSlotType.HairSideLeft, sideColor, 1);
+            AddStylePiece(contract, pieces, style.DefaultSideRightPieceId, HairSlotType.HairSideRight, sideColor, 1);
+            AddStylePiece(contract, pieces, style.DefaultFrontPieceId, HairSlotType.HairFront, frontColor, 5);
+            AddStylePiece(contract, pieces, style.OptionalBangsPieceId, HairSlotType.HairBangs, bangsColor, 6);
+            AddStylePiece(contract, pieces, style.OptionalFlyawayPieceId, HairSlotType.HairFlyaways, flyawayColor, 7);
+            AddStylePiece(contract, pieces, style.HairlinePieceId, HairSlotType.Hairline, hairlineColor, 4);
 
             if (facial != null && facial.GrowthEnabled)
             {
@@ -264,6 +283,28 @@ namespace Survivebest.Appearance
             }
 
             return contract;
+        }
+
+        private static Color ResolveSlotColor(HairProfile hair, HairSlotType slotType)
+        {
+            if (hair == null)
+            {
+                return Color.black;
+            }
+
+            Color baseColor = hair.GetEffectiveBaseColor();
+            Color withHighlights = Color.Lerp(baseColor, hair.HighlightColor, Mathf.Clamp01(hair.HighlightIntensity));
+            Color withRoots = Color.Lerp(withHighlights, hair.RootColor, Mathf.Clamp01(hair.OmbreAmount * 0.85f));
+
+            return slotType switch
+            {
+                HairSlotType.Hairline => withRoots,
+                HairSlotType.HairBack => Color.Lerp(baseColor, withRoots, hair.OmbreAmount),
+                HairSlotType.HairFlyaways => withHighlights,
+                HairSlotType.HairBangs => withHighlights,
+                HairSlotType.HairFront => withHighlights,
+                _ => baseColor
+            };
         }
 
         public static HairGrowthStage ResolveHairGrowthStage(int daysSinceTrim, HairGrowthRules rules)

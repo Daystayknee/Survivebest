@@ -274,6 +274,11 @@ namespace Survivebest.Appearance
 
             currentProfile = profile;
             ApplyHairStyle(profile.HairStyle);
+            if (!scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.NaturalHairColor = profile.HairColor;
+                scalpHairProfile.HairColor = profile.HairColor;
+            }
             ApplyHairColor(profile.HairColor);
             ApplyEyeColor(profile.EyeColor);
             ApplySkinTone(profile.SkinTone);
@@ -294,7 +299,96 @@ namespace Survivebest.Appearance
         public void SetHairColor(Color color)
         {
             currentProfile.HairColor = color;
+            if (scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.DyedHairColor = color;
+            }
+            else
+            {
+                scalpHairProfile.NaturalHairColor = color;
+            }
+
+            scalpHairProfile.HairColor = color;
             ApplyHairColor(color);
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetNaturalHairColor(Color color)
+        {
+            scalpHairProfile.NaturalHairColor = color;
+            if (!scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.HairColor = color;
+                currentProfile.HairColor = color;
+                ApplyHairColor(color);
+            }
+
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetDyedHairColor(Color color)
+        {
+            scalpHairProfile.DyedHairColor = color;
+            if (scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.HairColor = color;
+                currentProfile.HairColor = color;
+                ApplyHairColor(color);
+            }
+
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetUseDyedHairColor(bool useDyed)
+        {
+            scalpHairProfile.UseDyedColor = useDyed;
+            Color effective = scalpHairProfile.GetEffectiveBaseColor();
+            scalpHairProfile.HairColor = effective;
+            currentProfile.HairColor = effective;
+            ApplyHairColor(effective);
+            ApplyLayeredHairContract();
+            OnAppearanceChanged?.Invoke(currentProfile);
+        }
+
+        public void SetHairColorChannels(float? baseR = null, float? baseG = null, float? baseB = null, float? highlight = null, float? roots = null, float? ombre = null)
+        {
+            Color active = scalpHairProfile.GetEffectiveBaseColor();
+            if (baseR.HasValue) active.r = Mathf.Clamp01(baseR.Value);
+            if (baseG.HasValue) active.g = Mathf.Clamp01(baseG.Value);
+            if (baseB.HasValue) active.b = Mathf.Clamp01(baseB.Value);
+
+            if (scalpHairProfile.UseDyedColor)
+            {
+                scalpHairProfile.DyedHairColor = active;
+            }
+            else
+            {
+                scalpHairProfile.NaturalHairColor = active;
+            }
+
+            if (highlight.HasValue)
+            {
+                scalpHairProfile.HighlightIntensity = Mathf.Clamp01(highlight.Value);
+            }
+
+            if (roots.HasValue)
+            {
+                float root = Mathf.Clamp01(roots.Value);
+                scalpHairProfile.RootColor = new Color(root, root, root, 1f);
+            }
+
+            if (ombre.HasValue)
+            {
+                scalpHairProfile.OmbreAmount = Mathf.Clamp01(ombre.Value);
+            }
+
+            scalpHairProfile.HairColor = active;
+            currentProfile.HairColor = active;
+            ApplyHairColor(active);
+            ApplyLayeredHairContract();
             OnAppearanceChanged?.Invoke(currentProfile);
         }
 
@@ -399,6 +493,10 @@ namespace Survivebest.Appearance
         public void SetHairProfile(HairProfile profile)
         {
             scalpHairProfile = profile ?? new HairProfile();
+            Color effective = scalpHairProfile.GetEffectiveBaseColor();
+            scalpHairProfile.HairColor = effective;
+            currentProfile.HairColor = effective;
+            ApplyHairColor(effective);
             ApplyLayeredHairContract();
             OnAppearanceChanged?.Invoke(currentProfile);
         }

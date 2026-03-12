@@ -137,7 +137,9 @@ namespace Survivebest.World
                 AppearanceProfile profile = appearanceManager.CurrentProfile ?? new AppearanceProfile();
                 profile.SkinTone = ToSkinTone(phenotype.Skin.Tone);
                 profile.EyeColor = ToEyeColor(Mathf.Lerp(phenotype.Face.EyeSize, phenotype.Face.NoseBridgeHeight, 0.5f));
-                profile.HairColor = ResolveHairColor(phenotype.Hair, phenotype.Skin);
+
+                Color geneticallyResolvedHair = ResolveHairColor(phenotype.Hair, phenotype.Skin);
+                profile.HairColor = geneticallyResolvedHair;
 
                 float vitiligo = phenotype.Skin.Overlays != null ? phenotype.Skin.Overlays.Vitiligo : 0f;
                 profile.SkinIssue = vitiligo > 0.12f
@@ -151,6 +153,15 @@ namespace Survivebest.World
                                 : SkinIssueType.None;
                 profile.HasBeautyMark = phenotype.Skin.Overlays.BeautyMarks > 0.45f || phenotype.Skin.Overlays.Moles > 0.5f;
                 appearanceManager.ApplyAppearance(profile);
+
+                Survivebest.Appearance.HairProfile scalpHair = appearanceManager.ScalpHairProfile;
+                scalpHair.NaturalHairColor = geneticallyResolvedHair;
+                if (!scalpHair.UseDyedColor)
+                {
+                    scalpHair.HairColor = geneticallyResolvedHair;
+                }
+
+                appearanceManager.SetHairProfile(scalpHair);
             }
 
             if (visualGenome != null)

@@ -439,6 +439,7 @@ Additional progress this pass:
 - Added `ExperiencePacingOrchestrator` to coordinate AI drama, quests, minigames, dialogue, and social memory into consistent high-intensity loop cadence across survival/social/progression pillars.
 - Added modular paper-doll hair/beard/body-hair architecture with sprite-slot contracts, hairstyle bundles, compatibility tags, and timer-based grooming regrowth for future wet/messy/dirty/accessory variants.
 - Added modern creator-dashboard scaffolding (`CharacterCreatorDashboardController`) with top-tab routing, style filter panel, style-card grid binding, color swatches, preview controls, and appearance preset hooks.
+- Added natural-vs-dyed hair color separation with dashboard slider controls and genetics-safe behavior (genotype resolves natural hair, dye remains cosmetic/user-authored).
 
 
 ### Updated completion snapshot
