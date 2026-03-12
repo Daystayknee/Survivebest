@@ -38,9 +38,12 @@ namespace Survivebest.Utility
         [SerializeField] private EconomyManager economyManager;
         [SerializeField] private ContractBoardSystem contractBoardSystem;
         [SerializeField] private NpcScheduleSystem npcScheduleSystem;
+        [SerializeField] private ScheduleSystem scheduleSystem;
+        [SerializeField] private NPCAutonomyController npcAutonomyController;
         [SerializeField] private InjuryRecoverySystem injuryRecoverySystem;
         [SerializeField] private UIEventFeedbackRouter uiEventFeedbackRouter;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private TownSimulationManager townSimulationManager;
         [SerializeField] private NpcCareerSystem npcCareerSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
@@ -82,9 +85,12 @@ namespace Survivebest.Utility
             missing += CheckNull(economyManager, nameof(economyManager));
             missing += CheckNull(contractBoardSystem, nameof(contractBoardSystem));
             missing += CheckNull(npcScheduleSystem, nameof(npcScheduleSystem));
+            missing += CheckNull(scheduleSystem, nameof(scheduleSystem));
+            missing += CheckNull(npcAutonomyController, nameof(npcAutonomyController));
             missing += CheckNull(injuryRecoverySystem, nameof(injuryRecoverySystem));
             missing += CheckNull(uiEventFeedbackRouter, nameof(uiEventFeedbackRouter));
             missing += CheckNull(townSimulationSystem, nameof(townSimulationSystem));
+            missing += CheckNull(townSimulationManager, nameof(townSimulationManager));
             missing += CheckNull(npcCareerSystem, nameof(npcCareerSystem));
             missing += CheckNull(relationshipMemorySystem, nameof(relationshipMemorySystem));
             missing += CheckNull(questOpportunitySystem, nameof(questOpportunitySystem));
@@ -158,9 +164,12 @@ namespace Survivebest.Utility
             economyManager ??= FindObjectOfType<EconomyManager>(true);
             contractBoardSystem ??= FindObjectOfType<ContractBoardSystem>(true);
             npcScheduleSystem ??= FindObjectOfType<NpcScheduleSystem>(true);
+            scheduleSystem ??= FindObjectOfType<ScheduleSystem>(true);
+            npcAutonomyController ??= FindObjectOfType<NPCAutonomyController>(true);
             injuryRecoverySystem ??= FindObjectOfType<InjuryRecoverySystem>(true);
             uiEventFeedbackRouter ??= FindObjectOfType<UIEventFeedbackRouter>(true);
             townSimulationSystem ??= FindObjectOfType<TownSimulationSystem>(true);
+            townSimulationManager ??= FindObjectOfType<TownSimulationManager>(true);
             npcCareerSystem ??= FindObjectOfType<NpcCareerSystem>(true);
             relationshipMemorySystem ??= FindObjectOfType<RelationshipMemorySystem>(true);
             questOpportunitySystem ??= FindObjectOfType<QuestOpportunitySystem>(true);

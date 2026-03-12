@@ -157,6 +157,38 @@ namespace Survivebest.NPC
             });
         }
 
+
+        public NpcProfile GetNpcProfile(string npcId)
+        {
+            return npcProfiles.Find(x => x != null && string.Equals(x.NpcId, npcId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool ForceNpcState(string npcId, NpcActivityState state, string reason = "Autonomy override")
+        {
+            NpcProfile npc = GetNpcProfile(npcId);
+            if (npc == null || npc.IsDead)
+            {
+                return false;
+            }
+
+            npc.CurrentState = state;
+            PublishNpcOverrideEvent(npc, reason, state.ToString());
+            return true;
+        }
+
+        public bool ForceNpcLot(string npcId, string lotId, string reason = "Autonomy routing")
+        {
+            NpcProfile npc = GetNpcProfile(npcId);
+            if (npc == null || npc.IsDead || string.IsNullOrWhiteSpace(lotId))
+            {
+                return false;
+            }
+
+            npc.CurrentLotId = lotId;
+            PublishNpcOverrideEvent(npc, reason, lotId);
+            return true;
+        }
+
         public void SetNpcHealth(string npcId, float health)
         {
             NpcProfile npc = npcProfiles.Find(x => x != null && x.NpcId == npcId);
@@ -461,6 +493,21 @@ namespace Survivebest.NPC
             }
 
             return fallbackLot;
+        }
+
+
+        private void PublishNpcOverrideEvent(NpcProfile npc, string reason, string key)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityStarted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(NpcScheduleSystem),
+                SourceCharacterId = npc != null ? npc.NpcId : null,
+                ChangeKey = key,
+                Reason = reason,
+                Magnitude = worldClock != null ? worldClock.Hour : 0f
+            });
         }
 
         private int GetCurrentTotalHours()

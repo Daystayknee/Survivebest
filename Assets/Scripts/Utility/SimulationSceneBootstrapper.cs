@@ -40,6 +40,7 @@ namespace Survivebest.Utility
             EnsureSingleton<HouseholdManager>("HouseholdManager");
             EnsureSingleton<LocationManager>("LocationManager");
             EnsureSingleton<TownSimulationSystem>("TownSimulationSystem");
+            EnsureSingleton<TownSimulationManager>("TownSimulationManager");
             EnsureSingleton<LawSystem>("LawSystem");
             EnsureSingleton<DaySliceManager>("DaySliceManager");
             EnsureSingleton<GrocerySystem>("GrocerySystem");
@@ -50,6 +51,8 @@ namespace Survivebest.Utility
             EnsureSingleton<EconomyManager>("EconomyManager");
             EnsureSingleton<ContractBoardSystem>("ContractBoardSystem");
             EnsureSingleton<NpcScheduleSystem>("NpcScheduleSystem");
+            EnsureSingleton<ScheduleSystem>("ScheduleSystem");
+            EnsureSingleton<NPCAutonomyController>("NPCAutonomyController");
             EnsureSingleton<NpcCareerSystem>("NpcCareerSystem");
             EnsureSingleton<RelationshipMemorySystem>("RelationshipMemorySystem");
             EnsureSingleton<QuestOpportunitySystem>("QuestOpportunitySystem");

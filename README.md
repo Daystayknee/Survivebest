@@ -114,6 +114,9 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Unified inventory/economy authority now supports item instances, ownership scopes (household/personal/lot/equipped), recipe reservations, equipment state, spoilage/decay, theft flags, and value/depreciation evaluation (`EconomyInventorySystem`).
 - Added `InventoryManager` as explicit inventory authority for containers, stack transfers, usage, storage scopes, equipment hooks, and recipe reservation tracking across systems.
 - Added `EconomyManager` as explicit financial authority for account balances, transaction history, dynamic pricing modifiers, paychecks/fines, debt-aware charges, and cross-account transfers.
+- Added `TownSimulationManager` as a higher-level living-world coordinator for town-wide NPC population snapshots, district activity, open venue tracking, daily town incident rolls, and off-screen summary state.
+- Added `ScheduleSystem` as explicit obligation planner (shift/school/sleep/social/appointment blocks with holiday exceptions) separate from autonomy intent.
+- Added `NPCAutonomyController` as per-NPC decision runtime that combines schedule, needs, emotion, weather, personality bias, and routing to force practical state/lot decisions.
 - NPC simulation now includes home/work/lot presence, weather reactions, health-driven schedule overrides, jail unavailability, memory/reputation updates, and destination routing (`NpcScheduleSystem`).
 - Added a town/lot/zone simulation layer with districts, lot ownership/zoning, business open/close logic, route graph travel costs, and local safety/wealth values (`TownSimulationSystem`).
 - Added `NpcCareerSystem` for role requirements, shifts, pay schedules, attendance/performance, promotions/demotions, and role equipment/tool assignment.

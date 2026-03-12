@@ -390,6 +390,9 @@ Additional progress this pass:
 - Enhanced NPC agents with zone-aware routine routing + personality-driven crowded social conflict escalation in `NpcScheduleSystem`.
 - Added **InventoryManager** as master inventory authority (instances/stacks/containers/transfers/equips/reservations) and integrated grocery/ordering/recipe flows with it.
 - Added **EconomyManager** as financial authority (wallets/accounts/transactions/pricing modifiers/fines/paychecks/debt) for unified economy behavior.
+- Added **TownSimulationManager** as the living-world brain for lot populations, district activity, daily updates/incidents, and off-screen summary state.
+- Added **ScheduleSystem** as obligation scheduling (shifts/school/sleep/social/appointments/routine blocks + holiday exceptions).
+- Added **NPCAutonomyController** for per-NPC decision-making (where to go / what to do / reroute by weather-needs-emotion-personality).
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 
