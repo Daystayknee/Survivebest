@@ -213,6 +213,8 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added a relationship compatibility engine layered on top of the personality matrix to continuously model pair dynamics (familiarity/trust/attraction/respect/comfort/tension/jealousy/loyalty/romantic interest) and emit a compact compatibility dashboard summary.
 - Added `PsychologicalGrowthMentalHealthEngine` with per-character mental health profiles (stress/anxiety/depression/burnout/self-esteem/resilience/purpose/loneliness/trauma), therapy/coping/life-event processing, and cross-system modifiers for decisions, relationships, addiction pressure, work performance, conflict behavior, and long-term personality evolution.
 - Added `WorldCultureSocietyEngine` to model region/community culture (tradition, individualism/collectivism, authority, openness, moral strictness, cohesion), social norms/traditions/career prestige, cultural reputation pressure, migration adaptation, and cultural evolution hooks across social/family/milestone/lifestyle systems.
+- Expanded `PersonalityDecisionSystem` with procedural decision-space generation (seeded option synthesis, weighted scoring, confidence/novelty tags, and multi-step decision loops) so each character can continuously surface varied choices instead of a single static pick.
+- Expanded `HumanLifeExperienceLayerSystem` with procedural day-to-day life moments, hourly life-pulse simulation, and emotional reflection logging (gratitude/regret/pride/nostalgia/fear/hope) that feed mental-health and culture consequences for richer everyday loops.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
