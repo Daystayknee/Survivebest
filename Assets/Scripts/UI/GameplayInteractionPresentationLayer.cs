@@ -54,6 +54,15 @@ namespace Survivebest.UI
     }
 
     [Serializable]
+    public class LifeTimelinePreview
+    {
+        public string Title;
+        public string Source;
+        public int Day;
+        public int Hour;
+    }
+
+    [Serializable]
     public class HotspotActionPack
     {
         public string HotspotId;
@@ -80,11 +89,13 @@ namespace Survivebest.UI
         [SerializeField] private WorldPanelSnapshot currentWorldPanel = new();
         [SerializeField] private CharacterPanelSnapshot currentCharacterPanel = new();
         [SerializeField] private List<ActionFeedbackPulse> recentFeedback = new();
+        [SerializeField] private List<LifeTimelinePreview> recentTimelinePreview = new();
         [SerializeField, Min(5)] private int maxFeedbackEntries = 120;
 
         public WorldPanelSnapshot CurrentWorldPanel => currentWorldPanel;
         public CharacterPanelSnapshot CurrentCharacterPanel => currentCharacterPanel;
         public IReadOnlyList<ActionFeedbackPulse> RecentFeedback => recentFeedback;
+        public IReadOnlyList<LifeTimelinePreview> RecentTimelinePreview => recentTimelinePreview;
 
         public event Action<WorldPanelSnapshot> OnWorldPanelSnapshotUpdated;
         public event Action<CharacterPanelSnapshot> OnCharacterPanelSnapshotUpdated;
@@ -243,6 +254,60 @@ namespace Survivebest.UI
             return suggestions;
         }
 
+
+
+        public List<string> BuildDailyLifeFlowSuggestions()
+        {
+            List<string> flow = new()
+            {
+                "Wake up and check immediate needs",
+                "Choose one grounding action",
+                "Travel to a useful district",
+                "Perform work/social interaction",
+                "Resolve one event and log reflection",
+                "Return home and recover"
+            };
+
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null && humanLifeExperienceLayerSystem != null)
+            {
+                List<LifeTimelineEntry> timeline = humanLifeExperienceLayerSystem.GetTimelineForCharacter(active.CharacterId, 1);
+                if (timeline.Count > 0)
+                {
+                    flow.Add($"Recent beat: {timeline[0].Title}");
+                }
+            }
+
+            return flow;
+        }
+
+        public void SyncTimelinePreview(string characterId)
+        {
+            recentTimelinePreview.Clear();
+            if (humanLifeExperienceLayerSystem == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            List<LifeTimelineEntry> entries = humanLifeExperienceLayerSystem.GetTimelineForCharacter(characterId, 12);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                LifeTimelineEntry entry = entries[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                recentTimelinePreview.Add(new LifeTimelinePreview
+                {
+                    Title = entry.Title,
+                    Source = entry.Source,
+                    Day = entry.Day,
+                    Hour = entry.Hour
+                });
+            }
+        }
+
         public void RegisterManualChoiceResult(string actionKey, string summary, float magnitude)
         {
             CreateFeedback(actionKey, summary, magnitude, ResolveVisualCue(magnitude, summary));
@@ -285,6 +350,7 @@ namespace Survivebest.UI
             {
                 float quality = Mathf.Clamp01(0.5f + magnitude * 0.05f);
                 humanLifeExperienceLayerSystem.LogRoutineCompletion(active, actionKey, quality);
+                SyncTimelinePreview(active.CharacterId);
             }
         }
 

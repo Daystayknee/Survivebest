@@ -50,6 +50,18 @@ namespace Survivebest.Core
         [Range(0f, 1f)] public float Intensity;
     }
 
+    [Serializable]
+    public class LifeTimelineEntry
+    {
+        public string EntryId;
+        public string CharacterId;
+        public string Title;
+        public string Body;
+        public int Day;
+        public int Hour;
+        public string Source;
+    }
+
     public enum LifeReflectionType
     {
         Gratitude,
@@ -84,15 +96,19 @@ namespace Survivebest.Core
         [SerializeField] private List<PlaceAttachmentState> placeAttachments = new();
         [SerializeField] private List<ThoughtMessage> recentThoughts = new();
         [SerializeField] private List<ProceduralLifeMoment> recentMoments = new();
+        [SerializeField] private List<LifeTimelineEntry> recentTimeline = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
         [SerializeField, Min(10)] private int maxMoments = 300;
+        [SerializeField, Min(10)] private int maxTimelineEntries = 500;
 
         public IReadOnlyList<PlaceAttachmentState> PlaceAttachments => placeAttachments;
         public IReadOnlyList<ThoughtMessage> RecentThoughts => recentThoughts;
         public IReadOnlyList<ProceduralLifeMoment> RecentMoments => recentMoments;
+        public IReadOnlyList<LifeTimelineEntry> RecentTimeline => recentTimeline;
 
         public event Action<ThoughtMessage> OnThoughtLogged;
         public event Action<ProceduralLifeMoment> OnMomentGenerated;
+        public event Action<LifeTimelineEntry> OnTimelineEntryAdded;
 
         public void LogRoutineCompletion(CharacterCore actor, string actionId, float quality = 1f)
         {
@@ -112,6 +128,7 @@ namespace Survivebest.Core
                 psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.CareerPressure, 0.35f);
             }
 
+            RecordLifeTimelineEvent(actor, "Routine", thought, "routine");
             PublishEvent(actor.CharacterId, SimulationEventType.ActivityCompleted, actionId, "Routine completed", clampedQuality);
         }
 
@@ -170,6 +187,7 @@ namespace Survivebest.Core
             };
 
             AppendThought(actor, "reflection", thought, i, null);
+            RecordLifeTimelineEvent(actor, "Reflection", thought, "reflection");
 
             switch (reflectionType)
             {
@@ -272,11 +290,89 @@ namespace Survivebest.Core
                     AppendThought(actor, $"moment_{source}", moment.Headline, intensity, place);
                 }
 
+                RecordLifeTimelineEvent(actor, "Life Moment", moment.Headline, moment.Source);
                 ApplyMomentConsequences(actor, moment);
                 OnMomentGenerated?.Invoke(moment);
             }
 
             return generated;
+        }
+
+
+
+        public void RecordLifeTimelineEvent(CharacterCore actor, string title, string body, string source = "life")
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(title))
+            {
+                return;
+            }
+
+            LifeTimelineEntry entry = new LifeTimelineEntry
+            {
+                EntryId = Guid.NewGuid().ToString("N"),
+                CharacterId = actor.CharacterId,
+                Title = title,
+                Body = string.IsNullOrWhiteSpace(body) ? title : body,
+                Day = worldClock != null ? worldClock.Day : 0,
+                Hour = worldClock != null ? worldClock.Hour : 0,
+                Source = source
+            };
+
+            recentTimeline.Add(entry);
+            while (recentTimeline.Count > maxTimelineEntries)
+            {
+                recentTimeline.RemoveAt(0);
+            }
+
+            OnTimelineEntryAdded?.Invoke(entry);
+        }
+
+        public List<LifeTimelineEntry> GetTimelineForCharacter(string characterId, int max = 20)
+        {
+            List<LifeTimelineEntry> list = new();
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return list;
+            }
+
+            for (int i = recentTimeline.Count - 1; i >= 0 && list.Count < Mathf.Max(1, max); i--)
+            {
+                LifeTimelineEntry entry = recentTimeline[i];
+                if (entry != null && entry.CharacterId == characterId)
+                {
+                    list.Add(entry);
+                }
+            }
+
+            return list;
+        }
+
+        public void SimulateDailyLifeLoop(CharacterCore actor, int seed, int hours = 16)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            System.Random rng = new System.Random(seed);
+            int loops = Mathf.Clamp(hours, 1, 24);
+            for (int i = 0; i < loops; i++)
+            {
+                float pressure = Mathf.Clamp01((float)rng.NextDouble());
+                float social = Mathf.Clamp01((float)rng.NextDouble());
+                float progress = Mathf.Clamp01((float)rng.NextDouble());
+                int hour = worldClock != null ? worldClock.Hour : i;
+                SimulateHourPulse(actor, hour, pressure, social, progress);
+
+                if (progress > 0.75f)
+                {
+                    RecordLifeTimelineEvent(actor, "Small win", "You made meaningful progress in daily life.", "daily_loop");
+                }
+                else if (pressure > 0.8f)
+                {
+                    RecordLifeTimelineEvent(actor, "Stress spike", "The day became heavier than expected.", "daily_loop");
+                }
+            }
         }
 
         public List<DailyRoutineAction> GetRoutineForHour(int hour)

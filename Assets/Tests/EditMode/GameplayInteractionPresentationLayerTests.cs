@@ -36,6 +36,21 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+
+        [Test]
+        public void BuildDailyLifeFlowSuggestions_IncludesCoreLoopSteps()
+        {
+            GameObject go = new GameObject("PresentationFlow");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            var flow = layer.BuildDailyLifeFlowSuggestions();
+
+            Assert.GreaterOrEqual(flow.Count, 6);
+            Assert.IsTrue(flow[0].Contains("Wake up"));
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void BuildContextActionSuggestions_UsesNeedsAndDecisionSpace()
         {

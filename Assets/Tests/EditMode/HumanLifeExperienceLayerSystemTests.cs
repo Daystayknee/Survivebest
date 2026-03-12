@@ -45,6 +45,28 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+
+
+        [Test]
+        public void SimulateDailyLifeLoop_AddsTimelineEntries()
+        {
+            GameObject go = new GameObject("LifeLoop");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("Char4");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_looplife", "LoopLife", LifeStage.Adult);
+
+            int before = system.RecentTimeline.Count;
+            system.SimulateDailyLifeLoop(character, 123, 12);
+
+            Assert.Greater(system.RecentTimeline.Count, before);
+            Assert.Greater(system.RecentThoughts.Count, 0);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
         [Test]
         public void SimulateHourPulse_WithPressure_LogsThought()
         {
