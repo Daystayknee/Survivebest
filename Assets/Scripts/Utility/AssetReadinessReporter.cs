@@ -13,11 +13,51 @@ using Survivebest.NPC;
 using Survivebest.Health;
 using Survivebest.Social;
 using Survivebest.Story;
+using System;
 
 namespace Survivebest.Utility
 {
     public class AssetReadinessReporter : MonoBehaviour
     {
+        private readonly struct RuntimeSystemCheck
+        {
+            public RuntimeSystemCheck(string label, Type type, bool requiredForVision)
+            {
+                Label = label;
+                Type = type;
+                RequiredForVision = requiredForVision;
+            }
+
+            public string Label { get; }
+            public Type Type { get; }
+            public bool RequiredForVision { get; }
+        }
+
+        private static readonly RuntimeSystemCheck[] RuntimeSystemChecklist =
+        {
+            new("GameEventHub", typeof(GameEventHub), true),
+            new("WorldClock", typeof(WorldClock), true),
+            new("DaySliceManager", typeof(DaySliceManager), true),
+            new("HouseholdManager", typeof(HouseholdManager), true),
+            new("LocationManager", typeof(LocationManager), true),
+            new("WeatherManager", typeof(WeatherManager), true),
+            new("NeedsSystem", typeof(NeedsSystem), true),
+            new("HealthSystem", typeof(HealthSystem), true),
+            new("EmotionSystem", typeof(EmotionSystem), true),
+            new("SocialSystem", typeof(SocialSystem), true),
+            new("ActivitySystem", typeof(ActivitySystem), true),
+            new("InventoryManager", typeof(InventoryManager), true),
+            new("EconomyManager", typeof(EconomyManager), true),
+            new("SaveGameManager", typeof(SaveGameManager), true),
+            new("RelationshipMemorySystem", typeof(RelationshipMemorySystem), true),
+            new("QuestOpportunitySystem", typeof(QuestOpportunitySystem), false),
+            new("TownSimulationManager", typeof(TownSimulationManager), false),
+            new("ContractBoardSystem", typeof(ContractBoardSystem), false),
+            new("AutonomousStoryGenerator", typeof(AutonomousStoryGenerator), false),
+            new("AIDirectorDramaManager", typeof(AIDirectorDramaManager), false),
+            new("SimulationStabilityMonitor", typeof(SimulationStabilityMonitor), false)
+        };
+
         [Header("Optional Key UI Controllers")]
         [SerializeField] private SplashScreenController splashScreenController;
         [SerializeField] private MainMenuFlowController mainMenuFlowController;
@@ -190,6 +230,62 @@ namespace Survivebest.Utility
             simulationStabilityMonitor ??= FindObjectOfType<SimulationStabilityMonitor>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
+        }
+
+        [ContextMenu("Report Runtime Vision Coverage")]
+        public void ReportRuntimeVisionCoverage()
+        {
+            int requiredMissing = 0;
+            int requiredDisabled = 0;
+            int optionalMissing = 0;
+            int optionalDisabled = 0;
+
+            for (int i = 0; i < RuntimeSystemChecklist.Length; i++)
+            {
+                RuntimeSystemCheck check = RuntimeSystemChecklist[i];
+                MonoBehaviour component = FindObjectOfType(check.Type, true) as MonoBehaviour;
+
+                if (component == null)
+                {
+                    if (check.RequiredForVision)
+                    {
+                        requiredMissing++;
+                    }
+                    else
+                    {
+                        optionalMissing++;
+                    }
+
+                    Debug.LogWarning($"[AssetReadiness] Missing runtime system: {check.Label} (required={check.RequiredForVision})", this);
+                    continue;
+                }
+
+                if (!component.isActiveAndEnabled)
+                {
+                    if (check.RequiredForVision)
+                    {
+                        requiredDisabled++;
+                    }
+                    else
+                    {
+                        optionalDisabled++;
+                    }
+
+                    Debug.LogWarning($"[AssetReadiness] Runtime system found but disabled: {check.Label}", component);
+                }
+            }
+
+            bool allRequiredHealthy = requiredMissing == 0 && requiredDisabled == 0;
+            string summary = $"[AssetReadiness] Runtime Vision Coverage :: required missing={requiredMissing}, required disabled={requiredDisabled}, optional missing={optionalMissing}, optional disabled={optionalDisabled}";
+
+            if (allRequiredHealthy)
+            {
+                Debug.Log(summary, this);
+            }
+            else
+            {
+                Debug.LogWarning(summary, this);
+            }
         }
 
         private int CheckNull(Object value, string fieldName)
