@@ -58,6 +58,15 @@ namespace Survivebest.Crime
             new SubstanceProfile { Substance = SubstanceType.HardDrug, OnsetHours = 0.05f, DurationHours = 6, ToleranceRate = 0.16f, AddictionRate = 0.2f, WithdrawalSeverity = 0.6f }
         };
 
+        [Header("Substance Profiles")]
+        [SerializeField] private List<SubstanceProfile> substanceProfiles = new()
+        {
+            new SubstanceProfile { Substance = SubstanceType.Alcohol, OnsetHours = 0.1f, DurationHours = 3, ToleranceRate = 0.05f, AddictionRate = 0.06f, WithdrawalSeverity = 0.2f },
+            new SubstanceProfile { Substance = SubstanceType.Weed, OnsetHours = 0.2f, DurationHours = 4, ToleranceRate = 0.05f, AddictionRate = 0.05f, WithdrawalSeverity = 0.15f },
+            new SubstanceProfile { Substance = SubstanceType.PrescriptionDrug, OnsetHours = 0.1f, DurationHours = 2, ToleranceRate = 0.08f, AddictionRate = 0.08f, WithdrawalSeverity = 0.25f },
+            new SubstanceProfile { Substance = SubstanceType.HardDrug, OnsetHours = 0.05f, DurationHours = 6, ToleranceRate = 0.16f, AddictionRate = 0.2f, WithdrawalSeverity = 0.6f }
+        };
+
         [Header("Runtime Substance State")]
         [SerializeField] private List<ActiveSubstanceEffect> activeEffects = new();
         [SerializeField, Range(0f, 1f)] private float dependencyRiskPerUse = 0.06f;
