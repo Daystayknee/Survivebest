@@ -382,6 +382,13 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 Status update: items 1 through 8 and 10 now have foundational runtime systems; item 9 remains major production work.
 
 
+Additional progress this pass:
+- Added **L. Autonomous Story Generator** (`AutonomousStoryGenerator`) with weighted incidents and local news feed entries.
+- Added **M. World Persistence / Simulation Culling Rules** (`WorldPersistenceCullingSystem`) for lot activation budgets, off-screen NPC abstraction, and catch-up simulation.
+- Added **N. AI Director / Drama Manager** (`AIDirectorDramaManager`) to pace disruption/recovery beats based on boredom and tension.
+- Added **O. Animation-State / Feedback / Juice Layer** (`AnimationFeedbackJuiceSystem`) to map simulation events into animation/SFX/VFX/UI feedback cues.
+
+
 1. **Scene prefab completeness**
    - Most systems are code-ready but still need full prefab/inspector wiring in Unity scenes.
 

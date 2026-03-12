@@ -10,6 +10,8 @@ using Survivebest.Quest;
 using Survivebest.NPC;
 using Survivebest.Social;
 using Survivebest.Health;
+using Survivebest.Story;
+using Survivebest.UI;
 
 namespace Survivebest.Utility
 {
@@ -54,6 +56,10 @@ namespace Survivebest.Utility
             EnsureSingleton<AdvancedHealthRecoverySystem>("AdvancedHealthRecoverySystem");
             EnsureSingleton<HousingPropertySystem>("HousingPropertySystem");
             EnsureSingleton<CraftingProfessionSystem>("CraftingProfessionSystem");
+            EnsureSingleton<AutonomousStoryGenerator>("AutonomousStoryGenerator");
+            EnsureSingleton<WorldPersistenceCullingSystem>("WorldPersistenceCullingSystem");
+            EnsureSingleton<AIDirectorDramaManager>("AIDirectorDramaManager");
+            EnsureSingleton<AnimationFeedbackJuiceSystem>("AnimationFeedbackJuiceSystem");
 
             if (assetReadinessReporter == null)
             {

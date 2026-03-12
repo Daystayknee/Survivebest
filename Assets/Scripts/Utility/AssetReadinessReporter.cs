@@ -12,6 +12,7 @@ using Survivebest.Quest;
 using Survivebest.NPC;
 using Survivebest.Health;
 using Survivebest.Social;
+using Survivebest.Story;
 
 namespace Survivebest.Utility
 {
@@ -46,6 +47,10 @@ namespace Survivebest.Utility
         [SerializeField] private AdvancedHealthRecoverySystem advancedHealthRecoverySystem;
         [SerializeField] private HousingPropertySystem housingPropertySystem;
         [SerializeField] private CraftingProfessionSystem craftingProfessionSystem;
+        [SerializeField] private AutonomousStoryGenerator autonomousStoryGenerator;
+        [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
+        [SerializeField] private AIDirectorDramaManager aiDirectorDramaManager;
+        [SerializeField] private AnimationFeedbackJuiceSystem animationFeedbackJuiceSystem;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -84,6 +89,10 @@ namespace Survivebest.Utility
             missing += CheckNull(advancedHealthRecoverySystem, nameof(advancedHealthRecoverySystem));
             missing += CheckNull(housingPropertySystem, nameof(housingPropertySystem));
             missing += CheckNull(craftingProfessionSystem, nameof(craftingProfessionSystem));
+            missing += CheckNull(autonomousStoryGenerator, nameof(autonomousStoryGenerator));
+            missing += CheckNull(worldPersistenceCullingSystem, nameof(worldPersistenceCullingSystem));
+            missing += CheckNull(aiDirectorDramaManager, nameof(aiDirectorDramaManager));
+            missing += CheckNull(animationFeedbackJuiceSystem, nameof(animationFeedbackJuiceSystem));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -154,6 +163,10 @@ namespace Survivebest.Utility
             advancedHealthRecoverySystem ??= FindObjectOfType<AdvancedHealthRecoverySystem>(true);
             housingPropertySystem ??= FindObjectOfType<HousingPropertySystem>(true);
             craftingProfessionSystem ??= FindObjectOfType<CraftingProfessionSystem>(true);
+            autonomousStoryGenerator ??= FindObjectOfType<AutonomousStoryGenerator>(true);
+            worldPersistenceCullingSystem ??= FindObjectOfType<WorldPersistenceCullingSystem>(true);
+            aiDirectorDramaManager ??= FindObjectOfType<AIDirectorDramaManager>(true);
+            animationFeedbackJuiceSystem ??= FindObjectOfType<AnimationFeedbackJuiceSystem>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
