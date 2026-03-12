@@ -51,6 +51,17 @@ namespace Survivebest.UI
         [SerializeField] private Image faceLayer;
         [SerializeField] private Image eyesLayer;
         [SerializeField] private Image hairLayer;
+        [SerializeField] private Image hairBackLayer;
+        [SerializeField] private Image hairSideLeftLayer;
+        [SerializeField] private Image hairSideRightLayer;
+        [SerializeField] private Image hairFrontLayer;
+        [SerializeField] private Image hairBangsLayer;
+        [SerializeField] private Image hairFlyawaysLayer;
+        [SerializeField] private Image hairlineLayer;
+        [SerializeField] private Image mustacheLayer;
+        [SerializeField] private Image beardJawLayer;
+        [SerializeField] private Image beardChinLayer;
+        [SerializeField] private Image sideburnLayer;
         [SerializeField] private Image bodyLayer;
         [SerializeField] private Image clothingLayer;
 
@@ -120,6 +131,8 @@ namespace Survivebest.UI
                     hairLayer.color = profile.HairColor;
                 }
 
+                ApplyLayeredHairImages();
+
                 if (eyesLayer != null)
                 {
                     eyesLayer.color = ResolveEyeColor(profile.EyeColor);
@@ -130,6 +143,84 @@ namespace Survivebest.UI
                     faceLayer.color = ResolveSkinColor(profile.SkinTone);
                 }
             }
+        }
+
+
+        private void ApplyLayeredHairImages()
+        {
+            if (appearanceManager == null)
+            {
+                ClearHairSlotImages();
+                return;
+            }
+
+            HairRenderContract contract = appearanceManager.BuildHairRenderContract();
+            if (contract == null || contract.Pieces == null || contract.Pieces.Count == 0)
+            {
+                ClearHairSlotImages();
+                return;
+            }
+
+            ClearHairSlotImages();
+            for (int i = 0; i < contract.Pieces.Count; i++)
+            {
+                HairRenderPiece piece = contract.Pieces[i];
+                Image slot = ResolveHairSlotImage(piece.SlotType);
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                slot.sprite = piece.Sprite;
+                slot.color = piece.Color;
+                slot.enabled = piece.Sprite != null;
+            }
+        }
+
+        private Image ResolveHairSlotImage(HairSlotType slotType)
+        {
+            return slotType switch
+            {
+                HairSlotType.HairBack => hairBackLayer,
+                HairSlotType.HairSideLeft => hairSideLeftLayer,
+                HairSlotType.HairSideRight => hairSideRightLayer,
+                HairSlotType.HairFront => hairFrontLayer,
+                HairSlotType.HairBangs => hairBangsLayer,
+                HairSlotType.HairFlyaways => hairFlyawaysLayer,
+                HairSlotType.Hairline => hairlineLayer,
+                HairSlotType.Mustache => mustacheLayer,
+                HairSlotType.BeardJaw => beardJawLayer,
+                HairSlotType.BeardChin => beardChinLayer,
+                HairSlotType.Sideburns => sideburnLayer,
+                _ => null
+            };
+        }
+
+        private void ClearHairSlotImages()
+        {
+            ClearImage(hairBackLayer);
+            ClearImage(hairSideLeftLayer);
+            ClearImage(hairSideRightLayer);
+            ClearImage(hairFrontLayer);
+            ClearImage(hairBangsLayer);
+            ClearImage(hairFlyawaysLayer);
+            ClearImage(hairlineLayer);
+            ClearImage(mustacheLayer);
+            ClearImage(beardJawLayer);
+            ClearImage(beardChinLayer);
+            ClearImage(sideburnLayer);
+        }
+
+        private static void ClearImage(Image image)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            image.sprite = null;
+            image.enabled = false;
+            image.color = Color.white;
         }
 
         private void HandleAppearanceChanged(AppearanceProfile profile)

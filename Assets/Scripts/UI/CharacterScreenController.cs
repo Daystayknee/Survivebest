@@ -10,6 +10,7 @@ namespace Survivebest.UI
     public class CharacterScreenController : MonoBehaviour
     {
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private PersonalityMatrixSystem personalityMatrixSystem;
 
         [Header("Panels")]
         [SerializeField] private CharacterPortraitRenderer portraitRenderer;
@@ -17,6 +18,7 @@ namespace Survivebest.UI
         [SerializeField] private Text bodyStatsText;
         [SerializeField] private Text geneticsText;
         [SerializeField] private Text healthText;
+        [SerializeField] private Text personalityText;
 
         [Header("Trait Pills")]
         [SerializeField] private TraitPillTagView pillPrefab;
@@ -65,8 +67,9 @@ namespace Survivebest.UI
 
             RenderIdentity(character);
             RenderBodyStats(character.GetComponent<BodyCompositionSystem>());
-            RenderGenetics(character.GetComponent<VisualGenome>());
+            RenderGenetics(character.GetComponent<GeneticsSystem>(), character.GetComponent<VisualGenome>());
             RenderHealth(character.GetComponent<HealthSystem>(), character.GetComponent<MedicalConditionSystem>());
+            RenderPersonality(character);
             RenderTraitPills(character);
         }
 
@@ -96,27 +99,45 @@ namespace Survivebest.UI
             bodyStatsText.text = $"Height: {body.HeightCm:0.#} cm\nWeight: {body.WeightKg:0.#} kg\nBody Fat: {body.BodyFat * 100f:0.#}%\nMuscle Tone: {body.MuscleTone * 100f:0.#}%";
         }
 
-        private void RenderGenetics(VisualGenome visualGenome)
+        private void RenderGenetics(GeneticsSystem geneticsSystem, VisualGenome visualGenome)
         {
             if (geneticsText == null)
             {
                 return;
             }
 
-            if (visualGenome == null)
+            if (visualGenome == null && geneticsSystem == null)
             {
                 geneticsText.text = "Genetics/visual DNA unavailable.";
                 return;
             }
 
-            PhysicalTraits t = visualGenome.CurrentTraits;
             builder.Clear();
             builder.AppendLine("Genetics / Physical DNA");
-            builder.AppendLine($"Neck: {t.NeckLength:0.00}");
-            builder.AppendLine($"Shoulders: {t.ShoulderWidth:0.00}");
-            builder.AppendLine($"Bust: {t.BustSize:0.00}");
-            builder.AppendLine($"Hips: {t.HipWidth:0.00}");
-            builder.AppendLine($"Height Gene: {t.Height:0.00}");
+
+            if (geneticsSystem != null && geneticsSystem.Phenotype != null)
+            {
+                PhenotypeProfile phenotype = geneticsSystem.Phenotype;
+                builder.AppendLine($"Schema: {phenotype.BodySchema}");
+                builder.AppendLine($"Skin Tone: {phenotype.Skin.Tone:0.00}  Undertone: {phenotype.Skin.Undertone:0.00}");
+                builder.AppendLine($"Freckles: {phenotype.Skin.Overlays.Freckles:0.00}  Beauty Marks: {phenotype.Skin.Overlays.BeautyMarks:0.00}");
+                builder.AppendLine($"Vitiligo: {phenotype.Skin.Overlays.Vitiligo:0.00}  Acne: {phenotype.Skin.Overlays.Acne:0.00}  Wrinkles: {phenotype.Skin.Overlays.Wrinkles:0.00}");
+                builder.AppendLine($"Jaw: {phenotype.Face.JawWidth:0.00}  Chin: {phenotype.Face.ChinProminence:0.00}  Cheeks: {phenotype.Face.CheekFullness:0.00}");
+                builder.AppendLine($"Eyes: {phenotype.Face.EyeSize:0.00}/{phenotype.Face.EyeSpacing:0.00}  Nose: {phenotype.Face.NoseBridgeHeight:0.00}/{phenotype.Face.NostrilWidth:0.00}  Lips: {phenotype.Face.LipFullness:0.00}");
+                builder.AppendLine($"Hair Curl: {phenotype.Hair.Curl:0.00}  Density: {phenotype.Hair.Density:0.00}  Front/Side/Back: {phenotype.Hair.FrontPieceDensity:0.00}/{phenotype.Hair.SidePieceDensity:0.00}/{phenotype.Hair.BackPieceDensity:0.00}");
+                builder.AppendLine($"Body Regions N/C/W/H/T/C: {phenotype.Body.Neck:0.00}/{phenotype.Body.ChestBustPresentation:0.00}/{phenotype.Body.Waist:0.00}/{phenotype.Body.Hips:0.00}/{phenotype.Body.Thighs:0.00}/{phenotype.Body.Calves:0.00}");
+            }
+
+            if (visualGenome != null)
+            {
+                PhysicalTraits t = visualGenome.CurrentTraits;
+                builder.AppendLine($"Neck: {t.NeckLength:0.00}");
+                builder.AppendLine($"Shoulders: {t.ShoulderWidth:0.00}");
+                builder.AppendLine($"Bust: {t.BustSize:0.00}");
+                builder.AppendLine($"Hips: {t.HipWidth:0.00}");
+                builder.AppendLine($"Height Gene: {t.Height:0.00}");
+            }
+
             geneticsText.text = builder.ToString().TrimEnd();
         }
 
@@ -146,6 +167,23 @@ namespace Survivebest.UI
             }
 
             healthText.text = builder.ToString().TrimEnd();
+        }
+
+
+        private void RenderPersonality(CharacterCore character)
+        {
+            if (personalityText == null)
+            {
+                return;
+            }
+
+            if (character == null || personalityMatrixSystem == null)
+            {
+                personalityText.text = "Personality data unavailable.";
+                return;
+            }
+
+            personalityText.text = personalityMatrixSystem.BuildCompactSummary(character.CharacterId);
         }
 
         private void RenderTraitPills(CharacterCore character)
@@ -197,6 +235,7 @@ namespace Survivebest.UI
             if (bodyStatsText != null) bodyStatsText.text = string.Empty;
             if (geneticsText != null) geneticsText.text = string.Empty;
             if (healthText != null) healthText.text = string.Empty;
+            if (personalityText != null) personalityText.text = string.Empty;
         }
     }
 }
