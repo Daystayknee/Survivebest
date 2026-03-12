@@ -135,6 +135,9 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `HousingPropertySystem` for rent/mortgage/bills, utility state, room quality/comfort/cleanliness/clutter scoring, storage limits, appliance breakdowns, repair requests, and ownership transfer.
 - Added `CraftingProfessionSystem` for profession categories, crafting stations, blueprint/tool requirements, substitution logic, and output item quality outcomes.
 - Added `AutonomousStoryGenerator` for emergent incidents (relationship drama, neighborhood events, seasonal festivals, economic shocks, household crises) and auto-generated local news feed entries.
+- Added story "vibe presets" (`FrontierSurvival`, `RoadTripCalamity`, `GenerationalLegacy`, `SmallTownSaga`) so incident weighting can lean toward survival hardship, journey hazards, dynasty drama, or cozy-chaos town stories while still using emergent simulation.
+- `TownSimulationManager` now computes a reusable town pressure score (crowding + district activity + off-screen strain) that can drive director pacing and incident escalation.
+- `AIDirectorDramaManager` now considers town pressure and vibe profile when selecting disruption/recovery incident types, improving authored-feeling pacing without scripted rails.
 - Added `WorldPersistenceCullingSystem` for off-screen simulation rules, lot activation/deactivation budget, remote NPC catch-up summaries, and story-priority simulation scaling.
 - Added `AIDirectorDramaManager` to monitor boredom/tension and inject disruption or recovery beats so major moments are paced rather than random.
 - Added `AnimationFeedbackJuiceSystem` to translate simulation events into animation/SFX/VFX/UI cue payloads for stronger moment-to-moment feedback and readability.

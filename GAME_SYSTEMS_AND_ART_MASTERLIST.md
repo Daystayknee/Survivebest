@@ -395,6 +395,9 @@ Additional progress this pass:
 - Added **NPCAutonomyController** for per-NPC decision-making (where to go / what to do / reroute by weather-needs-emotion-personality).
 - Added **GameBalanceManager** for centralized tuning multipliers across needs/economy/risk/progression so balancing can happen without scattering constants.
 - Added **SimulationStabilityMonitor** + event spam gating for runtime safeguards (economy sanity, duplicate item IDs, NPC stuck states, time desync, event flood suppression).
+- Added story **vibe presets** to `AutonomousStoryGenerator` (`FrontierSurvival`, `RoadTripCalamity`, `GenerationalLegacy`, `SmallTownSaga`) to steer emergent incidents toward distinct tone families.
+- Added `TownSimulationManager.GetTownPressureScore()` (crowding + district activity + off-screen strain) so pacing systems can react to macro simulation stress.
+- Updated `AIDirectorDramaManager` to react to high town pressure and select disruption/recovery incident types based on the active story vibe preset.
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 
