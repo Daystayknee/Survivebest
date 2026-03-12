@@ -107,6 +107,10 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Utility/AssetReadinessReporter.cs`
 - `Assets/Scripts/Utility/PlaceholderGenerator.cs`
 
+### Automated Tests
+- `Assets/Tests/EditMode/EconomyInventorySystemTests.cs`
+- `Assets/Tests/EditMode/SaveSchemaMigrationTests.cs`
+
 ---
 
 ## 2) Gameplay Flows Currently Implemented
@@ -318,7 +322,7 @@ Use this as the practical art backlog for scenes/prefabs/UI hookups.
 
 ## 5) What’s Still Missing / Next Features To Build
 
-Status update: items 2, 3, 4, 6, and 7 now have foundational runtime systems; items 1, 5, 8, 9, and 10 remain major production work.
+Status update: items 2, 3, 4, 6, 7, and 8 now have foundational runtime systems; items 1, 5, 9, and 10 remain major production work.
 
 
 1. **Scene prefab completeness**

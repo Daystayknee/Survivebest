@@ -106,6 +106,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - New injury recovery layer adds severity-based injuries with treatment vs untreated hourly outcomes (`InjuryRecoverySystem`).
 - New skill-tree progression layer introduces unlockable profession nodes gated by skill levels and prerequisites (`SkillTreeSystem`).
 - Save payloads now include schema versioning + migration hook for backward-compatible future save evolution (`SaveGameManager`).
+- Added initial EditMode test coverage for economy state mutations/snapshots and save schema migration behavior (`Assets/Tests/EditMode/*`).
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).
@@ -121,6 +122,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Button and prefab hookups for every optional text/slider field in each page controller.
 - Deeper narrative/event animations and rich popup variant templates.
 - Use `AssetReadinessReporter` context action to quickly surface missing controller/image/text references in configured UI scenes.
+- `AssetReadinessReporter` now includes an `Auto Wire Known References` context action to auto-bind many commonly-missed scene references before running missing-reference reports.
 
 ## Data Variants (Updated)
 

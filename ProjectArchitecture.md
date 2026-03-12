@@ -506,4 +506,5 @@ Always-visible character presence:
 - `StatusEffectSystem` should own the long-tail modifiers library (220+ effects), ticking runtime effects into needs/health and publishing `StatusEffectChanged` events for HUD/journal surfaces.
 - `GeneticsSystem` should model trait inheritance from parents (with low mutation chance), map genes into face/body/skin/eyes, and re-apply morphing across life stages for believable aging progression.
 - `AppearanceManager` should support layered sprite auto-binding/validation to reduce manual image stacking errors in Unity portrait rigs.
+- `AssetReadinessReporter` should provide both diagnostics and auto-wire helpers (e.g., "Auto Wire Known References") to accelerate scene prefab completeness.
 - `FurnitureStoreController` should handle furniture purchase UI and spawn purchased placeables while transitioning player into build mode.

@@ -12,6 +12,14 @@ namespace Survivebest.Economy
         public int Quantity;
     }
 
+
+    [Serializable]
+    public class EconomySnapshot
+    {
+        public float Funds;
+        public List<SharedInventoryEntry> Inventory = new();
+    }
+
     public class EconomyInventorySystem : MonoBehaviour
     {
         [SerializeField, Min(0f)] private float startingFunds = 250f;
@@ -70,6 +78,70 @@ namespace Survivebest.Economy
         public bool HasItem(string itemName, int amount = 1)
         {
             return amount > 0 && GetQuantity(itemName) >= amount;
+        }
+
+
+        public EconomySnapshot CaptureSnapshot()
+        {
+            EconomySnapshot snapshot = new EconomySnapshot
+            {
+                Funds = funds,
+                Inventory = new List<SharedInventoryEntry>()
+            };
+
+            for (int i = 0; i < sharedInventory.Count; i++)
+            {
+                SharedInventoryEntry entry = sharedInventory[i];
+                if (entry == null || string.IsNullOrWhiteSpace(entry.ItemName) || entry.Quantity <= 0)
+                {
+                    continue;
+                }
+
+                snapshot.Inventory.Add(new SharedInventoryEntry
+                {
+                    ItemName = entry.ItemName,
+                    Quantity = entry.Quantity
+                });
+            }
+
+            return snapshot;
+        }
+
+        public void ApplySnapshot(EconomySnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            funds = Mathf.Max(0f, snapshot.Funds);
+            sharedInventory.Clear();
+
+            if (snapshot.Inventory != null)
+            {
+                for (int i = 0; i < snapshot.Inventory.Count; i++)
+                {
+                    SharedInventoryEntry entry = snapshot.Inventory[i];
+                    if (entry == null || string.IsNullOrWhiteSpace(entry.ItemName) || entry.Quantity <= 0)
+                    {
+                        continue;
+                    }
+
+                    sharedInventory.Add(new SharedInventoryEntry
+                    {
+                        ItemName = entry.ItemName,
+                        Quantity = entry.Quantity
+                    });
+                }
+            }
+
+            RebuildLookup();
+            OnFundsChanged?.Invoke(funds);
+
+            for (int i = 0; i < sharedInventory.Count; i++)
+            {
+                OnInventoryChanged?.Invoke(sharedInventory[i].ItemName, sharedInventory[i].Quantity);
+            }
         }
 
         public void AddItem(string itemName, int quantity, string reason = "Item added")
