@@ -84,6 +84,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `CharacterCore` with life stage, talent, portrait traits, birth date, death events
 - `FamilyManager`, `HouseholdManager`, `LegacyManager`
 - `LifeStageManager`, `BodyCompositionSystem`, `VisualGenome`
+- `FamilyDynamicsSystem` (family graph, bonds, household climate, parenting influence, and generational memory hooks).
 - `PersonalityArchetypeSystem`, `PersonalityMatrixSystem`, `MoralValueSystem`, `PreferenceSystem` (deep personality/value/preference profiles and evolution hooks).
 
 ### Needs / Health / Emotion

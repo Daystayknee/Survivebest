@@ -12,6 +12,7 @@ namespace Survivebest.Core
         [SerializeField] private WorldClock worldClock;
 
         public event Action<CharacterCore> OnFamilyMemberCreated;
+        public event Action<CharacterCore, CharacterCore, CharacterCore> OnChildBorn;
 
         public CharacterCore CreateRoommate()
         {
@@ -65,6 +66,7 @@ namespace Survivebest.Core
             }
 
             baby.SetTalents(inheritedTalents);
+            OnChildBorn?.Invoke(parentA, parentB, baby);
             return baby;
         }
 
