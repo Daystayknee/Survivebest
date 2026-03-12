@@ -68,6 +68,7 @@ namespace Survivebest.Quest
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private GameBalanceManager balanceManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<OpportunityDefinition> definitions = new();
         [SerializeField] private List<ActiveOpportunity> activeOpportunities = new();
@@ -184,7 +185,8 @@ namespace Survivebest.Quest
             active.State = success ? OpportunityState.Succeeded : OpportunityState.Failed;
             if (success && active.Definition != null)
             {
-                economyInventorySystem?.AddFunds(active.Definition.RewardFunds, $"Opportunity reward: {active.Definition.Title}");
+                float reward = balanceManager != null ? balanceManager.ScaleQuestReward(active.Definition.RewardFunds) : active.Definition.RewardFunds;
+                economyInventorySystem?.AddFunds(reward, $"Opportunity reward: {active.Definition.Title}");
             }
 
             OnOpportunityStateChanged?.Invoke(active);

@@ -60,6 +60,7 @@ namespace Survivebest.UI
         [SerializeField] private List<HairStyleSpriteEntry> hairSprites = new();
         [SerializeField] private List<BodyTypeSpriteEntry> bodySprites = new();
         [SerializeField] private List<ClothingSpriteEntry> clothingSprites = new();
+        [SerializeField] private Sprite missingPortraitFallback;
 
         private void OnEnable()
         {
@@ -105,15 +106,15 @@ namespace Survivebest.UI
                 return;
             }
 
-            ApplySprite(faceLayer, FindFaceSprite(targetCharacter.FaceShape));
-            ApplySprite(eyesLayer, FindEyeSprite(targetCharacter.EyeShape));
-            ApplySprite(bodyLayer, FindBodySprite(targetCharacter.CurrentBodyType));
-            ApplySprite(clothingLayer, FindClothingSprite(targetCharacter.ClothingStyle));
+            ApplySpriteWithFallback(faceLayer, FindFaceSprite(targetCharacter.FaceShape));
+            ApplySpriteWithFallback(eyesLayer, FindEyeSprite(targetCharacter.EyeShape));
+            ApplySpriteWithFallback(bodyLayer, FindBodySprite(targetCharacter.CurrentBodyType));
+            ApplySpriteWithFallback(clothingLayer, FindClothingSprite(targetCharacter.ClothingStyle));
 
             if (appearanceManager != null && appearanceManager.CurrentProfile != null)
             {
                 AppearanceProfile profile = appearanceManager.CurrentProfile;
-                ApplySprite(hairLayer, FindHairSprite(profile.HairStyle));
+                ApplySpriteWithFallback(hairLayer, FindHairSprite(profile.HairStyle));
                 if (hairLayer != null)
                 {
                     hairLayer.color = profile.HairColor;
@@ -196,6 +197,16 @@ namespace Survivebest.UI
                 SkinToneType.Brown => new Color(0.47f, 0.32f, 0.2f),
                 _ => new Color(0.31f, 0.2f, 0.12f)
             };
+        }
+
+        private void ApplySpriteWithFallback(Image image, Sprite sprite)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            image.sprite = sprite != null ? sprite : missingPortraitFallback;
         }
 
         private static void ApplySprite(Image image, Sprite sprite)

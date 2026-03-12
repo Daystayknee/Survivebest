@@ -26,6 +26,7 @@ namespace Survivebest.Core
     {
         [SerializeField] private CharacterCore owner;
         [SerializeField] private FamilyManager familyManager;
+        [SerializeField] private GameBalanceManager gameBalanceManager;
         [SerializeField] private List<Relationship> relationships = new();
         [SerializeField] private GameEventHub gameEventHub;
 
@@ -52,11 +53,11 @@ namespace Survivebest.Core
                 Relationship relationship = relationships[i];
                 if (relationship.RelationshipType == RelationshipType.Enemy)
                 {
-                    relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue - 1f, -100f, 100f);
+                    relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue + ScaleSocialDelta(-1f), -100f, 100f);
                 }
                 else if (relationship.RelationshipType == RelationshipType.Lover || relationship.RelationshipType == RelationshipType.Partner)
                 {
-                    relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue - 0.25f, -100f, 100f);
+                    relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue + ScaleSocialDelta(-0.25f), -100f, 100f);
                 }
 
                 OnRelationshipChanged?.Invoke(relationship);
@@ -104,7 +105,7 @@ namespace Survivebest.Core
                 relationships.Add(relationship);
             }
 
-            relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue + amount, -100f, 100f);
+            relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue + ScaleSocialDelta(amount), -100f, 100f);
 
             if (relationship.RelationshipValue > 80f && relationship.RelationshipType == RelationshipType.Roommate)
             {
@@ -141,6 +142,16 @@ namespace Survivebest.Core
                 Reason = reason,
                 Magnitude = relationship.RelationshipValue
             });
+        }
+
+        private float ScaleSocialDelta(float amount)
+        {
+            if (gameBalanceManager == null)
+            {
+                gameBalanceManager = FindObjectOfType<GameBalanceManager>();
+            }
+
+            return gameBalanceManager != null ? gameBalanceManager.ScaleSocialChange(amount) : amount;
         }
     }
 }

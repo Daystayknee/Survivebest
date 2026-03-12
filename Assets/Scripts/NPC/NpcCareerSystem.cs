@@ -59,6 +59,7 @@ namespace Survivebest.NPC
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
         [SerializeField] private SkillTreeSystem skillTreeSystem;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GameBalanceManager balanceManager;
         [SerializeField] private List<CareerRoleDefinition> roleDefinitions = new();
         [SerializeField] private List<NpcCareerRecord> records = new();
 
@@ -226,6 +227,10 @@ namespace Survivebest.NPC
                     CareerRoleDefinition role = roleDefinitions.Find(x => x != null && x.Profession == record.Profession);
                     int pay = role != null ? role.HourlyPay : 10;
                     float adjustedPay = pay * Mathf.Clamp(0.9f + record.CareerLevel * 0.08f, 0.9f, 2.5f);
+                    if (balanceManager != null)
+                    {
+                        adjustedPay = balanceManager.ScaleWage(adjustedPay);
+                    }
 
                     economyInventorySystem?.AddFunds(adjustedPay, $"Wages paid to NPC role {record.Profession}");
                     record.TotalEarnings += Mathf.RoundToInt(adjustedPay);

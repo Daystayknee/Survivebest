@@ -31,6 +31,7 @@ namespace Survivebest.Crime
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GameBalanceManager balanceManager;
 
         [Header("Runtime Substance State")]
         [SerializeField] private List<ActiveSubstanceEffect> activeEffects = new();
@@ -144,7 +145,7 @@ namespace Survivebest.Crime
 
         private void RaiseDependency(SubstanceType substanceType)
         {
-            float risk = dependencyRiskPerUse;
+            float risk = dependencyRiskPerUse * (balanceManager != null ? balanceManager.AddictionSeverityMultiplier : 1f);
             if (substanceType == SubstanceType.HardDrug)
             {
                 risk *= 2.4f;
@@ -180,7 +181,8 @@ namespace Survivebest.Crime
 
             if (activeEffects.Count == 0)
             {
-                dependencyLevel = Mathf.Max(0f, dependencyLevel - 0.01f);
+                float decay = balanceManager != null ? 0.01f * balanceManager.AddictionSeverityMultiplier : 0.01f;
+            dependencyLevel = Mathf.Max(0f, dependencyLevel - decay);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.World;
 
@@ -57,6 +58,7 @@ namespace Survivebest.Location
     {
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
+        [SerializeField] private GameBalanceManager gameBalanceManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<DistrictDefinition> districts = new();
         [SerializeField] private List<LotDefinition> lots = new();
@@ -124,9 +126,11 @@ namespace Survivebest.Location
             }
 
             float weatherMultiplier = 1f;
+            GameBalanceManager balance = ResolveBalanceManager();
             if (weatherManager != null)
             {
-                weatherMultiplier += GetWeatherPenaltyFactor(weatherManager.CurrentWeather) * edge.WeatherPenaltySensitivity;
+                float penalty = GetWeatherPenaltyFactor(weatherManager.CurrentWeather) * edge.WeatherPenaltySensitivity;
+                weatherMultiplier += balance != null ? balance.ScaleWeatherPenalty(penalty) : penalty;
             }
 
             return Mathf.Max(0.05f, edge.BaseTravelCost * weatherMultiplier);
@@ -230,6 +234,16 @@ namespace Survivebest.Location
                 WeatherState.Snowy => 0.65f,
                 _ => 0f
             };
+        }
+
+        private GameBalanceManager ResolveBalanceManager()
+        {
+            if (gameBalanceManager == null)
+            {
+                gameBalanceManager = FindObjectOfType<GameBalanceManager>();
+            }
+
+            return gameBalanceManager;
         }
     }
 }

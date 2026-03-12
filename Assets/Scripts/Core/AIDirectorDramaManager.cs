@@ -1,5 +1,6 @@
 using UnityEngine;
 using Survivebest.Events;
+using Survivebest.Location;
 using Survivebest.Quest;
 using Survivebest.Story;
 using Survivebest.World;
@@ -12,6 +13,7 @@ namespace Survivebest.Core
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private AutonomousStoryGenerator autonomousStoryGenerator;
+        [SerializeField] private TownSimulationManager townSimulationManager;
         [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Director Tuning")]
@@ -65,6 +67,13 @@ namespace Survivebest.Core
                 return;
             }
 
+            if (townSimulationManager != null && townSimulationManager.GetTownPressureScore() > 75f && tension < 70f)
+            {
+                tension = Mathf.Clamp(tension + 10f, 0f, 100f);
+                InjectOpportunitySpike();
+                return;
+            }
+
             if (tension > 80f)
             {
                 InjectRecoveryBeat();
@@ -77,7 +86,11 @@ namespace Survivebest.Core
             boredomHours = 0;
             tension = Mathf.Clamp(tension + 20f, 0f, 100f);
 
-            autonomousStoryGenerator?.ForceGenerateIncident(StoryIncidentType.SuddenAccident, tension);
+            StoryIncidentType spikeIncident = autonomousStoryGenerator != null && autonomousStoryGenerator.VibePreset == StoryVibePreset.GenerationalLegacy
+                ? StoryIncidentType.InheritedFamilyConflict
+                : StoryIncidentType.SuddenAccident;
+
+            autonomousStoryGenerator?.ForceGenerateIncident(spikeIncident, tension);
             questOpportunitySystem?.GenerateEmergencyOpportunity("district_center", "Director Emergency Response");
 
             PublishDirectorEvent("InjectOpportunity", "AI Director injected disruption to prevent repetitive day", tension, SimulationEventSeverity.Warning);
@@ -89,7 +102,11 @@ namespace Survivebest.Core
             boredomHours = 0;
             tension = Mathf.Clamp(tension - 25f, 0f, 100f);
 
-            autonomousStoryGenerator?.ForceGenerateIncident(StoryIncidentType.SeasonalFestival, tension);
+            StoryIncidentType recoveryIncident = autonomousStoryGenerator != null && autonomousStoryGenerator.VibePreset == StoryVibePreset.FrontierSurvival
+                ? StoryIncidentType.NeighborhoodEvent
+                : StoryIncidentType.SeasonalFestival;
+
+            autonomousStoryGenerator?.ForceGenerateIncident(recoveryIncident, tension);
             PublishDirectorEvent("InjectRecovery", "AI Director injected recovery beat to reduce chaos", tension, SimulationEventSeverity.Info);
         }
 

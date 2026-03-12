@@ -43,6 +43,7 @@ namespace Survivebest.Utility
             EnsureSingleton<TownSimulationManager>("TownSimulationManager");
             EnsureSingleton<LawSystem>("LawSystem");
             EnsureSingleton<DaySliceManager>("DaySliceManager");
+            EnsureSingleton<GameBalanceManager>("GameBalanceManager");
             EnsureSingleton<GrocerySystem>("GrocerySystem");
             EnsureSingleton<OrderingSystem>("OrderingSystem");
             EnsureSingleton<RecipeSystem>("RecipeSystem");
@@ -65,6 +66,7 @@ namespace Survivebest.Utility
             EnsureSingleton<WorldPersistenceCullingSystem>("WorldPersistenceCullingSystem");
             EnsureSingleton<AIDirectorDramaManager>("AIDirectorDramaManager");
             EnsureSingleton<AnimationFeedbackJuiceSystem>("AnimationFeedbackJuiceSystem");
+            EnsureSingleton<SimulationStabilityMonitor>("SimulationStabilityMonitor");
 
             if (assetReadinessReporter == null)
             {

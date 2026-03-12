@@ -10,6 +10,14 @@ using Survivebest.World;
 
 namespace Survivebest.Story
 {
+    public enum StoryVibePreset
+    {
+        FrontierSurvival,
+        RoadTripCalamity,
+        GenerationalLegacy,
+        SmallTownSaga
+    }
+
     public enum StoryIncidentType
     {
         RelationshipDrama,
@@ -61,11 +69,13 @@ namespace Survivebest.Story
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private TownSimulationManager townSimulationManager;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Generation")]
+        [SerializeField] private StoryVibePreset vibePreset = StoryVibePreset.SmallTownSaga;
         [SerializeField, Range(0f, 1f)] private float hourlyIncidentChance = 0.18f;
         [SerializeField, Min(1)] private int maxNewsEntries = 40;
         [SerializeField] private List<StoryIncidentDefinition> incidentDefinitions = new();
@@ -74,6 +84,7 @@ namespace Survivebest.Story
 
         public IReadOnlyList<StoryIncidentRecord> RecentIncidents => recentIncidents;
         public IReadOnlyList<LocalNewsEntry> LocalNewsFeed => localNewsFeed;
+        public StoryVibePreset VibePreset => vibePreset;
 
         public event Action<StoryIncidentRecord> OnIncidentGenerated;
 
@@ -144,7 +155,7 @@ namespace Survivebest.Story
                 }
 
                 candidates.Add(candidate);
-                total += candidate.Weight;
+                total += GetDynamicWeight(candidate);
             }
 
             if (candidates.Count == 0 || total <= 0f)
@@ -156,7 +167,7 @@ namespace Survivebest.Story
             float cumulative = 0f;
             for (int i = 0; i < candidates.Count; i++)
             {
-                cumulative += candidates[i].Weight;
+                cumulative += GetDynamicWeight(candidates[i]);
                 if (roll <= cumulative)
                 {
                     return candidates[i];
@@ -185,6 +196,62 @@ namespace Survivebest.Story
                 Description = "An autonomous incident emerged from simulation pressure.",
                 Weight = 1f
             };
+        }
+
+        public float GetVibeMultiplier(StoryIncidentType type)
+        {
+            return vibePreset switch
+            {
+                StoryVibePreset.FrontierSurvival => type switch
+                {
+                    StoryIncidentType.SuddenAccident => 1.35f,
+                    StoryIncidentType.HouseholdCrisis => 1.4f,
+                    StoryIncidentType.EconomicShock => 1.2f,
+                    StoryIncidentType.SeasonalFestival => 0.65f,
+                    _ => 1f
+                },
+                StoryVibePreset.RoadTripCalamity => type switch
+                {
+                    StoryIncidentType.SuddenAccident => 1.25f,
+                    StoryIncidentType.NeighborhoodEvent => 1.2f,
+                    StoryIncidentType.SeasonalFestival => 0.85f,
+                    _ => 1f
+                },
+                StoryVibePreset.GenerationalLegacy => type switch
+                {
+                    StoryIncidentType.InheritedFamilyConflict => 1.6f,
+                    StoryIncidentType.RelationshipDrama => 1.3f,
+                    StoryIncidentType.HouseholdCrisis => 1.15f,
+                    _ => 1f
+                },
+                _ => type switch
+                {
+                    StoryIncidentType.RelationshipDrama => 1.25f,
+                    StoryIncidentType.NeighborhoodEvent => 1.2f,
+                    StoryIncidentType.SeasonalFestival => 1.15f,
+                    _ => 1f
+                }
+            };
+        }
+
+        private float GetDynamicWeight(StoryIncidentDefinition candidate)
+        {
+            if (candidate == null)
+            {
+                return 0f;
+            }
+
+            float weight = candidate.Weight * Mathf.Max(0.1f, GetVibeMultiplier(candidate.Type));
+            if (townSimulationManager != null)
+            {
+                float pressure = townSimulationManager.GetTownPressureScore();
+                if (pressure > 65f && (candidate.Type == StoryIncidentType.HouseholdCrisis || candidate.Type == StoryIncidentType.EconomicShock))
+                {
+                    weight *= 1.2f;
+                }
+            }
+
+            return Mathf.Max(0.01f, weight);
         }
 
         private StoryIncidentRecord EmitIncident(StoryIncidentDefinition definition)

@@ -21,6 +21,7 @@ namespace Survivebest.Core
     public class SkillSystem : MonoBehaviour
     {
         [SerializeField] private CharacterCore owner;
+        [SerializeField] private GameBalanceManager balanceManager;
 
         private readonly Dictionary<string, float> skillLevels = new()
         {
@@ -74,8 +75,9 @@ namespace Survivebest.Core
                 skillLevels[skillName] = 0f;
             }
 
-            float multiplier = owner != null ? owner.GetSkillMultiplier(skillName) : 1f;
-            skillLevels[skillName] = Mathf.Max(0f, skillLevels[skillName] + amount * multiplier);
+            float ownerMultiplier = owner != null ? owner.GetSkillMultiplier(skillName) : 1f;
+            float balanceMultiplier = balanceManager != null ? balanceManager.SkillXpMultiplier : 1f;
+            skillLevels[skillName] = Mathf.Max(0f, skillLevels[skillName] + amount * ownerMultiplier * balanceMultiplier);
             OnSkillChanged?.Invoke(skillName, skillLevels[skillName]);
         }
 

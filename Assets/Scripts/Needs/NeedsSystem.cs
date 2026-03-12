@@ -30,6 +30,7 @@ namespace Survivebest.Needs
         [SerializeField, Range(0f, 100f)] private float mood = 100f;
         [SerializeField, Range(0f, 100f)] private float hydration = 100f;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GameBalanceManager balanceManager;
 
         [Header("Decay")]
         [SerializeField, Min(0f)] private float bladderGainPerMinute = 2f;
@@ -202,16 +203,18 @@ namespace Survivebest.Needs
 
         private void HandleMinutePassed(int hour, int minute)
         {
-            IncreaseBladder(bladderGainPerMinute);
+            float m = balanceManager != null ? balanceManager.NeedDecayMultiplier : 1f;
+            IncreaseBladder(bladderGainPerMinute * m);
         }
 
         private void HandleHourPassed(int hour)
         {
-            SetHunger(hunger - hungerLossPerHour);
-            SetEnergy(energy - energyLossPerHour);
-            SetHygiene(hygiene - hygieneLossPerHour);
-            SetHydration(hydration - hydrationLossPerHour);
-            SetMood(mood - 0.5f);
+            float m = balanceManager != null ? balanceManager.NeedDecayMultiplier : 1f;
+            SetHunger(hunger - hungerLossPerHour * m);
+            SetEnergy(energy - energyLossPerHour * m);
+            SetHygiene(hygiene - hygieneLossPerHour * m);
+            SetHydration(hydration - hydrationLossPerHour * m);
+            SetMood(mood - 0.5f * m);
             OnHourlyNeedDecay?.Invoke();
         }
 

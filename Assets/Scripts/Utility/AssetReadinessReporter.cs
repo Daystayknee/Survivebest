@@ -26,6 +26,7 @@ namespace Survivebest.Utility
         [SerializeField] private WorldCreatorScreenController worldCreatorScreenController;
         [SerializeField] private HouseholdMakerScreenController householdMakerScreenController;
         [SerializeField] private CharacterScreenController characterScreenController;
+        [SerializeField] private GameBalanceManager gameBalanceManager;
         [SerializeField] private GameplayScreenController gameplayScreenController;
         [SerializeField] private ActionPopupController actionPopupController;
         [SerializeField] private BuildModeManager buildModeManager;
@@ -56,6 +57,7 @@ namespace Survivebest.Utility
         [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
         [SerializeField] private AIDirectorDramaManager aiDirectorDramaManager;
         [SerializeField] private AnimationFeedbackJuiceSystem animationFeedbackJuiceSystem;
+        [SerializeField] private SimulationStabilityMonitor simulationStabilityMonitor;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -73,6 +75,7 @@ namespace Survivebest.Utility
             missing += CheckNull(worldCreatorScreenController, nameof(worldCreatorScreenController));
             missing += CheckNull(householdMakerScreenController, nameof(householdMakerScreenController));
             missing += CheckNull(characterScreenController, nameof(characterScreenController));
+            missing += CheckNull(gameBalanceManager, nameof(gameBalanceManager));
             missing += CheckNull(gameplayScreenController, nameof(gameplayScreenController));
             missing += CheckNull(actionPopupController, nameof(actionPopupController));
             missing += CheckNull(buildModeManager, nameof(buildModeManager));
@@ -103,6 +106,7 @@ namespace Survivebest.Utility
             missing += CheckNull(worldPersistenceCullingSystem, nameof(worldPersistenceCullingSystem));
             missing += CheckNull(aiDirectorDramaManager, nameof(aiDirectorDramaManager));
             missing += CheckNull(animationFeedbackJuiceSystem, nameof(animationFeedbackJuiceSystem));
+            missing += CheckNull(simulationStabilityMonitor, nameof(simulationStabilityMonitor));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -152,6 +156,7 @@ namespace Survivebest.Utility
             worldCreatorScreenController ??= FindObjectOfType<WorldCreatorScreenController>(true);
             householdMakerScreenController ??= FindObjectOfType<HouseholdMakerScreenController>(true);
             characterScreenController ??= FindObjectOfType<CharacterScreenController>(true);
+            gameBalanceManager ??= FindObjectOfType<GameBalanceManager>(true);
             gameplayScreenController ??= FindObjectOfType<GameplayScreenController>(true);
             actionPopupController ??= FindObjectOfType<ActionPopupController>(true);
             buildModeManager ??= FindObjectOfType<BuildModeManager>(true);
@@ -182,6 +187,7 @@ namespace Survivebest.Utility
             worldPersistenceCullingSystem ??= FindObjectOfType<WorldPersistenceCullingSystem>(true);
             aiDirectorDramaManager ??= FindObjectOfType<AIDirectorDramaManager>(true);
             animationFeedbackJuiceSystem ??= FindObjectOfType<AnimationFeedbackJuiceSystem>(true);
+            simulationStabilityMonitor ??= FindObjectOfType<SimulationStabilityMonitor>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }

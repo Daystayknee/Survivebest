@@ -67,6 +67,8 @@ namespace Survivebest.Events
         [SerializeField, Min(1)] private int maxRecentEvents = 300;
         [SerializeField] private List<SimulationEvent> recentEvents = new();
         [SerializeField] private WorldClock worldClock;
+        [SerializeField, Min(0f)] private float duplicateEventGateSeconds = 0.05f;
+        private readonly Dictionary<string, float> eventGateByKey = new();
 
         public event Action<SimulationEvent> OnEventPublished;
 
@@ -95,6 +97,10 @@ namespace Survivebest.Events
             }
 
             StampSimulationEvent(simulationEvent);
+            if (ShouldGateEvent(simulationEvent))
+            {
+                return;
+            }
 
             recentEvents.Add(simulationEvent);
             if (recentEvents.Count > maxRecentEvents)
@@ -109,6 +115,24 @@ namespace Survivebest.Events
         public static void PublishFromAnywhere(SimulationEvent simulationEvent)
         {
             Instance?.Publish(simulationEvent);
+        }
+
+        private bool ShouldGateEvent(SimulationEvent simulationEvent)
+        {
+            if (simulationEvent == null || duplicateEventGateSeconds <= 0f)
+            {
+                return false;
+            }
+
+            string key = $"{simulationEvent.Type}|{simulationEvent.SourceCharacterId}|{simulationEvent.ChangeKey}|{simulationEvent.Reason}";
+            float now = Time.unscaledTime;
+            if (eventGateByKey.TryGetValue(key, out float last) && now - last < duplicateEventGateSeconds)
+            {
+                return true;
+            }
+
+            eventGateByKey[key] = now;
+            return false;
         }
 
         private void StampSimulationEvent(SimulationEvent simulationEvent)

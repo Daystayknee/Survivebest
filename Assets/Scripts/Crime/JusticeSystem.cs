@@ -41,6 +41,7 @@ namespace Survivebest.Crime
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private OrderingSystem orderingSystem;
+        [SerializeField] private GameBalanceManager gameBalanceManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<ActiveSentence> activeSentences = new();
 
@@ -197,17 +198,38 @@ namespace Survivebest.Crime
 
         private JusticeOutcome BuildOutcome(LawSeverity severity)
         {
+            GameBalanceManager balance = ResolveBalanceManager();
             float strictnessBoost = lawSystem != null ? Mathf.Clamp01(lawSystem.GetEnforcementForCrime("Violence") - 0.5f) : 0f;
-            int fineBoost = Mathf.RoundToInt(strictnessBoost * 300f);
-            int jailBoost = Mathf.RoundToInt(strictnessBoost * 6f);
+            int fineBoost = Mathf.RoundToInt((balance != null ? balance.ScaleFineAmount(strictnessBoost * 300f) : strictnessBoost * 300f));
+            int jailBoost = Mathf.RoundToInt((balance != null ? balance.ScaleJailHours(strictnessBoost * 6f) : strictnessBoost * 6f));
 
             return severity switch
             {
-                LawSeverity.Infraction => new JusticeOutcome { Outcome = JusticeOutcomeType.Warning, FineAmount = 60 + fineBoost / 3, JailHours = 0 },
-                LawSeverity.Misdemeanor => new JusticeOutcome { Outcome = JusticeOutcomeType.Fine, FineAmount = 260 + fineBoost, JailHours = 3 + jailBoost / 2 },
-                LawSeverity.Felony => new JusticeOutcome { Outcome = JusticeOutcomeType.Jail, FineAmount = 1100 + fineBoost * 2, JailHours = 24 + jailBoost },
+                LawSeverity.Infraction => new JusticeOutcome { Outcome = JusticeOutcomeType.Warning, FineAmount = ScaleFine(balance, 60) + fineBoost / 3, JailHours = 0 },
+                LawSeverity.Misdemeanor => new JusticeOutcome { Outcome = JusticeOutcomeType.Fine, FineAmount = ScaleFine(balance, 260) + fineBoost, JailHours = ScaleJail(balance, 3) + jailBoost / 2 },
+                LawSeverity.Felony => new JusticeOutcome { Outcome = JusticeOutcomeType.Jail, FineAmount = ScaleFine(balance, 1100) + fineBoost * 2, JailHours = ScaleJail(balance, 24) + jailBoost },
                 _ => new JusticeOutcome { Outcome = JusticeOutcomeType.Warning, FineAmount = 0, JailHours = 0 }
             };
+        }
+
+        private GameBalanceManager ResolveBalanceManager()
+        {
+            if (gameBalanceManager == null)
+            {
+                gameBalanceManager = FindObjectOfType<GameBalanceManager>();
+            }
+
+            return gameBalanceManager;
+        }
+
+        private static int ScaleFine(GameBalanceManager balance, int baseFine)
+        {
+            return Mathf.Max(0, Mathf.RoundToInt(balance != null ? balance.ScaleFineAmount(baseFine) : baseFine));
+        }
+
+        private static int ScaleJail(GameBalanceManager balance, int baseJail)
+        {
+            return Mathf.Max(0, Mathf.RoundToInt(balance != null ? balance.ScaleJailHours(baseJail) : baseJail));
         }
 
         private void PublishJusticeEvent(CharacterCore offender, string crimeType, JusticeOutcome outcome, string reason)

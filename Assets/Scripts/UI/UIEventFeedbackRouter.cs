@@ -15,8 +15,11 @@ namespace Survivebest.UI
         [SerializeField] private string pulseTrigger = "Pulse";
         [SerializeField] private Text floatingFeedbackText;
         [SerializeField] private float feedbackTextSeconds = 2.5f;
+        [SerializeField, Min(0f)] private float duplicateFeedbackGateSeconds = 0.2f;
 
         private float feedbackHideAt;
+        private string lastFeedbackKey;
+        private float lastFeedbackAt;
 
         private void OnEnable()
         {
@@ -59,6 +62,16 @@ namespace Survivebest.UI
             {
                 return;
             }
+
+            string key = $"{simulationEvent.Type}|{simulationEvent.ChangeKey}|{simulationEvent.Reason}";
+            float now = Time.unscaledTime;
+            if (!string.IsNullOrWhiteSpace(lastFeedbackKey) && key == lastFeedbackKey && now - lastFeedbackAt < duplicateFeedbackGateSeconds)
+            {
+                return;
+            }
+
+            lastFeedbackKey = key;
+            lastFeedbackAt = now;
 
             PlaySeverityAudio(simulationEvent.Severity);
 

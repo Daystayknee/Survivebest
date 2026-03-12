@@ -31,6 +31,7 @@ namespace Survivebest.Crime
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GameBalanceManager balanceManager;
 
         public event Action<CrimeRecord> OnCrimeCommitted;
 
@@ -76,6 +77,10 @@ namespace Survivebest.Crime
             float enforcementChance = lawSystem != null
                 ? lawSystem.GetEnforcementForCrime(crimeType == CrimeType.Assault ? "Violence" : "Theft")
                 : 0.5f;
+            if (balanceManager != null)
+            {
+                enforcementChance = balanceManager.ScaleCrimeRisk(enforcementChance);
+            }
 
             if (justiceSystem != null && UnityEngine.Random.value <= enforcementChance)
             {

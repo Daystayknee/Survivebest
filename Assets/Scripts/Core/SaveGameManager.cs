@@ -109,6 +109,7 @@ namespace Survivebest.Core
             {
                 SaveSlotPayload payload = JsonUtility.FromJson<SaveSlotPayload>(payloadJson);
                 SaveSlotPayload migrated = MigratePayloadIfNeeded(payload);
+                ValidatePayload(migrated);
                 ApplyPayload(migrated);
             }
             else
@@ -286,6 +287,54 @@ namespace Survivebest.Core
             if (activeToSet != null)
             {
                 householdManager.SetActiveCharacter(activeToSet);
+            }
+        }
+
+
+        private void ValidatePayload(SaveSlotPayload payload)
+        {
+            if (payload == null)
+            {
+                return;
+            }
+
+            if (payload.World == null)
+            {
+                payload.World = new WorldSnapshot();
+            }
+
+            payload.World.Year = Mathf.Max(1, payload.World.Year);
+            payload.World.Month = Mathf.Max(1, payload.World.Month);
+            payload.World.Day = Mathf.Max(1, payload.World.Day);
+            payload.World.Hour = Mathf.Clamp(payload.World.Hour, 0, 23);
+            payload.World.Minute = Mathf.Clamp(payload.World.Minute, 0, 59);
+
+            if (payload.HouseholdCharacters == null)
+            {
+                payload.HouseholdCharacters = new List<CharacterSnapshot>();
+            }
+
+            HashSet<string> seenIds = new HashSet<string>();
+            for (int i = payload.HouseholdCharacters.Count - 1; i >= 0; i--)
+            {
+                CharacterSnapshot character = payload.HouseholdCharacters[i];
+                if (character == null)
+                {
+                    payload.HouseholdCharacters.RemoveAt(i);
+                    continue;
+                }
+
+                string key = !string.IsNullOrWhiteSpace(character.CharacterId) ? character.CharacterId : character.DisplayName;
+                if (string.IsNullOrWhiteSpace(key) || !seenIds.Add(key))
+                {
+                    payload.HouseholdCharacters.RemoveAt(i);
+                    continue;
+                }
+
+                character.Vitality = Mathf.Clamp(character.Vitality, 0f, 100f);
+                character.Skills ??= new List<SkillEntry>();
+                character.Statuses ??= new List<ActiveStatusEffect>();
+                character.Needs ??= new NeedsSnapshot();
             }
         }
 

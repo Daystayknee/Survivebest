@@ -50,6 +50,40 @@ namespace Survivebest.Location
         public IReadOnlyList<DistrictActivitySnapshot> DistrictActivity => districtActivity;
         public TownOffscreenState OffscreenState => offscreenState;
 
+        public float GetTownPressureScore()
+        {
+            float crowdingPressure = 0f;
+            for (int i = 0; i < lotPopulations.Count; i++)
+            {
+                LotPopulationSnapshot snapshot = lotPopulations[i];
+                if (snapshot == null)
+                {
+                    continue;
+                }
+
+                LotDefinition lot = townSimulationSystem != null ? townSimulationSystem.GetLot(snapshot.LotId) : null;
+                int capacity = lot != null ? Mathf.Max(1, lot.Capacity) : 30;
+                crowdingPressure += Mathf.Clamp01(snapshot.Population / (float)capacity) * 30f;
+            }
+
+            float activityPressure = 0f;
+            for (int i = 0; i < districtActivity.Count; i++)
+            {
+                DistrictActivitySnapshot district = districtActivity[i];
+                if (district == null)
+                {
+                    continue;
+                }
+
+                activityPressure += Mathf.Clamp01(district.ActivityScore / 100f) * 20f;
+            }
+
+            float offscreenPressure = Mathf.Clamp01((Mathf.Abs(offscreenState.AverageStressDelta) + Mathf.Max(0f, -offscreenState.AverageEnergyDelta)) / 25f) * 35f;
+            float remoteLoadPressure = Mathf.Clamp01(offscreenState.RemoteNpcCount / 80f) * 15f;
+
+            return Mathf.Clamp(crowdingPressure + activityPressure + offscreenPressure + remoteLoadPressure, 0f, 100f);
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)
@@ -80,7 +114,8 @@ namespace Survivebest.Location
         private void HandleHourPassed(int hour)
         {
             RecomputeTownState();
-            PublishTownEvent("HourlyTownUpdate", $"Town state refreshed for hour {hour}", hour, SimulationEventSeverity.Info);
+            float pressure = GetTownPressureScore();
+            PublishTownEvent("HourlyTownUpdate", $"Town state refreshed for hour {hour} (pressure {pressure:0.0})", pressure, SimulationEventSeverity.Info);
         }
 
         private void HandleDayPassed(int day)
