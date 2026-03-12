@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Needs;
+using Survivebest.World;
 
 namespace Survivebest.Core
 {
@@ -65,7 +66,11 @@ namespace Survivebest.Core
     public class PersonalityDecisionSystem : MonoBehaviour
     {
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private PersonalityArchetypeSystem personalityArchetypeSystem;
+        [SerializeField] private MoralValueSystem moralValueSystem;
+        [SerializeField] private PreferenceSystem preferenceSystem;
         [SerializeField] private List<PersonalityProfile> profiles = new();
         [SerializeField] private List<SocialCompatibility> compatibilities = new();
         [SerializeField] private List<JobFitScore> jobFitScores = new();
@@ -142,6 +147,9 @@ namespace Survivebest.Core
             };
 
             ApplyTraitBiases(profile, weights);
+            ApplyArchetypeBiases(character.CharacterId, weights);
+            ApplyMoralBiases(character.CharacterId, weights);
+            ApplyPreferenceBiases(character.CharacterId, weights);
 
             AutonomousActionType decision = PickWeighted(weights);
             float confidence = Mathf.Clamp01(weights[decision] / 140f);
@@ -198,6 +206,58 @@ namespace Survivebest.Core
             {
                 weights[AutonomousActionType.Socialize] += 12f;
                 weights[AutonomousActionType.Rest] *= 0.75f;
+            }
+        }
+
+
+
+        private void ApplyArchetypeBiases(string characterId, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (personalityArchetypeSystem == null)
+            {
+                return;
+            }
+
+            foreach (AutonomousActionType actionType in weights.Keys)
+            {
+                weights[actionType] += personalityArchetypeSystem.GetActionBias(characterId, actionType) * 100f;
+            }
+        }
+
+        private void ApplyMoralBiases(string characterId, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (moralValueSystem == null)
+            {
+                return;
+            }
+
+            float resistance = moralValueSystem.EvaluateCrimeResistance(characterId);
+            weights[AutonomousActionType.Work] += resistance * 10f;
+            weights[AutonomousActionType.Craft] += resistance * 6f;
+            weights[AutonomousActionType.Explore] -= resistance * 6f;
+        }
+
+        private void ApplyPreferenceBiases(string characterId, Dictionary<AutonomousActionType, float> weights)
+        {
+            if (preferenceSystem == null)
+            {
+                return;
+            }
+
+            string weather = worldClock != null ? worldClock.CurrentSeason.ToString() : string.Empty;
+            float weatherMood = preferenceSystem.GetMoodModifierForWeather(characterId, weather);
+            if (weatherMood > 0f)
+            {
+                weights[AutonomousActionType.Explore] += weatherMood * 2f;
+                weights[AutonomousActionType.Socialize] += weatherMood;
+                preferenceSystem.PublishPreferenceHit(characterId, "Favorite weather matched", weatherMood);
+                return;
+            }
+
+            if (weatherMood < 0f)
+            {
+                weights[AutonomousActionType.Rest] += Mathf.Abs(weatherMood) * 2f;
+                weights[AutonomousActionType.Sleep] += Mathf.Abs(weatherMood);
             }
         }
 

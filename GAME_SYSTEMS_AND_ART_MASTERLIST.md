@@ -43,6 +43,9 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/DaySliceManager.cs`
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
 - `Assets/Scripts/Core/PersonalityDecisionSystem.cs`
+- `Assets/Scripts/Core/PreferenceSystem.cs`
+- `Assets/Scripts/Core/MoralValueSystem.cs`
+- `Assets/Scripts/Core/PersonalityArchetypeSystem.cs`
 - `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
 - `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
 - `Assets/Scripts/Tasking/TaskModels.cs`
@@ -77,6 +80,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Emotion/EmotionSystem.cs`
 - `Assets/Scripts/Social/SocialSystem.cs`
 - `Assets/Scripts/Social/RelationshipMemorySystem.cs`
+- `Assets/Scripts/Social/LoveLanguageSystem.cs`
 - `Assets/Scripts/Dialogue/DialogueSystem.cs`
 - `Assets/Scripts/Dialogue/NarrativePromptSystem.cs`
 - `Assets/Scripts/Emotion/ConflictSystem.cs`
@@ -146,6 +150,12 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/UI/FurniturePlaceable.cs`
 - `Assets/Scripts/UI/UIGlassStyleController.cs`
 - `Assets/Scripts/UI/TraitPillTagView.cs`
+
+### Appearance / Identity Expression
+- `Assets/Scripts/Appearance/CharacterAppearanceEditor.cs`
+- `Assets/Scripts/Appearance/StyleIdentitySystem.cs`
+- `Assets/Scripts/Appearance/FashionSystem.cs`
+- `Assets/Scripts/Appearance/TattooSystem.cs`
 
 ### Rendering / View / Utility
 - `Assets/Scripts/Rendering/CharacterSortingGroupBinder.cs`
