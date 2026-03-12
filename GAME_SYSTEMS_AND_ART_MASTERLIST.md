@@ -83,6 +83,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Social/RelationshipMemorySystem.cs`
 - `Assets/Scripts/Social/LoveLanguageSystem.cs`
 - `Assets/Scripts/Social/RelationshipCompatibilityEngine.cs`
+- `Assets/Scripts/Social/SocialDramaEngine.cs`
 - `Assets/Scripts/Dialogue/DialogueSystem.cs`
 - `Assets/Scripts/Dialogue/NarrativePromptSystem.cs`
 - `Assets/Scripts/Emotion/ConflictSystem.cs`
@@ -174,6 +175,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/PersonalityDecisionSystemTests.cs`
 - `Assets/Tests/EditMode/PersonalityMatrixSystemTests.cs`
 - `Assets/Tests/EditMode/RelationshipCompatibilityEngineTests.cs`
+- `Assets/Tests/EditMode/SocialDramaEngineTests.cs`
 - `Assets/Tests/EditMode/HousingPropertySystemTests.cs`
 
 ---

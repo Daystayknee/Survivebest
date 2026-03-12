@@ -94,6 +94,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `SocialSystem`, `DialogueSystem`, `NarrativePromptSystem`
 - `LoveLanguageSystem` (primary/secondary love-language matching for relationship-memory outcomes).
 - `RelationshipCompatibilityEngine` (pairwise compatibility/trust/attraction/tension profiles driving emergent friendship/romance/rivalry).
+- `SocialDramaEngine` (gossip/rumor/secret/scandal propagation with reputation cascades and awareness levels).
 - `ActivitySystem`, `DailyRoutineSystem`, `SkillSystem`
 
 ### Commerce / Crafting / Food
