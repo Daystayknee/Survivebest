@@ -211,6 +211,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added dyed-vs-natural hair controls (checkbox + RGB/ombre/highlight sliders) so genetics updates only the **natural** hair gene color while user dye choices remain cosmetic overlays.
 - Expanded the personality matrix into 12 domains (social/emotional/cognitive/behavioral/moral/lifestyle + relationship, motivation, coping, risk response, preferences, identity expression) with 110+ trait variables driving autonomous choices, compatibility, and compact UI summary bars.
 - Added a relationship compatibility engine layered on top of the personality matrix to continuously model pair dynamics (familiarity/trust/attraction/respect/comfort/tension/jealousy/loyalty/romantic interest) and emit a compact compatibility dashboard summary.
+- Added `PsychologicalGrowthMentalHealthEngine` with per-character mental health profiles (stress/anxiety/depression/burnout/self-esteem/resilience/purpose/loneliness/trauma), therapy/coping/life-event processing, and cross-system modifiers for decisions, relationships, addiction pressure, work performance, conflict behavior, and long-term personality evolution.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

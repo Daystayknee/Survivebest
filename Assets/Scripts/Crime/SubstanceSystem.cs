@@ -74,6 +74,11 @@ namespace Survivebest.Crime
             dependencyLevel = Mathf.Clamp01(dependencyLevel + delta);
         }
 
+        public void AdjustRiskPressure(float pressureDelta)
+        {
+            dependencyLevel = Mathf.Clamp01(dependencyLevel + (pressureDelta * 0.05f));
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)

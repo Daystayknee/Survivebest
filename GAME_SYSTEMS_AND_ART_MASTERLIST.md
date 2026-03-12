@@ -51,6 +51,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/PersonalityMatrixSystem.cs`
 - `Assets/Scripts/Core/ExperiencePacingOrchestrator.cs`
 - `Assets/Scripts/Core/HumanLifeExperienceLayerSystem.cs`
+- `Assets/Scripts/Core/PsychologicalGrowthMentalHealthEngine.cs`
 - `Assets/Scripts/Tasking/TaskModels.cs`
 - `Assets/Scripts/Tasking/TaskDatabase.cs`
 - `Assets/Scripts/Tasking/TaskInteractionManager.cs`

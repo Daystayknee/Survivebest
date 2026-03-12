@@ -55,7 +55,8 @@ namespace Survivebest.Utility
             new("ContractBoardSystem", typeof(ContractBoardSystem), false),
             new("AutonomousStoryGenerator", typeof(AutonomousStoryGenerator), false),
             new("AIDirectorDramaManager", typeof(AIDirectorDramaManager), false),
-            new("SimulationStabilityMonitor", typeof(SimulationStabilityMonitor), false)
+            new("SimulationStabilityMonitor", typeof(SimulationStabilityMonitor), false),
+            new("PsychologicalGrowthMentalHealthEngine", typeof(PsychologicalGrowthMentalHealthEngine), true)
         };
 
         [Header("Optional Key UI Controllers")]
@@ -98,6 +99,7 @@ namespace Survivebest.Utility
         [SerializeField] private AIDirectorDramaManager aiDirectorDramaManager;
         [SerializeField] private AnimationFeedbackJuiceSystem animationFeedbackJuiceSystem;
         [SerializeField] private SimulationStabilityMonitor simulationStabilityMonitor;
+        [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
 
         [Header("Global UI Visual Targets")]
         [SerializeField] private List<Image> requiredImages = new();
@@ -147,6 +149,7 @@ namespace Survivebest.Utility
             missing += CheckNull(aiDirectorDramaManager, nameof(aiDirectorDramaManager));
             missing += CheckNull(animationFeedbackJuiceSystem, nameof(animationFeedbackJuiceSystem));
             missing += CheckNull(simulationStabilityMonitor, nameof(simulationStabilityMonitor));
+            missing += CheckNull(psychologicalGrowthMentalHealthEngine, nameof(psychologicalGrowthMentalHealthEngine));
 
             for (int i = 0; i < requiredImages.Count; i++)
             {
@@ -228,6 +231,7 @@ namespace Survivebest.Utility
             aiDirectorDramaManager ??= FindObjectOfType<AIDirectorDramaManager>(true);
             animationFeedbackJuiceSystem ??= FindObjectOfType<AnimationFeedbackJuiceSystem>(true);
             simulationStabilityMonitor ??= FindObjectOfType<SimulationStabilityMonitor>(true);
+            psychologicalGrowthMentalHealthEngine ??= FindObjectOfType<PsychologicalGrowthMentalHealthEngine>(true);
 
             Debug.Log("[AssetReadiness] Attempted auto-wire for known references.", this);
         }
