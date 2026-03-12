@@ -35,6 +35,9 @@ namespace Survivebest.Society
         public List<SubstanceLaw> SubstanceLaws = new();
         [Range(0f, 1f)] public float TheftEnforcement = 0.5f;
         [Range(0f, 1f)] public float ViolenceEnforcement = 0.8f;
+        [Range(0f, 1f)] public float PoliceFunding = 0.55f;
+        [Range(0f, 1f)] public float PrisonReform = 0.45f;
+        [Range(0f, 1f)] public float HealthcareCoverage = 0.5f;
     }
 
     public class LawSystem : MonoBehaviour
@@ -84,7 +87,8 @@ namespace Survivebest.Society
                 return 0.5f;
             }
 
-            return crimeType == "Violence" ? profile.ViolenceEnforcement : profile.TheftEnforcement;
+            float baseEnforcement = crimeType == "Violence" ? profile.ViolenceEnforcement : profile.TheftEnforcement;
+            return Mathf.Clamp01(baseEnforcement + ((profile.PoliceFunding - 0.5f) * 0.3f));
         }
 
         public bool VoteOnSubstanceLaw(string areaName, SubstanceType substanceType, bool voteForStricter)
@@ -118,6 +122,32 @@ namespace Survivebest.Society
             return true;
         }
 
+        public bool ApplyPolicyShift(string areaName, float policeBudgetDelta, float prisonReformDelta, float healthcareDelta)
+        {
+            AreaLawProfile profile = EnsureProfileExists(areaName);
+            if (profile == null)
+            {
+                return false;
+            }
+
+            profile.PoliceFunding = Mathf.Clamp01(profile.PoliceFunding + policeBudgetDelta);
+            profile.PrisonReform = Mathf.Clamp01(profile.PrisonReform + prisonReformDelta);
+            profile.HealthcareCoverage = Mathf.Clamp01(profile.HealthcareCoverage + healthcareDelta);
+            OnAreaLawChanged?.Invoke(profile.AreaName, profile);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.LawVoteResolved,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(LawSystem),
+                ChangeKey = $"PolicyShift:{profile.AreaName}",
+                Reason = "Policy package updated",
+                Magnitude = profile.PoliceFunding + profile.PrisonReform + profile.HealthcareCoverage
+            });
+
+            return true;
+        }
+
         private AreaLawProfile GetProfile(string areaName)
         {
             return areaProfiles.Find(x => x.AreaName == areaName);
@@ -137,6 +167,9 @@ namespace Survivebest.Society
                 AreaName = key,
                 TheftEnforcement = 0.5f,
                 ViolenceEnforcement = 0.8f,
+                PoliceFunding = 0.55f,
+                PrisonReform = 0.45f,
+                HealthcareCoverage = 0.5f,
                 SubstanceLaws = BuildDefaultSubstanceLaws()
             };
 

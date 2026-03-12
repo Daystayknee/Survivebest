@@ -1,6 +1,6 @@
 # Survivebest (2D Life Sim Survival RPG Foundation)
 
-Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.  
+Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.
 The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play.
 
 ## Engine / Requirements
@@ -84,6 +84,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `CharacterCore` with life stage, talent, portrait traits, birth date, death events
 - `FamilyManager`, `HouseholdManager`, `LegacyManager`
 - `LifeStageManager`, `BodyCompositionSystem`, `VisualGenome`
+- `PersonalityArchetypeSystem`, `PersonalityMatrixSystem`, `MoralValueSystem`, `PreferenceSystem` (deep personality/value/preference profiles and evolution hooks).
 
 ### Needs / Health / Emotion
 - `NeedsSystem`, `HealthSystem`, `MedicalConditionSystem`
@@ -91,6 +92,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 
 ### Social / Dialogue / Activities
 - `SocialSystem`, `DialogueSystem`, `NarrativePromptSystem`
+- `LoveLanguageSystem` (primary/secondary love-language matching for relationship-memory outcomes).
 - `ActivitySystem`, `DailyRoutineSystem`, `SkillSystem`
 
 ### Commerce / Crafting / Food
@@ -105,6 +107,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 
 ### UI / Interaction / View
 - `GameHUD` (needs, money, clock)
+- `CharacterAppearanceEditor`, `StyleIdentitySystem`, `FashionSystem`, `TattooSystem` (post-creation identity-expression layer with genetics-locked natural traits).
 - `JournalFeedUI` + `JournalCardView` (card-style event feed)
 - `CharacterRosterHUD`, `CharacterPortraitRenderer`
 - `SidebarContextMenu`, `ZoneScenePanel`, `SuccessionUI`
@@ -186,9 +189,23 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Car travel now uses vehicle type, room-distance multipliers, fuel/condition/cleanliness simulation, and applies travel impact to active-character needs/mood (`CarSystem`).
 - Expanded home hotspots now support doorway navigation, build toggle, furniture store, shower, fridge, water cooler, bed, mirror, couch, desk, bookshelf, TV, workout corner, pantry, and trash interactions that directly modify character needs (`HomeInteractionHotspot`).
 - New status effect simulation layer with an auto-generated 220-effect library (positive + negative), hourly ticking, illness chance hooks, and event emission (`StatusEffectSystem`).
-- New genetics pipeline with parent inheritance + mutation chance + life-stage morphing for facial/body traits (`GeneticsSystem` + `LifeStageManager` + `VisualGenome`).
+- New modular genetics pipeline with genotype→phenotype resolution, trait-expression modes (dominant/blended/partial/latent), life-stage remapping, and inherited health tendencies (`GeneticsSystem`, `InheritanceResolver`, `PhenotypeResolver`, `LifeStageMorphResolver`).
+- Added Unity-ready 2D avatar layer contracts (`AvatarLayerProfile`) for head/face/hair families and body-region scales (neck/chest/waist/hips/thighs/calves/hands/feet) to support future layered portrait/paper-doll rendering.
 - `AppearanceManager` now includes context-menu tools to auto-bind portrait layers by child name and validate missing layer references for Unity setup speed.
 - Furniture store purchase flow with wallet spend + instant placement spawn + build-mode handoff (`FurnitureStoreController`).
+- Added `ExperiencePacingOrchestrator` as a cross-system cadence layer to monitor survival/social/progression/expression/risk pillars and inject dynamic beats (director spikes, emergency opportunities, social memory beats, progression minigame nudges) when play gets too quiet.
+- Added modular layered hair pipeline for 2D avatars (`HairLayerSystem` + `HairGroomingSystem`) with slot-based assembly (back/side/front/bangs/flyaways/hairline), facial/body hair overlays, growth stages, shave/trim regrowth timers, and renderer contracts compatible with `AppearanceManager` + `CharacterPortraitRenderer`.
+- Added `CharacterCreatorDashboardController` for modern paper-doll dashboard flow (Appearance/Traits/Clothing tabs, filter-driven style cards, swatch colors, advanced sliders, preview rotate/zoom/drag, randomize, and preset save/load hooks).
+- Added `TaskInteractionManager` pipeline for **Optional Interactive Task Actions** (Auto vs Interactive mode) with step-based task sessions and result routing (`TaskDatabase`, `AutoTaskRunner`, `InteractiveTaskRunner`, `TaskResultSpawner`, `TaskStateUpdater`) so life tasks can be performed manually without score/rank mechanics.
+- Added `HumanLifeExperienceLayerSystem` to bridge portrait/dashboard-first simulation loops with routine completion signals, embodiment prompts, thought-message logging, and place-attachment tracking for non-walking life-sim flow.
+- Upgraded `GameplayScreenController` into a readable daily-life dashboard layer with top-state (time/weather/location), immediate pressure summaries, suggested next actions, and world-pulse snippets (latest event + thought) so the main loop is legible at a glance.
+- Refined `JournalFeedUI` and `HumanLifeExperienceLayerSystem` messaging so event cards and world pulse text read like a human-facing life feed (named character context, richer event titles, strongest thought/place summary) rather than raw debug output.
+- Expanded crime/law/drug governance depth with evidence-based investigations in `CrimeSystem`, staged justice outcomes in `JusticeSystem`, prison routine mode (`PrisonRoutineSystem`), criminal reputation tiers, addiction lifecycle tracking, and election-cycle policy hooks (`ElectionCycleSystem`) to make legal/social pressure a living life loop.
+- Added prison-mode depth systems: `PrisonInteractionSystem` (40+ interaction choices), `GuardAlertSystem`, `ContrabandSystem`, `PrisonEconomySystem`, `DisciplineSystem`, and `ParoleEvaluationSystem`, with dashboard legal-pressure wiring so incarceration feels like an alternate playable life chapter rather than a timer.
+- Added simplified personal drug-cycle systems (`CravingSystem`, `RehabilitationSystem`) and expanded `SubstanceSystem` integration (personality susceptibility, social-memory consequences, contextual legal risk like public use/DUI/distribution) to reinforce the temptation→use→withdrawal→consequence→recovery loop.
+- Added `CravingSystem` and `RehabilitationSystem` to complete the personal addiction loop (temptation/use/tolerance/withdrawal/recovery), and wired dashboard guidance (`GameplayScreenController`) to surface cravings and recovery-program status as actionable play signals.
+- Added dyed-vs-natural hair controls (checkbox + RGB/ombre/highlight sliders) so genetics updates only the **natural** hair gene color while user dye choices remain cosmetic overlays.
+- Added deep personality and identity-expression foundations: MBTI-inspired archetype profiles, a full multi-domain personality matrix, moral values, love languages, and post-creation style editing (fashion/tattoos/hair dye) while keeping genetics-derived natural traits locked.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).

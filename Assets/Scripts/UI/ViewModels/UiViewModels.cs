@@ -9,6 +9,21 @@ namespace Survivebest.UI.ViewModels
     [Serializable] public class SettingsViewModel { public float MasterVolume; public float MusicVolume; public float SfxVolume; public bool Fullscreen; public string Resolution; }
     [Serializable] public class WorldCreatorViewModel { public int MasterSeed; public string ProfileType; public string WorldName; }
     [Serializable] public class CharacterCreatorViewModel { public string DisplayName; public int Age; public string TraitSummary; }
+    [Serializable] public class CharacterCreatorDashboardViewModel
+    {
+        public string ActiveTab;
+        public string HairTextureFilter;
+        public string HairLengthFilter;
+        public string FacialHairFilter;
+        public int AvailableStyles;
+        public int SavedPresetCount;
+        public bool UseDyedHair;
+        public string NaturalHairHex;
+        public string DyedHairHex;
+        public float OmbreAmount;
+        public float HighlightIntensity;
+    }
+
     [Serializable] public class HouseholdMakerViewModel { public string HouseholdName; public int MemberCount; public int StartingFunds; }
     [Serializable] public class GameplayHudViewModel { public int Day; public string Time; public string Weather; public int Funds; public float TownPressure; }
     [Serializable] public class JournalCardViewModel { public string Title; public string Body; public string DistrictId; public string Timestamp; public string Severity; }
