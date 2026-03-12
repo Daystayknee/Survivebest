@@ -59,7 +59,7 @@ namespace Survivebest.Core
 
     public class SaveGameManager : MonoBehaviour
     {
-        private const int CurrentSchemaVersion = 4;
+        private const int CurrentSchemaVersion = 5;
         private const int LegacySchemaVersion = 1;
 
         [SerializeField] private WorldClock worldClock;

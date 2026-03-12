@@ -136,8 +136,8 @@ namespace Survivebest.World
             {
                 AppearanceProfile profile = appearanceManager.CurrentProfile ?? new AppearanceProfile();
                 profile.SkinTone = ToSkinTone(phenotype.Skin.Tone);
-                profile.EyeColor = ToEyeColor(Mathf.Lerp(geneticProfile.EyeSize, geneticProfile.NoseBridgeHeight, 0.5f));
-                profile.HairColor = Color.Lerp(new Color(0.1f, 0.06f, 0.04f), new Color(0.88f, 0.75f, 0.48f), phenotype.Hair.Pigment);
+                profile.EyeColor = ToEyeColor(Mathf.Lerp(phenotype.Face.EyeSize, phenotype.Face.NoseBridgeHeight, 0.5f));
+                profile.HairColor = ResolveHairColor(phenotype.Hair, phenotype.Skin);
 
                 float vitiligo = phenotype.Skin.Overlays != null ? phenotype.Skin.Overlays.Vitiligo : 0f;
                 profile.SkinIssue = vitiligo > 0.12f
@@ -146,24 +146,26 @@ namespace Survivebest.World
                         ? SkinIssueType.Acne
                         : phenotype.Skin.Overlays.Freckles > 0.4f
                             ? SkinIssueType.Freckles
-                            : SkinIssueType.None;
-                profile.HasBeautyMark = phenotype.Skin.Overlays.Moles > 0.5f;
+                            : phenotype.Skin.Overlays.Hyperpigmentation > 0.45f
+                                ? SkinIssueType.Hyperpigmentation
+                                : SkinIssueType.None;
+                profile.HasBeautyMark = phenotype.Skin.Overlays.BeautyMarks > 0.45f || phenotype.Skin.Overlays.Moles > 0.5f;
                 appearanceManager.ApplyAppearance(profile);
             }
 
             if (visualGenome != null)
             {
                 PhysicalTraits traits = visualGenome.CurrentTraits;
-                traits.NeckLength = Mathf.Lerp(0.85f, 1.2f, phenotype.Body.LimbProportion);
+                traits.NeckLength = Mathf.Lerp(0.82f, 1.25f, phenotype.Body.Neck);
                 traits.Height = Mathf.Lerp(0.8f, 1.25f, phenotype.Body.Height);
-                traits.ShoulderWidth = Mathf.Lerp(0.8f, 1.25f, phenotype.Body.FrameSize);
-                traits.BustSize = Mathf.Lerp(0.72f, 1.32f, phenotype.Body.ChestBustPresentation);
-                traits.HipWidth = Mathf.Lerp(0.75f, 1.35f, phenotype.Body.Hips);
-                traits.BootySize = Mathf.Lerp(0.75f, 1.35f, phenotype.Body.Hips);
-                traits.ArmThickness = Mathf.Lerp(0.7f, 1.3f, phenotype.Body.MuscleExpression * 0.65f + phenotype.Body.FatExpression * 0.35f);
-                traits.ThighGirth = Mathf.Lerp(0.7f, 1.35f, phenotype.Body.FatExpression * 0.6f + phenotype.Body.MuscleExpression * 0.4f);
-                traits.CalfGirth = Mathf.Lerp(0.7f, 1.25f, phenotype.Body.MuscleExpression);
-                traits.ChestDepth = Mathf.Lerp(0.8f, 1.22f, phenotype.Body.FrameSize);
+                traits.ShoulderWidth = Mathf.Lerp(0.75f, 1.3f, phenotype.Body.Shoulders);
+                traits.BustSize = Mathf.Lerp(0.68f, 1.35f, phenotype.Body.ChestBustPresentation);
+                traits.HipWidth = Mathf.Lerp(0.7f, 1.38f, phenotype.Body.Hips);
+                traits.BootySize = Mathf.Lerp(0.7f, 1.4f, phenotype.Body.Hips);
+                traits.ArmThickness = Mathf.Lerp(0.65f, 1.35f, phenotype.Body.MuscleExpression * 0.68f + phenotype.Body.FatExpression * 0.32f);
+                traits.ThighGirth = Mathf.Lerp(0.68f, 1.38f, phenotype.Body.Thighs);
+                traits.CalfGirth = Mathf.Lerp(0.66f, 1.3f, phenotype.Body.Calves);
+                traits.ChestDepth = Mathf.Lerp(0.78f, 1.24f, phenotype.Body.Stomach * 0.4f + phenotype.Body.FrameSize * 0.6f);
                 visualGenome.ApplyPhysicalTraits(traits);
             }
 
@@ -172,7 +174,7 @@ namespace Survivebest.World
                 BodyGenetics bodyGenetics = new BodyGenetics
                 {
                     AdultHeightCm = Mathf.Lerp(150f, 205f, phenotype.Body.Height),
-                    AdultWeightKg = Mathf.Lerp(48f, 130f, phenotype.Body.FrameSize),
+                    AdultWeightKg = Mathf.Lerp(45f, 138f, phenotype.Body.FrameSize),
                     BodyFatPotential = Mathf.Lerp(0.08f, 0.48f, phenotype.Body.FatExpression),
                     MusclePotential = Mathf.Lerp(0.1f, 0.95f, phenotype.Body.MuscleExpression)
                 };
@@ -189,6 +191,21 @@ namespace Survivebest.World
             }
 
             ResolveAndApplyPhenotype();
+        }
+
+
+        public AvatarLayerProfile BuildAvatarLayerContract()
+        {
+            return phenotypeProfile != null ? phenotypeProfile.AvatarLayers : new AvatarLayerProfile();
+        }
+
+        private static Color ResolveHairColor(HairProfile hair, SkinProfile skin)
+        {
+            Color baseHair = Color.Lerp(new Color(0.09f, 0.05f, 0.03f), new Color(0.9f, 0.78f, 0.52f), hair.Pigment);
+            float grayMix = Mathf.Clamp01(hair.Graying);
+            Color grayed = Color.Lerp(baseHair, new Color(0.72f, 0.72f, 0.74f), grayMix);
+            float undertoneWarm = Mathf.Lerp(0.92f, 1.08f, skin.Undertone);
+            return grayed * new Color(undertoneWarm, 1f, 1f);
         }
 
         private static EyeColorType ToEyeColor(float pigment)

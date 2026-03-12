@@ -116,11 +116,13 @@ namespace Survivebest.UI
             {
                 PhenotypeProfile phenotype = geneticsSystem.Phenotype;
                 builder.AppendLine($"Schema: {phenotype.BodySchema}");
-                builder.AppendLine($"Skin Tone: {phenotype.Skin.Tone:0.00}");
-                builder.AppendLine($"Freckles: {phenotype.Skin.Overlays.Freckles:0.00}");
-                builder.AppendLine($"Vitiligo: {phenotype.Skin.Overlays.Vitiligo:0.00}");
-                builder.AppendLine($"Jaw Width: {phenotype.Face.JawWidth:0.00}");
-                builder.AppendLine($"Lip Fullness: {phenotype.Face.LipFullness:0.00}");
+                builder.AppendLine($"Skin Tone: {phenotype.Skin.Tone:0.00}  Undertone: {phenotype.Skin.Undertone:0.00}");
+                builder.AppendLine($"Freckles: {phenotype.Skin.Overlays.Freckles:0.00}  Beauty Marks: {phenotype.Skin.Overlays.BeautyMarks:0.00}");
+                builder.AppendLine($"Vitiligo: {phenotype.Skin.Overlays.Vitiligo:0.00}  Acne: {phenotype.Skin.Overlays.Acne:0.00}  Wrinkles: {phenotype.Skin.Overlays.Wrinkles:0.00}");
+                builder.AppendLine($"Jaw: {phenotype.Face.JawWidth:0.00}  Chin: {phenotype.Face.ChinProminence:0.00}  Cheeks: {phenotype.Face.CheekFullness:0.00}");
+                builder.AppendLine($"Eyes: {phenotype.Face.EyeSize:0.00}/{phenotype.Face.EyeSpacing:0.00}  Nose: {phenotype.Face.NoseBridgeHeight:0.00}/{phenotype.Face.NostrilWidth:0.00}  Lips: {phenotype.Face.LipFullness:0.00}");
+                builder.AppendLine($"Hair Curl: {phenotype.Hair.Curl:0.00}  Density: {phenotype.Hair.Density:0.00}  Front/Side/Back: {phenotype.Hair.FrontPieceDensity:0.00}/{phenotype.Hair.SidePieceDensity:0.00}/{phenotype.Hair.BackPieceDensity:0.00}");
+                builder.AppendLine($"Body Regions N/C/W/H/T/C: {phenotype.Body.Neck:0.00}/{phenotype.Body.ChestBustPresentation:0.00}/{phenotype.Body.Waist:0.00}/{phenotype.Body.Hips:0.00}/{phenotype.Body.Thighs:0.00}/{phenotype.Body.Calves:0.00}");
             }
 
             if (visualGenome != null)

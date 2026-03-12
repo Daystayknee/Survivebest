@@ -430,7 +430,8 @@ Additional progress this pass:
 - Added service-staffing observability in `NpcCareerSystem` (`CountOnDuty`, `IsServiceAvailable`) plus critical-service outage events for unattended shifts.
 - Added family-level social consequence propagation in `RelationshipMemorySystem` so one insult can affect wider family reputation.
 - Added genetics architecture split into **Genotype / Phenotype / Condition Overlays / Life-Stage Morph** via `GeneticProfile`, `PhenotypeProfile`, and resolver pipeline (`InheritanceResolver`, `PhenotypeResolver`, `LifeStageMorphResolver`).
-- Added explicit genetics subprofiles for modular expansion: `FaceMorphProfile`, `BodyMorphProfile`, `SkinProfile`, `HairProfile`, and `HealthPredispositionProfile`.
+- Added explicit genetics subprofiles for modular expansion: `FaceMorphProfile`, `BodyMorphProfile`, `SkinProfile`, `HairProfile`, `HealthPredispositionProfile`, and Unity avatar layer contracts via `AvatarLayerProfile`.
+- Deepened phenotype variation coverage (face/body region morphs, skin condition overlays, hair front/side/back density contracts, body fat/muscle expression) for believable family resemblance and 2D layer-driven rendering.
 - Updated `GeneticsSystem` to resolve phenotype outputs into portrait, body morph, skin-state overlays, and body composition so genetics feed both visuals and simulation tendencies.
 - Extended save/load contracts (`SaveGameManager`) to persist `GeneticProfile` + `PhenotypeProfile` alongside core character state for future-proof inheritance and art pipeline stability.
 
