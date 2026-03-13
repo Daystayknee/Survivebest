@@ -39,5 +39,24 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(careerGo);
             Object.DestroyImmediate(scheduleGo);
         }
+
+        [Test]
+        public void OnEnable_SeedsUsaCommonRoles_WhenRoleListIsEmpty()
+        {
+            GameObject careerGo = new GameObject("CareerSeedRoles");
+            NpcCareerSystem career = careerGo.AddComponent<NpcCareerSystem>();
+
+            FieldInfo rolesField = typeof(NpcCareerSystem).GetField("roleDefinitions", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(rolesField);
+            List<CareerRoleDefinition> roles = (List<CareerRoleDefinition>)rolesField.GetValue(career);
+
+            Assert.IsNotNull(roles);
+            Assert.GreaterOrEqual(roles.Count, 10);
+            Assert.IsTrue(roles.Exists(x => x != null && x.Profession == ProfessionType.Firefighter));
+            Assert.IsTrue(roles.Exists(x => x != null && x.Profession == ProfessionType.TruckDriver));
+
+            Object.DestroyImmediate(careerGo);
+        }
+
     }
 }
