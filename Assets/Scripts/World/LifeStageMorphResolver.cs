@@ -57,7 +57,56 @@ namespace Survivebest.World
                 phenotype.AvatarLayers.CalfScale = Mathf.Clamp01(phenotype.Body.Calves);
                 phenotype.AvatarLayers.HandScale = Mathf.Clamp01(phenotype.Body.Hands);
                 phenotype.AvatarLayers.FootScale = Mathf.Clamp01(phenotype.Body.Feet);
+
+                ApplyLifeStageArtMode(phenotype.AvatarLayers, stage);
             }
+        }
+
+        private static void ApplyLifeStageArtMode(AvatarLayerProfile layers, LifeStage stage)
+        {
+            if (layers == null)
+            {
+                return;
+            }
+
+            layers.UseBundledInfantBody = stage is LifeStage.Baby or LifeStage.Infant;
+            layers.EnableCrawlingPoseSet = stage == LifeStage.Toddler;
+            layers.EnableOnesieLayer = stage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler;
+            layers.EnableYouthOutfitLayer = stage is LifeStage.Child or LifeStage.Preteen;
+            layers.EnableAdultOutfitLayer = stage is LifeStage.Teen or LifeStage.YoungAdult or LifeStage.Adult or LifeStage.OlderAdult or LifeStage.Elder;
+
+            layers.SkinAgeOverlayKey = stage switch
+            {
+                LifeStage.Baby or LifeStage.Infant => "skin_age_infant_soft",
+                LifeStage.Toddler => "skin_age_toddler_soft",
+                LifeStage.Child or LifeStage.Preteen => "skin_age_youth_clear",
+                LifeStage.Teen => "skin_age_teen_transition",
+                LifeStage.YoungAdult or LifeStage.Adult => "skin_age_adult_base",
+                LifeStage.OlderAdult => "skin_age_older_adult",
+                _ => "skin_age_elder"
+            };
+            layers.WrinkleOverlayKey = stage is LifeStage.OlderAdult or LifeStage.Elder ? "wrinkle_high" : stage is LifeStage.Adult ? "wrinkle_light" : "wrinkle_none";
+            layers.OutfitLayerKey = stage is LifeStage.Baby or LifeStage.Infant
+                ? "outfit_swaddle"
+                : stage == LifeStage.Toddler
+                    ? "outfit_onesie"
+                    : stage is LifeStage.Child or LifeStage.Preteen
+                        ? "outfit_youth"
+                        : stage == LifeStage.Teen
+                            ? "outfit_teen"
+                            : "outfit_adult";
+            layers.OnesieLayerKey = layers.EnableOnesieLayer ? "onesie_default" : null;
+            layers.CrawlPoseSetKey = layers.EnableCrawlingPoseSet ? "pose_crawl_set_a" : null;
+
+            layers.LifeStageArtMode = stage switch
+            {
+                LifeStage.Baby or LifeStage.Infant => LifeStageArtMode.BundlePortrait,
+                LifeStage.Toddler => LifeStageArtMode.ToddlerCrawl,
+                LifeStage.Child or LifeStage.Preteen => LifeStageArtMode.ChildSimpleRig,
+                LifeStage.Teen => LifeStageArtMode.TeenRig,
+                LifeStage.YoungAdult or LifeStage.Adult => LifeStageArtMode.AdultRig,
+                _ => LifeStageArtMode.ElderRig
+            };
         }
     }
 }
