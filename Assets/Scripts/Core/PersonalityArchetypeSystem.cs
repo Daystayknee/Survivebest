@@ -14,7 +14,11 @@ namespace Survivebest.Core
         ISFP,
         ENTP,
         ISTJ,
-        ESFP
+        ESFP,
+        INFP,
+        ENTJ,
+        ESFJ,
+        ISFJ
     }
 
     public enum EmotionalProcessingStyle
@@ -23,7 +27,9 @@ namespace Survivebest.Core
         Externalizer,
         Analytical,
         Empathetic,
-        Avoidant
+        Avoidant,
+        Reflective,
+        Regulated
     }
 
     [Serializable]
