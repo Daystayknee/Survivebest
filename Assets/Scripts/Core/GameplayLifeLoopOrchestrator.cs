@@ -43,6 +43,10 @@ namespace Survivebest.Core
         [SerializeField, Range(0, 23)] private int sleepHour = 22;
         [SerializeField] private List<LifeLoopStepRecord> recentSteps = new();
         [SerializeField, Min(20)] private int maxStepHistory = 600;
+        [SerializeField, Min(0)] private int recoveryInterventionCooldownHours = 4;
+
+        private readonly Dictionary<string, int> lastRecoveryInterventionHour = new();
+        private int fallbackAbsoluteHourCounter;
 
         public IReadOnlyList<LifeLoopStepRecord> RecentSteps => recentSteps;
 
@@ -93,6 +97,28 @@ namespace Survivebest.Core
             float pressure = BuildPressure(active, hour);
             float social = BuildSocialOpportunity(hour);
             float progress = BuildProgressFromDecision(decision);
+            float recoveryPriority = BuildRecoveryPriority(active, pressure, social);
+            bool canTriggerRecovery = CanTriggerRecoveryIntervention(active, hour);
+
+            if (recoveryPriority > 0.72f && canTriggerRecovery)
+            {
+                float therapyIntensity = Mathf.Lerp(0.35f, 0.9f, recoveryPriority);
+                psychologicalGrowthMentalHealthEngine?.AttendTherapySession(active.CharacterId, therapyIntensity);
+                humanLifeExperienceLayerSystem?.RecordLifeTimelineEvent(
+                    active,
+                    "Self-regulation block",
+                    "You deliberately slowed down and used coping tools to stabilize.",
+                    "loop");
+                gameplayInteractionPresentationLayer?.RegisterManualChoiceResult(
+                    "self_regulate",
+                    "Recovery routines reduced overwhelm",
+                    Mathf.Lerp(1f, 3.5f, recoveryPriority));
+                RecordRecoveryIntervention(active, hour);
+                RecordStep(active, "SelfRegulation", "mental_recovery", recoveryPriority);
+
+                pressure = Mathf.Clamp01(pressure - (0.18f * recoveryPriority));
+                progress = Mathf.Clamp01(progress + (0.14f * recoveryPriority));
+            }
 
             humanLifeExperienceLayerSystem?.SimulateHourPulse(active, hour, pressure, social, progress);
             adaptiveLifeEventsDirector?.DirectBeatForActiveCharacter(hour);
@@ -105,7 +131,7 @@ namespace Survivebest.Core
                 RecordStep(active, "Sleep", "sleep", 1f);
             }
 
-            PublishLoopEvent(active, decision, pressure, social, progress);
+            PublishLoopEvent(active, decision, pressure, social, progress, recoveryPriority);
         }
 
         private void HandleHourPassed(int hour)
@@ -152,6 +178,73 @@ namespace Survivebest.Core
             }
 
             return Mathf.Clamp01((timeBased * 0.6f) + (districtFlow * 0.4f));
+        }
+
+        private float BuildRecoveryPriority(CharacterCore active, float pressure, float social)
+        {
+            if (active == null)
+            {
+                return 0f;
+            }
+
+            float satisfactionPenalty = 0.35f;
+            float riskPressure = 0f;
+
+            if (psychologicalGrowthMentalHealthEngine != null)
+            {
+                float satisfaction = psychologicalGrowthMentalHealthEngine.GetLifeSatisfactionIndex(active.CharacterId) / 100f;
+                satisfactionPenalty = 1f - satisfaction;
+
+                List<string> flags = psychologicalGrowthMentalHealthEngine.GetMentalHealthRiskFlags(active.CharacterId);
+                riskPressure = Mathf.Clamp01(flags.Count / 5f);
+                if (flags.Contains("CrisisState"))
+                {
+                    riskPressure = Mathf.Clamp01(riskPressure + 0.3f);
+                }
+            }
+
+            return Mathf.Clamp01((pressure * 0.45f) + ((1f - social) * 0.2f) + (satisfactionPenalty * 0.25f) + (riskPressure * 0.1f));
+        }
+
+        private bool CanTriggerRecoveryIntervention(CharacterCore active, int hour)
+        {
+            if (active == null)
+            {
+                return false;
+            }
+
+            if (recoveryInterventionCooldownHours <= 0)
+            {
+                return true;
+            }
+
+            if (!lastRecoveryInterventionHour.TryGetValue(active.CharacterId, out int lastHour))
+            {
+                return true;
+            }
+
+            int absoluteHour = GetAbsoluteHour(hour);
+            return (absoluteHour - lastHour) >= recoveryInterventionCooldownHours;
+        }
+
+        private void RecordRecoveryIntervention(CharacterCore active, int hour)
+        {
+            if (active == null)
+            {
+                return;
+            }
+
+            lastRecoveryInterventionHour[active.CharacterId] = GetAbsoluteHour(hour);
+        }
+
+        private int GetAbsoluteHour(int hour)
+        {
+            if (worldClock != null)
+            {
+                return (worldClock.Day * 24) + worldClock.Hour;
+            }
+
+            return fallbackAbsoluteHourCounter++;
         }
 
         private static float BuildProgressFromDecision(AutonomousActionType decision)
@@ -215,7 +308,7 @@ namespace Survivebest.Core
             OnLifeLoopStep?.Invoke(record);
         }
 
-        private void PublishLoopEvent(CharacterCore actor, AutonomousActionType decision, float pressure, float social, float progress)
+        private void PublishLoopEvent(CharacterCore actor, AutonomousActionType decision, float pressure, float social, float progress, float recoveryPriority)
         {
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
@@ -224,7 +317,7 @@ namespace Survivebest.Core
                 SystemName = nameof(GameplayLifeLoopOrchestrator),
                 SourceCharacterId = actor != null ? actor.CharacterId : null,
                 ChangeKey = decision.ToString(),
-                Reason = $"Loop tick completed (pressure {pressure:0.00}, social {social:0.00}, progress {progress:0.00})",
+                Reason = $"Loop tick completed (pressure {pressure:0.00}, social {social:0.00}, progress {progress:0.00}, recovery {recoveryPriority:0.00})",
                 Magnitude = progress - pressure
             });
         }

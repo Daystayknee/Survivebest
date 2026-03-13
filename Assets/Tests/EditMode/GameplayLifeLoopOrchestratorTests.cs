@@ -16,6 +16,7 @@ namespace Survivebest.Tests.EditMode
             HouseholdManager household = go.AddComponent<HouseholdManager>();
             HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
             PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
 
             typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(orchestrator, household);
@@ -23,6 +24,8 @@ namespace Survivebest.Tests.EditMode
                 ?.SetValue(orchestrator, life);
             typeof(GameplayLifeLoopOrchestrator).GetField("personalityDecisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(orchestrator, decisions);
+            typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, mental);
 
             GameObject charGo = new GameObject("Char");
             CharacterCore character = charGo.AddComponent<CharacterCore>();
@@ -39,5 +42,93 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
         }
+
+        [Test]
+        public void ExecuteManualLifeLoopTick_HighRiskStateCreatesSelfRegulationStep()
+        {
+            GameObject go = new GameObject("LoopOrchestratorRisk");
+            GameplayLifeLoopOrchestrator orchestrator = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, household);
+            typeof(GameplayLifeLoopOrchestrator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, life);
+            typeof(GameplayLifeLoopOrchestrator).GetField("personalityDecisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, decisions);
+            typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, mental);
+
+            GameObject charGo = new GameObject("RiskChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_loop_risk", "LoopRisk", LifeStage.Adult);
+            charGo.AddComponent<NeedsSystem>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            mental.RecordLifeEvent(character.CharacterId, MentalHealthEventType.Crisis, 1.6f);
+            mental.RecordLifeEvent(character.CharacterId, MentalHealthEventType.Trauma, 1.2f);
+
+            orchestrator.ExecuteManualLifeLoopTick(10);
+
+            Assert.IsTrue(orchestrator.RecentSteps.Count > 0);
+            Assert.IsTrue(System.Linq.Enumerable.Any(orchestrator.RecentSteps, s => s.StepLabel == "SelfRegulation"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void ExecuteManualLifeLoopTick_RecoveryInterventionHonorsCooldown()
+        {
+            GameObject go = new GameObject("LoopOrchestratorCooldown");
+            GameplayLifeLoopOrchestrator orchestrator = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, household);
+            typeof(GameplayLifeLoopOrchestrator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, life);
+            typeof(GameplayLifeLoopOrchestrator).GetField("personalityDecisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, decisions);
+            typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, mental);
+            typeof(GameplayLifeLoopOrchestrator).GetField("recoveryInterventionCooldownHours", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, 4);
+
+            GameObject charGo = new GameObject("CooldownChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_loop_cooldown", "LoopCooldown", LifeStage.Adult);
+            charGo.AddComponent<NeedsSystem>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            mental.RecordLifeEvent(character.CharacterId, MentalHealthEventType.Crisis, 1.6f);
+            mental.RecordLifeEvent(character.CharacterId, MentalHealthEventType.Trauma, 1.2f);
+
+            orchestrator.ExecuteManualLifeLoopTick(10);
+            orchestrator.ExecuteManualLifeLoopTick(11);
+
+            int recoverySteps = 0;
+            for (int i = 0; i < orchestrator.RecentSteps.Count; i++)
+            {
+                if (orchestrator.RecentSteps[i].StepLabel == "SelfRegulation")
+                {
+                    recoverySteps++;
+                }
+            }
+
+            Assert.AreEqual(1, recoverySteps);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }

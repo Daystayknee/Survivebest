@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
@@ -83,6 +84,7 @@ namespace Survivebest.UI
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
+        [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
         [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Runtime")]
@@ -238,12 +240,45 @@ namespace Survivebest.UI
 
             if (personalityDecisionSystem != null)
             {
-                List<ProceduralDecisionOption> options = personalityDecisionSystem.GenerateDecisionSpace(active, DateTime.UtcNow.Minute + active.CharacterId.GetHashCode(), 4);
+                int seed = BuildSuggestionSeed(active);
+                List<ProceduralDecisionOption> options = personalityDecisionSystem.GenerateDecisionSpace(active, seed, 4);
                 for (int i = 0; i < options.Count; i++)
                 {
                     suggestions.Add($"Try: {options[i].Label}");
                 }
             }
+
+            if (psychologicalGrowthMentalHealthEngine != null)
+            {
+                float satisfaction = psychologicalGrowthMentalHealthEngine.GetLifeSatisfactionIndex(active.CharacterId);
+                List<string> flags = psychologicalGrowthMentalHealthEngine.GetMentalHealthRiskFlags(active.CharacterId);
+
+                if (flags.Contains("CrisisState"))
+                {
+                    suggestions.Add("Pause high-risk tasks and choose immediate support");
+                }
+
+                if (flags.Contains("BurnoutRisk"))
+                {
+                    suggestions.Add("Take a recovery block (rest + hydration + low-pressure routine)");
+                }
+
+                if (flags.Contains("IsolationRisk"))
+                {
+                    suggestions.Add("Reach out to one trusted contact today");
+                }
+
+                if (satisfaction < 40f)
+                {
+                    suggestions.Add("Pick one meaningful purpose action to regain momentum");
+                }
+            }
+
+            suggestions = suggestions
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .ToList();
 
             if (suggestions.Count == 0)
             {
@@ -253,6 +288,24 @@ namespace Survivebest.UI
 
             return suggestions;
         }
+
+        private int BuildSuggestionSeed(CharacterCore active)
+        {
+            int baseSeed = active != null ? active.CharacterId.GetHashCode() : 17;
+            if (worldClock != null)
+            {
+                baseSeed = (baseSeed * 31) + worldClock.Day;
+                baseSeed = (baseSeed * 31) + worldClock.Hour;
+            }
+            else
+            {
+                baseSeed = (baseSeed * 31) + DateTime.UtcNow.Hour;
+            }
+
+            return baseSeed;
+        }
+
+
 
 
 
@@ -394,7 +447,21 @@ namespace Survivebest.UI
             currentCharacterPanel.Hunger = needs != null ? needs.Hunger : 60f;
             currentCharacterPanel.Stress = emotion != null ? emotion.Stress : 25f;
 
-            if (currentCharacterPanel.Health < 40f)
+            List<string> riskFlags = psychologicalGrowthMentalHealthEngine != null
+                ? psychologicalGrowthMentalHealthEngine.GetMentalHealthRiskFlags(active.CharacterId)
+                : null;
+
+            if (riskFlags != null && riskFlags.Contains("CrisisState"))
+            {
+                currentCharacterPanel.VisualMode = "MentalCrisisMode";
+                currentCharacterPanel.OverlayTag = "crisis_pulse";
+            }
+            else if (riskFlags != null && riskFlags.Contains("BurnoutRisk"))
+            {
+                currentCharacterPanel.VisualMode = "RecoveryNeededMode";
+                currentCharacterPanel.OverlayTag = "burnout_fade";
+            }
+            else if (currentCharacterPanel.Health < 40f)
             {
                 currentCharacterPanel.VisualMode = "HealthInjuryMode";
                 currentCharacterPanel.OverlayTag = "injury_glow";
