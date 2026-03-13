@@ -24,6 +24,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - UI action routing and hotspot packs are aligned with these systems (map travel prompts, bathroom/closet actions, clothing store flows).
 - World clock/calendar now supports minutes→years progression, seasonal holiday definitions (including Winterfest on Winter day 25), and household-wide annual aging hook integration with `LifeStageManager`.
 - Weather now supports a global simple seasonal state mapping (`Sunny`, `Rainy`, `Snowy`) in addition to weighted seasonal variability.
+- Birthday celebrations now publish sensory event feed entries and world-time now includes richer fixed + seasonal holidays.
+- Added `WorldEventDirector` for recurring ambient events (street performances, cookouts, skywatch nights) with see/hear/feel narrative output.
 
 ## 1) Implemented Runtime Systems (by script)
 
@@ -33,6 +35,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 ### World / Time / Environment
 - `Assets/Scripts/World/WorldClock.cs`
 - `Assets/Scripts/World/WeatherManager.cs`
+- `Assets/Scripts/World/WorldEventDirector.cs`
 - `Assets/Scripts/World/WeatherEffectSystem.cs`
 - `Assets/Scripts/World/BirthdayManager.cs`
 - `Assets/Scripts/World/WorldCreatorManager.cs`

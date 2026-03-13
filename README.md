@@ -43,7 +43,7 @@ _Last updated: current branch state._
 - Food-depth extensions (ingredient taxonomy metadata, recipe quality/discovery, daily specials, seasonal grocery prices/availability, freshness states).
 - UI/controller foundation and scene tools (menus, HUD/feed/panels, action popups, readiness/bootstrap helpers).
 - Headless readiness utilities (optional UI coverage, runtime coverage, integration dry-runs, aggregated balance recommendations) to progress wiring/balancing work outside Unity PlayMode.
-- World simulation depth upgrades: `WorldClock` now supports season-day holiday definitions (default `Winterfest` on Winter day 25) and household-wide annual `AgeUp()` hooks; `WeatherManager` supports a simple global season weather mode (`Sunny`/`Rainy`/`Snowy`).
+- World simulation depth upgrades: `WorldClock` now supports richer fixed + seasonal holidays with sensory descriptions and household-wide annual `AgeUp()` hooks; `BirthdayManager` publishes celebration events; `WorldEventDirector` schedules ambient town moments so players can see/hear/feel world events; `WeatherManager` supports a simple global season weather mode (`Sunny`/`Rainy`/`Snowy`).
 - Broad EditMode test coverage across major domains (core/economy/social/story/home-life/food extensions).
 
 ### ⚠️ Partially complete (code ready, Unity wiring/balancing pending)
