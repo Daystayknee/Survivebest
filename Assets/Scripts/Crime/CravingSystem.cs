@@ -3,6 +3,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Needs;
 using Survivebest.World;
+using Survivebest.Events;
 
 namespace Survivebest.Crime
 {
@@ -12,6 +13,7 @@ namespace Survivebest.Crime
         [SerializeField] private AddictionLifecycleSystem addictionLifecycleSystem;
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private GameEventHub gameEventHub;
 
         [SerializeField, Range(0f, 1f)] private float cravingIntensity;
         [SerializeField] private bool cravingActive;
@@ -42,6 +44,7 @@ namespace Survivebest.Crime
             cravingIntensity = Mathf.Clamp01(cravingIntensity - Mathf.Abs(amount));
             cravingActive = cravingIntensity > 0.2f;
             OnCravingChanged?.Invoke(cravingIntensity);
+            PublishCravingEvent("CravingRelief", "Craving relief applied", cravingIntensity, SimulationEventSeverity.Info);
         }
 
         private void HandleHourPassed(int _)
@@ -73,9 +76,28 @@ namespace Survivebest.Crime
             {
                 needsSystem.ModifyMood(-1.4f * cravingIntensity);
                 needsSystem.ModifyEnergy(-0.6f * cravingIntensity);
+                needsSystem.ModifyMentalFatigue(cravingIntensity * 0.4f);
             }
 
             OnCravingChanged?.Invoke(cravingIntensity);
+            if (cravingIntensity >= 0.8f)
+            {
+                PublishCravingEvent("CravingPeak", "Craving intensity reached critical zone", cravingIntensity, SimulationEventSeverity.Warning);
+            }
+        }
+
+        private void PublishCravingEvent(string key, string reason, float magnitude, SimulationEventSeverity severity)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.StatusEffectChanged,
+                Severity = severity,
+                SystemName = nameof(CravingSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = key,
+                Reason = reason,
+                Magnitude = magnitude
+            });
         }
     }
 }

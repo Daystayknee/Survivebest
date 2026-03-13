@@ -88,6 +88,7 @@ namespace Survivebest.Needs
         [SerializeField, Min(0f)] private float appearanceLossPerHour = 0.6f;
         [SerializeField, Min(0f)] private float boredomGainPerHour = 1.6f;
         [SerializeField, Min(0f)] private float mentalFatigueGainPerHour = 1.2f;
+        [SerializeField, Range(0f, 100f)] private float healthStrainThreshold = 72f;
 
         public event Action<float> OnHungerChanged;
         public event Action<float> OnBladderChanged;
@@ -343,6 +344,7 @@ namespace Survivebest.Needs
             burnoutRisk = Mathf.Clamp(burnoutRisk + mentalFatigue * 0.01f + stressProxy() * 0.02f, 0f, 100f);
             UpdateBurnoutStage();
             SetMood(mood - 0.5f * m);
+            ApplyCompoundedHealthStrain();
             OnHourlyNeedDecay?.Invoke();
 
             if (activeCraving == CravingType.None && UnityEngine.Random.value < 0.08f)
@@ -352,6 +354,30 @@ namespace Survivebest.Needs
         }
 
         private float stressProxy() => Mathf.Clamp01((100f - mood) / 100f) * 100f;
+
+        private void ApplyCompoundedHealthStrain()
+        {
+            float deprivation = ((100f - hunger) + (100f - energy) + (100f - hydration) + mentalFatigue) * 0.25f;
+            if (deprivation < healthStrainThreshold)
+            {
+                return;
+            }
+
+            float overload = Mathf.Clamp01((deprivation - healthStrainThreshold) / 28f);
+            SetMood(mood - overload * 0.8f);
+            ModifyMotivation(-overload * 1.2f);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.NeedCritical,
+                Severity = overload > 0.7f ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
+                SystemName = nameof(NeedsSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = "CompoundedNeedStrain",
+                Reason = "Multiple unmet needs are compounding into health strain",
+                Magnitude = deprivation
+            });
+        }
 
         private void UpdateBurnoutStage()
         {

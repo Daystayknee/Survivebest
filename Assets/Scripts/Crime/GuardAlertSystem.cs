@@ -19,6 +19,7 @@ namespace Survivebest.Crime
         [SerializeField] private GuardAlertLevel currentLevel = GuardAlertLevel.Normal;
 
         public event Action<GuardAlertLevel> OnAlertLevelChanged;
+        public event Action<float> OnAlertScoreChanged;
 
         public GuardAlertLevel CurrentLevel => currentLevel;
         public float AlertScore => alertScore;
@@ -26,12 +27,14 @@ namespace Survivebest.Crime
         public void RaiseAlert(float delta, string reason)
         {
             alertScore = Mathf.Clamp01(alertScore + Mathf.Abs(delta));
+            OnAlertScoreChanged?.Invoke(alertScore);
             RefreshLevel(reason);
         }
 
         public void ReduceAlert(float delta, string reason)
         {
             alertScore = Mathf.Clamp01(alertScore - Mathf.Abs(delta));
+            OnAlertScoreChanged?.Invoke(alertScore);
             RefreshLevel(reason);
         }
 
@@ -47,6 +50,18 @@ namespace Survivebest.Crime
 
             if (next == currentLevel)
             {
+                if (Mathf.Abs(alertScore - 0.5f) >= 0.25f)
+                {
+                    (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                    {
+                        Type = SimulationEventType.ActivityStarted,
+                        Severity = alertScore >= 0.8f ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
+                        SystemName = nameof(GuardAlertSystem),
+                        ChangeKey = "GuardAlertPressure",
+                        Reason = string.IsNullOrWhiteSpace(reason) ? "Guard alert pressure shifted" : reason,
+                        Magnitude = alertScore
+                    });
+                }
                 return;
             }
 

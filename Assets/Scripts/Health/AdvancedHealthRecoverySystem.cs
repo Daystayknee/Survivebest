@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
+using Survivebest.Needs;
 using Survivebest.World;
 
 namespace Survivebest.Health
@@ -51,6 +52,7 @@ namespace Survivebest.Health
     {
         [SerializeField] private CharacterCore owner;
         [SerializeField] private HealthSystem healthSystem;
+        [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<RegionInjury> activeInjuries = new();
@@ -158,6 +160,7 @@ namespace Survivebest.Health
                 if (UnityEngine.Random.value < injury.InfectionRisk * untreatedPenalty * 0.05f)
                 {
                     healthSystem?.Damage(1.6f);
+                    needsSystem?.ModifyMood(-1.2f);
                     injury.Severity = Mathf.Clamp(injury.Severity + 2.4f, 0f, 100f);
                     PublishHealthEvent(injury, "Infection spike", SimulationEventSeverity.Warning, injury.Severity);
                 }
@@ -207,11 +210,27 @@ namespace Survivebest.Health
                 plan.RemainingDoses--;
                 plan.NextDoseHour = now + Mathf.Max(2, plan.IntervalHours);
                 healthSystem?.Heal(0.8f);
+                needsSystem?.ModifyMood(0.5f);
 
                 if (plan.RemainingDoses <= 0)
                 {
                     medicationPlans.RemoveAt(i);
                 }
+            }
+
+            for (int i = 0; i < activeInjuries.Count; i++)
+            {
+                RegionInjury injury = activeInjuries[i];
+                if (injury == null || injury.IsRecovered || now < injury.NextMedicationHour)
+                {
+                    continue;
+                }
+
+                injury.NextMedicationHour = now + Mathf.Max(3, injury.MedicationIntervalHours);
+                injury.Severity = Mathf.Clamp(injury.Severity + 0.9f, 0f, 100f);
+                injury.InfectionRisk = Mathf.Clamp01(injury.InfectionRisk + 0.02f);
+                needsSystem?.ModifyMood(-0.45f);
+                PublishHealthEvent(injury, "Medication missed", SimulationEventSeverity.Warning, injury.Severity);
             }
         }
 

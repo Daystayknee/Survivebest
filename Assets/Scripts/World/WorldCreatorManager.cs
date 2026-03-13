@@ -78,6 +78,16 @@ namespace Survivebest.World
                     Background = null,
                     SpawnPoint = null
                 });
+
+                (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                {
+                    Type = SimulationEventType.WorldAreaGenerated,
+                    Severity = SimulationEventSeverity.Info,
+                    SystemName = nameof(WorldCreatorManager),
+                    ChangeKey = template.AreaName,
+                    Reason = $"Generated area {template.AreaName} ({template.Theme})",
+                    Magnitude = (template.TheftEnforcement + template.ViolenceEnforcement) * 0.5f * 100f
+                });
             }
 
             lawSystem?.SetAreaProfiles(profiles);

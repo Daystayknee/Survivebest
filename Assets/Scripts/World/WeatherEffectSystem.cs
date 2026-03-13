@@ -18,6 +18,7 @@ namespace Survivebest.World
         [SerializeField] private float stormEnergyLoss = 3f;
         [SerializeField] private float blizzardEnergyLoss = 4f;
         [SerializeField] private float heatwaveHydrationLoss = 6f;
+        [SerializeField, Min(0f)] private float hazardousWeatherHealthTick = 0.35f;
 
         private WeatherState currentWeather;
 
@@ -126,6 +127,7 @@ namespace Survivebest.World
                 case WeatherState.Stormy:
                     needs.ModifyEnergy(-stormEnergyLoss);
                     needs.ModifyMood(-2f);
+                    health?.Damage(hazardousWeatherHealthTick);
                     break;
                 case WeatherState.Blizzard:
                     needs.ModifyEnergy(-blizzardEnergyLoss);
@@ -142,9 +144,11 @@ namespace Survivebest.World
                     break;
             }
 
-            if (member == householdManager.ActiveCharacter)
+            bool hazardous = weather == WeatherState.Stormy || weather == WeatherState.Blizzard || weather == WeatherState.Heatwave;
+            if (member == householdManager.ActiveCharacter || hazardous)
             {
-                PublishWeatherEffectEvent(member, "WeatherHourTick", weather.ToString(), GetWeatherMagnitude(weather));
+                string key = hazardous ? "WeatherHazardTick" : "WeatherHourTick";
+                PublishWeatherEffectEvent(member, key, weather.ToString(), GetWeatherMagnitude(weather));
             }
         }
 

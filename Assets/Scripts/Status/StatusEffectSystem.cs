@@ -75,6 +75,7 @@ namespace Survivebest.Status
         [SerializeField] private List<StatusEffectDefinition> statusLibrary = new();
         [SerializeField] private List<ActiveStatusEffect> activeEffects = new();
         [SerializeField, Min(150)] private int targetLibrarySize = 220;
+        [SerializeField, Range(0f, 5f)] private float negativeStackPenaltyPerHour = 0.35f;
 
         public IReadOnlyList<StatusEffectDefinition> StatusLibrary => statusLibrary;
         public IReadOnlyList<ActiveStatusEffect> ActiveEffects => activeEffects;
@@ -199,9 +200,15 @@ namespace Survivebest.Status
 
         private void HandleHourPassed(int hour)
         {
+            int negativeCount = 0;
             for (int i = activeEffects.Count - 1; i >= 0; i--)
             {
                 ActiveStatusEffect effect = activeEffects[i];
+                if (effect != null && effect.IsNegative)
+                {
+                    negativeCount++;
+                }
+
                 TickEffect(effect);
                 effect.RemainingHours--;
 
@@ -211,6 +218,8 @@ namespace Survivebest.Status
                     PublishStatusEvent("StatusExpired", effect.DisplayName, 0f, effect.IsNegative);
                 }
             }
+
+            ApplyStackedNegativePenalty(negativeCount);
         }
 
         private void TickEffect(ActiveStatusEffect effect)
@@ -242,6 +251,25 @@ namespace Survivebest.Status
             }
 
             PublishStatusEvent("StatusTick", effect.DisplayName, effect.RemainingHours, effect.IsNegative);
+        }
+
+        private void ApplyStackedNegativePenalty(int negativeCount)
+        {
+            if (negativeCount < 3 || needsSystem == null)
+            {
+                return;
+            }
+
+            float excess = negativeCount - 2;
+            float penalty = excess * negativeStackPenaltyPerHour;
+            needsSystem.ModifyMood(-penalty);
+            needsSystem.ModifyEnergy(-penalty * 0.7f);
+            if (healthSystem != null && negativeCount >= 5)
+            {
+                healthSystem.Damage(penalty * 0.1f);
+            }
+
+            PublishStatusEvent("StatusOverload", $"{negativeCount} negative statuses are compounding", penalty, true);
         }
 
         private void GenerateStatusLibrary()

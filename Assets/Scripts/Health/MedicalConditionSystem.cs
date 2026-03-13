@@ -66,6 +66,7 @@ namespace Survivebest.Health
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private List<MedicalCondition> activeConditions = new();
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField, Range(0f, 1f)] private float severeComplicationChance = 0.08f;
 
         public event Action<MedicalCondition> OnConditionAdded;
         public event Action<MedicalCondition> OnConditionExpired;
@@ -95,6 +96,11 @@ namespace Survivebest.Health
                 return false;
             }
 
+            if (HasCondition(x => x.IsIllness && x.IllnessType == illnessType))
+            {
+                return false;
+            }
+
             MedicalCondition condition = BuildIllness(illnessType, severity);
             activeConditions.Add(condition);
             OnConditionAdded?.Invoke(condition);
@@ -114,6 +120,11 @@ namespace Survivebest.Health
         public bool AddInjury(InjuryType injuryType, ConditionSeverity severity)
         {
             if (!IsInjuryAgeAppropriate(injuryType))
+            {
+                return false;
+            }
+
+            if (HasCondition(x => !x.IsIllness && x.InjuryType == injuryType))
             {
                 return false;
             }
@@ -177,6 +188,7 @@ namespace Survivebest.Health
                 {
                     activeConditions.RemoveAt(i);
                     OnConditionExpired?.Invoke(condition);
+                    PublishConditionEvent(condition, "ConditionExpired", 0f, SimulationEventSeverity.Info);
                 }
             }
         }
@@ -204,7 +216,21 @@ namespace Survivebest.Health
                 {
                     needsSystem.ModifyHygiene(-condition.HourlyHygieneDamage);
                 }
+
+                if (condition.Severity == ConditionSeverity.Severe)
+                {
+                    needsSystem.RestoreHydration(-0.35f);
+                    needsSystem.ModifyEnergy(-0.5f);
+                }
             }
+
+            if (condition.Severity == ConditionSeverity.Severe && UnityEngine.Random.value <= severeComplicationChance)
+            {
+                healthSystem?.Damage(0.35f);
+                PublishConditionEvent(condition, "ComplicationTick", 1f, SimulationEventSeverity.Warning);
+            }
+
+            PublishConditionEvent(condition, "ConditionTick", condition.RemainingHours, condition.Severity == ConditionSeverity.Severe ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
         }
 
         private MedicalCondition BuildIllness(IllnessType type, ConditionSeverity severity)
@@ -308,6 +334,39 @@ namespace Survivebest.Health
                 ConditionSeverity.Moderate => 1.6f,
                 _ => 2.3f
             };
+        }
+
+        private bool HasCondition(Func<MedicalCondition, bool> predicate)
+        {
+            if (predicate == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < activeConditions.Count; i++)
+            {
+                MedicalCondition condition = activeConditions[i];
+                if (condition != null && predicate(condition))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void PublishConditionEvent(MedicalCondition condition, string changeKey, float magnitude, SimulationEventSeverity severity)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = condition != null && condition.IsIllness ? SimulationEventType.IllnessStarted : SimulationEventType.InjuryStarted,
+                Severity = severity,
+                SystemName = nameof(MedicalConditionSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = changeKey,
+                Reason = condition != null ? (condition.IsIllness ? condition.IllnessType.ToString() : condition.InjuryType.ToString()) : "Condition",
+                Magnitude = magnitude
+            });
         }
     }
 }
