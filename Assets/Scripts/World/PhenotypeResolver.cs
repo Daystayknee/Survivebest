@@ -154,9 +154,22 @@ namespace Survivebest.World
                 MouthFamily = ChooseFamily(genes.LipFullness),
                 JawFamily = ChooseFamily(genes.JawWidth),
                 EarFamily = ChooseFamily(genes.EarSize),
+                EyeExpressionSet = ChooseEyeExpressionSet(genes.EyeSize, genes.EyeSpacing),
+                MouthExpressionSet = ChooseMouthExpressionSet(genes.LipFullness, genes.BrowHeaviness),
+                BrowExpressionFamily = ChooseFamily(genes.BrowHeaviness),
+                EyelidExpressionFamily = ChooseFamily(Mathf.Lerp(genes.EyeSize, genes.SleepQualityTendency, 0.5f)),
+                BaseBodyLayerKey = BuildLayerKey("body_base", ChooseFamily(genes.FrameSize)),
+                EyeLayerKey = BuildLayerKey("eyes", ChooseFamily(genes.EyeSize)),
+                NoseLayerKey = BuildLayerKey("nose", ChooseFamily(genes.NoseBridgeHeight)),
+                MouthLayerKey = BuildLayerKey("mouth", ChooseFamily(genes.LipFullness)),
+                BrowLayerKey = BuildLayerKey("brow", ChooseFamily(genes.BrowHeaviness)),
+                ExpressionPresetKey = BuildExpressionPresetKey(ChooseEyeExpressionSet(genes.EyeSize, genes.EyeSpacing), ChooseMouthExpressionSet(genes.LipFullness, genes.BrowHeaviness)),
                 HairFrontFamily = ChooseHairFamily(genes.HairCurl),
                 HairSideFamily = ChooseHairFamily(genes.HairCurl),
                 HairBackFamily = ChooseHairFamily(genes.HairCurl),
+                FemininePresentation = ResolveSchemaBias(genes.BodySchema, BodySchema.Feminine),
+                MasculinePresentation = ResolveSchemaBias(genes.BodySchema, BodySchema.Masculine),
+                AndrogynyPresentation = ResolveSchemaBias(genes.BodySchema, BodySchema.Androgynous),
                 NeckScale = genes.LimbProportion,
                 ChestScale = genes.ChestBustPotential,
                 WaistScale = genes.WaistHipBias,
@@ -166,6 +179,49 @@ namespace Survivebest.World
                 HandScale = genes.HandSize,
                 FootScale = genes.FootSize
             };
+        }
+
+
+        private static float ResolveSchemaBias(BodySchema schema, BodySchema target)
+        {
+            if (schema == target)
+            {
+                return 1f;
+            }
+
+            if (schema == BodySchema.Androgynous)
+            {
+                return target == BodySchema.Androgynous ? 1f : 0.6f;
+            }
+
+            if (schema == BodySchema.Neutral)
+            {
+                return target == BodySchema.Androgynous ? 0.7f : 0.5f;
+            }
+
+            return target == BodySchema.Androgynous ? 0.35f : 0.2f;
+        }
+
+        private static EyeExpressionSet ChooseEyeExpressionSet(float eyeSize, float spacing)
+        {
+            float blend = (eyeSize + spacing) * 0.5f;
+            if (blend < 0.2f) return EyeExpressionSet.Sharp;
+            if (blend < 0.35f) return EyeExpressionSet.Alert;
+            if (blend < 0.5f) return EyeExpressionSet.Neutral;
+            if (blend < 0.68f) return EyeExpressionSet.Soft;
+            if (blend < 0.85f) return EyeExpressionSet.Sleepy;
+            return EyeExpressionSet.Wide;
+        }
+
+        private static MouthExpressionSet ChooseMouthExpressionSet(float lips, float brow)
+        {
+            float blend = Mathf.Clamp01((lips * 0.65f) + ((1f - brow) * 0.35f));
+            if (blend < 0.2f) return MouthExpressionSet.Frown;
+            if (blend < 0.4f) return MouthExpressionSet.Neutral;
+            if (blend < 0.56f) return MouthExpressionSet.Smirk;
+            if (blend < 0.72f) return MouthExpressionSet.Soft;
+            if (blend < 0.88f) return MouthExpressionSet.Smile;
+            return MouthExpressionSet.Full;
         }
 
         private static LayerPieceFamily ChooseFamily(float v)
