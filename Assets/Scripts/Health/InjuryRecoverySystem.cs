@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
+using Survivebest.Needs;
 using Survivebest.World;
 
 namespace Survivebest.Health
@@ -29,9 +30,11 @@ namespace Survivebest.Health
     {
         [SerializeField] private CharacterCore owner;
         [SerializeField] private HealthSystem healthSystem;
+        [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<InjuryRecord> activeInjuries = new();
+        [SerializeField, Min(0f)] private float untreatedStressPerHour = 0.8f;
 
         public IReadOnlyList<InjuryRecord> ActiveInjuries => activeInjuries;
 
@@ -108,6 +111,13 @@ namespace Survivebest.Health
                 if (damage > 0f)
                 {
                     healthSystem?.Damage(damage);
+                    needsSystem?.ModifyMood(-damage * 2.4f);
+                    needsSystem?.ModifyEnergy(-damage * 1.4f);
+                }
+
+                if (injury.NeedsTreatment)
+                {
+                    needsSystem?.ModifyMood(-untreatedStressPerHour * 0.3f);
                 }
 
                 if (injury.RemainingHours > 0f)

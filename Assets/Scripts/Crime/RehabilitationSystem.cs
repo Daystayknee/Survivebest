@@ -1,7 +1,10 @@
 using System;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Events;
 using Survivebest.Needs;
+using Survivebest.Health;
+using Survivebest.Status;
 using Survivebest.World;
 
 namespace Survivebest.Crime
@@ -20,7 +23,10 @@ namespace Survivebest.Crime
         [SerializeField] private AddictionLifecycleSystem addictionLifecycleSystem;
         [SerializeField] private CravingSystem cravingSystem;
         [SerializeField] private NeedsSystem needsSystem;
+        [SerializeField] private HealthSystem healthSystem;
+        [SerializeField] private StatusEffectSystem statusEffectSystem;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private GameEventHub gameEventHub;
 
         [SerializeField] private RehabilitationProgramType activeProgram;
         [SerializeField, Min(0)] private int remainingProgramDays;
@@ -56,6 +62,7 @@ namespace Survivebest.Crime
             activeProgram = type;
             remainingProgramDays = durationDays;
             OnProgramStarted?.Invoke(type, durationDays);
+            PublishRehabEvent("ProgramStarted", $"{type} started for {durationDays} days", durationDays, SimulationEventSeverity.Info);
             return true;
         }
 
@@ -80,6 +87,14 @@ namespace Survivebest.Crime
             cravingSystem?.RelieveCraving(progress * 1.2f);
             needsSystem?.ModifyMood(1.4f);
             needsSystem?.ModifyEnergy(0.8f);
+            healthSystem?.Heal(progress * 0.6f);
+
+            if (statusEffectSystem != null && activeProgram == RehabilitationProgramType.ExerciseRoutine)
+            {
+                statusEffectSystem.ApplyStatusById("status_020", 4);
+            }
+
+            PublishRehabEvent("ProgramTick", $"{activeProgram} daily progress", progress, SimulationEventSeverity.Info);
 
             if (remainingProgramDays > 0)
             {
@@ -88,6 +103,22 @@ namespace Survivebest.Crime
 
             OnProgramCompleted?.Invoke(activeProgram);
             needsSystem?.ModifyMood(3f);
+            healthSystem?.Heal(2f);
+            PublishRehabEvent("ProgramCompleted", $"{activeProgram} completed", 1f, SimulationEventSeverity.Info);
+        }
+
+        private void PublishRehabEvent(string key, string reason, float magnitude, SimulationEventSeverity severity)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityCompleted,
+                Severity = severity,
+                SystemName = nameof(RehabilitationSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = key,
+                Reason = reason,
+                Magnitude = magnitude
+            });
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
+using Survivebest.World;
 
 namespace Survivebest.Crime
 {
@@ -27,7 +28,9 @@ namespace Survivebest.Crime
     public class CriminalReputationSystem : MonoBehaviour
     {
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField] private List<CriminalReputationState> reputations = new();
+        [SerializeField, Min(0)] private int dailyReputationDecay = 1;
 
         public event Action<CriminalReputationState> OnReputationChanged;
 
@@ -44,6 +47,11 @@ namespace Survivebest.Crime
             {
                 gameEventHub.OnEventPublished += HandleEventPublished;
             }
+
+            if (worldClock != null)
+            {
+                worldClock.OnDayPassed += HandleDayPassed;
+            }
         }
 
         private void OnDisable()
@@ -51,6 +59,11 @@ namespace Survivebest.Crime
             if (gameEventHub != null)
             {
                 gameEventHub.OnEventPublished -= HandleEventPublished;
+            }
+
+            if (worldClock != null)
+            {
+                worldClock.OnDayPassed -= HandleDayPassed;
             }
         }
 
@@ -77,8 +90,12 @@ namespace Survivebest.Crime
                 conviction = true;
                 delta = simulationEvent.ChangeKey == "Jail" ? 8 : 5;
             }
+            else if (simulationEvent.Type == SimulationEventType.ActivityCompleted && simulationEvent.ChangeKey == "ProgramCompleted")
+            {
+                delta = -3;
+            }
 
-            if (delta <= 0)
+            if (delta == 0)
             {
                 return;
             }
@@ -95,6 +112,26 @@ namespace Survivebest.Crime
             state.TotalConvictions += conviction ? 1 : 0;
             state.Tier = ResolveTier(state.Score);
             OnReputationChanged?.Invoke(state);
+        }
+
+        private void HandleDayPassed(int _)
+        {
+            if (dailyReputationDecay <= 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < reputations.Count; i++)
+            {
+                CriminalReputationState state = reputations[i];
+                if (state == null || state.Score <= 0)
+                {
+                    continue;
+                }
+
+                state.Score = Mathf.Max(0, state.Score - dailyReputationDecay);
+                state.Tier = ResolveTier(state.Score);
+            }
         }
 
         private static CriminalReputationTier ResolveTier(int score)
