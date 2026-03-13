@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Needs;
@@ -11,12 +12,19 @@ namespace Survivebest.Minigames
     public enum MinigameType
     {
         Cooking,
+        Baking,
+        DrinkMixing,
+        Fishing,
         Repairs,
         FirstAid,
         Cleaning,
         Surgery,
         RestaurantService,
-        EmergencyResponse
+        EmergencyResponse,
+        MovieNight,
+        TVMarathon,
+        BookReading,
+        SingingSession
     }
 
     [Serializable]
@@ -41,12 +49,19 @@ namespace Survivebest.Minigames
         [SerializeField] private MinigameSceneProfile[] sceneProfiles =
         {
             new MinigameSceneProfile { Type = MinigameType.Cooking, SceneBackdropId = "kitchen_station", Prompt = "Keep prep clean, season correctly, and plate before service delay.", RecommendedSkill = "Cooking", DurationMultiplier = 1f },
+            new MinigameSceneProfile { Type = MinigameType.Baking, SceneBackdropId = "kitchen_oven", Prompt = "Measure carefully, control oven timing, and finish a balanced bake.", RecommendedSkill = "Cooking", DurationMultiplier = 1.15f },
+            new MinigameSceneProfile { Type = MinigameType.DrinkMixing, SceneBackdropId = "kitchen_counter", Prompt = "Mix hydration drinks, teas, and shakes with timing and cleanliness.", RecommendedSkill = "Cooking", DurationMultiplier = 0.9f },
+            new MinigameSceneProfile { Type = MinigameType.Fishing, SceneBackdropId = "riverbank", Prompt = "Pick the right bait, cast with rhythm, and react to fish tension.", RecommendedSkill = "Fishing", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.Repairs, SceneBackdropId = "garage_bench", Prompt = "Diagnose the fault, pick safe tools, and verify the fix under load.", RecommendedSkill = "Engineering", DurationMultiplier = 1.1f },
             new MinigameSceneProfile { Type = MinigameType.FirstAid, SceneBackdropId = "triage_room", Prompt = "Stabilize airway, control bleeding, and monitor vitals.", RecommendedSkill = "First aid", DurationMultiplier = 1.1f },
             new MinigameSceneProfile { Type = MinigameType.Cleaning, SceneBackdropId = "home_maintenance", Prompt = "Sanitize high-touch areas and manage supplies without wasting water.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f },
             new MinigameSceneProfile { Type = MinigameType.Surgery, SceneBackdropId = "operating_theater", Prompt = "Prep sterile field, follow operation checklist, and close safely.", RecommendedSkill = "First aid", DurationMultiplier = 1.5f },
             new MinigameSceneProfile { Type = MinigameType.RestaurantService, SceneBackdropId = "restaurant_line", Prompt = "Coordinate orders, avoid cross-contamination, and maintain ticket speed.", RecommendedSkill = "Cooking", DurationMultiplier = 1.2f },
-            new MinigameSceneProfile { Type = MinigameType.EmergencyResponse, SceneBackdropId = "emergency_scene", Prompt = "Secure the scene, triage quickly, and coordinate responders.", RecommendedSkill = "Survival skills", DurationMultiplier = 1.35f }
+            new MinigameSceneProfile { Type = MinigameType.EmergencyResponse, SceneBackdropId = "emergency_scene", Prompt = "Secure the scene, triage quickly, and coordinate responders.", RecommendedSkill = "Survival skills", DurationMultiplier = 1.35f },
+            new MinigameSceneProfile { Type = MinigameType.MovieNight, SceneBackdropId = "living_room", Prompt = "Pick a film mood, settle in, and recover stress while staying present.", RecommendedSkill = "Storytelling", DurationMultiplier = 0.8f },
+            new MinigameSceneProfile { Type = MinigameType.TVMarathon, SceneBackdropId = "living_room_tv", Prompt = "Choose episodes by vibe and manage time so tomorrow still works.", RecommendedSkill = "Storytelling", DurationMultiplier = 0.75f },
+            new MinigameSceneProfile { Type = MinigameType.BookReading, SceneBackdropId = "library_corner", Prompt = "Read deeply, take notes, and absorb ideas for growth.", RecommendedSkill = "Writing", DurationMultiplier = 0.85f },
+            new MinigameSceneProfile { Type = MinigameType.SingingSession, SceneBackdropId = "music_corner", Prompt = "Warm up voice, stay on pitch, and perform with confidence.", RecommendedSkill = "Singing", DurationMultiplier = 0.95f }
         };
 
         private Coroutine runningMinigame;
@@ -94,13 +109,26 @@ namespace Survivebest.Minigames
             return profession switch
             {
                 ProfessionType.Doctor => MinigameType.Surgery,
+                ProfessionType.Nurse => MinigameType.FirstAid,
                 ProfessionType.Chef => MinigameType.RestaurantService,
                 ProfessionType.Mechanic => MinigameType.Repairs,
                 ProfessionType.Police => MinigameType.EmergencyResponse,
-                ProfessionType.Teacher => MinigameType.Cleaning,
+                ProfessionType.Firefighter => MinigameType.EmergencyResponse,
+                ProfessionType.Teacher => MinigameType.BookReading,
                 ProfessionType.Clerk => MinigameType.RestaurantService,
+                ProfessionType.RetailAssociate => MinigameType.RestaurantService,
+                ProfessionType.TruckDriver => MinigameType.EmergencyResponse,
+                ProfessionType.OfficeAdministrator => MinigameType.BookReading,
+                ProfessionType.Electrician => MinigameType.Repairs,
+                ProfessionType.ConstructionWorker => MinigameType.Repairs,
                 _ => MinigameType.Cleaning
             };
+        }
+
+
+        public List<MinigameType> GetAvailableMinigameTypes()
+        {
+            return new List<MinigameType>((MinigameType[])Enum.GetValues(typeof(MinigameType)));
         }
 
         public MinigameSceneProfile GetSceneProfile(MinigameType type)
@@ -193,12 +221,19 @@ namespace Survivebest.Minigames
             return type switch
             {
                 MinigameType.Cooking => "Cooking",
+                MinigameType.Baking => "Cooking",
+                MinigameType.DrinkMixing => "Cooking",
+                MinigameType.Fishing => "Fishing",
                 MinigameType.Repairs => "Engineering",
                 MinigameType.FirstAid => "First aid",
                 MinigameType.Cleaning => "Survival skills",
                 MinigameType.Surgery => "First aid",
                 MinigameType.RestaurantService => "Cooking",
                 MinigameType.EmergencyResponse => "Survival skills",
+                MinigameType.MovieNight => "Storytelling",
+                MinigameType.TVMarathon => "Storytelling",
+                MinigameType.BookReading => "Writing",
+                MinigameType.SingingSession => "Singing",
                 _ => "Survival skills"
             };
         }
@@ -227,12 +262,19 @@ namespace Survivebest.Minigames
             return type switch
             {
                 MinigameType.Cooking => 0.08f,
+                MinigameType.Baking => 0.1f,
+                MinigameType.DrinkMixing => 0.06f,
+                MinigameType.Fishing => 0.13f,
                 MinigameType.Repairs => 0.14f,
                 MinigameType.FirstAid => 0.12f,
                 MinigameType.Cleaning => 0.04f,
                 MinigameType.Surgery => 0.2f,
                 MinigameType.RestaurantService => 0.16f,
                 MinigameType.EmergencyResponse => 0.18f,
+                MinigameType.MovieNight => 0.02f,
+                MinigameType.TVMarathon => 0.03f,
+                MinigameType.BookReading => 0.04f,
+                MinigameType.SingingSession => 0.08f,
                 _ => 0.1f
             };
         }
@@ -249,10 +291,16 @@ namespace Survivebest.Minigames
 
             if (needs != null)
             {
-                float energyCost = type is MinigameType.Surgery or MinigameType.EmergencyResponse ? (success ? -5f : -8f) : (success ? -3f : -6f);
+                float energyCost = type is MinigameType.Surgery or MinigameType.EmergencyResponse
+                    ? (success ? -5f : -8f)
+                    : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading
+                        ? (success ? 4f : 1f)
+                        : (success ? -3f : -6f);
                 needs.ModifyEnergy(energyCost);
-                needs.ModifyMood(success ? 2f : -3f);
-                needs.RestoreHydration(type == MinigameType.RestaurantService ? -2f : -1.5f);
+                needs.ModifyMood(type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.SingingSession
+                    ? (success ? 5f : -1f)
+                    : success ? 2f : -3f);
+                needs.RestoreHydration(type == MinigameType.RestaurantService || type == MinigameType.DrinkMixing ? 2f : -1.5f);
             }
 
             if (skillSystem != null)

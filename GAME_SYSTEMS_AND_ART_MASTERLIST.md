@@ -16,6 +16,18 @@ This file is a comprehensive implementation inventory for the current codebase.
 - Full PlayMode coverage and balancing passes in a Unity CI runner.
 - Final save/load and long-run lifecycle parity verification across all active subsystems.
 
+### Latest sync updates (current branch)
+- Accuracy note: this master list is synchronized to the current branch state and includes headless-readiness/balance tooling added for non-Unity progress.
+- Sandbox/standard balance mode is wired through world-creation settings and can be applied before world generation.
+- USA baseline templates/roles/skills are integrated (world areas, NPC professions, skill catalog expansions).
+- Human-life interaction coverage now includes leisure, kitchen, fishing, bathroom loops, towel dry-off, and per-character closet history.
+- UI action routing and hotspot packs are aligned with these systems (map travel prompts, bathroom/closet actions, clothing store flows).
+- World clock/calendar now supports minutes→years progression, seasonal holiday definitions (including Winterfest on Winter day 25), and household-wide annual aging hook integration with `LifeStageManager`.
+- Weather now supports a global simple seasonal state mapping (`Sunny`, `Rainy`, `Snowy`) in addition to weighted seasonal variability.
+- Birthday celebrations now publish sensory event feed entries and world-time now includes richer fixed + seasonal holidays.
+- Added `WorldEventDirector` for recurring ambient events (street performances, cookouts, skywatch nights) with see/hear/feel narrative output.
+- Household creator now has expanded tabs, multi-asset preview rotation controls, character cycling, and an in-flow genetics consistency validator.
+
 ## 1) Implemented Runtime Systems (by script)
 
 ### Events
@@ -24,6 +36,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 ### World / Time / Environment
 - `Assets/Scripts/World/WorldClock.cs`
 - `Assets/Scripts/World/WeatherManager.cs`
+- `Assets/Scripts/World/WorldEventDirector.cs`
 - `Assets/Scripts/World/WeatherEffectSystem.cs`
 - `Assets/Scripts/World/BirthdayManager.cs`
 - `Assets/Scripts/World/WorldCreatorManager.cs`
@@ -41,6 +54,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/BodyCompositionSystem.cs`
 - `Assets/Scripts/Core/SaveGameManager.cs`
 - `Assets/Scripts/Core/SkillSystem.cs`
+- `Assets/Scripts/Core/LifeActivityCatalog.cs`
 - `Assets/Scripts/Core/SkillTreeSystem.cs`
 - `Assets/Scripts/Core/DaySliceManager.cs`
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
@@ -98,6 +112,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Activity/ActivitySystem.cs`
 - `Assets/Scripts/Activity/DailyRoutineSystem.cs`
 - `Assets/Scripts/Minigames/MinigameManager.cs`
+- Minigame activity set includes: `Cooking`, `Baking`, `DrinkMixing`, `Fishing`, `Repairs`, `FirstAid`, `Cleaning`, `Surgery`, `RestaurantService`, `EmergencyResponse`, `MovieNight`, `TVMarathon`, `BookReading`, `SingingSession`.
 
 ### Commerce / Inventory / Recipes / Ordering
 - `Assets/Scripts/Economy/EconomyInventorySystem.cs`
@@ -174,6 +189,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Utility/AssetReadinessReporter.cs`
 - `Assets/Scripts/Utility/PlaceholderGenerator.cs`
 - `Assets/Scripts/Utility/SimulationSceneBootstrapper.cs`
+- `Assets/Scripts/Utility/IntegrationDryRunService.cs`
+- `Assets/Scripts/Utility/BalanceTuningAdvisor.cs`
 
 ### Automated Tests
 - `Assets/Tests/EditMode/EconomyInventorySystemTests.cs`
@@ -193,6 +210,14 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/GameplayInteractionPresentationLayerTests.cs`
 - `Assets/Tests/EditMode/GameplayLifeLoopOrchestratorTests.cs`
 - `Assets/Tests/EditMode/AdaptiveLifeEventsDirectorTests.cs`
+- `Assets/Tests/EditMode/IntegrationDryRunServiceTests.cs`
+- `Assets/Tests/EditMode/BalanceTuningAdvisorTests.cs`
+- `Assets/Tests/EditMode/LifeActivityCatalogTests.cs`
+- `Assets/Tests/EditMode/WorldCreatorScreenControllerTests.cs`
+- `Assets/Tests/EditMode/SkillSystemTests.cs`
+- `Assets/Tests/EditMode/MinigameManagerTests.cs`
+- `Assets/Tests/EditMode/NpcCareerSystemTests.cs`
+- `Assets/Tests/EditMode/GameBalanceManagerTests.cs`
 
 ---
 
@@ -552,3 +577,15 @@ Additional progress this pass:
 - Dialogue selection now ties click context + relationship memory into generated line scoring (mood/situation/memory-aware), and pet interactables can route into species-specific care dialogue payloads for richer overlay immersion.
 - Clickable service objects now route through dialogue presentation payloads too (work/hospital/shop/school/home), so both NPC chats and object interactions share the same visual-novel overlay contract.
 - Pet-click dialogue now resolves species from household pet profiles (instead of hardcoded dog), and overlay context now surfaces mood/situation/memory tags so authored content and UI debugging stay aligned.
+
+
+## Readiness and Validation Utilities (Current)
+- `AssetReadinessReporter` includes context actions for:
+  - `Report Missing Asset References`
+  - `Auto Wire Known References`
+  - `Report Runtime Vision Coverage`
+  - `Report Optional UI Coverage`
+  - `Run Integration + Balance Dry Run` (scenario-harness-driven profile checks + balance evaluation summary)
+- `IntegrationDryRunService` runs deterministic procedural scenarios across profile presets and converts outcomes into telemetry snapshots for `GameBalanceManager` evaluation.
+- `BalanceTuningAdvisor` aggregates dry-run evaluations into average-score/stability summaries and ranked repeated recommendations to speed balancing passes.
+- `AssetReadinessReporter` includes `Run Headless Pending-Work Audit` to chain optional UI coverage checks, runtime vision checks, dry runs, and aggregated recommendations in one pass.

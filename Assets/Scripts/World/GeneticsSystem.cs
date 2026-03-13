@@ -88,6 +88,44 @@ namespace Survivebest.World
             ResolveAndApplyPhenotype();
         }
 
+
+        public void SetParentReferences(GeneticsSystem newParentA, GeneticsSystem newParentB)
+        {
+            parentA = newParentA;
+            parentB = newParentB;
+        }
+
+        public bool ValidateGeneticsConsistency()
+        {
+            bool repaired = false;
+            if (geneticProfile == null)
+            {
+                geneticProfile = new GeneticProfile();
+                repaired = true;
+            }
+
+            if (geneticProfile.Seed <= 0)
+            {
+                if (parentA != null && parentB != null)
+                {
+                    InheritFromParents();
+                }
+                else
+                {
+                    GenerateFounderGenes();
+                }
+
+                repaired = true;
+            }
+            else
+            {
+                geneticProfile.ClampToNormalizedRange();
+                ResolveAndApplyPhenotype();
+            }
+
+            return repaired;
+        }
+
         [ContextMenu("Apply Genetics To Character")]
         public void ApplyGeneticsToSystems()
         {
