@@ -33,6 +33,14 @@ namespace Survivebest.World
         [TextArea] public string SensoryDescription = "You hear celebration music in the distance, see decorations go up, and feel a shift in the town mood.";
     }
 
+    [Serializable]
+    public class SeasonalHolidayDefinition
+    {
+        public string Name;
+        public Season Season = Season.Winter;
+        [Min(1)] public int DayOfSeason = 1;
+    }
+
     public class WorldClock : MonoBehaviour
     {
         [SerializeField, Min(0.1f)] private float realSecondsPerGameMinute = 5f;
@@ -188,6 +196,50 @@ namespace Survivebest.World
                     TriggerHoliday(holiday.Name, holiday.SensoryDescription);
                 }
             }
+
+            int dayOfSeason = ResolveDayOfSeason(Month, Day);
+            for (int i = 0; i < seasonalHolidays.Count; i++)
+            {
+                SeasonalHolidayDefinition holiday = seasonalHolidays[i];
+                if (holiday == null || string.IsNullOrWhiteSpace(holiday.Name))
+                {
+                    continue;
+                }
+
+                if (holiday.Season == CurrentSeason && holiday.DayOfSeason == dayOfSeason)
+                {
+                    OnHolidayStarted?.Invoke(holiday.Name, Day, Month, Year);
+                }
+            }
+        }
+
+        private void TriggerHouseholdAgeUp()
+        {
+            if (!UsesHouseholdAgeUpHook)
+            {
+                return;
+            }
+
+            IReadOnlyList<CharacterCore> members = householdManager.Members;
+            for (int i = 0; i < members.Count; i++)
+            {
+                CharacterCore member = members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                LifeStageManager lifeStageManager = member.GetComponent<LifeStageManager>();
+                lifeStageManager?.AgeUp();
+            }
+        }
+
+        private int ResolveDayOfSeason(int month, int day)
+        {
+            int seasonLengthMonths = Mathf.Max(1, monthsPerYear / 4);
+            int monthIndex = Mathf.Clamp(month - 1, 0, monthsPerYear - 1);
+            int monthInSeason = monthIndex % seasonLengthMonths;
+            return monthInSeason * daysPerMonth + Mathf.Clamp(day, 1, daysPerMonth);
         }
 
 
