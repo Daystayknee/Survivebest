@@ -17,7 +17,14 @@ namespace Survivebest.NPC
         Teacher,
         Chef,
         Mechanic,
-        Student
+        Student,
+        Nurse,
+        Firefighter,
+        RetailAssociate,
+        TruckDriver,
+        OfficeAdministrator,
+        Electrician,
+        ConstructionWorker
     }
 
     [Serializable]
@@ -62,6 +69,7 @@ namespace Survivebest.NPC
         [SerializeField] private GameBalanceManager balanceManager;
         [SerializeField] private List<CareerRoleDefinition> roleDefinitions = new();
         [SerializeField] private List<NpcCareerRecord> records = new();
+        [SerializeField] private bool seedUsaCommonRolesOnEnable = true;
 
         private readonly Dictionary<string, int> lastServiceOutageHourByRole = new(StringComparer.OrdinalIgnoreCase);
 
@@ -71,6 +79,11 @@ namespace Survivebest.NPC
 
         private void OnEnable()
         {
+            if (seedUsaCommonRolesOnEnable)
+            {
+                EnsureUsaCommonRoleDefinitions();
+            }
+
             if (worldClock != null)
             {
                 worldClock.OnHourPassed += HandleHourPassed;
@@ -316,6 +329,46 @@ namespace Survivebest.NPC
 
                 OnCareerChanged?.Invoke(record);
             }
+        }
+
+
+        private void EnsureUsaCommonRoleDefinitions()
+        {
+            AddRoleIfMissing(ProfessionType.Doctor, "General Hospital", 8, 16, 62, true, "medical_scrubs", "medical_kit", "hospital");
+            AddRoleIfMissing(ProfessionType.Nurse, "General Hospital", 7, 19, 38, true, "nurse_scrubs", "medical_kit", "hospital");
+            AddRoleIfMissing(ProfessionType.Teacher, "Elementary School", 7, 15, 29, true, "teacher_badge", "lesson_tablet", "school");
+            AddRoleIfMissing(ProfessionType.Police, "Police Precinct", 6, 18, 36, true, "police_uniform", "duty_belt", "public_safety");
+            AddRoleIfMissing(ProfessionType.Firefighter, "Fire Station", 6, 18, 34, true, "fire_uniform", "rescue_kit", "public_safety");
+            AddRoleIfMissing(ProfessionType.Clerk, "Post Office", 8, 17, 20, false, "service_uniform", "scanner", "postal");
+            AddRoleIfMissing(ProfessionType.RetailAssociate, "Downtown Grocery", 9, 21, 18, false, "retail_apron", "scanner", "retail");
+            AddRoleIfMissing(ProfessionType.Chef, "City Diner", 10, 22, 24, true, "chef_jacket", "chef_knife", "food_service");
+            AddRoleIfMissing(ProfessionType.Mechanic, "Auto Garage", 8, 18, 28, true, "mechanic_overalls", "toolbox", "repairs");
+            AddRoleIfMissing(ProfessionType.TruckDriver, "Warehouse Hub", 5, 15, 31, true, "hi_vis_vest", "route_manifest", "logistics");
+            AddRoleIfMissing(ProfessionType.OfficeAdministrator, "Tech Office", 8, 17, 26, false, "office_badge", "laptop", "office");
+            AddRoleIfMissing(ProfessionType.Electrician, "Construction Yard", 7, 17, 33, true, "trade_vest", "electrical_kit", "trades");
+            AddRoleIfMissing(ProfessionType.ConstructionWorker, "Construction Yard", 7, 17, 30, true, "hard_hat", "power_tools", "trades");
+            AddRoleIfMissing(ProfessionType.Student, "Community College", 8, 14, 0, false, "student_badge", "textbook", "education");
+        }
+
+        private void AddRoleIfMissing(ProfessionType profession, string workplaceLotId, int startHour, int endHour, int hourlyPay, bool critical, string uniformItemId, string toolItemId, string accessTag)
+        {
+            if (roleDefinitions.Exists(x => x != null && x.Profession == profession))
+            {
+                return;
+            }
+
+            roleDefinitions.Add(new CareerRoleDefinition
+            {
+                Profession = profession,
+                WorkplaceLotId = workplaceLotId,
+                ShiftStartHour = startHour,
+                ShiftEndHour = endHour,
+                HourlyPay = hourlyPay,
+                IsCriticalWorldService = critical,
+                UniformItemId = uniformItemId,
+                ToolItemId = toolItemId,
+                AccessTag = accessTag
+            });
         }
 
         private bool IsWithinShift(NpcCareerRecord record, int hour)

@@ -33,6 +33,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 _Last updated: current branch state._
 
 ### ✅ Implemented and in repository
+- Documentation sync note: this README now reflects the current branch implementation including headless readiness tooling (`IntegrationDryRunService`, `BalanceTuningAdvisor`) and expanded home-life loops (bathroom/towel/closet/clothing-store actions).
 - Core simulation backbone (clock, weather, day slices, event hub, bootstrap, stability monitor).
 - Character simulation layers (needs, health/medical/status, emotion/conflict, social memory).
 - Economy and inventory authority (economy, unified inventory instances/stacks, grocery/order/recipe/crafting).
@@ -41,6 +42,7 @@ _Last updated: current branch state._
 - Home-life and realism extensions (chores, hygiene environment, utilities, repairs, appliance wear, weather home impact).
 - Food-depth extensions (ingredient taxonomy metadata, recipe quality/discovery, daily specials, seasonal grocery prices/availability, freshness states).
 - UI/controller foundation and scene tools (menus, HUD/feed/panels, action popups, readiness/bootstrap helpers).
+- Headless readiness utilities (optional UI coverage, runtime coverage, integration dry-runs, aggregated balance recommendations) to progress wiring/balancing work outside Unity PlayMode.
 - Broad EditMode test coverage across major domains (core/economy/social/story/home-life/food extensions).
 
 ### ⚠️ Partially complete (code ready, Unity wiring/balancing pending)
@@ -52,6 +54,9 @@ _Last updated: current branch state._
 1. Run complete EditMode + PlayMode suites in Unity CI and fix any compile/runtime regressions.
 2. Finalize save/load coverage matrix for every active subsystem state in long runs.
 3. Complete prefab/inspector hookup docs and lock Alpha-1 “definition of done” checklist.
+
+- Added tooling to support these pending areas in-code: `AssetReadinessReporter` now includes `Report Optional UI Coverage` for scene/prefab hookup tracking and `Run Integration + Balance Dry Run` for profile-based integration/balance smoke checks.
+- Added `BalanceTuningAdvisor` + `Run Headless Pending-Work Audit` flow in `AssetReadinessReporter` to aggregate cross-profile dry-run scores/recommendations and prioritize non-Unity balancing work before PlayMode wiring.
 
 ## Current Included Systems
 
@@ -190,6 +195,16 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Contextual action popups with confirm/cancel and effects for buy/sell/trade/meds/doctor/forage/camp/skill practice plus dedicated animal-sighting encounters (preview + success/fail outcomes + payouts) (`ActionPopupController`).
 - Minigames now resolve from performer skills + current needs (not pure RNG), apply post-action stat costs, grant skill XP, and emit activity events (`MinigameManager`).
 - Build mode flow with drag-move furniture support and interaction lock while not in build mode (`BuildModeManager`, `FurniturePlaceable`).
+- Added balance experience presets in `GameBalanceManager` so teams can switch between `Standard` and lower-pressure `Sandbox` tuning while keeping the same core systems active, and wired the toggle into `WorldCreatorScreenController` settings flow.
+- Added `LifeActivityCatalog` as a shared source for TV/movie/book/singing/outfit style flavor picks so activity text and outcomes stay consistent across hotspots and popup actions.
+- Expanded `MinigameManager` activity coverage with leisure + kitchen + fishing minigames (`Baking`, `DrinkMixing`, `Fishing`, `MovieNight`, `TVMarathon`, `BookReading`, `SingingSession`) and added catalog retrieval via `GetAvailableMinigameTypes()`.
+- Expanded `HomeInteractionHotspot` essential-life loop with `Toilet` and `TowelRack`, including shower→dry-off continuity and per-character closet tracking (`CharacterClosetProfile`) for outfit history.
+- Expanded interaction UI options to include `Use Bathroom`, `Take Shower`, `Dry Off (Towel)`, and `Clothing Store`, with linked need/appearance/mood outcomes in `ActionPopupController`.
+- Expanded `GameplayInteractionPresentationLayer` residential action packs to include bathroom and closet loops and updated daily-flow guidance to keep survival goals and human-life maintenance in sync.
+- Expanded world/career/skill defaults for a common USA-style life-sim baseline: world creator now seeds familiar places (school, precinct, fire station, grocery, diner, warehouse, construction yard), NPC careers auto-seed broad U.S.-common jobs, and skill catalog includes modern everyday/professional skills.
+- Expanded character activities and minigames for richer day-to-day play: fishing, baking, drink mixing, movie night, TV sessions (with genres), reading, and singing; plus map-click travel guidance and richer indoor hotspot action packs.
+- Synced home-leisure/action/map loops so daily life feels more human: shared genre/style picks across TV/books/singing, travel prompt + district click routing, and expanded action suggestions that blend survival pressure with personal-life moments.
+- Expanded essential life-maintenance loops: bathroom/toilet pressure handling, shower + towel sequence, per-character closet outfit tracking, and clothing-store action hooks tied to mood/appearance progression.
 - Car travel now uses vehicle type, room-distance multipliers, fuel/condition/cleanliness simulation, and applies travel impact to active-character needs/mood (`CarSystem`).
 - Expanded home hotspots now support doorway navigation, build toggle, furniture store, shower, fridge, water cooler, bed, mirror, couch, desk, bookshelf, TV, workout corner, pantry, and trash interactions that directly modify character needs (`HomeInteractionHotspot`).
 - New status effect simulation layer with an auto-generated 220-effect library (positive + negative), hourly ticking, illness chance hooks, and event emission (`StatusEffectSystem`).
