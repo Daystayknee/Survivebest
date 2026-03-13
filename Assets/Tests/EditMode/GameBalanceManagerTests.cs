@@ -106,5 +106,40 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void ApplyExperienceMode_Sandbox_UsesLowerPressurePreset()
+        {
+            GameObject go = new GameObject("BalanceSandboxPreset");
+            GameBalanceManager manager = go.AddComponent<GameBalanceManager>();
+
+            manager.ApplyExperienceMode(BalanceExperienceMode.Sandbox);
+
+            Assert.AreEqual(BalanceExperienceMode.Sandbox, manager.ExperienceMode);
+            Assert.AreEqual(0.7f, manager.NeedDecayMultiplier, 0.001f);
+            Assert.AreEqual(1.2f, manager.WageMultiplier, 0.001f);
+            Assert.AreEqual(0.75f, manager.CrimeRiskMultiplier, 0.001f);
+            Assert.AreEqual(1.35f, manager.SkillXpMultiplier, 0.001f);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void ApplyExperienceMode_Standard_RestoresBaselineMultipliers()
+        {
+            GameObject go = new GameObject("BalanceStandardPreset");
+            GameBalanceManager manager = go.AddComponent<GameBalanceManager>();
+
+            manager.ApplyExperienceMode(BalanceExperienceMode.Sandbox);
+            manager.ApplyExperienceMode(BalanceExperienceMode.Standard);
+
+            Assert.AreEqual(BalanceExperienceMode.Standard, manager.ExperienceMode);
+            Assert.AreEqual(1f, manager.NeedDecayMultiplier, 0.001f);
+            Assert.AreEqual(1f, manager.ItemPriceMultiplier, 0.001f);
+            Assert.AreEqual(1f, manager.CrimeRiskMultiplier, 0.001f);
+            Assert.AreEqual(1f, manager.SkillXpMultiplier, 0.001f);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
