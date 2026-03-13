@@ -27,6 +27,29 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void IngredientCatalog_Awake_InjectsSeasoningAndLiquidEssentials()
+        {
+            GameObject go = new GameObject("IngredientCatalogEssentials");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            IngredientItem salt = catalog.GetIngredient("Salt");
+            IngredientItem water = catalog.GetIngredient("Water");
+            IngredientItem stock = catalog.GetIngredient("Chicken stock");
+
+            Assert.IsNotNull(salt);
+            Assert.IsNotNull(water);
+            Assert.IsNotNull(stock);
+            Assert.IsTrue(catalog.HasTag("Salt", "seasoning"));
+            Assert.AreEqual(IngredientCategory.Liquids, water.Category);
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void RecipeSystem_DiscoverRecipeFromIngredients_AddsRecipe()
         {
