@@ -66,7 +66,11 @@ namespace Survivebest.LifeStage
 
         private void HandleYearPassed(int year)
         {
-            AgeUp();
+            bool clockHandlesHouseholdAging = worldClock != null && worldClock.UsesHouseholdAgeUpHook;
+            if (!clockHandlesHouseholdAging)
+            {
+                AgeUp();
+            }
 
             if (owner == null || healthSystem == null)
             {
