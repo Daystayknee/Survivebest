@@ -6,6 +6,7 @@ using Survivebest.Needs;
 using Survivebest.Emotion;
 using Survivebest.Events;
 using Survivebest.Social;
+using Survivebest.Interaction;
 
 namespace Survivebest.Dialogue
 {
@@ -165,6 +166,32 @@ namespace Survivebest.Dialogue
             return PerformDialogue(target, intent, delta, context);
         }
 
+
+        public bool PerformServiceInteractionDialogue(CharacterCore actor, InteractableType interactableType, string situationTag = null)
+        {
+            string resolvedSituation = string.IsNullOrWhiteSpace(situationTag) ? ResolveSituationFromInteractable(interactableType) : situationTag;
+            string line = ResolveServiceActionLine(interactableType, actor);
+
+            OnDialogueResolved?.Invoke(line, true);
+            OnDialoguePresentationReady?.Invoke(new DialoguePresentationPayload
+            {
+                SpeakerCharacterId = actor != null ? actor.CharacterId : owner != null ? owner.CharacterId : null,
+                TargetCharacterId = null,
+                SpeakerName = actor != null ? actor.DisplayName : owner != null ? owner.DisplayName : "You",
+                TargetName = interactableType.ToString(),
+                Intent = DialogueIntent.SmallTalk,
+                Line = line,
+                Success = true,
+                VisualTone = "neutral",
+                MoodTag = ResolveMoodTag(null),
+                SituationTag = resolvedSituation,
+                MemoryTag = "shared_meal",
+                SpeakerSpecies = "human",
+                IsPetInteraction = false
+            });
+
+            return true;
+        }
         public bool PerformPetInteractionDialogue(string species, string petName = "Pet", string situationTag = "pet_home")
         {
             List<DialogueGeneratedLine> petLines = GetPetInteractionLines(species);
@@ -561,184 +588,37 @@ namespace Survivebest.Dialogue
             return "first_meeting";
         }
 
-        public List<DialogueGeneratedLine> GetOptionsForMood(string moodTag)
+
+        private static string ResolveSituationFromInteractable(InteractableType type)
         {
-            return generatedLines.FindAll(x => x != null &&
-                string.Equals(x.MoodTag, moodTag, StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(x.Line));
-        }
-
-        public List<DialogueGeneratedLine> GetOptionsForSituation(string situationTag)
-        {
-            return generatedLines.FindAll(x => x != null &&
-                string.Equals(x.SituationTag, situationTag, StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(x.Line));
-        }
-
-        public List<DialogueGeneratedLine> GetOptionsForMemory(string memoryTag)
-        {
-            return generatedLines.FindAll(x => x != null &&
-                string.Equals(x.MemoryTag, memoryTag, StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(x.Line));
-        }
-
-        public List<DialogueGeneratedLine> GetPetInteractionLines(string species)
-        {
-            return generatedLines.FindAll(x => x != null && x.IsPetInteraction &&
-                string.Equals(x.SpeakerSpecies, species, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private void EnsureDialogueDepth()
-        {
-            generatedLines.Clear();
-
-            string[] moods = { "calm", "happy", "tense", "sad", "romantic", "awkward" };
-            string[] situations = { "home", "work", "street", "hospital", "market", "school" };
-            string[] memories = { "first_meeting", "shared_meal", "big_argument", "helped_me", "festival_night", "storm_day" };
-
-            string[] openers =
+            return type switch
             {
-                "I keep thinking about", "I wanted to ask about", "Do you remember", "I still feel something about",
-                "Can we revisit", "I appreciate", "I'm nervous about", "I laughed earlier about",
-                "I've been carrying", "Let's talk through", "I noticed", "I can't shake"
+                InteractableType.Bed or InteractableType.Toilet or InteractableType.Fridge or InteractableType.Sink => "home",
+                InteractableType.WorkObject => "work",
+                InteractableType.HospitalBed => "hospital",
+                InteractableType.ShopCounter => "market",
+                InteractableType.SchoolDesk => "school",
+                InteractableType.Pet => "pet_home",
+                _ => "street"
             };
-            string[] middles =
+        }
+
+        private static string ResolveServiceActionLine(InteractableType type, CharacterCore actor)
+        {
+            string actorName = actor != null ? actor.DisplayName : "You";
+            return type switch
             {
-                "that moment", "what happened", "the way you looked", "our decision", "the energy between us",
-                "how we handled it", "your perspective", "the small detail", "the silence after", "the promise"
+                InteractableType.Fridge => $"{actorName} checks ingredients, portions, and freshness before preparing a meal.",
+                InteractableType.Sink => $"{actorName} hydrates, rinses up, and resets for the next task.",
+                InteractableType.Toilet => $"{actorName} handles hygiene and comfort needs.",
+                InteractableType.Bed => $"{actorName} takes structured rest to recover energy and mood.",
+                InteractableType.WorkObject => $"{actorName} clocks into a focused work task tied to professional skill growth.",
+                InteractableType.HospitalBed => $"{actorName} enters a care interaction flow with triage and treatment context.",
+                InteractableType.ShopCounter => $"{actorName} begins a buy/sell exchange with inventory and pricing context.",
+                InteractableType.SchoolDesk => $"{actorName} starts a study or teaching action that builds long-term knowledge.",
+                InteractableType.Pet => $"{actorName} starts a pet-care interaction for bonding, feeding, and routine wellbeing.",
+                _ => $"{actorName} interacts with {type}."
             };
-            string[] closers =
-            {
-                "and I want us aligned.", "because it matters to me.", "before the day gets away from us.",
-                "so we don't repeat old mistakes.", "and I think we can do better together.",
-                "if you're willing to hear me out.", "and I'm trying to be honest.",
-                "so we can keep trust intact.", "and maybe end today lighter.", "while it's still fresh in my mind."
-            };
-
-            DialogueIntent[] intents =
-            {
-                DialogueIntent.SmallTalk,
-                DialogueIntent.FriendlyChat,
-                DialogueIntent.Compliment,
-                DialogueIntent.Comfort,
-                DialogueIntent.Gossip,
-                DialogueIntent.Flirt,
-                DialogueIntent.Apologize,
-                DialogueIntent.Argue
-            };
-
-            for (int mi = 0; mi < moods.Length; mi++)
-            {
-                for (int si = 0; si < situations.Length; si++)
-                {
-                    for (int me = 0; me < memories.Length; me++)
-                    {
-                        for (int i = 0; i < openers.Length; i++)
-                        {
-                            string line = $"{openers[i]} {middles[(i + si) % middles.Length]} from {situations[si]} around {memories[me]}, {closers[(i + mi) % closers.Length]}";
-                            generatedLines.Add(new DialogueGeneratedLine
-                            {
-                                Intent = intents[(i + mi + si + me) % intents.Length],
-                                MoodTag = moods[mi],
-                                SituationTag = situations[si],
-                                MemoryTag = memories[me],
-                                SpeakerSpecies = "human",
-                                IsPetInteraction = false,
-                                Line = line
-                            });
-                        }
-                    }
-                }
-            }
-
-            EnsureMinimumPerMood(moods);
-            EnsureMinimumPerSituation(situations);
-            EnsureMinimumPerMemory(memories);
-            EnsurePetInteractionDepth();
-        }
-
-        private void EnsurePetInteractionDepth()
-        {
-            string[] species = { "dog", "cat", "rabbit", "parrot", "turtle" };
-            string[] petLines =
-            {
-                "I brushed your coat and you look proud.", "Let's go for a short walk together.",
-                "You're safer when you stay close to home.", "I cleaned your space so you can rest well.",
-                "You look hungry; let's handle food first.", "You seem anxious; stay with me a minute.",
-                "Great training today; you learned fast.", "Let's do a calm routine before bedtime.",
-                "You did well meeting new people today.", "I'll refill your water now."
-            };
-
-            for (int s = 0; s < species.Length; s++)
-            {
-                for (int i = 0; i < 28; i++)
-                {
-                    string line = $"[{species[s]}] {petLines[i % petLines.Length]} (care cycle {i + 1})";
-                    generatedLines.Add(new DialogueGeneratedLine
-                    {
-                        Intent = DialogueIntent.Comfort,
-                        MoodTag = "care",
-                        SituationTag = "pet_home",
-                        MemoryTag = "pet_bond",
-                        SpeakerSpecies = species[s],
-                        IsPetInteraction = true,
-                        Line = line
-                    });
-                }
-            }
-        }
-
-        private void EnsureMinimumPerMood(string[] moods)
-        {
-            for (int i = 0; i < moods.Length; i++)
-            {
-                string mood = moods[i];
-                List<DialogueGeneratedLine> bucket = GetOptionsForMood(mood);
-                PadBucket(bucket, minimumLinesPerBucket, mood, "home", "first_meeting");
-            }
-        }
-
-        private void EnsureMinimumPerSituation(string[] situations)
-        {
-            for (int i = 0; i < situations.Length; i++)
-            {
-                string situation = situations[i];
-                List<DialogueGeneratedLine> bucket = GetOptionsForSituation(situation);
-                PadBucket(bucket, minimumLinesPerBucket, "calm", situation, "shared_meal");
-            }
-        }
-
-        private void EnsureMinimumPerMemory(string[] memories)
-        {
-            for (int i = 0; i < memories.Length; i++)
-            {
-                string memory = memories[i];
-                List<DialogueGeneratedLine> bucket = GetOptionsForMemory(memory);
-                PadBucket(bucket, minimumLinesPerBucket, "reflective", "home", memory);
-            }
-        }
-
-        private void PadBucket(List<DialogueGeneratedLine> bucket, int minimum, string mood, string situation, string memory)
-        {
-            if (bucket.Count >= minimum)
-            {
-                return;
-            }
-
-            int needed = minimum - bucket.Count;
-            for (int i = 0; i < needed; i++)
-            {
-                generatedLines.Add(new DialogueGeneratedLine
-                {
-                    Intent = DialogueIntent.SmallTalk,
-                    MoodTag = mood,
-                    SituationTag = situation,
-                    MemoryTag = memory,
-                    SpeakerSpecies = "human",
-                    IsPetInteraction = false,
-                    Line = $"(fallback) Let's keep talking about {memory} in {situation} while we're {mood}. #{i + 1}"
-                });
-            }
         }
 
         private void ApplyEmotionIntent(DialogueIntent intent, bool success)

@@ -167,6 +167,35 @@ namespace Survivebest.Interaction
                     HealthSystem sinkHealth = activeCharacter.GetComponent<HealthSystem>();
                     needs.ApplyDrinkEffects(drink, sinkHealth);
                     break;
+                case InteractableType.WorkObject:
+                    activeCharacter.transform.position = interactable.transform.position;
+                    if (MinigameManager.Instance != null)
+                    {
+                        MinigameManager.Instance.StartMinigame(MinigameType.Repairs, activeCharacter, _ => { });
+                    }
+                    break;
+                case InteractableType.HospitalBed:
+                    activeCharacter.transform.position = interactable.transform.position;
+                    if (MinigameManager.Instance != null)
+                    {
+                        MinigameManager.Instance.StartMinigame(MinigameType.Surgery, activeCharacter, _ => { });
+                    }
+                    break;
+                case InteractableType.ShopCounter:
+                    activeCharacter.transform.position = interactable.transform.position;
+                    needs.ModifyMood(1f);
+                    break;
+                case InteractableType.SchoolDesk:
+                    activeCharacter.transform.position = interactable.transform.position;
+                    if (MinigameManager.Instance != null)
+                    {
+                        MinigameManager.Instance.StartMinigame(MinigameType.Cleaning, activeCharacter, _ => { });
+                    }
+                    break;
+                case InteractableType.Pet:
+                    activeCharacter.transform.position = interactable.transform.position;
+                    needs.ModifyMood(2f);
+                    break;
             }
         }
     }

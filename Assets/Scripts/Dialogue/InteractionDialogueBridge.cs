@@ -39,9 +39,20 @@ namespace Survivebest.Dialogue
         {
             pendingSituationTag = ResolveSituationTag(interactable);
 
-            if (interactable != null && interactable.Type == InteractableType.Pet && dialogueSystem != null && actor != null)
+            if (interactable == null || dialogueSystem == null)
+            {
+                return;
+            }
+
+            if (interactable.Type == InteractableType.Pet && actor != null)
             {
                 dialogueSystem.PerformPetInteractionDialogue("dog", interactable.gameObject.name, "pet_home");
+                return;
+            }
+
+            if (interactable.Type != InteractableType.Character)
+            {
+                dialogueSystem.PerformServiceInteractionDialogue(actor, interactable.Type, pendingSituationTag);
             }
         }
 

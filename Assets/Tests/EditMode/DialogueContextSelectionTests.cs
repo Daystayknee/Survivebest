@@ -5,6 +5,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Dialogue;
 using Survivebest.Social;
+using Survivebest.Interaction;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -107,5 +108,30 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void PerformServiceInteractionDialogue_EmitsServicePayloadWithSituation()
+        {
+            GameObject go = new GameObject("ServiceDialogue");
+            DialogueSystem dialogue = go.AddComponent<DialogueSystem>();
+
+            GameObject actorGo = new GameObject("Actor");
+            CharacterCore actor = actorGo.AddComponent<CharacterCore>();
+            actor.Initialize("actor", "Actor", LifeStage.Adult);
+
+            DialoguePresentationPayload payload = null;
+            dialogue.OnDialoguePresentationReady += p => payload = p;
+
+            bool success = dialogue.PerformServiceInteractionDialogue(actor, InteractableType.HospitalBed);
+
+            Assert.IsTrue(success);
+            Assert.IsNotNull(payload);
+            Assert.AreEqual("hospital", payload.SituationTag);
+            Assert.AreEqual("HospitalBed", payload.TargetName);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(actorGo);
+        }
+
     }
 }

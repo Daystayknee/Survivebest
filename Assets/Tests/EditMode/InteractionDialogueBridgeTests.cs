@@ -97,5 +97,55 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void NonCharacterClick_ThroughBridge_TriggersServicePayload()
+        {
+            GameObject root = new GameObject("RootService");
+            InteractionController interaction = root.AddComponent<InteractionController>();
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            DialogueSystem dialogue = root.AddComponent<DialogueSystem>();
+            SocialSystem social = root.AddComponent<SocialSystem>();
+            InteractionDialogueBridge bridge = root.AddComponent<InteractionDialogueBridge>();
+
+            GameObject actorGo = new GameObject("Actor");
+            CharacterCore actor = actorGo.AddComponent<CharacterCore>();
+            actor.Initialize("actor", "Actor", LifeStage.Adult);
+            household.AddMember(actor);
+            household.SetActiveCharacter(actor);
+
+            typeof(DialogueSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, actor);
+            typeof(DialogueSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, social);
+            typeof(InteractionDialogueBridge).GetField("interactionController", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(bridge, interaction);
+            typeof(InteractionDialogueBridge).GetField("dialogueSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(bridge, dialogue);
+            typeof(InteractionDialogueBridge).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(bridge, household);
+            typeof(InteractionController).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(interaction, household);
+
+            MethodInfo onEnable = typeof(InteractionDialogueBridge).GetMethod("OnEnable", BindingFlags.NonPublic | BindingFlags.Instance);
+            onEnable?.Invoke(bridge, null);
+
+            GameObject interactableGo = new GameObject("ShopInteractable");
+            Interactable interactable = interactableGo.AddComponent<Interactable>();
+            typeof(Interactable).GetField("interactableType", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(interactable, InteractableType.ShopCounter);
+
+            DialoguePresentationPayload payload = null;
+            dialogue.OnDialoguePresentationReady += p => payload = p;
+
+            MethodInfo handle = typeof(InteractionController).GetMethod("HandleInteraction", BindingFlags.NonPublic | BindingFlags.Instance);
+            handle?.Invoke(interaction, new object[] { interactable });
+
+            Assert.IsNotNull(payload);
+            Assert.AreEqual("market", payload.SituationTag);
+            Assert.AreEqual("ShopCounter", payload.TargetName);
+
+            MethodInfo onDisable = typeof(InteractionDialogueBridge).GetMethod("OnDisable", BindingFlags.NonPublic | BindingFlags.Instance);
+            onDisable?.Invoke(bridge, null);
+
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(actorGo);
+            Object.DestroyImmediate(interactableGo);
+        }
+
     }
 }

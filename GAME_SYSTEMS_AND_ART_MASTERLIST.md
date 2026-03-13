@@ -550,3 +550,4 @@ Additional progress this pass:
   - Added `InteractionDialogueBridge` so character clicks can auto-run intent-aware dialogue and immediately feed overlay payloads, plus non-character clickable context messages in the overlay.
   - Dialogue depth expanded with procedural generation targeting 100+ options per mood/situation/memory bucket plus species-specific pet interaction dialogue pools.
 - Dialogue selection now ties click context + relationship memory into generated line scoring (mood/situation/memory-aware), and pet interactables can route into species-specific care dialogue payloads for richer overlay immersion.
+- Clickable service objects now route through dialogue presentation payloads too (work/hospital/shop/school/home), so both NPC chats and object interactions share the same visual-novel overlay contract.
