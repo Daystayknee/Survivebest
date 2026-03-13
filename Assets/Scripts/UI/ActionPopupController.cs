@@ -219,6 +219,22 @@ namespace Survivebest.UI
                     reason = DoMakeDrink(active);
                     magnitude = 2f;
                     break;
+                case "use_bathroom":
+                    reason = DoUseBathroom(active);
+                    magnitude = 2f;
+                    break;
+                case "take_shower":
+                    reason = DoTakeShower(active);
+                    magnitude = 3f;
+                    break;
+                case "dry_off_towel":
+                    reason = DoDryOffWithTowel(active);
+                    magnitude = 1.5f;
+                    break;
+                case "clothing_store":
+                    reason = DoClothingStore(active);
+                    magnitude = 3f;
+                    break;
                 case "practice_skill":
                     reason = PracticeSkill(active, "Cooking", 4f);
                     magnitude = 4f;
@@ -293,6 +309,10 @@ namespace Survivebest.UI
                 "cook_meal" => "Kitchen: Cook Meal",
                 "bake_food" => "Kitchen: Bake Food",
                 "make_drink" => "Kitchen: Make Drink",
+                "use_bathroom" => "Bathroom: Toilet",
+                "take_shower" => "Bathroom: Shower",
+                "dry_off_towel" => "Bathroom: Dry Off",
+                "clothing_store" => "Store: Clothing Store",
                 "animal_sight" => currentSighting != null ? $"Animal Sighting: {currentSighting.SightingName}" : "Animal Sighting",
                 "practice_skill" => "Skill Practice",
                 "train_skill" => "Skill Training",
@@ -320,6 +340,10 @@ namespace Survivebest.UI
                 "cook_meal" => "Cook an actual meal in the kitchen for hunger recovery and skill XP.",
                 "bake_food" => "Bake snacks/desserts for comfort and cooking growth.",
                 "make_drink" => "Prepare tea/coffee/smoothies for hydration and light mood boost.",
+                "use_bathroom" => "Use the toilet to reset bladder pressure and avoid discomfort accidents.",
+                "take_shower" => "Take a shower to recover hygiene, grooming, and confidence.",
+                "dry_off_towel" => "Use a towel after shower to finish your routine and feel fresh.",
+                "clothing_store" => "Buy a new outfit per character and improve appearance/mood.",
                 "animal_sight" => BuildAnimalSightingDescription(),
                 "practice_skill" => "Spend time to gain XP in an applied skill.",
                 "train_skill" => "Focused training to gain bigger XP rewards.",
@@ -383,6 +407,18 @@ namespace Survivebest.UI
                     builder.AppendLine("• Prep ingredients");
                     builder.AppendLine("• Time heat and finish");
                     builder.AppendLine("• Clean station");
+                    break;
+                case "use_bathroom":
+                case "take_shower":
+                case "dry_off_towel":
+                    builder.AppendLine("Bathroom routine:");
+                    builder.AppendLine("• Toilet → Shower → Towel");
+                    builder.AppendLine("• Keeps hygiene + bladder in healthy range");
+                    break;
+                case "clothing_store":
+                    builder.AppendLine("Outfit options:");
+                    builder.AppendLine("• Casual • Workwear • Formal • Sport • Cozy");
+                    builder.AppendLine("Costs funds, improves appearance/mood");
                     break;
                 case "practice_skill":
                 case "train_skill":
@@ -662,6 +698,71 @@ namespace Survivebest.UI
             NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
             needs?.RestoreHydration(12f);
             return "Prepared a drink and recovered hydration.";
+        }
+
+
+        private string DoUseBathroom(CharacterCore active)
+        {
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            if (needs == null)
+            {
+                return "No active character for bathroom action.";
+            }
+
+            needs.ResetBladder();
+            needs.ModifyMood(2f);
+            return "Bathroom break complete.";
+        }
+
+        private string DoTakeShower(CharacterCore active)
+        {
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            if (needs == null)
+            {
+                return "No active character for shower action.";
+            }
+
+            needs.ModifyHygiene(28f);
+            needs.ModifyGrooming(6f);
+            needs.ModifyAppearance(4f);
+            needs.ModifyMood(5f);
+            return "Shower complete. You should dry off with a towel.";
+        }
+
+        private string DoDryOffWithTowel(CharacterCore active)
+        {
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            if (needs == null)
+            {
+                return "No active character for towel action.";
+            }
+
+            needs.ModifyHygiene(2f);
+            needs.ModifyAppearance(2f);
+            needs.ModifyMood(2f);
+            return "Dried off and finished bathroom routine.";
+        }
+
+        private string DoClothingStore(CharacterCore active)
+        {
+            if (active == null)
+            {
+                return "No active character for clothing store action.";
+            }
+
+            bool paid = orderingSystem == null || orderingSystem.SpendFunds(22f);
+            if (!paid)
+            {
+                return "Not enough money for new clothing right now.";
+            }
+
+            NeedsSystem needs = active.GetComponent<NeedsSystem>();
+            needs?.ModifyAppearance(12f);
+            needs?.ModifyMood(6f);
+            needs?.ModifyGrooming(4f);
+
+            string style = LifeActivityCatalog.PickRandomOutfitStyle();
+            return $"Bought a {style} outfit and updated your closet.";
         }
 
         private string DoForage()

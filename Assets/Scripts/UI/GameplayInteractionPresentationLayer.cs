@@ -238,6 +238,8 @@ namespace Survivebest.UI
                 case LocationTheme.Residential:
                     packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry"));
                     packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean"));
+                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel"));
+                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv"));
                     packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote"));
                     packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing"));
                     packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect"));
@@ -364,6 +366,7 @@ namespace Survivebest.UI
                 "Open map and click a district to travel",
                 "Run one work/skill objective",
                 "Do one human-life activity (TV/movie/book/sing/social)",
+                "Run bathroom + hygiene loop before next major outing",
                 "Cook or bake in kitchen and reset hydration",
                 "Resolve one event and log reflection",
                 "Return home and recover"

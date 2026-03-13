@@ -73,6 +73,7 @@ namespace Survivebest.UI
                     currentOptions.Add(new SidebarOption { Label = "Sell", ActionKey = "sell" });
                     currentOptions.Add(new SidebarOption { Label = "Trade", ActionKey = "trade" });
                     currentOptions.Add(new SidebarOption { Label = "Go to Movies", ActionKey = "go_movies" });
+                    currentOptions.Add(new SidebarOption { Label = "Clothing Store", ActionKey = "clothing_store" });
                     currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;
                 case LocationTheme.Hospital:
@@ -103,6 +104,9 @@ namespace Survivebest.UI
                     currentOptions.Add(new SidebarOption { Label = "Cook", ActionKey = "cook_meal" });
                     currentOptions.Add(new SidebarOption { Label = "Bake", ActionKey = "bake_food" });
                     currentOptions.Add(new SidebarOption { Label = "Make Drink", ActionKey = "make_drink" });
+                    currentOptions.Add(new SidebarOption { Label = "Use Bathroom", ActionKey = "use_bathroom" });
+                    currentOptions.Add(new SidebarOption { Label = "Take Shower", ActionKey = "take_shower" });
+                    currentOptions.Add(new SidebarOption { Label = "Dry Off (Towel)", ActionKey = "dry_off_towel" });
                     currentOptions.Add(new SidebarOption { Label = "Animal Sighting", ActionKey = "animal_sight" });
                     currentOptions.Add(new SidebarOption { Label = "Practice Skill", ActionKey = "practice_skill" });
                     break;

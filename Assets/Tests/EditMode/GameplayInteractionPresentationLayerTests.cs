@@ -40,6 +40,9 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(flat.Contains("bake"));
             Assert.IsTrue(flat.Contains("mix_drink"));
             Assert.IsTrue(flat.Contains("sing"));
+            Assert.IsTrue(flat.Contains("use_bathroom"));
+            Assert.IsTrue(flat.Contains("take_shower"));
+            Assert.IsTrue(flat.Contains("dry_off_towel"));
 
             Object.DestroyImmediate(go);
         }

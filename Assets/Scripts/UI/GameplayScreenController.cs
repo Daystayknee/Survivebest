@@ -520,7 +520,8 @@ namespace Survivebest.UI
                 if (currentNeeds.Hunger < 45f) actions.Add("Cook a quick meal (Auto or Interactive)");
                 if (currentNeeds.Hydration < 45f) actions.Add("Prepare a drink and hydrate");
                 if (currentNeeds.Energy < 40f) actions.Add("Take a rest routine or early sleep");
-                if (currentNeeds.Hygiene < 50f || currentNeeds.Grooming < 50f) actions.Add("Run grooming reset (shower + style)");
+                if (currentNeeds.Hygiene < 50f || currentNeeds.Grooming < 50f) actions.Add("Run grooming reset (shower + towel + style)");
+                if (currentNeeds.Bladder > 70f) actions.Add("Bathroom break now (toilet then wash up)");
                 if (currentNeeds.Mood < 50f)
                 {
                     actions.Add("Text/call someone for social comfort");
