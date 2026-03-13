@@ -8,7 +8,12 @@ namespace Survivebest.Interaction
         Toilet,
         Fridge,
         Bed,
-        Sink
+        Sink,
+        WorkObject,
+        HospitalBed,
+        ShopCounter,
+        SchoolDesk,
+        Pet
     }
 
     public class Interactable : MonoBehaviour

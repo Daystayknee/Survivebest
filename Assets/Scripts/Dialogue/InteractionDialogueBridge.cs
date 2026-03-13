@@ -15,10 +15,13 @@ namespace Survivebest.Dialogue
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private bool autoTriggerDialogueOnCharacterClick = true;
 
+        private string pendingSituationTag = "home";
+
         private void OnEnable()
         {
             if (interactionController != null)
             {
+                interactionController.OnInteractableClicked += HandleInteractableClicked;
                 interactionController.OnCharacterInteractionRequested += HandleCharacterInteractionRequested;
             }
         }
@@ -27,7 +30,18 @@ namespace Survivebest.Dialogue
         {
             if (interactionController != null)
             {
+                interactionController.OnInteractableClicked -= HandleInteractableClicked;
                 interactionController.OnCharacterInteractionRequested -= HandleCharacterInteractionRequested;
+            }
+        }
+
+        private void HandleInteractableClicked(Interactable interactable, CharacterCore actor)
+        {
+            pendingSituationTag = ResolveSituationTag(interactable);
+
+            if (interactable != null && interactable.Type == InteractableType.Pet && dialogueSystem != null && actor != null)
+            {
+                dialogueSystem.PerformPetInteractionDialogue("dog", interactable.gameObject.name, "pet_home");
             }
         }
 
@@ -45,7 +59,12 @@ namespace Survivebest.Dialogue
             }
 
             DialogueIntent intent = ResolveIntentForActor(active);
-            dialogueSystem.PerformDialogue(target, intent);
+            dialogueSystem.PerformDialogue(target, intent, new DialogueContext
+            {
+                SituationTag = pendingSituationTag,
+                SpeakerSpecies = "human",
+                IsPetInteraction = false
+            });
         }
 
         public static DialogueIntent ResolveIntentForActor(CharacterCore actor)
@@ -66,6 +85,28 @@ namespace Survivebest.Dialogue
             }
 
             return DialogueIntent.SmallTalk;
+        }
+
+        public static string ResolveSituationTag(Interactable interactable)
+        {
+            if (interactable == null)
+            {
+                return "street";
+            }
+
+            return interactable.Type switch
+            {
+                InteractableType.Bed => "home",
+                InteractableType.Toilet => "home",
+                InteractableType.Fridge => "home",
+                InteractableType.Sink => "home",
+                InteractableType.WorkObject => "work",
+                InteractableType.HospitalBed => "hospital",
+                InteractableType.ShopCounter => "market",
+                InteractableType.SchoolDesk => "school",
+                InteractableType.Pet => "pet_home",
+                _ => "street"
+            };
         }
     }
 }

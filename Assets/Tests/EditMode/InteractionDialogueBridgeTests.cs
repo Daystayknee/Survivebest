@@ -83,5 +83,19 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(interactableGo);
         }
+        [Test]
+        public void ResolveSituationTag_MapsInteractableTypes()
+        {
+            GameObject go = new GameObject("Interactable");
+            Interactable interactable = go.AddComponent<Interactable>();
+            typeof(Interactable).GetField("interactableType", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(interactable, InteractableType.ShopCounter);
+
+            string situation = InteractionDialogueBridge.ResolveSituationTag(interactable);
+            Assert.AreEqual("market", situation);
+
+            Object.DestroyImmediate(go);
+        }
+
     }
 }

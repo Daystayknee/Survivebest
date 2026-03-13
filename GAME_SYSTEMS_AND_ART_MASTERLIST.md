@@ -549,3 +549,4 @@ Additional progress this pass:
   - Added click-to-overlay dialogue flow scaffolding: character clicks now emit interaction events, dialogue emits presentation payloads, and `DialogueOverlayController` displays portrait/name/line/tone in a visual-novel-style popup layer.
   - Added `InteractionDialogueBridge` so character clicks can auto-run intent-aware dialogue and immediately feed overlay payloads, plus non-character clickable context messages in the overlay.
   - Dialogue depth expanded with procedural generation targeting 100+ options per mood/situation/memory bucket plus species-specific pet interaction dialogue pools.
+- Dialogue selection now ties click context + relationship memory into generated line scoring (mood/situation/memory-aware), and pet interactables can route into species-specific care dialogue payloads for richer overlay immersion.
