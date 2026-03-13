@@ -14,7 +14,14 @@ namespace Survivebest.Catalog
         Medicine,
         Animal,
         Skill,
-        Facility
+        Facility,
+        Object,
+        Accessory,
+        Clothing,
+        Store,
+        Foliage,
+        Pet,
+        Consumable
     }
 
     [Serializable]
@@ -347,6 +354,81 @@ namespace Survivebest.Catalog
             new SupplyItem { Name = "Petting Zoo", Group = SupplyGroup.Facility },
             new SupplyItem { Name = "City Zoo", Group = SupplyGroup.Facility }
         };
+
+        private void Awake()
+        {
+            EnsureWorldEssentials();
+        }
+
+        public bool HasSupply(string name, SupplyGroup group)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return false;
+            }
+
+            return supplies.Exists(s => s != null && s.Group == group && string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void EnsureWorldEssentials()
+        {
+            AddIfMissing("Backpack", SupplyGroup.Accessory);
+            AddIfMissing("Watch", SupplyGroup.Accessory);
+            AddIfMissing("Necklace", SupplyGroup.Accessory);
+            AddIfMissing("Sunglasses", SupplyGroup.Accessory);
+            AddIfMissing("Hat", SupplyGroup.Accessory);
+
+            AddIfMissing("Work Uniform", SupplyGroup.Clothing);
+            AddIfMissing("Doctor Scrubs", SupplyGroup.Clothing);
+            AddIfMissing("Chef Jacket", SupplyGroup.Clothing);
+            AddIfMissing("Rain Jacket", SupplyGroup.Clothing);
+            AddIfMissing("Winter Boots", SupplyGroup.Clothing);
+
+            AddIfMissing("Dining Table", SupplyGroup.Object);
+            AddIfMissing("Bookshelf", SupplyGroup.Object);
+            AddIfMissing("Refrigerator", SupplyGroup.Object);
+            AddIfMissing("Toolbox", SupplyGroup.Object);
+            AddIfMissing("Pet Bed", SupplyGroup.Object);
+
+            AddIfMissing("General Store", SupplyGroup.Store);
+            AddIfMissing("Clothing Boutique", SupplyGroup.Store);
+            AddIfMissing("Hardware Store", SupplyGroup.Store);
+            AddIfMissing("Pet Supply Store", SupplyGroup.Store);
+            AddIfMissing("Garden Center", SupplyGroup.Store);
+
+            AddIfMissing("Oak Tree", SupplyGroup.Foliage);
+            AddIfMissing("Pine Tree", SupplyGroup.Foliage);
+            AddIfMissing("Rose Bush", SupplyGroup.Foliage);
+            AddIfMissing("Lavender", SupplyGroup.Foliage);
+            AddIfMissing("Fern", SupplyGroup.Foliage);
+
+            AddIfMissing("Dog", SupplyGroup.Pet);
+            AddIfMissing("Cat", SupplyGroup.Pet);
+            AddIfMissing("Rabbit", SupplyGroup.Pet);
+            AddIfMissing("Parrot", SupplyGroup.Pet);
+            AddIfMissing("Turtle", SupplyGroup.Pet);
+
+            AddIfMissing("Pet Food", SupplyGroup.Consumable);
+            AddIfMissing("Bandage", SupplyGroup.Consumable);
+            AddIfMissing("Batteries", SupplyGroup.Consumable);
+            AddIfMissing("Laundry Detergent", SupplyGroup.Consumable);
+            AddIfMissing("Soap", SupplyGroup.Consumable);
+        }
+
+        private void AddIfMissing(string name, SupplyGroup group)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return;
+            }
+
+            if (HasSupply(name, group))
+            {
+                return;
+            }
+
+            supplies.Add(new SupplyItem { Name = name, Group = group });
+        }
 
         public IReadOnlyList<SupplyItem> Supplies => supplies;
 

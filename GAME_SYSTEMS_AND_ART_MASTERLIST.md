@@ -535,7 +535,10 @@ Additional progress this pass:
 
 ### Current top-priority next features to build
 - **End-to-end balancing pipeline**: telemetry capture, scenario packs, baseline targets, and automated comparison reports.
+  - Progress: `GameBalanceManager` now includes balance telemetry snapshots, target-band scoring, stability reporting, and tuning recommendations to support repeatable balancing sweeps.
 - **Prefab/scene integration pass**: guarantee each foundational manager is wired in shipping scenes with validated dependencies.
 - **Quest/contract productionization**: contract data model, authoring workflow, progression ladders, and fail/success UX.
 - **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
 - **Polish production sprint**: animation sets, VFX/SFX layers, accessibility options, controller UX, and microinteraction tuning.
+- **Immersive profession minigames + realistic pantry coverage**: expanded minigame types include Surgery/RestaurantService/EmergencyResponse with job mapping, scene prompts, and skill-specific tuning; ingredient essentials now inject core seasonings/liquids (salt, pepper, oils, stocks, water, milk, etc.) for realistic recipe coverage.
+- **Cross-domain world essentials injection**: core non-food essentials now auto-seed across supply/inventory/household layers (clothing/accessories/objects/stores/foliage/pets/consumables, starter household containers, pet supplies, and household autonomy notes + character rotation support).
