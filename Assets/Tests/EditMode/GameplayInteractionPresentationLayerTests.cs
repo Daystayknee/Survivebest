@@ -39,6 +39,53 @@ namespace Survivebest.Tests.EditMode
 
 
 
+
+        [Test]
+        public void RegisterManualChoiceResult_BuildsMomentumAndScalesMagnitude()
+        {
+            GameObject go = new GameObject("PresentationMomentum");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            layer.RegisterManualChoiceResult("work", "Strong output", 2f);
+            layer.RegisterManualChoiceResult("craft", "Strong output", 2f);
+            layer.RegisterManualChoiceResult("explore", "Strong output", 2f);
+
+            Assert.GreaterOrEqual(layer.MomentumStreak, 3);
+            Assert.Greater(layer.MomentumRewardMultiplier, 1f);
+            Assert.Greater(layer.RecentFeedback[^1].Magnitude, 2f);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildContextActionSuggestions_IncludesMomentumSuggestionWhenStreakIsActive()
+        {
+            GameObject go = new GameObject("PresentationMomentumSuggestions");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+
+            GameObject charGo = new GameObject("MomentumChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_momentum", "Momentum", LifeStage.Adult);
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, household);
+
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            layer.RegisterManualChoiceResult("work", "Great", 2f);
+            layer.RegisterManualChoiceResult("craft", "Great", 2f);
+            layer.RegisterManualChoiceResult("socialize", "Great", 2f);
+
+            var suggestions = layer.BuildContextActionSuggestions();
+
+            Assert.IsTrue(suggestions.Exists(s => s.Contains("Momentum", System.StringComparison.OrdinalIgnoreCase)));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
         [Test]
         public void BuildDailyLifeFlowSuggestions_IncludesCoreLoopSteps()
         {
