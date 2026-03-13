@@ -19,6 +19,37 @@ namespace Survivebest.World
         Coily
     }
 
+
+    public enum EyeExpressionSet
+    {
+        Neutral,
+        Soft,
+        Alert,
+        Sharp,
+        Sleepy,
+        Wide
+    }
+
+    public enum MouthExpressionSet
+    {
+        Neutral,
+        Soft,
+        Smile,
+        Frown,
+        Smirk,
+        Full
+    }
+
+    public enum LifeStageArtMode
+    {
+        BundlePortrait,
+        ToddlerCrawl,
+        ChildSimpleRig,
+        TeenRig,
+        AdultRig,
+        ElderRig
+    }
+
     [Serializable]
     public class ConditionOverlayProfile
     {
@@ -121,9 +152,25 @@ namespace Survivebest.World
         public LayerPieceFamily JawFamily = LayerPieceFamily.Default;
         public LayerPieceFamily EarFamily = LayerPieceFamily.Default;
 
+        public EyeExpressionSet EyeExpressionSet = EyeExpressionSet.Neutral;
+        public MouthExpressionSet MouthExpressionSet = MouthExpressionSet.Neutral;
+        public LayerPieceFamily BrowExpressionFamily = LayerPieceFamily.Default;
+        public LayerPieceFamily EyelidExpressionFamily = LayerPieceFamily.Default;
+
         public LayerPieceFamily HairFrontFamily = LayerPieceFamily.Default;
         public LayerPieceFamily HairSideFamily = LayerPieceFamily.Default;
         public LayerPieceFamily HairBackFamily = LayerPieceFamily.Default;
+
+        [Range(0f, 1f)] public float FemininePresentation = 0.5f;
+        [Range(0f, 1f)] public float MasculinePresentation = 0.5f;
+        [Range(0f, 1f)] public float AndrogynyPresentation = 0.5f;
+
+        public LifeStageArtMode LifeStageArtMode = LifeStageArtMode.AdultRig;
+        public bool UseBundledInfantBody;
+        public bool EnableCrawlingPoseSet;
+        public bool EnableOnesieLayer;
+        public bool EnableYouthOutfitLayer;
+        public bool EnableAdultOutfitLayer = true;
 
         [Range(0f, 1f)] public float NeckScale = 0.5f;
         [Range(0f, 1f)] public float ChestScale = 0.5f;
