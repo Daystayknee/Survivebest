@@ -16,6 +16,12 @@ This file is a comprehensive implementation inventory for the current codebase.
 - Full PlayMode coverage and balancing passes in a Unity CI runner.
 - Final save/load and long-run lifecycle parity verification across all active subsystems.
 
+### Latest sync updates (current branch)
+- Sandbox/standard balance mode is wired through world-creation settings and can be applied before world generation.
+- USA baseline templates/roles/skills are integrated (world areas, NPC professions, skill catalog expansions).
+- Human-life interaction coverage now includes leisure, kitchen, fishing, bathroom loops, towel dry-off, and per-character closet history.
+- UI action routing and hotspot packs are aligned with these systems (map travel prompts, bathroom/closet actions, clothing store flows).
+
 ## 1) Implemented Runtime Systems (by script)
 
 ### Events
@@ -41,6 +47,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Core/BodyCompositionSystem.cs`
 - `Assets/Scripts/Core/SaveGameManager.cs`
 - `Assets/Scripts/Core/SkillSystem.cs`
+- `Assets/Scripts/Core/LifeActivityCatalog.cs`
 - `Assets/Scripts/Core/SkillTreeSystem.cs`
 - `Assets/Scripts/Core/DaySliceManager.cs`
 - `Assets/Scripts/Core/LongTermProgressionSystem.cs`
@@ -98,6 +105,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Activity/ActivitySystem.cs`
 - `Assets/Scripts/Activity/DailyRoutineSystem.cs`
 - `Assets/Scripts/Minigames/MinigameManager.cs`
+- Minigame activity set includes: `Cooking`, `Baking`, `DrinkMixing`, `Fishing`, `Repairs`, `FirstAid`, `Cleaning`, `Surgery`, `RestaurantService`, `EmergencyResponse`, `MovieNight`, `TVMarathon`, `BookReading`, `SingingSession`.
 
 ### Commerce / Inventory / Recipes / Ordering
 - `Assets/Scripts/Economy/EconomyInventorySystem.cs`
