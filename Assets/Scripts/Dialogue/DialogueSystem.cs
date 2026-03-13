@@ -29,6 +29,20 @@ namespace Survivebest.Dialogue
         public string Line;
     }
 
+
+    [Serializable]
+    public class DialoguePresentationPayload
+    {
+        public string SpeakerCharacterId;
+        public string TargetCharacterId;
+        public string SpeakerName;
+        public string TargetName;
+        public DialogueIntent Intent;
+        public string Line;
+        public bool Success;
+        public string VisualTone;
+    }
+
     public class DialogueSystem : MonoBehaviour
     {
         [SerializeField] private CharacterCore owner;
@@ -39,6 +53,7 @@ namespace Survivebest.Dialogue
         [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<string, bool> OnDialogueResolved;
+        public event Action<DialoguePresentationPayload> OnDialoguePresentationReady;
 
         public bool PerformDialogue(CharacterCore target, DialogueIntent intent, int baseRelationshipDelta)
         {
@@ -63,6 +78,17 @@ namespace Survivebest.Dialogue
 
             string line = GetLine(intent);
             OnDialogueResolved?.Invoke(line, success);
+            OnDialoguePresentationReady?.Invoke(new DialoguePresentationPayload
+            {
+                SpeakerCharacterId = owner != null ? owner.CharacterId : null,
+                TargetCharacterId = target != null ? target.CharacterId : null,
+                SpeakerName = owner != null ? owner.DisplayName : "You",
+                TargetName = target != null ? target.DisplayName : "Unknown",
+                Intent = intent,
+                Line = line,
+                Success = success,
+                VisualTone = ResolveVisualTone(intent, success)
+            });
 
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
@@ -126,6 +152,22 @@ namespace Survivebest.Dialogue
                     emotionSystem.ModifyAffection(success ? 2f : -1f);
                     break;
             }
+        }
+
+        private static string ResolveVisualTone(DialogueIntent intent, bool success)
+        {
+            if (!success)
+            {
+                return "tension";
+            }
+
+            return intent switch
+            {
+                DialogueIntent.Flirt or DialogueIntent.Compliment => "romance",
+                DialogueIntent.Comfort => "warmth",
+                DialogueIntent.Argue or DialogueIntent.Yell or DialogueIntent.Insult => "conflict",
+                _ => "neutral"
+            };
         }
 
         private int GetBaseDelta(DialogueIntent intent)

@@ -24,18 +24,28 @@ namespace Survivebest.Appearance
         Green,
         Blue,
         Gray,
-        Amber
+        Amber,
+        DarkBrown,
+        LightBrown,
+        Honey,
+        Teal,
+        Violet
     }
 
     public enum SkinToneType
     {
+        Alabaster,
         Porcelain,
         Fair,
+        Beige,
         Light,
         Olive,
+        Golden,
         Tan,
+        Caramel,
         Brown,
-        Deep
+        Deep,
+        Ebony
     }
 
     public enum SkinIssueType
@@ -57,6 +67,9 @@ namespace Survivebest.Appearance
         public SkinToneType SkinTone;
         public SkinIssueType SkinIssue;
         public bool HasBeautyMark;
+        [Range(0f, 1f)] public float FeminineExpression = 0.5f;
+        [Range(0f, 1f)] public float MasculineExpression = 0.5f;
+        [Range(0f, 1f)] public float AndrogynyExpression = 0.5f;
         public Color MakeupColor = new(1f, 0.7f, 0.7f, 0.5f);
     }
 

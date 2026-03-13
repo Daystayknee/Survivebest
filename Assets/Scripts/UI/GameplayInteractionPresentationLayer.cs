@@ -43,6 +43,8 @@ namespace Survivebest.UI
         public int Day;
         public int Hour;
         public string VisualCue;
+        [Range(0, 12)] public int MomentumStreak;
+        [Range(0f, 2f)] public float RewardMultiplier;
     }
 
     [Serializable]
@@ -93,11 +95,15 @@ namespace Survivebest.UI
         [SerializeField] private List<ActionFeedbackPulse> recentFeedback = new();
         [SerializeField] private List<LifeTimelinePreview> recentTimelinePreview = new();
         [SerializeField, Min(5)] private int maxFeedbackEntries = 120;
+        [SerializeField, Min(0)] private int momentumStreak;
+        [SerializeField, Min(1f)] private float momentumRewardMultiplier = 1f;
 
         public WorldPanelSnapshot CurrentWorldPanel => currentWorldPanel;
         public CharacterPanelSnapshot CurrentCharacterPanel => currentCharacterPanel;
         public IReadOnlyList<ActionFeedbackPulse> RecentFeedback => recentFeedback;
         public IReadOnlyList<LifeTimelinePreview> RecentTimelinePreview => recentTimelinePreview;
+        public int MomentumStreak => momentumStreak;
+        public float MomentumRewardMultiplier => momentumRewardMultiplier;
 
         public event Action<WorldPanelSnapshot> OnWorldPanelSnapshotUpdated;
         public event Action<CharacterPanelSnapshot> OnCharacterPanelSnapshotUpdated;
@@ -280,6 +286,11 @@ namespace Survivebest.UI
                 .Take(8)
                 .ToList();
 
+            if (momentumStreak >= 3)
+            {
+                suggestions.Insert(0, $"Momentum x{momentumStreak}: chain a bold action for bonus rewards");
+            }
+
             if (suggestions.Count == 0)
             {
                 suggestions.Add("Talk to someone nearby");
@@ -440,12 +451,15 @@ namespace Survivebest.UI
             NeedsSystem needs = active.GetComponent<NeedsSystem>();
             HealthSystem health = active.GetComponent<HealthSystem>();
             Emotion.EmotionSystem emotion = active.GetComponent<Emotion.EmotionSystem>();
+            GeneticsSystem geneticsSystem = active.GetComponent<GeneticsSystem>();
 
             currentCharacterPanel.CharacterId = active.CharacterId;
             currentCharacterPanel.Health = health != null ? health.CurrentHealth : 75f;
             currentCharacterPanel.Energy = needs != null ? needs.Energy : 60f;
             currentCharacterPanel.Hunger = needs != null ? needs.Hunger : 60f;
             currentCharacterPanel.Stress = emotion != null ? emotion.Stress : 25f;
+
+            geneticsSystem?.ApplyDynamicPresentationState();
 
             List<string> riskFlags = psychologicalGrowthMentalHealthEngine != null
                 ? psychologicalGrowthMentalHealthEngine.GetMentalHealthRiskFlags(active.CharacterId)
@@ -482,14 +496,19 @@ namespace Survivebest.UI
 
         private void CreateFeedback(string actionKey, string summary, float magnitude, string visualCue)
         {
+            UpdateMomentum(magnitude);
+            float adjustedMagnitude = magnitude * momentumRewardMultiplier;
+
             ActionFeedbackPulse pulse = new ActionFeedbackPulse
             {
                 ActionKey = actionKey,
                 Summary = summary,
-                Magnitude = magnitude,
+                Magnitude = adjustedMagnitude,
                 Day = worldClock != null ? worldClock.Day : 0,
                 Hour = worldClock != null ? worldClock.Hour : 0,
-                VisualCue = visualCue
+                VisualCue = ResolveVisualCue(adjustedMagnitude, summary),
+                MomentumStreak = momentumStreak,
+                RewardMultiplier = momentumRewardMultiplier
             };
 
             recentFeedback.Add(pulse);
@@ -503,13 +522,31 @@ namespace Survivebest.UI
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
                 Type = SimulationEventType.ActivityCompleted,
-                Severity = magnitude < 0f ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                Severity = adjustedMagnitude < 0f ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
                 SystemName = nameof(GameplayInteractionPresentationLayer),
                 SourceCharacterId = householdManager != null && householdManager.ActiveCharacter != null ? householdManager.ActiveCharacter.CharacterId : null,
                 ChangeKey = actionKey,
                 Reason = summary,
-                Magnitude = magnitude
+                Magnitude = adjustedMagnitude
             });
+        }
+
+        private void UpdateMomentum(float magnitude)
+        {
+            if (magnitude > 0.8f)
+            {
+                momentumStreak = Mathf.Min(momentumStreak + 1, 12);
+            }
+            else if (magnitude < -0.2f)
+            {
+                momentumStreak = Mathf.Max(0, momentumStreak - 2);
+            }
+            else
+            {
+                momentumStreak = Mathf.Max(0, momentumStreak - 1);
+            }
+
+            momentumRewardMultiplier = 1f + Mathf.Min(momentumStreak, 5) * 0.1f;
         }
 
         private static HotspotActionPack BuildPack(string id, string label, params string[] actions)
@@ -527,6 +564,11 @@ namespace Survivebest.UI
             if (!string.IsNullOrWhiteSpace(summary) && (summary.Contains("injury", StringComparison.OrdinalIgnoreCase) || summary.Contains("failed", StringComparison.OrdinalIgnoreCase)))
             {
                 return "warning_flash";
+            }
+
+            if (magnitude >= 6f)
+            {
+                return "combo_fireworks";
             }
 
             if (magnitude >= 4f)
