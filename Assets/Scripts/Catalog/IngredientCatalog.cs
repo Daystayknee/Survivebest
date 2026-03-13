@@ -199,6 +199,8 @@ namespace Survivebest.Catalog
                     item.Tags = BuildDefaultTags(item.Group);
                 }
             }
+
+            EnsureRealismEssentials();
         }
 
         public List<IngredientItem> GetByGroup(IngredientGroup group)
@@ -222,6 +224,153 @@ namespace Survivebest.Catalog
         {
             IngredientItem ingredient = GetIngredient(nameOrId);
             return ingredient != null && ingredient.Tags != null && ingredient.Tags.Exists(t => string.Equals(t, tag, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void EnsureRealismEssentials()
+        {
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Salt",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Spices,
+                IsPerishable = false,
+                SpoilTimeHours = 8760f,
+                Tags = new List<string> { "seasoning", "savory", "essential" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Black Pepper",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Spices,
+                IsPerishable = false,
+                SpoilTimeHours = 8760f,
+                Tags = new List<string> { "seasoning", "aromatic", "essential" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Cumin",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Spices,
+                IsPerishable = false,
+                SpoilTimeHours = 8760f,
+                Tags = new List<string> { "seasoning", "earthy" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Paprika",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Spices,
+                IsPerishable = false,
+                SpoilTimeHours = 8760f,
+                Tags = new List<string> { "seasoning", "smoky" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Soy Sauce",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Condiments,
+                IsPerishable = false,
+                SpoilTimeHours = 1440f,
+                Hydration = 10f,
+                Tags = new List<string> { "liquid", "umami", "seasoning" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Vinegar",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Condiments,
+                IsPerishable = false,
+                SpoilTimeHours = 6000f,
+                Hydration = 10f,
+                Tags = new List<string> { "liquid", "acidic", "preserve" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Olive oil",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Oils,
+                IsPerishable = false,
+                SpoilTimeHours = 2400f,
+                Fat = 100f,
+                Tags = new List<string> { "oil", "liquid", "cooking-essential" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Water",
+                Group = IngredientGroup.Snack,
+                Category = IngredientCategory.Liquids,
+                IsPerishable = false,
+                SpoilTimeHours = 8760f,
+                Hydration = 100f,
+                Tags = new List<string> { "liquid", "hydration", "essential" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Milk",
+                Group = IngredientGroup.Snack,
+                Category = IngredientCategory.Dairy,
+                IsPerishable = true,
+                SpoilTimeHours = 72f,
+                Hydration = 70f,
+                Protein = 8f,
+                Fat = 5f,
+                Carbs = 5f,
+                Tags = new List<string> { "liquid", "dairy", "breakfast" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Cooking wine",
+                Group = IngredientGroup.Spice,
+                Category = IngredientCategory.Alcohol,
+                IsPerishable = false,
+                SpoilTimeHours = 8760f,
+                Hydration = 20f,
+                Tags = new List<string> { "liquid", "deglaze", "cooking" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Vegetable stock",
+                Group = IngredientGroup.Legume,
+                Category = IngredientCategory.Liquids,
+                IsPerishable = true,
+                SpoilTimeHours = 96f,
+                Hydration = 90f,
+                Tags = new List<string> { "liquid", "broth", "soup-base" }
+            });
+            AddIfMissing(new IngredientItem
+            {
+                Name = "Chicken stock",
+                Group = IngredientGroup.Meat,
+                Category = IngredientCategory.Liquids,
+                IsPerishable = true,
+                SpoilTimeHours = 96f,
+                Hydration = 90f,
+                Tags = new List<string> { "liquid", "broth", "soup-base" }
+            });
+        }
+
+        private void AddIfMissing(IngredientItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Name))
+            {
+                return;
+            }
+
+            bool exists = ingredients.Exists(i => i != null &&
+                (string.Equals(i.Name, item.Name, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(i.Id, item.Id, StringComparison.OrdinalIgnoreCase)));
+            if (exists)
+            {
+                return;
+            }
+
+            item.Id = item.Name.Trim().ToLowerInvariant().Replace(" ", "_");
+            if (item.Tags == null || item.Tags.Count == 0)
+            {
+                item.Tags = BuildDefaultTags(item.Group);
+            }
+
+            ingredients.Add(item);
         }
 
         private static IngredientCategory InferCategory(IngredientGroup group)
