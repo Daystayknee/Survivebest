@@ -26,6 +26,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - Weather now supports a global simple seasonal state mapping (`Sunny`, `Rainy`, `Snowy`) in addition to weighted seasonal variability.
 - Birthday celebrations now publish sensory event feed entries and world-time now includes richer fixed + seasonal holidays.
 - Added `WorldEventDirector` for recurring ambient events (street performances, cookouts, skywatch nights) with see/hear/feel narrative output.
+- Household creator now has expanded tabs, multi-asset preview rotation controls, character cycling, and an in-flow genetics consistency validator.
 
 ## 1) Implemented Runtime Systems (by script)
 

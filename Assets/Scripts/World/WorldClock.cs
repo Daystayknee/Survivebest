@@ -33,14 +33,6 @@ namespace Survivebest.World
         [TextArea] public string SensoryDescription = "You hear celebration music in the distance, see decorations go up, and feel a shift in the town mood.";
     }
 
-    [Serializable]
-    public class SeasonalHolidayDefinition
-    {
-        public string Name;
-        public Season Season = Season.Winter;
-        [Min(1)] public int DayOfSeason = 1;
-    }
-
     public class WorldClock : MonoBehaviour
     {
         [SerializeField, Min(0.1f)] private float realSecondsPerGameMinute = 5f;
@@ -196,21 +188,51 @@ namespace Survivebest.World
                     TriggerHoliday(holiday.Name, holiday.SensoryDescription);
                 }
             }
+        }
 
-            int dayOfSeason = ResolveDayOfSeason(Month, Day);
-            for (int i = 0; i < seasonalHolidays.Count; i++)
+        private void TriggerHouseholdAgeUp()
+        {
+            if (!UsesHouseholdAgeUpHook)
             {
-                SeasonalHolidayDefinition holiday = seasonalHolidays[i];
-                if (holiday == null || string.IsNullOrWhiteSpace(holiday.Name))
+                return;
+            }
+
+            IReadOnlyList<CharacterCore> members = householdManager.Members;
+            for (int i = 0; i < members.Count; i++)
+            {
+                CharacterCore member = members[i];
+                if (member == null)
                 {
                     continue;
                 }
 
-                if (holiday.Season == CurrentSeason && holiday.DayOfSeason == dayOfSeason)
-                {
-                    OnHolidayStarted?.Invoke(holiday.Name, Day, Month, Year);
-                }
+                LifeStageManager lifeStageManager = member.GetComponent<LifeStageManager>();
+                lifeStageManager?.AgeUp();
             }
+        }
+
+        private int ResolveDayOfSeason(int month, int day)
+        {
+            int seasonLengthMonths = Mathf.Max(1, monthsPerYear / 4);
+            int monthIndex = Mathf.Clamp(month - 1, 0, monthsPerYear - 1);
+            int monthInSeason = monthIndex % seasonLengthMonths;
+            return monthInSeason * daysPerMonth + Mathf.Clamp(day, 1, daysPerMonth);
+        }
+
+
+        private void TriggerHoliday(string holidayName, string sensoryDescription)
+        {
+            OnHolidayStarted?.Invoke(holidayName, Day, Month, Year);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.HolidayStarted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(WorldClock),
+                ChangeKey = holidayName,
+                Reason = string.IsNullOrWhiteSpace(sensoryDescription) ? "A holiday is underway." : sensoryDescription,
+                Magnitude = 1f
+            });
         }
 
         private void TriggerHouseholdAgeUp()

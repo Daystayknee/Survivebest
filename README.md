@@ -44,6 +44,7 @@ _Last updated: current branch state._
 - UI/controller foundation and scene tools (menus, HUD/feed/panels, action popups, readiness/bootstrap helpers).
 - Headless readiness utilities (optional UI coverage, runtime coverage, integration dry-runs, aggregated balance recommendations) to progress wiring/balancing work outside Unity PlayMode.
 - World simulation depth upgrades: `WorldClock` now supports richer fixed + seasonal holidays with sensory descriptions and household-wide annual `AgeUp()` hooks; `BirthdayManager` publishes celebration events; `WorldEventDirector` schedules ambient town moments so players can see/hear/feel world events; `WeatherManager` supports a simple global season weather mode (`Sunny`/`Rainy`/`Snowy`).
+- Household creator upgrades: expanded tab set (appearance/genetics/style/skills/relationships/household), tab wrapping helpers, multi-asset character preview pivot rotation support, and household-wide genetics validation pass in creator flow.
 - Broad EditMode test coverage across major domains (core/economy/social/story/home-life/food extensions).
 
 ### ⚠️ Partially complete (code ready, Unity wiring/balancing pending)
@@ -76,7 +77,7 @@ These transitions are managed by `MainMenuFlowController`, splash timing/skip by
 
 Load Game screen presents 3 save slots (world name, playtime, date, household size) via `LoadGameScreenController`.
 World creator is tabbed (`Appearance & Environment`, `Ecology & Inhabitants`, `Government & Laws`, `Starting Origins`, `Survival Mechanics`) via `WorldCreatorScreenController`.
-Household maker tab flow + rotation/zoom support is handled by `HouseholdMakerScreenController`.
+Household maker now supports expanded tabs, wrap navigation, multi-asset preview rotation, per-character switching, zoom controls, and a household genetics validation action via `HouseholdMakerScreenController`.
 Gameplay map layout orchestration (location nav, map label, environment/ecology/government summaries, resources, character vitals) is handled by `GameplayScreenController`.
 Contextual action popups for buy/sell/medical/forage/skill actions are handled by `ActionPopupController` (fed by `SidebarContextMenu`).
 
