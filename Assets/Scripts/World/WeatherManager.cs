@@ -73,6 +73,7 @@ namespace Survivebest.World
         };
 
         public event Action<WeatherState> OnWeatherChanged;
+        public event Action<WeatherState, WeatherState, string> OnWeatherTransition;
 
         public WeatherState CurrentWeather => weatherState;
 
@@ -112,6 +113,7 @@ namespace Survivebest.World
                 return;
             }
 
+            PublishForecast(worldClock.CurrentSeason, day);
             ApplySeasonWeather(worldClock.CurrentSeason);
         }
 
@@ -119,7 +121,7 @@ namespace Survivebest.World
         {
             if (useSimpleSeasonWeather)
             {
-                SetWeather(ResolveSimpleSeasonWeather(season));
+                SetWeather(ResolveSimpleSeasonWeather(season), "simple_season");
                 return;
             }
 
@@ -131,7 +133,7 @@ namespace Survivebest.World
                 _ => summerWeights
             };
 
-            SetWeather(PickWeightedWeather(weights));
+            SetWeather(PickWeightedWeather(weights), "weighted_season");
         }
 
         private static WeatherState ResolveSimpleSeasonWeather(Season season)
@@ -177,15 +179,17 @@ namespace Survivebest.World
             return weights[weights.Length - 1].State;
         }
 
-        private void SetWeather(WeatherState state)
+        private void SetWeather(WeatherState state, string source)
         {
             if (weatherState == state)
             {
                 return;
             }
 
+            WeatherState previous = weatherState;
             weatherState = state;
             OnWeatherChanged?.Invoke(weatherState);
+            OnWeatherTransition?.Invoke(previous, weatherState, source);
 
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
@@ -193,8 +197,29 @@ namespace Survivebest.World
                 Severity = IsHazardous(state) ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
                 SystemName = nameof(WeatherManager),
                 ChangeKey = weatherState.ToString(),
-                Reason = $"Season/day weather resolution produced {weatherState}",
-                Magnitude = (float)weatherState
+                Reason = $"Weather transitioned {previous} -> {weatherState} ({source})",
+                Magnitude = Mathf.Abs((float)weatherState - (float)previous) + 1f
+            });
+        }
+
+        private void PublishForecast(Season season, int day)
+        {
+            string forecast = season switch
+            {
+                Season.Winter => "cold front likely with snow pockets",
+                Season.Fall => "overcast with intermittent rain bands",
+                Season.Spring => "mixed cloud cover and breezy rain",
+                _ => "warmer skies with localized dry spells"
+            };
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.WeatherForecasted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(WeatherManager),
+                ChangeKey = $"Forecast_D{day}",
+                Reason = $"Seasonal forecast: {forecast}",
+                Magnitude = (int)season + 1f
             });
         }
 

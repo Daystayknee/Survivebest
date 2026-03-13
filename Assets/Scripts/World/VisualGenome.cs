@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using Survivebest.Events;
 
 namespace Survivebest.World
 {
@@ -29,8 +31,10 @@ namespace Survivebest.World
 
         [SerializeField] private float minHumanScale = 0.8f;
         [SerializeField] private float maxHumanScale = 1.3f;
+        [SerializeField] private GameEventHub gameEventHub;
 
         public PhysicalTraits CurrentTraits { get; private set; }
+        public event Action<PhysicalTraits> OnPhysicalTraitsApplied;
 
         public void ApplyPhysicalTraits(PhysicalTraits traits)
         {
@@ -43,6 +47,17 @@ namespace Survivebest.World
             if (thighs != null) thighs.localScale = new Vector3(traits.ThighGirth, 1f, 1f);
             if (calves != null) calves.localScale = new Vector3(traits.CalfGirth, 1f, 1f);
             if (root != null) root.localScale = new Vector3(1f, traits.Height, 1f);
+
+            OnPhysicalTraitsApplied?.Invoke(traits);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.GeneticsResolved,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(VisualGenome),
+                ChangeKey = "PhysicalTraitsApplied",
+                Reason = $"Height:{traits.Height:0.00} Shoulder:{traits.ShoulderWidth:0.00} Hip:{traits.HipWidth:0.00}",
+                Magnitude = traits.Height
+            });
         }
 
         public PhysicalTraits GenerateRandomDNA()

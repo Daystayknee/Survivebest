@@ -11,6 +11,7 @@ namespace Survivebest.World
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private string birthdayCelebrationTemplate = "{0}'s birthday: you hear friends singing, see candles and decorations, and feel the household energy lift.";
+        [SerializeField, Min(0f)] private float birthdayMoodBoostMagnitude = 6f;
 
         public event Action<CharacterCore, int, int, int> OnBirthdayStarted;
 
@@ -48,6 +49,7 @@ namespace Survivebest.World
                 {
                     OnBirthdayStarted?.Invoke(member, day, worldClock.Month, worldClock.Year);
                     PublishBirthdayEvent(member);
+                    householdManager.RegisterAutonomyIntent(member.CharacterId, "Celebrate birthday with household");
                 }
             }
         }
@@ -63,6 +65,7 @@ namespace Survivebest.World
                 string.IsNullOrWhiteSpace(birthdayCelebrationTemplate) ? "{0} has a birthday celebration." : birthdayCelebrationTemplate,
                 member.DisplayName);
 
+            int age = Mathf.Max(0, worldClock.Year - member.BirthYear);
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
                 Type = SimulationEventType.BirthdayStarted,
@@ -70,8 +73,8 @@ namespace Survivebest.World
                 SystemName = nameof(BirthdayManager),
                 SourceCharacterId = member.CharacterId,
                 ChangeKey = member.DisplayName,
-                Reason = description,
-                Magnitude = 1f
+                Reason = $"{description} Turning {age}.",
+                Magnitude = birthdayMoodBoostMagnitude
             });
         }
     }

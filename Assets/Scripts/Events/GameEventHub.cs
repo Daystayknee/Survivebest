@@ -10,6 +10,7 @@ namespace Survivebest.Events
         NeedCritical,
         RelationshipChanged,
         WeatherChanged,
+        WeatherForecasted,
         IllnessStarted,
         InjuryStarted,
         CrimeCommitted,
@@ -21,13 +22,18 @@ namespace Survivebest.Events
         RecipeCooked,
         DialogueResolved,
         DayStageChanged,
+        TimeAdvanced,
+        DateChanged,
+        SeasonChanged,
         OrderPlaced,
         OrderDelivered,
         LawVoteResolved,
         WorldCreated,
+        WorldAreaGenerated,
         HolidayStarted,
         BirthdayStarted,
         WorldAmbientEventStarted,
+        GeneticsResolved,
         SidebarOptionsGenerated,
         NarrativePromptGenerated,
         MenuScreenChanged,
@@ -113,6 +119,48 @@ namespace Survivebest.Events
             }
 
             OnEventPublished?.Invoke(simulationEvent);
+        }
+
+        public List<SimulationEvent> GetRecentEventsByType(SimulationEventType type, int maxCount = 25)
+        {
+            List<SimulationEvent> results = new();
+            int limit = Mathf.Max(1, maxCount);
+            for (int i = recentEvents.Count - 1; i >= 0 && results.Count < limit; i--)
+            {
+                SimulationEvent evt = recentEvents[i];
+                if (evt != null && evt.Type == type)
+                {
+                    results.Add(evt);
+                }
+            }
+
+            return results;
+        }
+
+        public int CountEventsInRange(SimulationEventType type, int fromAbsoluteHourInclusive, int toAbsoluteHourInclusive)
+        {
+            if (toAbsoluteHourInclusive < fromAbsoluteHourInclusive)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < recentEvents.Count; i++)
+            {
+                SimulationEvent evt = recentEvents[i];
+                if (evt == null || evt.Type != type)
+                {
+                    continue;
+                }
+
+                int absoluteHour = (evt.Year * 12 * 31 * 24) + (evt.Month * 31 * 24) + (evt.Day * 24) + evt.Hour;
+                if (absoluteHour >= fromAbsoluteHourInclusive && absoluteHour <= toAbsoluteHourInclusive)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         public static void PublishFromAnywhere(SimulationEvent simulationEvent)
