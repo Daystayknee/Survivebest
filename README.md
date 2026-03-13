@@ -53,6 +53,8 @@ _Last updated: current branch state._
 2. Finalize save/load coverage matrix for every active subsystem state in long runs.
 3. Complete prefab/inspector hookup docs and lock Alpha-1 “definition of done” checklist.
 
+- Added tooling to support these pending areas in-code: `AssetReadinessReporter` now includes `Report Optional UI Coverage` for scene/prefab hookup tracking and `Run Integration + Balance Dry Run` for profile-based integration/balance smoke checks.
+
 ## Current Included Systems
 
 ## Front-End Flow (Menu Vision)

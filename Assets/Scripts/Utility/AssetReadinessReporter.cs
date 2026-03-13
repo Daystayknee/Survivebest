@@ -312,6 +312,96 @@ namespace Survivebest.Utility
             }
         }
 
+
+        [ContextMenu("Run Integration + Balance Dry Run")]
+        public void RunIntegrationBalanceDryRun()
+        {
+            if (gameBalanceManager == null)
+            {
+                gameBalanceManager = FindObjectOfType<GameBalanceManager>(true);
+            }
+
+            if (gameBalanceManager == null)
+            {
+                Debug.LogWarning("[AssetReadiness] Cannot run integration dry run: missing GameBalanceManager.", this);
+                return;
+            }
+
+            var results = IntegrationDryRunService.RunScenarioBalanceDryRun(gameBalanceManager, 7);
+            if (results.Count == 0)
+            {
+                Debug.LogWarning("[AssetReadiness] Integration dry run produced no results.", this);
+                return;
+            }
+
+            int unstableCount = 0;
+            for (int i = 0; i < results.Count; i++)
+            {
+                var result = results[i];
+                if (result.Evaluation == null)
+                {
+                    continue;
+                }
+
+                if (!result.Evaluation.IsStable)
+                {
+                    unstableCount++;
+                }
+
+                Debug.Log($"[AssetReadiness] DryRun {result.ProfileType}: score={result.Evaluation.Score:0.0}, incidents={result.Outcome.IncidentCount}, funds={result.Outcome.FinalFunds}, stable={result.Evaluation.IsStable}", this);
+            }
+
+            if (unstableCount > 0)
+            {
+                Debug.LogWarning($"[AssetReadiness] Integration dry run found {unstableCount} unstable profile(s). Use report output for balancing passes.", this);
+            }
+            else
+            {
+                Debug.Log("[AssetReadiness] Integration dry run indicates stable balance across sampled profiles.", this);
+            }
+        }
+
+        [ContextMenu("Report Optional UI Coverage")]
+        public void ReportOptionalUiCoverage()
+        {
+            int totalControllers = 0;
+            int missingControllers = 0;
+
+            EvaluateOptionalRef(splashScreenController, nameof(splashScreenController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(mainMenuFlowController, nameof(mainMenuFlowController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(loadGameScreenController, nameof(loadGameScreenController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(settingsPageController, nameof(settingsPageController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(worldCreatorScreenController, nameof(worldCreatorScreenController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(householdMakerScreenController, nameof(householdMakerScreenController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(characterScreenController, nameof(characterScreenController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(gameplayScreenController, nameof(gameplayScreenController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(actionPopupController, nameof(actionPopupController), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(buildModeManager, nameof(buildModeManager), ref totalControllers, ref missingControllers);
+            EvaluateOptionalRef(furnitureStoreController, nameof(furnitureStoreController), ref totalControllers, ref missingControllers);
+
+            string summary = $"[AssetReadiness] Optional UI coverage: configured={totalControllers - missingControllers}/{totalControllers}, missing={missingControllers}";
+            if (missingControllers == 0)
+            {
+                Debug.Log(summary, this);
+            }
+            else
+            {
+                Debug.LogWarning(summary, this);
+            }
+        }
+
+        private void EvaluateOptionalRef(UnityEngine.Object value, string name, ref int total, ref int missing)
+        {
+            total++;
+            if (value != null)
+            {
+                return;
+            }
+
+            missing++;
+            Debug.LogWarning($"[AssetReadiness] Optional UI reference missing: {name}", this);
+        }
+
         private int CheckNull(Object value, string fieldName)
         {
             if (value != null)

@@ -560,3 +560,13 @@ Additional progress this pass:
 - Dialogue selection now ties click context + relationship memory into generated line scoring (mood/situation/memory-aware), and pet interactables can route into species-specific care dialogue payloads for richer overlay immersion.
 - Clickable service objects now route through dialogue presentation payloads too (work/hospital/shop/school/home), so both NPC chats and object interactions share the same visual-novel overlay contract.
 - Pet-click dialogue now resolves species from household pet profiles (instead of hardcoded dog), and overlay context now surfaces mood/situation/memory tags so authored content and UI debugging stay aligned.
+
+
+## Readiness and Validation Utilities (Current)
+- `AssetReadinessReporter` includes context actions for:
+  - `Report Missing Asset References`
+  - `Auto Wire Known References`
+  - `Report Runtime Vision Coverage`
+  - `Report Optional UI Coverage`
+  - `Run Integration + Balance Dry Run` (scenario-harness-driven profile checks + balance evaluation summary)
+- `IntegrationDryRunService` runs deterministic procedural scenarios across profile presets and converts outcomes into telemetry snapshots for `GameBalanceManager` evaluation.
