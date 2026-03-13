@@ -194,6 +194,39 @@ namespace Survivebest.UI
             return options;
         }
 
+
+        public string BuildTravelMapPrompt()
+        {
+            return "Open the map, click a district, and confirm travel. Indoors, use doorway arrows/hotspots to move room-to-room.";
+        }
+
+        public bool TryTravelToDistrict(string districtId)
+        {
+            if (string.IsNullOrWhiteSpace(districtId) || locationManager == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<Room> rooms = locationManager.Rooms;
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                Room room = rooms[i];
+                if (room == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(room.AreaName, districtId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(room.RoomName, districtId, StringComparison.OrdinalIgnoreCase))
+                {
+                    locationManager.NavigateToRoom(room.RoomName);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public List<HotspotActionPack> BuildHotspotsForCurrentLocation()
         {
             List<HotspotActionPack> packs = new();
@@ -204,8 +237,10 @@ namespace Survivebest.UI
             {
                 case LocationTheme.Residential:
                     packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry"));
-                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "snack", "clean"));
+                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean"));
                     packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote"));
+                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing_along"));
+                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect"));
                     break;
                 case LocationTheme.Hospital:
                     packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests"));
@@ -220,7 +255,7 @@ namespace Survivebest.UI
                     packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form"));
                     break;
                 default:
-                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger"));
+                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel"));
                     break;
             }
 

@@ -51,6 +51,8 @@ namespace Survivebest.Interaction
         [SerializeField] private HouseholdChoreSystem householdChoreSystem;
         [SerializeField] private string propertyId = "home_property";
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private string[] tvGenres = { "Sitcom", "Drama", "Documentary", "Sports", "Anime", "Reality" };
+        [SerializeField] private string[] bookGenres = { "Fantasy", "Mystery", "Sci-fi", "Biography", "History", "Self-help" };
 
         public bool Execute()
         {
@@ -59,6 +61,7 @@ namespace Survivebest.Interaction
             HealthSystem health = active != null ? active.GetComponent<HealthSystem>() : null;
             StatusEffectSystem status = active != null ? active.GetComponent<StatusEffectSystem>() : null;
 
+            string interactionDetail = null;
             bool succeeded = hotspotType switch
             {
                 HomeHotspotType.TrashCan => ExecuteTrash(status),
@@ -72,8 +75,8 @@ namespace Survivebest.Interaction
                 HomeHotspotType.Mirror => ExecuteMirror(needs, status),
                 HomeHotspotType.Couch => ExecuteCouch(needs, status),
                 HomeHotspotType.Desk => ExecuteDesk(needs, status),
-                HomeHotspotType.Bookshelf => ExecuteBookshelf(needs, status),
-                HomeHotspotType.TV => ExecuteTV(needs, status),
+                HomeHotspotType.Bookshelf => ExecuteBookshelf(needs, status, out interactionDetail),
+                HomeHotspotType.TV => ExecuteTV(needs, status, out interactionDetail),
                 HomeHotspotType.WorkoutCorner => ExecuteWorkout(needs, health, status),
                 HomeHotspotType.Pantry => ExecutePantry(needs, status),
                 HomeHotspotType.RecyclingBin => ExecuteRecycling(status),
@@ -86,7 +89,8 @@ namespace Survivebest.Interaction
 
             if (succeeded)
             {
-                Publish(SimulationEventSeverity.Info, hotspotType.ToString(), $"Executed hotspot: {hotspotType}", 1f);
+                string detail = string.IsNullOrWhiteSpace(interactionDetail) ? string.Empty : $" ({interactionDetail})";
+                Publish(SimulationEventSeverity.Info, hotspotType.ToString(), $"Executed hotspot: {hotspotType}{detail}", 1f);
             }
 
             return succeeded;
@@ -325,8 +329,9 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private static bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
+            pickedGenre = PickRandom(bookGenres, "General reading");
             if (needs == null)
             {
                 return false;
@@ -338,8 +343,9 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
+            pickedGenre = PickRandom(tvGenres, "General show");
             if (needs == null)
             {
                 return false;
@@ -351,6 +357,17 @@ namespace Survivebest.Interaction
             housingPropertySystem?.RegisterUtilityUsage(propertyId, 1.3f, 0f, 0f, 0.9f, 0f);
             status?.ApplyRandomStatus(UnityEngine.Random.value < 0.35f);
             return true;
+        }
+
+
+        private static string PickRandom(string[] values, string fallback)
+        {
+            if (values == null || values.Length == 0)
+            {
+                return fallback;
+            }
+
+            return values[UnityEngine.Random.Range(0, values.Length)];
         }
 
         private static bool ExecuteWorkout(NeedsSystem needs, HealthSystem health, StatusEffectSystem status)
