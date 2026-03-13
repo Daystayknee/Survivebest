@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using Survivebest.Location;
 using Survivebest.World;
 using Survivebest.Events;
+using Survivebest.Core;
 
 namespace Survivebest.UI
 {
@@ -52,6 +53,7 @@ namespace Survivebest.UI
         public bool EnableIllness = true;
         public bool EnableTemperature = true;
         public bool EnableFatigue = true;
+        public bool SandboxExperience;
     }
 
     public class WorldCreatorScreenController : MonoBehaviour
@@ -59,6 +61,7 @@ namespace Survivebest.UI
         [SerializeField] private MainMenuFlowController menuFlowController;
         [SerializeField] private WorldCreatorManager worldCreatorManager;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GameBalanceManager gameBalanceManager;
 
         [Header("Optional UI Text")]
         [SerializeField] private Text tabTitleText;
@@ -101,8 +104,17 @@ namespace Survivebest.UI
                 return;
             }
 
+            ApplyBalanceModeFromSettings();
+
             List<WorldAreaTemplate> templates = BuildTemplatesFromSettings();
             worldCreatorManager.BuildWorldFromTemplates(templates);
+            RefreshText();
+        }
+
+        public void SetSandboxExperience(bool enabled)
+        {
+            settings.SandboxExperience = enabled;
+            ApplyBalanceModeFromSettings();
             RefreshText();
         }
 
@@ -176,7 +188,21 @@ namespace Survivebest.UI
             builder.AppendLine($"Temperature: {(settings.EnableTemperature ? "On" : "Off")}");
             builder.AppendLine($"Fatigue: {(settings.EnableFatigue ? "On" : "Off")}");
             builder.AppendLine($"Permadeath: {(settings.Permadeath ? "On" : "Off")}");
+            builder.AppendLine($"Experience: {(settings.SandboxExperience ? "Sandbox" : "Standard")}");
             return builder.ToString().TrimEnd();
+        }
+
+        private void ApplyBalanceModeFromSettings()
+        {
+            gameBalanceManager ??= FindObjectOfType<GameBalanceManager>(true);
+            if (gameBalanceManager == null)
+            {
+                return;
+            }
+
+            gameBalanceManager.ApplyExperienceMode(settings.SandboxExperience
+                ? BalanceExperienceMode.Sandbox
+                : BalanceExperienceMode.Standard);
         }
 
         private void PublishTabEvent()
