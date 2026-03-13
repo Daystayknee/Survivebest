@@ -451,12 +451,15 @@ namespace Survivebest.UI
             NeedsSystem needs = active.GetComponent<NeedsSystem>();
             HealthSystem health = active.GetComponent<HealthSystem>();
             Emotion.EmotionSystem emotion = active.GetComponent<Emotion.EmotionSystem>();
+            GeneticsSystem geneticsSystem = active.GetComponent<GeneticsSystem>();
 
             currentCharacterPanel.CharacterId = active.CharacterId;
             currentCharacterPanel.Health = health != null ? health.CurrentHealth : 75f;
             currentCharacterPanel.Energy = needs != null ? needs.Energy : 60f;
             currentCharacterPanel.Hunger = needs != null ? needs.Hunger : 60f;
             currentCharacterPanel.Stress = emotion != null ? emotion.Stress : 25f;
+
+            geneticsSystem?.ApplyDynamicPresentationState();
 
             List<string> riskFlags = psychologicalGrowthMentalHealthEngine != null
                 ? psychologicalGrowthMentalHealthEngine.GetMentalHealthRiskFlags(active.CharacterId)

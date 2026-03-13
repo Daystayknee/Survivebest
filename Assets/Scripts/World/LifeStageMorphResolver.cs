@@ -108,29 +108,5 @@ namespace Survivebest.World
                 _ => LifeStageArtMode.ElderRig
             };
         }
-
-        private static void ApplyLifeStageArtMode(AvatarLayerProfile layers, LifeStage stage)
-        {
-            if (layers == null)
-            {
-                return;
-            }
-
-            layers.UseBundledInfantBody = stage is LifeStage.Baby or LifeStage.Infant;
-            layers.EnableCrawlingPoseSet = stage == LifeStage.Toddler;
-            layers.EnableOnesieLayer = stage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler;
-            layers.EnableYouthOutfitLayer = stage is LifeStage.Child or LifeStage.Preteen;
-            layers.EnableAdultOutfitLayer = stage is LifeStage.Teen or LifeStage.YoungAdult or LifeStage.Adult or LifeStage.OlderAdult or LifeStage.Elder;
-
-            layers.LifeStageArtMode = stage switch
-            {
-                LifeStage.Baby or LifeStage.Infant => LifeStageArtMode.BundlePortrait,
-                LifeStage.Toddler => LifeStageArtMode.ToddlerCrawl,
-                LifeStage.Child or LifeStage.Preteen => LifeStageArtMode.ChildSimpleRig,
-                LifeStage.Teen => LifeStageArtMode.TeenRig,
-                LifeStage.YoungAdult or LifeStage.Adult => LifeStageArtMode.AdultRig,
-                _ => LifeStageArtMode.ElderRig
-            };
-        }
     }
 }

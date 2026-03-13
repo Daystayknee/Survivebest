@@ -2,6 +2,8 @@ using UnityEngine;
 using Survivebest.Appearance;
 using Survivebest.Core;
 using Survivebest.LifeStage;
+using Survivebest.Emotion;
+using Survivebest.Needs;
 
 namespace Survivebest.World
 {
@@ -12,6 +14,8 @@ namespace Survivebest.World
         [SerializeField] private VisualGenome visualGenome;
         [SerializeField] private LifeStageManager lifeStageManager;
         [SerializeField] private BodyCompositionSystem bodyCompositionSystem;
+        [SerializeField] private EmotionSystem emotionSystem;
+        [SerializeField] private NeedsSystem needsSystem;
 
         [Header("Parent Optional References")]
         [SerializeField] private GeneticsSystem parentA;
@@ -30,6 +34,13 @@ namespace Survivebest.World
 
         private void Awake()
         {
+            if (owner == null) owner = GetComponent<CharacterCore>();
+            if (appearanceManager == null) appearanceManager = GetComponent<AppearanceManager>();
+            if (visualGenome == null) visualGenome = GetComponent<VisualGenome>();
+            if (lifeStageManager == null) lifeStageManager = GetComponent<LifeStageManager>();
+            if (bodyCompositionSystem == null) bodyCompositionSystem = GetComponent<BodyCompositionSystem>();
+            if (emotionSystem == null) emotionSystem = GetComponent<EmotionSystem>();
+            if (needsSystem == null) needsSystem = GetComponent<NeedsSystem>();
             if (geneticProfile.Seed == 0)
             {
                 GenerateFounderGenes();
@@ -109,6 +120,7 @@ namespace Survivebest.World
             LifeStage stage = owner != null ? owner.CurrentLifeStage : LifeStage.YoungAdult;
             phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, environmentPressure);
             ApplyResolvedPhenotype(phenotypeProfile);
+            ApplyDynamicPresentationState();
         }
 
         private void ApplyResolvedPhenotype(PhenotypeProfile phenotype)
@@ -192,6 +204,24 @@ namespace Survivebest.World
 
                 bodyCompositionSystem.ApplyGenetics(bodyGenetics);
             }
+        }
+
+        public void ApplyDynamicPresentationState()
+        {
+            if (phenotypeProfile == null)
+            {
+                return;
+            }
+
+            float stressValue = emotionSystem != null ? emotionSystem.Stress : 25f;
+            float angerValue = emotionSystem != null ? emotionSystem.Anger : 10f;
+            float affectionValue = emotionSystem != null ? emotionSystem.Affection : 40f;
+            float energyValue = needsSystem != null ? needsSystem.Energy : 60f;
+            float illness = phenotypeProfile.Skin != null && phenotypeProfile.Skin.Overlays != null
+                ? phenotypeProfile.Skin.Overlays.IllnessPallor * 100f
+                : 0f;
+
+            AvatarPresentationStateResolver.ApplyDynamicState(phenotypeProfile, stressValue, angerValue, affectionValue, energyValue, illness);
         }
 
         private void HandleLifeStageChanged(CharacterCore character, int _, LifeStage __)
