@@ -54,6 +54,7 @@ _Last updated: current branch state._
 3. Complete prefab/inspector hookup docs and lock Alpha-1 “definition of done” checklist.
 
 - Added tooling to support these pending areas in-code: `AssetReadinessReporter` now includes `Report Optional UI Coverage` for scene/prefab hookup tracking and `Run Integration + Balance Dry Run` for profile-based integration/balance smoke checks.
+- Added `BalanceTuningAdvisor` + `Run Headless Pending-Work Audit` flow in `AssetReadinessReporter` to aggregate cross-profile dry-run scores/recommendations and prioritize non-Unity balancing work before PlayMode wiring.
 
 ## Current Included Systems
 

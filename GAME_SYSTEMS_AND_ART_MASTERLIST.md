@@ -570,3 +570,5 @@ Additional progress this pass:
   - `Report Optional UI Coverage`
   - `Run Integration + Balance Dry Run` (scenario-harness-driven profile checks + balance evaluation summary)
 - `IntegrationDryRunService` runs deterministic procedural scenarios across profile presets and converts outcomes into telemetry snapshots for `GameBalanceManager` evaluation.
+- `BalanceTuningAdvisor` aggregates dry-run evaluations into average-score/stability summaries and ranked repeated recommendations to speed balancing passes.
+- `AssetReadinessReporter` includes `Run Headless Pending-Work Audit` to chain optional UI coverage checks, runtime vision checks, dry runs, and aggregated recommendations in one pass.

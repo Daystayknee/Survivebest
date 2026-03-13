@@ -402,6 +402,35 @@ namespace Survivebest.Utility
             Debug.LogWarning($"[AssetReadiness] Optional UI reference missing: {name}", this);
         }
 
+
+        [ContextMenu("Run Headless Pending-Work Audit")]
+        public void RunHeadlessPendingWorkAudit()
+        {
+            ReportOptionalUiCoverage();
+            ReportRuntimeVisionCoverage();
+            RunIntegrationBalanceDryRun();
+
+            if (gameBalanceManager == null)
+            {
+                gameBalanceManager = FindObjectOfType<GameBalanceManager>(true);
+            }
+
+            if (gameBalanceManager == null)
+            {
+                Debug.LogWarning("[AssetReadiness] Headless audit skipped balance summary: missing GameBalanceManager.", this);
+                return;
+            }
+
+            var results = IntegrationDryRunService.RunScenarioBalanceDryRun(gameBalanceManager, 7);
+            BalanceAuditSummary summary = BalanceTuningAdvisor.BuildSummary(results);
+
+            Debug.Log($"[AssetReadiness] Balance summary :: evaluated={summary.ProfilesEvaluated}, stable={summary.StableProfiles}, unstable={summary.UnstableProfiles}, avgScore={summary.AverageScore:0.0}", this);
+            for (int i = 0; i < summary.TopRecommendations.Count; i++)
+            {
+                Debug.Log($"[AssetReadiness] Recommendation {i + 1}: {summary.TopRecommendations[i]}", this);
+            }
+        }
+
         private int CheckNull(Object value, string fieldName)
         {
             if (value != null)
