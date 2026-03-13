@@ -10,6 +10,7 @@ using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Needs;
 using Survivebest.Status;
+using Survivebest.Minigames;
 
 namespace Survivebest.UI
 {
@@ -39,6 +40,7 @@ namespace Survivebest.UI
         [SerializeField] private OrderingSystem orderingSystem;
         [SerializeField] private RecipeSystem recipeSystem;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private MinigameManager minigameManager;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -184,6 +186,39 @@ namespace Survivebest.UI
                     reason = "Camp setup complete. Energy recovery boosted tonight.";
                     magnitude = 2f;
                     break;
+                case "fish":
+                    reason = DoFishing(active);
+                    magnitude = 3f;
+                    break;
+                case "watch_tv":
+                    reason = DoWatchTv(active);
+                    magnitude = 2f;
+                    break;
+                case "watch_movie":
+                case "go_movies":
+                    reason = DoWatchMovie(active);
+                    magnitude = 3f;
+                    break;
+                case "read_book":
+                    reason = DoReadBook(active);
+                    magnitude = 2f;
+                    break;
+                case "sing":
+                    reason = DoSing(active);
+                    magnitude = 2f;
+                    break;
+                case "cook_meal":
+                    reason = DoCookMeal(active);
+                    magnitude = 3f;
+                    break;
+                case "bake_food":
+                    reason = DoBakeFood(active);
+                    magnitude = 3f;
+                    break;
+                case "make_drink":
+                    reason = DoMakeDrink(active);
+                    magnitude = 2f;
+                    break;
                 case "practice_skill":
                     reason = PracticeSkill(active, "Cooking", 4f);
                     magnitude = 4f;
@@ -248,7 +283,16 @@ namespace Survivebest.UI
                 "get_meds" => "Medical: Get Meds",
                 "see_doctor" => "Medical: See Doctor",
                 "forage" => "Nature: Forage",
+                "fish" => "Nature: Fishing",
                 "camp" => "Nature: Camp",
+                "watch_tv" => "Home: Watch TV",
+                "watch_movie" => "Home: Movie Night",
+                "go_movies" => "Outing: Go to Movies",
+                "read_book" => "Home: Read Book",
+                "sing" => "Home: Singing Session",
+                "cook_meal" => "Kitchen: Cook Meal",
+                "bake_food" => "Kitchen: Bake Food",
+                "make_drink" => "Kitchen: Make Drink",
                 "animal_sight" => currentSighting != null ? $"Animal Sighting: {currentSighting.SightingName}" : "Animal Sighting",
                 "practice_skill" => "Skill Practice",
                 "train_skill" => "Skill Training",
@@ -266,7 +310,16 @@ namespace Survivebest.UI
                 "get_meds" => "Apply medicine effects and stabilize condition severity.",
                 "see_doctor" => "Schedule a doctor consultation for diagnostics.",
                 "forage" => "Explore wild zones and gather random ingredients.",
+                "fish" => "Cast lines in rivers/lakes and bring home fish for meals or sale.",
                 "camp" => "Set camp to restore comfort and safety overnight.",
+                "watch_tv" => "Pick a show genre and decompress while recovering mood.",
+                "watch_movie" => "Choose a movie vibe and enjoy a full focused entertainment block.",
+                "go_movies" => "Travel out for a theater outing with stronger social/mood impact.",
+                "read_book" => "Read fiction/non-fiction to unwind and build knowledge.",
+                "sing" => "Run a singing session to raise confidence and expression.",
+                "cook_meal" => "Cook an actual meal in the kitchen for hunger recovery and skill XP.",
+                "bake_food" => "Bake snacks/desserts for comfort and cooking growth.",
+                "make_drink" => "Prepare tea/coffee/smoothies for hydration and light mood boost.",
                 "animal_sight" => BuildAnimalSightingDescription(),
                 "practice_skill" => "Spend time to gain XP in an applied skill.",
                 "train_skill" => "Focused training to gain bigger XP rewards.",
@@ -299,6 +352,37 @@ namespace Survivebest.UI
                     break;
                 case "animal_sight":
                     AppendAnimalSightingPreview(builder);
+                    break;
+                case "fish":
+                    builder.AppendLine("Fishing options:");
+                    builder.AppendLine("• River cast");
+                    builder.AppendLine("• Lake shore cast");
+                    builder.AppendLine("• Bait setup");
+                    break;
+                case "watch_tv":
+                    builder.AppendLine("TV Genres:");
+                    builder.AppendLine("• Sitcom • Drama • Documentary • Sports • Anime");
+                    break;
+                case "watch_movie":
+                case "go_movies":
+                    builder.AppendLine("Movie choices:");
+                    builder.AppendLine("• Comedy • Action • Romance • Horror • Family");
+                    break;
+                case "read_book":
+                    builder.AppendLine("Book shelf:");
+                    builder.AppendLine("• Fantasy • Mystery • Sci-fi • Biography • Self-help");
+                    break;
+                case "sing":
+                    builder.AppendLine("Singing set:");
+                    builder.AppendLine("• Pop • R&B • Rock • Jazz • Acoustic");
+                    break;
+                case "cook_meal":
+                case "bake_food":
+                case "make_drink":
+                    builder.AppendLine("Kitchen actions:");
+                    builder.AppendLine("• Prep ingredients");
+                    builder.AppendLine("• Time heat and finish");
+                    builder.AppendLine("• Clean station");
                     break;
                 case "practice_skill":
                 case "train_skill":
@@ -497,6 +581,87 @@ namespace Survivebest.UI
             grocerySystem.ConsumeIngredient(item.ItemName, 1);
             orderingSystem?.AddFunds(8f);
             return $"Sold 1x {item.ItemName}.";
+        }
+
+
+        private string DoFishing(CharacterCore active)
+        {
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.Fishing, active, _ => { });
+
+            SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
+            skills?.AddExperience("Fishing", 4f);
+            grocerySystem?.BuyIngredient("Fresh Fish", UnityEngine.Random.Range(1, 3));
+            return "Fishing session complete. You brought back fresh fish.";
+        }
+
+        private string DoWatchTv(CharacterCore active)
+        {
+            string picked = LifeActivityCatalog.PickTvGenre();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.TVMarathon, active, _ => { });
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.ModifyMood(6f);
+            needs?.ModifyEnergy(2f);
+            return $"Watched a {picked} TV block and relaxed.";
+        }
+
+        private string DoWatchMovie(CharacterCore active)
+        {
+            string picked = LifeActivityCatalog.PickMovieGenre();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.MovieNight, active, _ => { });
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.ModifyMood(8f);
+            needs?.ModifyEnergy(3f);
+            return $"Movie night: enjoyed a {picked} feature.";
+        }
+
+        private string DoReadBook(CharacterCore active)
+        {
+            string picked = LifeActivityCatalog.PickBookGenre();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.BookReading, active, _ => { });
+            SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
+            skills?.AddExperience("Writing", 2f);
+            return $"Read a {picked} book session.";
+        }
+
+        private string DoSing(CharacterCore active)
+        {
+            string style = LifeActivityCatalog.PickSingingStyle();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.SingingSession, active, _ => { });
+            SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
+            skills?.AddExperience("Singing", 3f);
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.ModifyMood(5f);
+            return $"Singing session finished with {style} vocal practice.";
+        }
+
+        private string DoCookMeal(CharacterCore active)
+        {
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.Cooking, active, _ => { });
+            return PracticeSkill(active, "Cooking", 5f);
+        }
+
+        private string DoBakeFood(CharacterCore active)
+        {
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.Baking, active, _ => { });
+            return PracticeSkill(active, "Cooking", 4f);
+        }
+
+        private string DoMakeDrink(CharacterCore active)
+        {
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.DrinkMixing, active, _ => { });
+            SkillSystem skill = active != null ? active.GetComponent<SkillSystem>() : null;
+            skill?.AddExperience("Cooking", 2f);
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.RestoreHydration(12f);
+            return "Prepared a drink and recovered hydration.";
         }
 
         private string DoForage()

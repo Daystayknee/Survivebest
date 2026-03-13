@@ -59,6 +59,7 @@ namespace Survivebest.Interaction
             HealthSystem health = active != null ? active.GetComponent<HealthSystem>() : null;
             StatusEffectSystem status = active != null ? active.GetComponent<StatusEffectSystem>() : null;
 
+            string interactionDetail = null;
             bool succeeded = hotspotType switch
             {
                 HomeHotspotType.TrashCan => ExecuteTrash(status),
@@ -72,8 +73,8 @@ namespace Survivebest.Interaction
                 HomeHotspotType.Mirror => ExecuteMirror(needs, status),
                 HomeHotspotType.Couch => ExecuteCouch(needs, status),
                 HomeHotspotType.Desk => ExecuteDesk(needs, status),
-                HomeHotspotType.Bookshelf => ExecuteBookshelf(needs, status),
-                HomeHotspotType.TV => ExecuteTV(needs, status),
+                HomeHotspotType.Bookshelf => ExecuteBookshelf(needs, status, out interactionDetail),
+                HomeHotspotType.TV => ExecuteTV(needs, status, out interactionDetail),
                 HomeHotspotType.WorkoutCorner => ExecuteWorkout(needs, health, status),
                 HomeHotspotType.Pantry => ExecutePantry(needs, status),
                 HomeHotspotType.RecyclingBin => ExecuteRecycling(status),
@@ -86,7 +87,8 @@ namespace Survivebest.Interaction
 
             if (succeeded)
             {
-                Publish(SimulationEventSeverity.Info, hotspotType.ToString(), $"Executed hotspot: {hotspotType}", 1f);
+                string detail = string.IsNullOrWhiteSpace(interactionDetail) ? string.Empty : $" ({interactionDetail})";
+                Publish(SimulationEventSeverity.Info, hotspotType.ToString(), $"Executed hotspot: {hotspotType}{detail}", 1f);
             }
 
             return succeeded;
@@ -325,8 +327,9 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private static bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
+            pickedGenre = LifeActivityCatalog.PickBookGenre();
             if (needs == null)
             {
                 return false;
@@ -338,8 +341,9 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
+            pickedGenre = LifeActivityCatalog.PickTvGenre();
             if (needs == null)
             {
                 return false;
@@ -352,6 +356,7 @@ namespace Survivebest.Interaction
             status?.ApplyRandomStatus(UnityEngine.Random.value < 0.35f);
             return true;
         }
+
 
         private static bool ExecuteWorkout(NeedsSystem needs, HealthSystem health, StatusEffectSystem status)
         {

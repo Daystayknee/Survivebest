@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace Survivebest.Core
 {
+    public enum BalanceExperienceMode
+    {
+        Standard,
+        Sandbox
+    }
+
     [Serializable]
     public class BalanceTelemetrySnapshot
     {
@@ -57,6 +63,9 @@ namespace Survivebest.Core
 
     public class GameBalanceManager : MonoBehaviour
     {
+        [Header("Experience")]
+        [SerializeField] private BalanceExperienceMode experienceMode = BalanceExperienceMode.Standard;
+
         [Header("Needs")]
         [SerializeField, Min(0.1f)] private float needDecayMultiplier = 1f;
         [SerializeField, Min(0f)] private float socialChangeMultiplier = 1f;
@@ -103,6 +112,7 @@ namespace Survivebest.Core
         public float WeatherPenaltyMultiplier => weatherPenaltyMultiplier;
         public float CrimeRiskMultiplier => crimeRiskMultiplier;
         public float SkillXpMultiplier => skillXpMultiplier;
+        public BalanceExperienceMode ExperienceMode => experienceMode;
         public IReadOnlyList<BalanceTelemetrySnapshot> TelemetryHistory => telemetryHistory;
 
         public float ScaleNeedDecay(float value) => value * needDecayMultiplier;
@@ -116,6 +126,21 @@ namespace Survivebest.Core
         public float ScaleWeatherPenalty(float value) => value * weatherPenaltyMultiplier;
         public float ScaleSkillXp(float value) => value * skillXpMultiplier;
         public float ScaleCrimeRisk(float value) => Mathf.Clamp01(value * crimeRiskMultiplier);
+
+        public void ApplyExperienceMode(BalanceExperienceMode mode)
+        {
+            experienceMode = mode;
+
+            switch (mode)
+            {
+                case BalanceExperienceMode.Sandbox:
+                    ApplySandboxPreset();
+                    break;
+                default:
+                    ApplyStandardPreset();
+                    break;
+            }
+        }
 
         public void CaptureTelemetry(BalanceTelemetrySnapshot snapshot)
         {
@@ -235,6 +260,40 @@ namespace Survivebest.Core
                 "CrimeRate" when value > 35f => "Increase law pressure, deterrence, and rehabilitation throughput.",
                 _ => $"Tune {metricName} toward target ranges."
             };
+        }
+
+        private void ApplyStandardPreset()
+        {
+            needDecayMultiplier = 1f;
+            socialChangeMultiplier = 1f;
+            emotionalStabilityRange = 1f;
+            wageMultiplier = 1f;
+            itemPriceMultiplier = 1f;
+            questRewardMultiplier = 1f;
+            jailPunishmentMultiplier = 1f;
+            illnessFrequencyMultiplier = 1f;
+            recoveryTimeMultiplier = 1f;
+            addictionSeverityMultiplier = 1f;
+            weatherPenaltyMultiplier = 1f;
+            crimeRiskMultiplier = 1f;
+            skillXpMultiplier = 1f;
+        }
+
+        private void ApplySandboxPreset()
+        {
+            needDecayMultiplier = 0.7f;
+            socialChangeMultiplier = 0.85f;
+            emotionalStabilityRange = 1.35f;
+            wageMultiplier = 1.2f;
+            itemPriceMultiplier = 0.85f;
+            questRewardMultiplier = 1.25f;
+            jailPunishmentMultiplier = 0.7f;
+            illnessFrequencyMultiplier = 0.75f;
+            recoveryTimeMultiplier = 0.8f;
+            addictionSeverityMultiplier = 0.8f;
+            weatherPenaltyMultiplier = 0.7f;
+            crimeRiskMultiplier = 0.75f;
+            skillXpMultiplier = 1.35f;
         }
     }
 }
