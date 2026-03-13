@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.Minigames;
@@ -219,7 +220,7 @@ namespace Survivebest.Core
             if (minigameManager != null && !minigameManager.IsRunning)
             {
                 CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
-                MinigameType type = (MinigameType)Random.Range(0, 4);
+                MinigameType type = (MinigameType)Random.Range(0, Enum.GetValues(typeof(MinigameType)).Length);
                 minigameManager.StartMinigame(type, active, _ => { });
             }
 
