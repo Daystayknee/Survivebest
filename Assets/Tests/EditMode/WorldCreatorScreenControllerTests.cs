@@ -56,5 +56,27 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(root);
         }
+
+        [Test]
+        public void GenerateWorld_UsesUsaCommonPlacesPresetByDefault()
+        {
+            GameObject root = new GameObject("WorldCreatorUsaPlaces");
+            WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
+            WorldCreatorManager worldCreatorManager = root.AddComponent<WorldCreatorManager>();
+
+            int generatedCount = 0;
+            worldCreatorManager.OnWorldGenerated += count => generatedCount = count;
+
+            typeof(WorldCreatorScreenController)
+                .GetField("worldCreatorManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(controller, worldCreatorManager);
+
+            controller.GenerateWorld();
+
+            Assert.GreaterOrEqual(generatedCount, 12);
+
+            Object.DestroyImmediate(root);
+        }
+
     }
 }

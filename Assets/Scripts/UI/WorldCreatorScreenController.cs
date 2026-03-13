@@ -53,7 +53,8 @@ namespace Survivebest.UI
         public bool EnableIllness = true;
         public bool EnableTemperature = true;
         public bool EnableFatigue = true;
-        public bool SandboxExperience;
+        public bool SandboxExperience = true;
+        public bool UseUsaCommonPlaces = true;
     }
 
     public class WorldCreatorScreenController : MonoBehaviour
@@ -123,6 +124,11 @@ namespace Survivebest.UI
             float lawStrict = Mathf.Lerp(0.25f, 0.95f, settings.GovernmentStrictness);
             float violence = Mathf.Lerp(0.35f, 0.98f, settings.CrimeStrictness);
 
+            if (settings.UseUsaCommonPlaces)
+            {
+                return BuildUsaCommonTemplates(lawStrict, violence);
+            }
+
             return new List<WorldAreaTemplate>
             {
                 new WorldAreaTemplate { AreaName = "Home District", Theme = LocationTheme.Residential, TheftEnforcement = lawStrict * 0.7f, ViolenceEnforcement = violence * 0.7f },
@@ -131,6 +137,27 @@ namespace Survivebest.UI
                 new WorldAreaTemplate { AreaName = "Work Complex", Theme = LocationTheme.Workplace, TheftEnforcement = lawStrict * 0.85f, ViolenceEnforcement = violence * 0.85f },
                 new WorldAreaTemplate { AreaName = "General Hospital", Theme = LocationTheme.Hospital, TheftEnforcement = lawStrict, ViolenceEnforcement = violence },
                 new WorldAreaTemplate { AreaName = "Civic Hall", Theme = LocationTheme.Civic, TheftEnforcement = lawStrict * 0.95f, ViolenceEnforcement = violence * 0.95f }
+            };
+        }
+
+        private List<WorldAreaTemplate> BuildUsaCommonTemplates(float lawStrict, float violence)
+        {
+            return new List<WorldAreaTemplate>
+            {
+                new WorldAreaTemplate { AreaName = "Suburban Homes", Theme = LocationTheme.Residential, TheftEnforcement = lawStrict * 0.65f, ViolenceEnforcement = violence * 0.6f },
+                new WorldAreaTemplate { AreaName = ResolveBiomeAreaName(), Theme = settings.BiomeTheme, TheftEnforcement = lawStrict * 0.35f, ViolenceEnforcement = violence * (settings.WildlifeAggressive ? 1f : 0.65f) },
+                new WorldAreaTemplate { AreaName = "Downtown Grocery", Theme = LocationTheme.StoreInterior, TheftEnforcement = lawStrict * 0.9f, ViolenceEnforcement = violence * 0.78f },
+                new WorldAreaTemplate { AreaName = "City Diner", Theme = LocationTheme.StoreInterior, TheftEnforcement = lawStrict * 0.82f, ViolenceEnforcement = violence * 0.74f },
+                new WorldAreaTemplate { AreaName = "Auto Garage", Theme = LocationTheme.Workplace, TheftEnforcement = lawStrict * 0.75f, ViolenceEnforcement = violence * 0.75f },
+                new WorldAreaTemplate { AreaName = "Tech Office", Theme = LocationTheme.Workplace, TheftEnforcement = lawStrict * 0.88f, ViolenceEnforcement = violence * 0.8f },
+                new WorldAreaTemplate { AreaName = "Warehouse Hub", Theme = LocationTheme.Workplace, TheftEnforcement = lawStrict * 0.8f, ViolenceEnforcement = violence * 0.82f },
+                new WorldAreaTemplate { AreaName = "General Hospital", Theme = LocationTheme.Hospital, TheftEnforcement = lawStrict, ViolenceEnforcement = violence },
+                new WorldAreaTemplate { AreaName = "Elementary School", Theme = LocationTheme.Civic, TheftEnforcement = lawStrict * 0.95f, ViolenceEnforcement = violence * 0.9f },
+                new WorldAreaTemplate { AreaName = "Community College", Theme = LocationTheme.Civic, TheftEnforcement = lawStrict * 0.92f, ViolenceEnforcement = violence * 0.87f },
+                new WorldAreaTemplate { AreaName = "Police Precinct", Theme = LocationTheme.Civic, TheftEnforcement = lawStrict, ViolenceEnforcement = violence },
+                new WorldAreaTemplate { AreaName = "Fire Station", Theme = LocationTheme.Civic, TheftEnforcement = lawStrict * 0.97f, ViolenceEnforcement = violence * 0.9f },
+                new WorldAreaTemplate { AreaName = "Post Office", Theme = LocationTheme.Civic, TheftEnforcement = lawStrict * 0.88f, ViolenceEnforcement = violence * 0.8f },
+                new WorldAreaTemplate { AreaName = "Construction Yard", Theme = LocationTheme.Workplace, TheftEnforcement = lawStrict * 0.7f, ViolenceEnforcement = violence * 0.85f }
             };
         }
 
@@ -175,6 +202,7 @@ namespace Survivebest.UI
             builder.AppendLine($"Animals: {Mathf.RoundToInt(settings.AnimalPopulation * 500f)} ({Mathf.RoundToInt(settings.PredatorRatio * 100f)}% predators)");
             builder.AppendLine($"Gov Strictness: {Mathf.RoundToInt(settings.GovernmentStrictness * 100f)}");
             builder.AppendLine($"Origin: {settings.StartingOrigin}");
+            builder.AppendLine($"US Common Places: {(settings.UseUsaCommonPlaces ? "On" : "Off")}");
             return builder.ToString().TrimEnd();
         }
 
@@ -189,6 +217,8 @@ namespace Survivebest.UI
             builder.AppendLine($"Fatigue: {(settings.EnableFatigue ? "On" : "Off")}");
             builder.AppendLine($"Permadeath: {(settings.Permadeath ? "On" : "Off")}");
             builder.AppendLine($"Experience: {(settings.SandboxExperience ? "Sandbox" : "Standard")}");
+            builder.AppendLine("USA Jobs: Doctor, Nurse, Teacher, Police, Firefighter, Retail, Chef, Mechanic, Driver, Office, Electrician, Construction");
+            builder.AppendLine("USA Skills: Driving, Customer Service, Office Admin, Electrical Repair, Healthcare, Teaching, Food Service, Logistics");
             return builder.ToString().TrimEnd();
         }
 
