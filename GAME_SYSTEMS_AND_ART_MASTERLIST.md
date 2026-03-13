@@ -535,6 +535,7 @@ Additional progress this pass:
 
 ### Current top-priority next features to build
 - **End-to-end balancing pipeline**: telemetry capture, scenario packs, baseline targets, and automated comparison reports.
+  - Progress: `GameBalanceManager` now includes balance telemetry snapshots, target-band scoring, stability reporting, and tuning recommendations to support repeatable balancing sweeps.
 - **Prefab/scene integration pass**: guarantee each foundational manager is wired in shipping scenes with validated dependencies.
 - **Quest/contract productionization**: contract data model, authoring workflow, progression ladders, and fail/success UX.
 - **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
