@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
@@ -239,7 +240,8 @@ namespace Survivebest.UI
 
             if (personalityDecisionSystem != null)
             {
-                List<ProceduralDecisionOption> options = personalityDecisionSystem.GenerateDecisionSpace(active, DateTime.UtcNow.Minute + active.CharacterId.GetHashCode(), 4);
+                int seed = BuildSuggestionSeed(active);
+                List<ProceduralDecisionOption> options = personalityDecisionSystem.GenerateDecisionSpace(active, seed, 4);
                 for (int i = 0; i < options.Count; i++)
                 {
                     suggestions.Add($"Try: {options[i].Label}");
@@ -272,6 +274,12 @@ namespace Survivebest.UI
                 }
             }
 
+            suggestions = suggestions
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .ToList();
+
             if (suggestions.Count == 0)
             {
                 suggestions.Add("Talk to someone nearby");
@@ -280,6 +288,24 @@ namespace Survivebest.UI
 
             return suggestions;
         }
+
+        private int BuildSuggestionSeed(CharacterCore active)
+        {
+            int baseSeed = active != null ? active.CharacterId.GetHashCode() : 17;
+            if (worldClock != null)
+            {
+                baseSeed = (baseSeed * 31) + worldClock.Day;
+                baseSeed = (baseSeed * 31) + worldClock.Hour;
+            }
+            else
+            {
+                baseSeed = (baseSeed * 31) + DateTime.UtcNow.Hour;
+            }
+
+            return baseSeed;
+        }
+
+
 
 
 

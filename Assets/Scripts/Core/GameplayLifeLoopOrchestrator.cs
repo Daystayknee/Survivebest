@@ -43,6 +43,10 @@ namespace Survivebest.Core
         [SerializeField, Range(0, 23)] private int sleepHour = 22;
         [SerializeField] private List<LifeLoopStepRecord> recentSteps = new();
         [SerializeField, Min(20)] private int maxStepHistory = 600;
+        [SerializeField, Min(0)] private int recoveryInterventionCooldownHours = 4;
+
+        private readonly Dictionary<string, int> lastRecoveryInterventionHour = new();
+        private int fallbackAbsoluteHourCounter;
 
         public IReadOnlyList<LifeLoopStepRecord> RecentSteps => recentSteps;
 
@@ -94,8 +98,9 @@ namespace Survivebest.Core
             float social = BuildSocialOpportunity(hour);
             float progress = BuildProgressFromDecision(decision);
             float recoveryPriority = BuildRecoveryPriority(active, pressure, social);
+            bool canTriggerRecovery = CanTriggerRecoveryIntervention(active, hour);
 
-            if (recoveryPriority > 0.72f)
+            if (recoveryPriority > 0.72f && canTriggerRecovery)
             {
                 float therapyIntensity = Mathf.Lerp(0.35f, 0.9f, recoveryPriority);
                 psychologicalGrowthMentalHealthEngine?.AttendTherapySession(active.CharacterId, therapyIntensity);
@@ -108,6 +113,7 @@ namespace Survivebest.Core
                     "self_regulate",
                     "Recovery routines reduced overwhelm",
                     Mathf.Lerp(1f, 3.5f, recoveryPriority));
+                RecordRecoveryIntervention(active, hour);
                 RecordStep(active, "SelfRegulation", "mental_recovery", recoveryPriority);
 
                 pressure = Mathf.Clamp01(pressure - (0.18f * recoveryPriority));
@@ -198,6 +204,47 @@ namespace Survivebest.Core
             }
 
             return Mathf.Clamp01((pressure * 0.45f) + ((1f - social) * 0.2f) + (satisfactionPenalty * 0.25f) + (riskPressure * 0.1f));
+        }
+
+        private bool CanTriggerRecoveryIntervention(CharacterCore active, int hour)
+        {
+            if (active == null)
+            {
+                return false;
+            }
+
+            if (recoveryInterventionCooldownHours <= 0)
+            {
+                return true;
+            }
+
+            if (!lastRecoveryInterventionHour.TryGetValue(active.CharacterId, out int lastHour))
+            {
+                return true;
+            }
+
+            int absoluteHour = GetAbsoluteHour(hour);
+            return (absoluteHour - lastHour) >= recoveryInterventionCooldownHours;
+        }
+
+        private void RecordRecoveryIntervention(CharacterCore active, int hour)
+        {
+            if (active == null)
+            {
+                return;
+            }
+
+            lastRecoveryInterventionHour[active.CharacterId] = GetAbsoluteHour(hour);
+        }
+
+        private int GetAbsoluteHour(int hour)
+        {
+            if (worldClock != null)
+            {
+                return (worldClock.Day * 24) + worldClock.Hour;
+            }
+
+            return fallbackAbsoluteHourCounter++;
         }
 
         private static float BuildProgressFromDecision(AutonomousActionType decision)

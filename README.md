@@ -222,7 +222,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Added `AdaptiveLifeEventsDirector` to inject context-aware support/growth/complication/disruption/recovery/high-risk beats based on mental pressure, social support, and infrastructure stress, so long runs keep producing human-feeling turning points.
 - Deepened `LivingWorldInfrastructureEngine` with itemized supply-chain state (`SupplyItemType` stocks, availability/price pressure/volatility) and business supply dependency so shortages now propagate into service quality, demand pressure, and district stress.
 - Extended `PsychologicalGrowthMentalHealthEngine` with life-satisfaction scoring and explicit risk-flag outputs so other directors/systems can respond consistently to crisis, burnout, and isolation states.
-- Strengthened `GameplayLifeLoopOrchestrator` and `GameplayInteractionPresentationLayer` to trigger self-regulation interventions and recovery-focused action suggestions when risk flags indicate crisis or burnout conditions.
+- Strengthened `GameplayLifeLoopOrchestrator` and `GameplayInteractionPresentationLayer` to trigger cooldown-gated self-regulation interventions and recovery-focused action suggestions when risk flags indicate crisis or burnout conditions, with deduplicated/capped context prompts.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
