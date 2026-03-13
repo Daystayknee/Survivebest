@@ -29,6 +29,7 @@ namespace Survivebest.World
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherState weatherState = WeatherState.Sunny;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private bool useSimpleSeasonWeather = true;
 
         [Header("Seasonal Weight Overrides")]
         [SerializeField] private WeatherWeight[] springWeights =
@@ -116,6 +117,12 @@ namespace Survivebest.World
 
         private void ApplySeasonWeather(Season season)
         {
+            if (useSimpleSeasonWeather)
+            {
+                SetWeather(ResolveSimpleSeasonWeather(season));
+                return;
+            }
+
             WeatherWeight[] weights = season switch
             {
                 Season.Winter => winterWeights,
@@ -125,6 +132,17 @@ namespace Survivebest.World
             };
 
             SetWeather(PickWeightedWeather(weights));
+        }
+
+        private static WeatherState ResolveSimpleSeasonWeather(Season season)
+        {
+            return season switch
+            {
+                Season.Winter => WeatherState.Snowy,
+                Season.Fall => WeatherState.Rainy,
+                Season.Spring => WeatherState.Rainy,
+                _ => WeatherState.Sunny
+            };
         }
 
         private static WeatherState PickWeightedWeather(WeatherWeight[] weights)
