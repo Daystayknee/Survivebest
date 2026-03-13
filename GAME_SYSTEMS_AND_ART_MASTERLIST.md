@@ -548,3 +548,4 @@ Additional progress this pass:
   - Added dynamic presentation state resolver hooks so stress/anger/affection/energy can drive live eye-brow-mouth expression preset swaps and skin fatigue/pallor overlays at runtime.
   - Added click-to-overlay dialogue flow scaffolding: character clicks now emit interaction events, dialogue emits presentation payloads, and `DialogueOverlayController` displays portrait/name/line/tone in a visual-novel-style popup layer.
   - Added `InteractionDialogueBridge` so character clicks can auto-run intent-aware dialogue and immediately feed overlay payloads, plus non-character clickable context messages in the overlay.
+  - Dialogue depth expanded with procedural generation targeting 100+ options per mood/situation/memory bucket plus species-specific pet interaction dialogue pools.
