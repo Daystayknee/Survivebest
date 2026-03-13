@@ -34,5 +34,25 @@ namespace Survivebest.Tasks
 
             return results;
         }
+
+        public List<TaskDefinition> FindByStation(string stationId)
+        {
+            List<TaskDefinition> results = new();
+            if (string.IsNullOrWhiteSpace(stationId))
+            {
+                return results;
+            }
+
+            for (int i = 0; i < tasks.Count; i++)
+            {
+                TaskDefinition definition = tasks[i];
+                if (definition != null && string.Equals(definition.StationId, stationId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    results.Add(definition);
+                }
+            }
+
+            return results;
+        }
     }
 }

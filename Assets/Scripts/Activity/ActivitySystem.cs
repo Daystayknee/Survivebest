@@ -40,6 +40,8 @@ namespace Survivebest.Activity
         [SerializeField] private FoodDatabase foodDatabase;
         [SerializeField] private LifeStageManager lifeStageManager;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField, Min(0)] private int sameActivityStreak;
+        [SerializeField] private ActivityType lastActivityType;
 
         public event Action<ActivityType> OnActivityPerformed;
 
@@ -186,6 +188,14 @@ namespace Survivebest.Activity
                     break;
             }
 
+            sameActivityStreak = activityType == lastActivityType ? sameActivityStreak + 1 : 1;
+            lastActivityType = activityType;
+            if (sameActivityStreak >= 4)
+            {
+                needsSystem.ModifyMood(-1.5f);
+                needsSystem.ModifyMentalFatigue(0.8f);
+            }
+
             OnActivityPerformed?.Invoke(activityType);
 
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
@@ -195,8 +205,8 @@ namespace Survivebest.Activity
                 SystemName = nameof(ActivitySystem),
                 SourceCharacterId = owner != null ? owner.CharacterId : null,
                 ChangeKey = activityType.ToString(),
-                Reason = "Activity resolved",
-                Magnitude = 1f
+                Reason = sameActivityStreak >= 4 ? "Activity resolved with repetition fatigue" : "Activity resolved",
+                Magnitude = sameActivityStreak
             });
         }
 

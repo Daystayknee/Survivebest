@@ -101,6 +101,8 @@ namespace Survivebest.Social
         [SerializeField] private List<ReputationLayerProfile> reputations = new();
         [SerializeField] private List<RumorPacket> rumors = new();
         [SerializeField, Range(0f, 1f)] private float baseMutationChance = 0.25f;
+        [SerializeField, Min(1)] private int pulseIntervalHours = 6;
+        private int lastPulseHour = -9999;
 
         public IReadOnlyList<SocialEventSignal> SocialSignals => socialSignals;
         public IReadOnlyList<ScandalEvent> Scandals => scandals;
@@ -120,6 +122,48 @@ namespace Survivebest.Social
             {
                 relationshipMemorySystem.OnMemoryAdded -= HandleMemoryAdded;
             }
+        }
+
+
+
+        private void Update()
+        {
+            int now = GetCurrentTotalHours();
+            if (now <= 0 || now - lastPulseHour < pulseIntervalHours)
+            {
+                return;
+            }
+
+            lastPulseHour = now;
+            ProcessDramaPulse();
+        }
+
+        private void ProcessDramaPulse()
+        {
+            for (int i = 0; i < scandals.Count; i++)
+            {
+                ScandalEvent scandal = scandals[i];
+                if (scandal == null)
+                {
+                    continue;
+                }
+
+                scandal.MediaSpread = Mathf.Clamp01(scandal.MediaSpread - 0.05f);
+                scandal.Severity = Mathf.Clamp01(scandal.Severity - 0.02f);
+            }
+
+            for (int i = 0; i < rumors.Count; i++)
+            {
+                RumorPacket rumor = rumors[i];
+                if (rumor == null)
+                {
+                    continue;
+                }
+
+                rumor.SpreadPower = Mathf.Clamp01(rumor.SpreadPower - 0.04f);
+            }
+
+            Publish("DramaPulse", "Social drama pulse processed", 0.35f);
         }
 
         public SocialEventSignal RegisterSocialEvent(SocialEventType eventType, string location, List<string> involvedCharacters, List<string> witnesses, float severity, float truthLevel, params string[] tags)

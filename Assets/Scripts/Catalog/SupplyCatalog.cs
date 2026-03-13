@@ -436,5 +436,16 @@ namespace Survivebest.Catalog
         {
             return supplies.FindAll(s => s.Group == group);
         }
+
+        public SupplyItem GetRandomByGroup(SupplyGroup group)
+        {
+            List<SupplyItem> matches = GetByGroup(group);
+            if (matches == null || matches.Count == 0)
+            {
+                return null;
+            }
+
+            return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
     }
 }

@@ -113,6 +113,7 @@ namespace Survivebest.Commerce
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
         [SerializeField] private EconomyManager economyManager;
         [SerializeField] private InventoryManager inventoryManager;
+        [SerializeField, Range(0f, 100f)] private float serviceSatisfaction = 60f;
 
         private readonly List<PendingOrder> pendingOrders = new();
 
@@ -347,6 +348,8 @@ namespace Survivebest.Commerce
                     inventoryManager?.AddStack("household_delivery", order.Item.Food.Name, 1, "Delivery received");
                 }
                 OnOrderCompleted?.Invoke(order.Item.Food != null ? order.Item.Food.Name : "Unknown", true);
+                float latenessMinutes = Mathf.Max(0f, now - order.DueTotalMinutes);
+                serviceSatisfaction = Mathf.Clamp(serviceSatisfaction + (latenessMinutes <= 0f ? 1.2f : -Mathf.Min(3f, latenessMinutes * 0.02f)), 0f, 100f);
 
                 (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
                 {
@@ -355,8 +358,8 @@ namespace Survivebest.Commerce
                     SystemName = nameof(OrderingSystem),
                     SourceCharacterId = order.SourceCharacterId,
                     ChangeKey = order.Item.Food != null ? order.Item.Food.Name : "Unknown",
-                    Reason = $"Order delivered from {order.Item.VendorName}",
-                    Magnitude = order.Item.Price
+                    Reason = $"Order delivered from {order.Item.VendorName} (service {serviceSatisfaction:0.0})",
+                    Magnitude = serviceSatisfaction
                 });
 
                 pendingOrders.RemoveAt(i);

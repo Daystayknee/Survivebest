@@ -213,5 +213,16 @@ namespace Survivebest.Food
 
             return foods.Find(f => f != null && string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
         }
+
+        public FoodItem GetRandomByCategory(FoodCategory category)
+        {
+            List<FoodItem> matches = foods.FindAll(x => x != null && x.Category == category);
+            if (matches == null || matches.Count == 0)
+            {
+                return null;
+            }
+
+            return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
     }
 }

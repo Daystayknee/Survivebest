@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Health;
 using Survivebest.Crime;
+using Survivebest.Events;
 
 namespace Survivebest.Emotion
 {
@@ -31,6 +32,7 @@ namespace Survivebest.Emotion
         [SerializeField] private SocialSystem socialSystem;
         [SerializeField] private HealthSystem healthSystem;
         [SerializeField] private CrimeSystem crimeSystem;
+        [SerializeField] private GameEventHub gameEventHub;
         private readonly Dictionary<string, ConflictEscalationStage> escalationByTarget = new();
 
         public event Action<CharacterCore, CharacterCore, bool, ViolenceType> OnFightResolved;
@@ -50,6 +52,7 @@ namespace Survivebest.Emotion
             if (!emotionSystem.IsReadyToFight())
             {
                 RaiseConflictStage(target.CharacterId, ConflictEscalationStage.Argument);
+                PublishConflictEvent(target, violenceType, false, "Conflict did not escalate to violence");
                 return false;
             }
 
@@ -105,7 +108,30 @@ namespace Survivebest.Emotion
             }
 
             OnFightResolved?.Invoke(owner, target, ownerWins, violenceType);
+            PublishConflictEvent(target, violenceType, ownerWins, "Conflict violence resolved");
             return true;
+        }
+
+        public void TryDeescalate(string targetCharacterId, float calmPower)
+        {
+            if (string.IsNullOrWhiteSpace(targetCharacterId) || calmPower <= 0f)
+            {
+                return;
+            }
+
+            ConflictEscalationStage current = GetEscalationStage(targetCharacterId);
+            ConflictEscalationStage next = current switch
+            {
+                ConflictEscalationStage.RelationshipDamage => ConflictEscalationStage.Fight,
+                ConflictEscalationStage.Fight => ConflictEscalationStage.Argument,
+                ConflictEscalationStage.Argument => ConflictEscalationStage.Annoyance,
+                _ => ConflictEscalationStage.Annoyance
+            };
+
+            escalationByTarget[targetCharacterId] = next;
+            emotionSystem?.ModifyAnger(-Mathf.Clamp(calmPower * 6f, 0f, 12f));
+            emotionSystem?.ModifyStress(-Mathf.Clamp(calmPower * 5f, 0f, 10f));
+            socialSystem?.UpdateRelationship(targetCharacterId, Mathf.RoundToInt(calmPower * 4f));
         }
 
         public ConflictEscalationStage GetEscalationStage(string targetCharacterId)
@@ -138,6 +164,21 @@ namespace Survivebest.Emotion
                 emotionSystem?.ModifyStress(2f);
                 socialSystem?.UpdateRelationship(targetCharacterId, -4);
             }
+        }
+
+        private void PublishConflictEvent(CharacterCore target, ViolenceType type, bool ownerWins, string reason)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.RelationshipChanged,
+                Severity = ownerWins ? SimulationEventSeverity.Warning : SimulationEventSeverity.Critical,
+                SystemName = nameof(ConflictSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                TargetCharacterId = target != null ? target.CharacterId : null,
+                ChangeKey = type.ToString(),
+                Reason = reason,
+                Magnitude = ownerWins ? 1f : -1f
+            });
         }
     }
 }

@@ -4,6 +4,7 @@ using Survivebest.Core;
 using Survivebest.Health;
 using Survivebest.Needs;
 using Survivebest.World;
+using Survivebest.Events;
 
 namespace Survivebest.Crime
 {
@@ -23,6 +24,7 @@ namespace Survivebest.Crime
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private HealthSystem healthSystem;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private GameEventHub gameEventHub;
 
         [SerializeField] private AddictionStage stage;
         [SerializeField, Range(0f, 1f)] private float tolerance;
@@ -78,6 +80,7 @@ namespace Survivebest.Crime
             needsSystem?.ModifyEnergy(reduction * 1.5f);
             OnWithdrawalUpdated?.Invoke(withdrawalLoad);
             RecomputeStage();
+            PublishAddictionEvent("RehabProgress", "Rehabilitation progress applied", reduction, SimulationEventSeverity.Info);
         }
 
         private void HandleSubstanceUsed(SubstanceType type, bool illegal)
@@ -93,6 +96,7 @@ namespace Survivebest.Crime
 
             OnWithdrawalUpdated?.Invoke(withdrawalLoad);
             RecomputeStage();
+            PublishAddictionEvent("SubstanceUse", $"Substance used: {type}", tolerance, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
         }
 
         private void HandleHourPassed(int _)
@@ -113,6 +117,11 @@ namespace Survivebest.Crime
 
             OnWithdrawalUpdated?.Invoke(withdrawalLoad);
             RecomputeStage();
+
+            if (stage == AddictionStage.Withdrawal && withdrawalLoad >= 0.75f)
+            {
+                PublishAddictionEvent("AcuteWithdrawal", "Withdrawal load reached acute level", withdrawalLoad, SimulationEventSeverity.Critical);
+            }
         }
 
         private void ApplyWithdrawalSymptoms(float intensity)
@@ -123,6 +132,7 @@ namespace Survivebest.Crime
                 needsSystem.ModifyEnergy(-0.8f * intensity);
                 needsSystem.RestoreHydration(-0.6f * intensity);
                 needsSystem.ModifyHygiene(-0.3f * intensity);
+                needsSystem.RestoreHunger(-0.35f * intensity);
             }
 
             healthSystem?.Damage(0.25f * intensity);
@@ -151,6 +161,21 @@ namespace Survivebest.Crime
 
             stage = next;
             OnStageChanged?.Invoke(stage);
+            PublishAddictionEvent("StageChanged", $"Addiction stage moved to {stage}", withdrawalLoad + tolerance, stage == AddictionStage.Withdrawal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
+        }
+
+        private void PublishAddictionEvent(string key, string reason, float magnitude, SimulationEventSeverity severity)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.StatusEffectChanged,
+                Severity = severity,
+                SystemName = nameof(AddictionLifecycleSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = key,
+                Reason = reason,
+                Magnitude = magnitude
+            });
         }
     }
 }

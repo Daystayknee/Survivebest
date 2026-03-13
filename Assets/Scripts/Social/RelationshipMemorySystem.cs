@@ -68,6 +68,7 @@ namespace Survivebest.Social
         [SerializeField] private List<RelationshipMemory> memories = new();
         [SerializeField] private List<RelationshipProfile> profiles = new();
         [SerializeField] private List<ReputationEntry> reputations = new();
+        [SerializeField, Min(0)] private int memorySoftCap = 500;
 
         public event Action<RelationshipMemory> OnMemoryAdded;
         public event Action<string, string, int> OnGossipPropagated;
@@ -97,6 +98,11 @@ namespace Survivebest.Social
             };
 
             memories.Add(memory);
+            if (memories.Count > memorySoftCap)
+            {
+                memories.RemoveAt(0);
+            }
+
             ApplyMemoryToProfiles(memory);
             OnMemoryAdded?.Invoke(memory);
 

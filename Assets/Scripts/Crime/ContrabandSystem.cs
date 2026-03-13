@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
+using Survivebest.Health;
+using Survivebest.Needs;
 
 namespace Survivebest.Crime
 {
@@ -49,6 +51,7 @@ namespace Survivebest.Crime
 
             InmateContrabandInventory inventory = GetOrCreateInventory(actor.CharacterId);
             inventory.Items.Add(item);
+            ApplyImmediateContrabandEffects(actor, item, true);
             OnContrabandAdded?.Invoke(actor.CharacterId, item);
             Publish(actor.CharacterId, "ContrabandAdded", $"Acquired {item.ItemId}", item.Risk);
         }
@@ -69,9 +72,33 @@ namespace Survivebest.Crime
             int index = UnityEngine.Random.Range(0, inventory.Items.Count);
             ContrabandItem item = inventory.Items[index];
             inventory.Items.RemoveAt(index);
+            ApplyImmediateContrabandEffects(actor, item, false);
             OnContrabandConfiscated?.Invoke(actor.CharacterId, item);
             Publish(actor.CharacterId, "ContrabandConfiscated", $"Confiscated {item.ItemId}", item != null ? item.Risk : 0.2f);
             return true;
+        }
+
+        private static void ApplyImmediateContrabandEffects(CharacterCore actor, ContrabandItem item, bool added)
+        {
+            if (actor == null || item == null)
+            {
+                return;
+            }
+
+            NeedsSystem needs = actor.GetComponent<NeedsSystem>();
+            HealthSystem health = actor.GetComponent<HealthSystem>();
+
+            float polarity = added ? 1f : -1f;
+            needs?.ModifyMood(0.4f * polarity);
+
+            if (item.Category == ContrabandCategory.Drugs)
+            {
+                needs?.ModifyEnergy(-0.5f * item.Risk * polarity);
+                if (added)
+                {
+                    health?.Damage(item.Risk * 0.15f);
+                }
+            }
         }
 
         public int CountItems(string characterId)

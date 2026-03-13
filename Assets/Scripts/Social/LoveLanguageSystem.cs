@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Events;
 
 namespace Survivebest.Social
 {
@@ -25,6 +26,7 @@ namespace Survivebest.Social
     public class LoveLanguageSystem : MonoBehaviour
     {
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<LoveLanguageProfile> profiles = new();
 
         public LoveLanguageProfile GetOrCreateProfile(string characterId)
@@ -63,6 +65,18 @@ namespace Survivebest.Social
                     : "love_language_attempt";
                 relationshipMemorySystem.RecordEvent(actorId, targetId, topic, delta, isPublic, "district_default");
             }
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.RelationshipChanged,
+                Severity = delta >= 10 ? SimulationEventSeverity.Info : SimulationEventSeverity.Warning,
+                SystemName = nameof(LoveLanguageSystem),
+                SourceCharacterId = actorId,
+                TargetCharacterId = targetId,
+                ChangeKey = actionLanguage.ToString(),
+                Reason = "Love language action applied",
+                Magnitude = delta
+            });
 
             return delta;
         }

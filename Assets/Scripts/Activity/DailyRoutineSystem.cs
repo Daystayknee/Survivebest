@@ -64,6 +64,11 @@ namespace Survivebest.Activity
                 householdChoreSystem?.TryCompleteHighestPriorityChore();
             }
 
+            if (needsSystem != null && selected == ActivityType.HobbyPractice && needsSystem.BurnoutRiskValue > 70f)
+            {
+                activitySystem.PerformActivity(ActivityType.Rest);
+            }
+
             OnAutonomousActivityPerformed?.Invoke(selected, hour);
         }
 

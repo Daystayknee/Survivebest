@@ -13,6 +13,9 @@ namespace Survivebest.Core
         public string FavoriteMusic = "Any";
         public string FavoriteWeather = "Clear";
         public string DislikedActivity = "None";
+        public string FavoriteSocialSetting = "Small Group";
+        public string FavoriteDailyRhythm = "Balanced";
+        public string PreferredHouseholdRole = "Flexible";
     }
 
     public class PreferenceSystem : MonoBehaviour
@@ -44,6 +47,12 @@ namespace Survivebest.Core
             if (string.Equals(profile.FavoriteWeather, weatherName, StringComparison.OrdinalIgnoreCase))
             {
                 return 3f;
+            }
+
+            if (string.Equals(weatherName, "Storm", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(weatherName, "Winter", StringComparison.OrdinalIgnoreCase))
+            {
+                return -2f;
             }
 
             return -1f;

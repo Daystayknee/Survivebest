@@ -13,6 +13,8 @@ namespace Survivebest.Core
         [Range(0f, 1f)] public float Ambition = 0.5f;
         [Range(0f, 1f)] public float Empathy = 0.5f;
         [Range(0f, 1f)] public float AuthorityRespect = 0.5f;
+        [Range(0f, 1f)] public float Honesty = 0.5f;
+        [Range(0f, 1f)] public float CommunityDuty = 0.5f;
     }
 
     public class MoralValueSystem : MonoBehaviour
@@ -34,7 +36,9 @@ namespace Survivebest.Core
                 Loyalty = UnityEngine.Random.Range(0.25f, 0.85f),
                 Ambition = UnityEngine.Random.Range(0.2f, 0.9f),
                 Empathy = UnityEngine.Random.Range(0.2f, 0.9f),
-                AuthorityRespect = UnityEngine.Random.Range(0.15f, 0.9f)
+                AuthorityRespect = UnityEngine.Random.Range(0.15f, 0.9f),
+                Honesty = UnityEngine.Random.Range(0.25f, 0.95f),
+                CommunityDuty = UnityEngine.Random.Range(0.2f, 0.9f)
             };
             profiles.Add(profile);
             return profile;
@@ -43,7 +47,7 @@ namespace Survivebest.Core
         public float EvaluateCrimeResistance(string characterId)
         {
             MoralValueProfile profile = GetOrCreateProfile(characterId);
-            return Mathf.Clamp01((profile.Justice * 0.35f) + (profile.Empathy * 0.25f) + (profile.AuthorityRespect * 0.25f) - (profile.Ambition * 0.2f));
+            return Mathf.Clamp01((profile.Justice * 0.25f) + (profile.Empathy * 0.18f) + (profile.AuthorityRespect * 0.18f) + (profile.Honesty * 0.2f) + (profile.CommunityDuty * 0.14f) - (profile.Ambition * 0.18f));
         }
     }
 }

@@ -63,6 +63,40 @@ namespace Survivebest.Core
                 OnRelationshipChanged?.Invoke(relationship);
                 PublishRelationshipEvent(relationship, "Daily relationship drift applied");
             }
+
+            PublishHouseholdSocialPulse();
+        }
+
+        private void PublishHouseholdSocialPulse()
+        {
+            if (relationships == null || relationships.Count == 0)
+            {
+                return;
+            }
+
+            float total = 0f;
+            for (int i = 0; i < relationships.Count; i++)
+            {
+                Relationship relationship = relationships[i];
+                if (relationship == null)
+                {
+                    continue;
+                }
+
+                total += relationship.RelationshipValue;
+            }
+
+            float average = total / Mathf.Max(1, relationships.Count);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.RelationshipChanged,
+                Severity = average < -20f ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(SocialSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = "HouseholdSocialPulse",
+                Reason = "Computed daily household social pulse",
+                Magnitude = average
+            });
         }
 
         public CharacterCore AddHouseholdMember(RelationshipType type)

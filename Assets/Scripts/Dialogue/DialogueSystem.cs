@@ -110,8 +110,10 @@ namespace Survivebest.Dialogue
             float angerPenalty = emotionSystem != null ? emotionSystem.Anger * 0.005f : 0f;
             float stressPenalty = emotionSystem != null ? emotionSystem.Stress * 0.003f : 0f;
             float relationshipBonus = relationship > 50f ? 0.08f : 0f;
+            float memoryBonus = ResolveSharedHistoryBonus(target.CharacterId);
+            float conflictPenalty = ResolveConflictPressure(target.CharacterId);
 
-            float successChance = Mathf.Clamp01(0.8f + relationshipBonus - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty);
+            float successChance = Mathf.Clamp01(0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty);
             bool success = UnityEngine.Random.value <= successChance;
 
             int finalDelta = success ? baseRelationshipDelta : -Mathf.Max(1, Mathf.Abs(baseRelationshipDelta));
@@ -588,6 +590,77 @@ namespace Survivebest.Dialogue
             return "first_meeting";
         }
 
+
+
+        private float ResolveSharedHistoryBonus(string targetCharacterId)
+        {
+            if (relationshipMemorySystem == null || string.IsNullOrWhiteSpace(targetCharacterId))
+            {
+                return 0f;
+            }
+
+            IReadOnlyList<RelationshipMemory> memories = relationshipMemorySystem.Memories;
+            if (memories == null || memories.Count == 0)
+            {
+                return 0f;
+            }
+
+            int positive = 0;
+            for (int i = memories.Count - 1; i >= 0 && positive < 6; i--)
+            {
+                RelationshipMemory memory = memories[i];
+                if (memory == null)
+                {
+                    continue;
+                }
+
+                bool related = string.Equals(memory.SubjectCharacterId, targetCharacterId, StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(memory.TargetCharacterId, targetCharacterId, StringComparison.OrdinalIgnoreCase);
+                if (!related || memory.Impact <= 0)
+                {
+                    continue;
+                }
+
+                positive += memory.Impact >= 20 ? 2 : 1;
+            }
+
+            return Mathf.Clamp(positive * 0.01f, 0f, 0.08f);
+        }
+
+        private float ResolveConflictPressure(string targetCharacterId)
+        {
+            if (relationshipMemorySystem == null || string.IsNullOrWhiteSpace(targetCharacterId))
+            {
+                return 0f;
+            }
+
+            IReadOnlyList<RelationshipMemory> memories = relationshipMemorySystem.Memories;
+            if (memories == null || memories.Count == 0)
+            {
+                return 0f;
+            }
+
+            int hostility = 0;
+            for (int i = memories.Count - 1; i >= 0 && hostility < 10; i--)
+            {
+                RelationshipMemory memory = memories[i];
+                if (memory == null)
+                {
+                    continue;
+                }
+
+                bool related = string.Equals(memory.SubjectCharacterId, targetCharacterId, StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(memory.TargetCharacterId, targetCharacterId, StringComparison.OrdinalIgnoreCase);
+                if (!related || memory.Impact >= 0)
+                {
+                    continue;
+                }
+
+                hostility += Mathf.Abs(memory.Impact) >= 25 ? 2 : 1;
+            }
+
+            return Mathf.Clamp(hostility * 0.012f, 0f, 0.12f);
+        }
 
         private static string ResolveSituationFromInteractable(InteractableType type)
         {

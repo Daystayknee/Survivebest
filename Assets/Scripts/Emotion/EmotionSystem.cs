@@ -23,6 +23,7 @@ namespace Survivebest.Emotion
         [SerializeField, Range(0f, 100f)] private float loneliness;
         [SerializeField, Range(0f, 100f)] private float socialExhaustion;
         [SerializeField, Range(-1f, 1f)] private float rainyCozyAffinity = 0.2f;
+        [SerializeField, Range(0f, 2f)] private float emotionalMomentum = 0.8f;
 
         public event Action<float> OnAngerChanged;
         public event Action<float> OnAffectionChanged;
@@ -95,8 +96,10 @@ namespace Survivebest.Emotion
             socialBattery = Mathf.Clamp(socialBattery - scaled * 8f, 0f, 100f);
             socialExhaustion = Mathf.Clamp(socialExhaustion + scaled * 6f, 0f, 100f);
             loneliness = Mathf.Clamp(loneliness - scaled * 7f, 0f, 100f);
+            affection = Mathf.Clamp(affection + scaled * 1.2f, 0f, 100f);
             OnSocialBatteryChanged?.Invoke(socialBattery);
             OnLonelinessChanged?.Invoke(loneliness);
+            PublishEmotionEvent("SocialInteraction", "Social interaction applied", scaled);
         }
 
         public void RecoverSocialEnergy(float amount)
@@ -115,8 +118,27 @@ namespace Survivebest.Emotion
 
             ApplyWeatherMoodImpact();
             ApplyMoodDrift();
+            ApplyEmotionalMomentum();
             OnSocialBatteryChanged?.Invoke(socialBattery);
             OnLonelinessChanged?.Invoke(loneliness);
+        }
+
+        private void ApplyEmotionalMomentum()
+        {
+            if (needsSystem == null)
+            {
+                return;
+            }
+
+            float agitation = ((anger + stress) * 0.5f - affection * 0.25f) / 100f;
+            if (agitation > 0.45f)
+            {
+                needsSystem.ModifyMood(-agitation * emotionalMomentum);
+            }
+            else if (affection > 60f && stress < 45f)
+            {
+                needsSystem.ModifyMood(0.35f * emotionalMomentum);
+            }
         }
 
         private void ApplyWeatherMoodImpact()

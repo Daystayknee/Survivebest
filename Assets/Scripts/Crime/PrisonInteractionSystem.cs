@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Events;
+using Survivebest.Health;
 using Survivebest.Needs;
 
 namespace Survivebest.Crime
@@ -74,6 +76,7 @@ namespace Survivebest.Crime
         [SerializeField] private ContrabandSystem contrabandSystem;
         [SerializeField] private DisciplineSystem disciplineSystem;
         [SerializeField] private PrisonEconomySystem prisonEconomySystem;
+        [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<PrisonInteractionDefinition> interactions = new();
 
         public event Action<CharacterCore, PrisonInteractionType> OnInteractionPerformed;
@@ -102,8 +105,17 @@ namespace Survivebest.Crime
             }
 
             NeedsSystem needs = actor.GetComponent<NeedsSystem>();
+            HealthSystem health = actor.GetComponent<HealthSystem>();
             needs?.ModifyMood(definition.MoodDelta);
             needs?.ModifyEnergy(definition.EnergyDelta);
+            if (definition.Type is PrisonInteractionType.Exercise or PrisonInteractionType.Meditate)
+            {
+                health?.Heal(0.2f);
+            }
+            else if (definition.Type is PrisonInteractionType.ChallengeToFight or PrisonInteractionType.AttemptEscape)
+            {
+                health?.Damage(0.25f);
+            }
 
             InmateRoutineState state = prisonRoutineSystem != null ? prisonRoutineSystem.GetState(actor.CharacterId) : null;
             if (state != null)
@@ -124,7 +136,27 @@ namespace Survivebest.Crime
 
             ApplySpecialEffects(actor, definition);
             OnInteractionPerformed?.Invoke(actor, type);
+            PublishInteractionEvent(actor, definition);
             return true;
+        }
+
+        private void PublishInteractionEvent(CharacterCore actor, PrisonInteractionDefinition definition)
+        {
+            if (actor == null || definition == null)
+            {
+                return;
+            }
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityCompleted,
+                Severity = definition.Illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(PrisonInteractionSystem),
+                SourceCharacterId = actor.CharacterId,
+                ChangeKey = definition.Type.ToString(),
+                Reason = $"Interaction: {definition.Type}",
+                Magnitude = Mathf.Abs(definition.MoodDelta) + Mathf.Abs(definition.EnergyDelta)
+            });
         }
 
         private void ApplySpecialEffects(CharacterCore actor, PrisonInteractionDefinition definition)

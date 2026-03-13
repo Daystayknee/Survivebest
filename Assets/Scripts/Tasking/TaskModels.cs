@@ -20,7 +20,13 @@ namespace Survivebest.Tasks
         Gardening,
         Service,
         Styling,
-        Outfit
+        Outfit,
+        Education,
+        Wellness,
+        SocialCare,
+        Entertainment,
+        Finance,
+        Travel
     }
 
     public enum TaskResultType
@@ -29,7 +35,10 @@ namespace Survivebest.Tasks
         HeldProp,
         AppearanceUpdate,
         WorldStateUpdate,
-        RelationshipService
+        RelationshipService,
+        SkillExperience,
+        MoodChange,
+        EnergyChange
     }
 
     [Serializable]
@@ -55,6 +64,10 @@ namespace Survivebest.Tasks
         public string RelationshipTargetId;
         public int RelationshipDelta;
         public string CompletionText;
+        public string SkillId;
+        public float SkillXp;
+        public float MoodDelta;
+        public float EnergyDelta;
     }
 
     [CreateAssetMenu(menuName = "Survivebest/Tasks/Task Definition", fileName = "TaskDefinition")]

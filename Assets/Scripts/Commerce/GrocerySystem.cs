@@ -66,6 +66,40 @@ namespace Survivebest.Commerce
             AddToPantry(name, quantity);
         }
 
+
+
+        public int BulkRestockForWeek(List<string> preferredIngredients, int targetPerIngredient = 3)
+        {
+            if (preferredIngredients == null || preferredIngredients.Count == 0)
+            {
+                return 0;
+            }
+
+            int purchased = 0;
+            for (int i = 0; i < preferredIngredients.Count; i++)
+            {
+                string ingredient = preferredIngredients[i];
+                if (string.IsNullOrWhiteSpace(ingredient))
+                {
+                    continue;
+                }
+
+                int need = Mathf.Max(0, targetPerIngredient - GetIngredientQuantity(ingredient));
+                if (need <= 0)
+                {
+                    continue;
+                }
+
+                int before = GetIngredientQuantity(ingredient);
+                BuyIngredient(ingredient, need);
+                int gained = Mathf.Max(0, GetIngredientQuantity(ingredient) - before);
+                purchased += gained;
+            }
+
+            PublishInventoryEvent("WeeklyRestock", purchased, "Bulk pantry restock processed");
+            return purchased;
+        }
+
         public bool ConsumeIngredient(string name, int quantity = 1)
         {
             InventoryEntry entry = pantry.Find(x => x.ItemName == name);
