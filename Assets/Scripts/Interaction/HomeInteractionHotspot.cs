@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Commerce;
 using Survivebest.Core;
@@ -32,7 +34,18 @@ namespace Survivebest.Interaction
         CleaningStation,
         GroomingStation,
         Closet,
+        Toilet,
+        TowelRack,
         Generic
+    }
+
+
+    [Serializable]
+    public class CharacterClosetProfile
+    {
+        public string CharacterId;
+        public string LastOutfitTag;
+        public int OutfitChanges;
     }
 
     public class HomeInteractionHotspot : MonoBehaviour
@@ -51,6 +64,9 @@ namespace Survivebest.Interaction
         [SerializeField] private HouseholdChoreSystem householdChoreSystem;
         [SerializeField] private string propertyId = "home_property";
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private List<CharacterClosetProfile> closetProfiles = new();
+        [SerializeField] private string[] outfitTags = { "Streetwear", "Athleisure", "Formal", "Lounge", "Workwear" };
+        private readonly HashSet<string> pendingTowelDryoffCharacters = new();
 
         public bool Execute()
         {
@@ -59,6 +75,7 @@ namespace Survivebest.Interaction
             HealthSystem health = active != null ? active.GetComponent<HealthSystem>() : null;
             StatusEffectSystem status = active != null ? active.GetComponent<StatusEffectSystem>() : null;
 
+            string interactionDetail = null;
             bool succeeded = hotspotType switch
             {
                 HomeHotspotType.TrashCan => ExecuteTrash(status),
@@ -72,21 +89,24 @@ namespace Survivebest.Interaction
                 HomeHotspotType.Mirror => ExecuteMirror(needs, status),
                 HomeHotspotType.Couch => ExecuteCouch(needs, status),
                 HomeHotspotType.Desk => ExecuteDesk(needs, status),
-                HomeHotspotType.Bookshelf => ExecuteBookshelf(needs, status),
-                HomeHotspotType.TV => ExecuteTV(needs, status),
+                HomeHotspotType.Bookshelf => ExecuteBookshelf(needs, status, out interactionDetail),
+                HomeHotspotType.TV => ExecuteTV(needs, status, out interactionDetail),
                 HomeHotspotType.WorkoutCorner => ExecuteWorkout(needs, health, status),
                 HomeHotspotType.Pantry => ExecutePantry(needs, status),
                 HomeHotspotType.RecyclingBin => ExecuteRecycling(status),
                 HomeHotspotType.LaundryBasket => ExecuteLaundry(status),
                 HomeHotspotType.CleaningStation => ExecuteCleaningStation(status),
                 HomeHotspotType.GroomingStation => ExecuteGroomingStation(needs, status),
-                HomeHotspotType.Closet => ExecuteClosetChange(needs, status),
+                HomeHotspotType.Closet => ExecuteClosetChange(active, needs, status, out interactionDetail),
+                HomeHotspotType.Toilet => ExecuteToilet(needs, status),
+                HomeHotspotType.TowelRack => ExecuteTowelRack(active, needs, status),
                 _ => ExecuteGeneric(status)
             };
 
             if (succeeded)
             {
-                Publish(SimulationEventSeverity.Info, hotspotType.ToString(), $"Executed hotspot: {hotspotType}", 1f);
+                string detail = string.IsNullOrWhiteSpace(interactionDetail) ? string.Empty : $" ({interactionDetail})";
+                Publish(SimulationEventSeverity.Info, hotspotType.ToString(), $"Executed hotspot: {hotspotType}{detail}", 1f);
             }
 
             return succeeded;
@@ -171,15 +191,21 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private bool ExecuteClosetChange(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteClosetChange(CharacterCore active, NeedsSystem needs, StatusEffectSystem status, out string outfitTag)
         {
-            if (needs == null)
+            outfitTag = PickRandom(outfitTags, "Everyday");
+            if (needs == null || active == null)
             {
                 return false;
             }
 
+            CharacterClosetProfile profile = GetOrCreateClosetProfile(active.CharacterId);
+            profile.LastOutfitTag = outfitTag;
+            profile.OutfitChanges += 1;
+
             needs.ModifyAppearance(14f);
             needs.ModifyMood(4f);
+            needs.ModifyGrooming(6f);
             housingPropertySystem?.AddLaundry(propertyId, 2f);
             status?.ApplyStatusById("status_200", 3);
             return true;
@@ -227,6 +253,11 @@ namespace Survivebest.Interaction
             if (needs == null)
             {
                 return false;
+            }
+
+            if (householdManager != null && householdManager.ActiveCharacter != null)
+            {
+                pendingTowelDryoffCharacters.Add(householdManager.ActiveCharacter.CharacterId);
             }
 
             needs.ModifyHygiene(30f);
@@ -325,8 +356,9 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private static bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
+            pickedGenre = LifeActivityCatalog.PickBookGenre();
             if (needs == null)
             {
                 return false;
@@ -338,8 +370,9 @@ namespace Survivebest.Interaction
             return true;
         }
 
-        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status)
+        private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
+            pickedGenre = LifeActivityCatalog.PickTvGenre();
             if (needs == null)
             {
                 return false;
@@ -352,6 +385,7 @@ namespace Survivebest.Interaction
             status?.ApplyRandomStatus(UnityEngine.Random.value < 0.35f);
             return true;
         }
+
 
         private static bool ExecuteWorkout(NeedsSystem needs, HealthSystem health, StatusEffectSystem status)
         {
@@ -383,6 +417,64 @@ namespace Survivebest.Interaction
             housingPropertySystem?.RegisterUtilityUsage(propertyId, 0f, 0f, 1.1f, 0f, 0.1f);
             status?.ApplyRandomStatus(UnityEngine.Random.value < 0.5f);
             return true;
+        }
+
+
+        private bool ExecuteToilet(NeedsSystem needs, StatusEffectSystem status)
+        {
+            if (needs == null)
+            {
+                return false;
+            }
+
+            needs.ResetBladder();
+            needs.ModifyMood(3f);
+            needs.ModifyHygiene(-2f);
+            housingPropertySystem?.RegisterUtilityUsage(propertyId, 0.1f, 0.9f, 0f, 0f, 0f);
+            status?.ApplyStatusById("status_150", 2);
+            return true;
+        }
+
+        private bool ExecuteTowelRack(CharacterCore active, NeedsSystem needs, StatusEffectSystem status)
+        {
+            if (active == null || needs == null)
+            {
+                return false;
+            }
+
+            bool wasWet = pendingTowelDryoffCharacters.Remove(active.CharacterId);
+            needs.ModifyHygiene(wasWet ? 3f : 1f);
+            needs.ModifyMood(wasWet ? 3f : 1f);
+            needs.ModifyAppearance(2f);
+            status?.ApplyStatusById("status_020", 2);
+            return true;
+        }
+
+        private CharacterClosetProfile GetOrCreateClosetProfile(string characterId)
+        {
+            CharacterClosetProfile profile = closetProfiles.Find(x => x != null && x.CharacterId == characterId);
+            if (profile != null)
+            {
+                return profile;
+            }
+
+            profile = new CharacterClosetProfile
+            {
+                CharacterId = characterId,
+                LastOutfitTag = "Everyday"
+            };
+            closetProfiles.Add(profile);
+            return profile;
+        }
+
+        private static string PickRandom(string[] values, string fallback)
+        {
+            if (values == null || values.Length == 0)
+            {
+                return fallback;
+            }
+
+            return values[UnityEngine.Random.Range(0, values.Length)];
         }
 
         private bool ExecuteGeneric(StatusEffectSystem status)

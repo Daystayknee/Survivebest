@@ -23,6 +23,30 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void BuildHotspotsForCurrentLocation_IncludesHumanLifeActionsAtHome()
+        {
+            GameObject go = new GameObject("PresentationHomeHotspots");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            var hotspots = layer.BuildHotspotsForCurrentLocation();
+            string flat = string.Join("|", hotspots.ConvertAll(p => string.Join(",", p.Actions)));
+
+            Assert.IsTrue(flat.Contains("watch_tv"));
+            Assert.IsTrue(flat.Contains("watch_movie"));
+            Assert.IsTrue(flat.Contains("read_book"));
+            Assert.IsTrue(flat.Contains("cook"));
+            Assert.IsTrue(flat.Contains("bake"));
+            Assert.IsTrue(flat.Contains("mix_drink"));
+            Assert.IsTrue(flat.Contains("sing"));
+            Assert.IsTrue(flat.Contains("use_bathroom"));
+            Assert.IsTrue(flat.Contains("take_shower"));
+            Assert.IsTrue(flat.Contains("dry_off_towel"));
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void RegisterManualChoiceResult_AddsFeedbackPulse()
         {
@@ -204,6 +228,42 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
         }
+
+        [Test]
+        public void BuildTravelMapPrompt_ExplainsMapClickAndIndoorArrows()
+        {
+            GameObject go = new GameObject("PresentationTravelPrompt");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            string prompt = layer.BuildTravelMapPrompt();
+
+            Assert.IsTrue(prompt.Contains("click", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(prompt.Contains("map", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(prompt.Contains("doorway", System.StringComparison.OrdinalIgnoreCase) || prompt.Contains("arrow", System.StringComparison.OrdinalIgnoreCase));
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryTravelToDistrict_ReturnsTrueWhenMatchingRoomExists()
+        {
+            GameObject go = new GameObject("PresentationTravelMap");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            LocationManager location = go.AddComponent<LocationManager>();
+            location.SetRooms(new System.Collections.Generic.List<Room>
+            {
+                new Room { RoomName = "Downtown Grocery", AreaName = "Downtown Grocery" }
+            });
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, location);
+
+            bool moved = layer.TryTravelToDistrict("Downtown Grocery");
+
+            Assert.IsTrue(moved);
+            Object.DestroyImmediate(go);
+        }
+
 
     }
 }
