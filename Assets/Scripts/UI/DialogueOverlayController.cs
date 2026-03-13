@@ -109,12 +109,12 @@ namespace Survivebest.UI
 
             if (lineText != null)
             {
-                lineText.text = $"Interacted with {interactable.Type}.";
+                lineText.text = ResolveInteractablePrompt(interactable.Type);
             }
 
             if (contextText != null)
             {
-                contextText.text = "Clickable Service Action";
+                contextText.text = $"Clickable Service Action • {interactable.Type}";
             }
 
             if (toneStripe != null)
@@ -156,15 +156,36 @@ namespace Survivebest.UI
 
             if (contextText != null)
             {
-                contextText.text = payload.Success
-                    ? $"{payload.SpeakerName} • {payload.Intent}"
-                    : $"{payload.SpeakerName} • {payload.Intent} (failed)";
+                string outcome = payload.Success ? "success" : "failed";
+                string petTag = payload.IsPetInteraction ? " • pet" : string.Empty;
+                string situation = string.IsNullOrWhiteSpace(payload.SituationTag) ? "unknown" : payload.SituationTag;
+                string mood = string.IsNullOrWhiteSpace(payload.MoodTag) ? "neutral" : payload.MoodTag;
+                string memory = string.IsNullOrWhiteSpace(payload.MemoryTag) ? "no-memory" : payload.MemoryTag;
+                contextText.text = $"{payload.SpeakerName} • {payload.Intent} • {outcome}{petTag} | {situation} | {mood} | {memory}";
             }
 
             if (toneStripe != null)
             {
                 toneStripe.color = ResolveToneColor(payload.VisualTone);
             }
+        }
+
+
+        private static string ResolveInteractablePrompt(InteractableType type)
+        {
+            return type switch
+            {
+                InteractableType.Fridge => "Open food planning and prep options.",
+                InteractableType.Sink => "Refresh hygiene and hydration routines.",
+                InteractableType.Bed => "Rest and recovery options are available.",
+                InteractableType.Toilet => "Handle comfort and hygiene needs.",
+                InteractableType.WorkObject => "Start a focused job task to gain skill.",
+                InteractableType.HospitalBed => "Begin treatment flow and medical decisions.",
+                InteractableType.ShopCounter => "Review buy/sell interactions and costs.",
+                InteractableType.SchoolDesk => "Start learning or teaching interactions.",
+                InteractableType.Pet => "Care, train, or bond with your pet.",
+                _ => $"Interacted with {type}."
+            };
         }
 
         private Color ResolveToneColor(string visualTone)

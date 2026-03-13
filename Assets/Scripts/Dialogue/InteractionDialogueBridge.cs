@@ -46,7 +46,9 @@ namespace Survivebest.Dialogue
 
             if (interactable.Type == InteractableType.Pet && actor != null)
             {
-                dialogueSystem.PerformPetInteractionDialogue("dog", interactable.gameObject.name, "pet_home");
+                string petName = interactable.gameObject != null ? interactable.gameObject.name : "Pet";
+                string petSpecies = ResolvePetSpecies(petName);
+                dialogueSystem.PerformPetInteractionDialogue(petSpecies, petName, "pet_home");
                 return;
             }
 
@@ -76,6 +78,35 @@ namespace Survivebest.Dialogue
                 SpeakerSpecies = "human",
                 IsPetInteraction = false
             });
+        }
+
+
+        private string ResolvePetSpecies(string petName)
+        {
+            if (householdManager == null || householdManager.Pets == null)
+            {
+                return "dog";
+            }
+
+            for (int i = 0; i < householdManager.Pets.Count; i++)
+            {
+                HouseholdPetProfile pet = householdManager.Pets[i];
+                if (pet == null)
+                {
+                    continue;
+                }
+
+                bool nameMatch = !string.IsNullOrWhiteSpace(pet.Name) && string.Equals(pet.Name, petName, System.StringComparison.OrdinalIgnoreCase);
+                bool idMatch = !string.IsNullOrWhiteSpace(pet.PetId) && string.Equals(pet.PetId, petName, System.StringComparison.OrdinalIgnoreCase);
+                if (!nameMatch && !idMatch)
+                {
+                    continue;
+                }
+
+                return string.IsNullOrWhiteSpace(pet.Species) ? "dog" : pet.Species.ToLowerInvariant();
+            }
+
+            return "dog";
         }
 
         public static DialogueIntent ResolveIntentForActor(CharacterCore actor)
