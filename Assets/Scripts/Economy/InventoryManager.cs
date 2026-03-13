@@ -73,6 +73,12 @@ namespace Survivebest.Economy
         public IReadOnlyList<ReservedIngredientEntry> ReservedIngredients => reservedIngredients;
         public IReadOnlyList<FoodStackState> FoodStackStates => foodStackStates;
 
+        private void Awake()
+        {
+            EnsureCoreWorldContainers();
+            SeedCoreConsumables();
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)
@@ -87,6 +93,35 @@ namespace Survivebest.Economy
             {
                 worldClock.OnHourPassed -= HandleHourPassed;
             }
+        }
+
+        private void EnsureCoreWorldContainers()
+        {
+            EnsureContainer("household_storage", "Household Storage", InventoryScope.Household);
+            EnsureContainer("wardrobe", "Wardrobe", InventoryScope.Household);
+            EnsureContainer("accessory_chest", "Accessory Chest", InventoryScope.Household);
+            EnsureContainer("tool_shed", "Tool Shed", InventoryScope.LotStorage);
+            EnsureContainer("pet_supplies", "Pet Supplies", InventoryScope.Household);
+        }
+
+        private void SeedCoreConsumables()
+        {
+            SeedIfEmpty("household_storage", "Bandage", 4);
+            SeedIfEmpty("household_storage", "Batteries", 4);
+            SeedIfEmpty("household_storage", "Soap", 2);
+            SeedIfEmpty("pet_supplies", "Pet Food", 6);
+            SeedIfEmpty("pet_supplies", "Leash", 1);
+            SeedIfEmpty("accessory_chest", "Backpack", 1);
+        }
+
+        private void SeedIfEmpty(string containerId, string itemId, int quantity)
+        {
+            if (quantity <= 0 || GetStackQuantity(containerId, itemId) > 0)
+            {
+                return;
+            }
+
+            AddStack(containerId, itemId, quantity, "Core essentials seed");
         }
 
         public InventoryContainer EnsureContainer(string containerId, string displayName, InventoryScope scope, string ownerCharacterId = null)

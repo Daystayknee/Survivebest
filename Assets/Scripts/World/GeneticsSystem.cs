@@ -2,6 +2,8 @@ using UnityEngine;
 using Survivebest.Appearance;
 using Survivebest.Core;
 using Survivebest.LifeStage;
+using Survivebest.Emotion;
+using Survivebest.Needs;
 
 namespace Survivebest.World
 {
@@ -12,6 +14,8 @@ namespace Survivebest.World
         [SerializeField] private VisualGenome visualGenome;
         [SerializeField] private LifeStageManager lifeStageManager;
         [SerializeField] private BodyCompositionSystem bodyCompositionSystem;
+        [SerializeField] private EmotionSystem emotionSystem;
+        [SerializeField] private NeedsSystem needsSystem;
 
         [Header("Parent Optional References")]
         [SerializeField] private GeneticsSystem parentA;
@@ -30,6 +34,13 @@ namespace Survivebest.World
 
         private void Awake()
         {
+            if (owner == null) owner = GetComponent<CharacterCore>();
+            if (appearanceManager == null) appearanceManager = GetComponent<AppearanceManager>();
+            if (visualGenome == null) visualGenome = GetComponent<VisualGenome>();
+            if (lifeStageManager == null) lifeStageManager = GetComponent<LifeStageManager>();
+            if (bodyCompositionSystem == null) bodyCompositionSystem = GetComponent<BodyCompositionSystem>();
+            if (emotionSystem == null) emotionSystem = GetComponent<EmotionSystem>();
+            if (needsSystem == null) needsSystem = GetComponent<NeedsSystem>();
             if (geneticProfile.Seed == 0)
             {
                 GenerateFounderGenes();
@@ -109,6 +120,7 @@ namespace Survivebest.World
             LifeStage stage = owner != null ? owner.CurrentLifeStage : LifeStage.YoungAdult;
             phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, environmentPressure);
             ApplyResolvedPhenotype(phenotypeProfile);
+            ApplyDynamicPresentationState();
         }
 
         private void ApplyResolvedPhenotype(PhenotypeProfile phenotype)
@@ -194,6 +206,24 @@ namespace Survivebest.World
             }
         }
 
+        public void ApplyDynamicPresentationState()
+        {
+            if (phenotypeProfile == null)
+            {
+                return;
+            }
+
+            float stressValue = emotionSystem != null ? emotionSystem.Stress : 25f;
+            float angerValue = emotionSystem != null ? emotionSystem.Anger : 10f;
+            float affectionValue = emotionSystem != null ? emotionSystem.Affection : 40f;
+            float energyValue = needsSystem != null ? needsSystem.Energy : 60f;
+            float illness = phenotypeProfile.Skin != null && phenotypeProfile.Skin.Overlays != null
+                ? phenotypeProfile.Skin.Overlays.IllnessPallor * 100f
+                : 0f;
+
+            AvatarPresentationStateResolver.ApplyDynamicState(phenotypeProfile, stressValue, angerValue, affectionValue, energyValue, illness);
+        }
+
         private void HandleLifeStageChanged(CharacterCore character, int _, LifeStage __)
         {
             if (character != owner)
@@ -221,23 +251,31 @@ namespace Survivebest.World
 
         private static EyeColorType ToEyeColor(float pigment)
         {
-            if (pigment < 0.2f) return EyeColorType.Blue;
-            if (pigment < 0.35f) return EyeColorType.Gray;
-            if (pigment < 0.5f) return EyeColorType.Green;
-            if (pigment < 0.65f) return EyeColorType.Hazel;
-            if (pigment < 0.85f) return EyeColorType.Brown;
-            return EyeColorType.Amber;
+            if (pigment < 0.1f) return EyeColorType.Blue;
+            if (pigment < 0.2f) return EyeColorType.Gray;
+            if (pigment < 0.3f) return EyeColorType.Teal;
+            if (pigment < 0.42f) return EyeColorType.Green;
+            if (pigment < 0.54f) return EyeColorType.Hazel;
+            if (pigment < 0.66f) return EyeColorType.Honey;
+            if (pigment < 0.78f) return EyeColorType.LightBrown;
+            if (pigment < 0.9f) return EyeColorType.Brown;
+            return EyeColorType.DarkBrown;
         }
 
         private static SkinToneType ToSkinTone(float melanin)
         {
-            if (melanin < 0.1f) return SkinToneType.Porcelain;
+            if (melanin < 0.05f) return SkinToneType.Alabaster;
+            if (melanin < 0.12f) return SkinToneType.Porcelain;
             if (melanin < 0.2f) return SkinToneType.Fair;
-            if (melanin < 0.35f) return SkinToneType.Light;
-            if (melanin < 0.5f) return SkinToneType.Olive;
-            if (melanin < 0.65f) return SkinToneType.Tan;
-            if (melanin < 0.82f) return SkinToneType.Brown;
-            return SkinToneType.Deep;
+            if (melanin < 0.3f) return SkinToneType.Beige;
+            if (melanin < 0.4f) return SkinToneType.Light;
+            if (melanin < 0.52f) return SkinToneType.Olive;
+            if (melanin < 0.62f) return SkinToneType.Golden;
+            if (melanin < 0.72f) return SkinToneType.Tan;
+            if (melanin < 0.82f) return SkinToneType.Caramel;
+            if (melanin < 0.9f) return SkinToneType.Brown;
+            if (melanin < 0.96f) return SkinToneType.Deep;
+            return SkinToneType.Ebony;
         }
 
         private static FaceShapeType ToFaceShape(float faceWidth, float jawWidth)
@@ -252,10 +290,13 @@ namespace Survivebest.World
 
         private static BodyType ToBodyType(float frame)
         {
-            if (frame < 0.2f) return BodyType.Slim;
-            if (frame < 0.45f) return BodyType.Average;
-            if (frame < 0.65f) return BodyType.Curvy;
-            if (frame < 0.82f) return BodyType.Muscular;
+            if (frame < 0.15f) return BodyType.Slim;
+            if (frame < 0.3f) return BodyType.Lean;
+            if (frame < 0.48f) return BodyType.Average;
+            if (frame < 0.62f) return BodyType.Curvy;
+            if (frame < 0.74f) return BodyType.Athletic;
+            if (frame < 0.86f) return BodyType.Muscular;
+            if (frame < 0.94f) return BodyType.PlusSize;
             return BodyType.Heavy;
         }
 
@@ -269,11 +310,14 @@ namespace Survivebest.World
 
         private static NoseShapeType ToNoseShape(float height)
         {
-            if (height < 0.2f) return NoseShapeType.Petite;
-            if (height < 0.4f) return NoseShapeType.Button;
-            if (height < 0.6f) return NoseShapeType.Straight;
-            if (height < 0.8f) return NoseShapeType.Aquiline;
-            return NoseShapeType.Broad;
+            if (height < 0.14f) return NoseShapeType.Petite;
+            if (height < 0.28f) return NoseShapeType.Button;
+            if (height < 0.42f) return NoseShapeType.Snub;
+            if (height < 0.58f) return NoseShapeType.Straight;
+            if (height < 0.72f) return NoseShapeType.Roman;
+            if (height < 0.86f) return NoseShapeType.Aquiline;
+            if (height < 0.94f) return NoseShapeType.Broad;
+            return NoseShapeType.Nubian;
         }
 
         private static LipShapeType ToLipShape(float fullness)
