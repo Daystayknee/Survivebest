@@ -51,6 +51,8 @@ namespace Survivebest.Interaction
         [SerializeField] private HouseholdChoreSystem householdChoreSystem;
         [SerializeField] private string propertyId = "home_property";
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private string[] tvGenres = { "Sitcom", "Drama", "Documentary", "Sports", "Anime", "Reality" };
+        [SerializeField] private string[] bookGenres = { "Fantasy", "Mystery", "Sci-fi", "Biography", "History", "Self-help" };
 
         public bool Execute()
         {
