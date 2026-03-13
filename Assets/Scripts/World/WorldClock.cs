@@ -190,6 +190,80 @@ namespace Survivebest.World
             }
         }
 
+        private void TriggerHouseholdAgeUp()
+        {
+            if (!UsesHouseholdAgeUpHook)
+            {
+                return;
+            }
+
+            IReadOnlyList<CharacterCore> members = householdManager.Members;
+            for (int i = 0; i < members.Count; i++)
+            {
+                CharacterCore member = members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                LifeStageManager lifeStageManager = member.GetComponent<LifeStageManager>();
+                lifeStageManager?.AgeUp();
+            }
+        }
+
+        private int ResolveDayOfSeason(int month, int day)
+        {
+            int seasonLengthMonths = Mathf.Max(1, monthsPerYear / 4);
+            int monthIndex = Mathf.Clamp(month - 1, 0, monthsPerYear - 1);
+            int monthInSeason = monthIndex % seasonLengthMonths;
+            return monthInSeason * daysPerMonth + Mathf.Clamp(day, 1, daysPerMonth);
+        }
+
+
+        private void TriggerHoliday(string holidayName, string sensoryDescription)
+        {
+            OnHolidayStarted?.Invoke(holidayName, Day, Month, Year);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.HolidayStarted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(WorldClock),
+                ChangeKey = holidayName,
+                Reason = string.IsNullOrWhiteSpace(sensoryDescription) ? "A holiday is underway." : sensoryDescription,
+                Magnitude = 1f
+            });
+        }
+
+        private void TriggerHouseholdAgeUp()
+        {
+            if (!UsesHouseholdAgeUpHook)
+            {
+                return;
+            }
+
+            IReadOnlyList<CharacterCore> members = householdManager.Members;
+            for (int i = 0; i < members.Count; i++)
+            {
+                CharacterCore member = members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                LifeStageManager lifeStageManager = member.GetComponent<LifeStageManager>();
+                lifeStageManager?.AgeUp();
+            }
+        }
+
+        private int ResolveDayOfSeason(int month, int day)
+        {
+            int seasonLengthMonths = Mathf.Max(1, monthsPerYear / 4);
+            int monthIndex = Mathf.Clamp(month - 1, 0, monthsPerYear - 1);
+            int monthInSeason = monthIndex % seasonLengthMonths;
+            return monthInSeason * daysPerMonth + Mathf.Clamp(day, 1, daysPerMonth);
+        }
+
 
         private void TriggerHoliday(string holidayName, string sensoryDescription)
         {
