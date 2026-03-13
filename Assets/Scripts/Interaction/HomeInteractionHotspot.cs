@@ -331,7 +331,7 @@ namespace Survivebest.Interaction
 
         private bool ExecuteBookshelf(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
-            pickedGenre = PickRandom(bookGenres, "General reading");
+            pickedGenre = LifeActivityCatalog.PickBookGenre();
             if (needs == null)
             {
                 return false;
@@ -345,7 +345,7 @@ namespace Survivebest.Interaction
 
         private bool ExecuteTV(NeedsSystem needs, StatusEffectSystem status, out string pickedGenre)
         {
-            pickedGenre = PickRandom(tvGenres, "General show");
+            pickedGenre = LifeActivityCatalog.PickTvGenre();
             if (needs == null)
             {
                 return false;
@@ -359,16 +359,6 @@ namespace Survivebest.Interaction
             return true;
         }
 
-
-        private static string PickRandom(string[] values, string fallback)
-        {
-            if (values == null || values.Length == 0)
-            {
-                return fallback;
-            }
-
-            return values[UnityEngine.Random.Range(0, values.Length)];
-        }
 
         private static bool ExecuteWorkout(NeedsSystem needs, HealthSystem health, StatusEffectSystem status)
         {

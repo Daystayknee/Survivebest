@@ -239,7 +239,7 @@ namespace Survivebest.UI
                     packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry"));
                     packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean"));
                     packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote"));
-                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing_along"));
+                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing"));
                     packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect"));
                     break;
                 case LocationTheme.Hospital:
@@ -360,9 +360,11 @@ namespace Survivebest.UI
             List<string> flow = new()
             {
                 "Wake up and check immediate needs",
-                "Choose one grounding action",
-                "Travel to a useful district",
-                "Perform work/social interaction",
+                "Use home arrows/hotspots to prep your morning routine",
+                "Open map and click a district to travel",
+                "Run one work/skill objective",
+                "Do one human-life activity (TV/movie/book/sing/social)",
+                "Cook or bake in kitchen and reset hydration",
                 "Resolve one event and log reflection",
                 "Return home and recover"
             };

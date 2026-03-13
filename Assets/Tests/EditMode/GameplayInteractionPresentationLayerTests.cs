@@ -23,6 +23,27 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void BuildHotspotsForCurrentLocation_IncludesHumanLifeActionsAtHome()
+        {
+            GameObject go = new GameObject("PresentationHomeHotspots");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            var hotspots = layer.BuildHotspotsForCurrentLocation();
+            string flat = string.Join("|", hotspots.ConvertAll(p => string.Join(",", p.Actions)));
+
+            Assert.IsTrue(flat.Contains("watch_tv"));
+            Assert.IsTrue(flat.Contains("watch_movie"));
+            Assert.IsTrue(flat.Contains("read_book"));
+            Assert.IsTrue(flat.Contains("cook"));
+            Assert.IsTrue(flat.Contains("bake"));
+            Assert.IsTrue(flat.Contains("mix_drink"));
+            Assert.IsTrue(flat.Contains("sing"));
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void RegisterManualChoiceResult_AddsFeedbackPulse()
         {

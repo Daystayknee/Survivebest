@@ -47,6 +47,7 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(types.Contains(MinigameType.Baking));
             Assert.IsTrue(types.Contains(MinigameType.DrinkMixing));
             Assert.IsTrue(types.Contains(MinigameType.MovieNight));
+            Assert.IsTrue(types.Contains(MinigameType.TVMarathon));
             Assert.IsTrue(types.Contains(MinigameType.BookReading));
             Assert.IsTrue(types.Contains(MinigameType.SingingSession));
 

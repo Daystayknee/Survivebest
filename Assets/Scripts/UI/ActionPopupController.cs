@@ -597,38 +597,46 @@ namespace Survivebest.UI
 
         private string DoWatchTv(CharacterCore active)
         {
-            string[] genres = { "Sitcom", "Drama", "Documentary", "Sports", "Anime" };
-            string picked = genres[UnityEngine.Random.Range(0, genres.Length)];
+            string picked = LifeActivityCatalog.PickTvGenre();
             minigameManager ??= MinigameManager.Instance;
             minigameManager?.StartMinigame(MinigameType.TVMarathon, active, _ => { });
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.ModifyMood(6f);
+            needs?.ModifyEnergy(2f);
             return $"Watched a {picked} TV block and relaxed.";
         }
 
         private string DoWatchMovie(CharacterCore active)
         {
-            string[] movies = { "Comedy", "Action", "Romance", "Horror", "Family" };
-            string picked = movies[UnityEngine.Random.Range(0, movies.Length)];
+            string picked = LifeActivityCatalog.PickMovieGenre();
             minigameManager ??= MinigameManager.Instance;
             minigameManager?.StartMinigame(MinigameType.MovieNight, active, _ => { });
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.ModifyMood(8f);
+            needs?.ModifyEnergy(3f);
             return $"Movie night: enjoyed a {picked} feature.";
         }
 
         private string DoReadBook(CharacterCore active)
         {
-            string[] books = { "Fantasy", "Mystery", "Sci-fi", "Biography", "Self-help" };
-            string picked = books[UnityEngine.Random.Range(0, books.Length)];
+            string picked = LifeActivityCatalog.PickBookGenre();
             minigameManager ??= MinigameManager.Instance;
             minigameManager?.StartMinigame(MinigameType.BookReading, active, _ => { });
+            SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
+            skills?.AddExperience("Writing", 2f);
             return $"Read a {picked} book session.";
         }
 
         private string DoSing(CharacterCore active)
         {
+            string style = LifeActivityCatalog.PickSingingStyle();
             minigameManager ??= MinigameManager.Instance;
             minigameManager?.StartMinigame(MinigameType.SingingSession, active, _ => { });
             SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
             skills?.AddExperience("Singing", 3f);
-            return "Singing session finished with vocal practice.";
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            needs?.ModifyMood(5f);
+            return $"Singing session finished with {style} vocal practice.";
         }
 
         private string DoCookMeal(CharacterCore active)
