@@ -540,3 +540,4 @@ Additional progress this pass:
 - **Quest/contract productionization**: contract data model, authoring workflow, progression ladders, and fail/success UX.
 - **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
 - **Polish production sprint**: animation sets, VFX/SFX layers, accessibility options, controller UX, and microinteraction tuning.
+- **Immersive profession minigames + realistic pantry coverage**: expanded minigame types include Surgery/RestaurantService/EmergencyResponse with job mapping, scene prompts, and skill-specific tuning; ingredient essentials now inject core seasonings/liquids (salt, pepper, oils, stocks, water, milk, etc.) for realistic recipe coverage.
