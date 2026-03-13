@@ -32,6 +32,7 @@ namespace Survivebest.UI
             if (interactionController != null)
             {
                 interactionController.OnCharacterInteractionRequested += HandleCharacterInteractionRequested;
+                interactionController.OnInteractableClicked += HandleInteractableClicked;
             }
 
             if (dialogueSystem != null)
@@ -47,6 +48,7 @@ namespace Survivebest.UI
             if (interactionController != null)
             {
                 interactionController.OnCharacterInteractionRequested -= HandleCharacterInteractionRequested;
+                interactionController.OnInteractableClicked -= HandleInteractableClicked;
             }
 
             if (dialogueSystem != null)
@@ -90,6 +92,35 @@ namespace Survivebest.UI
 
             AppearanceManager appearance = character.GetComponent<AppearanceManager>();
             portraitRenderer?.SetTargetCharacter(character, appearance);
+        }
+
+        private void HandleInteractableClicked(Interactable interactable, CharacterCore actor)
+        {
+            if (interactable == null || interactable.Type == InteractableType.Character)
+            {
+                return;
+            }
+
+            SetVisible(true);
+            if (nameText != null)
+            {
+                nameText.text = actor != null ? actor.DisplayName : "Interaction";
+            }
+
+            if (lineText != null)
+            {
+                lineText.text = $"Interacted with {interactable.Type}.";
+            }
+
+            if (contextText != null)
+            {
+                contextText.text = "Clickable Service Action";
+            }
+
+            if (toneStripe != null)
+            {
+                toneStripe.color = neutralTone;
+            }
         }
 
         private void HandleCharacterInteractionRequested(CharacterCore actor, CharacterCore target)
