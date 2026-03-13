@@ -4,6 +4,7 @@ using Survivebest.Core;
 using Survivebest.LifeStage;
 using Survivebest.Emotion;
 using Survivebest.Needs;
+using Survivebest.Events;
 
 namespace Survivebest.World
 {
@@ -16,6 +17,7 @@ namespace Survivebest.World
         [SerializeField] private BodyCompositionSystem bodyCompositionSystem;
         [SerializeField] private EmotionSystem emotionSystem;
         [SerializeField] private NeedsSystem needsSystem;
+        [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Parent Optional References")]
         [SerializeField] private GeneticsSystem parentA;
@@ -72,6 +74,7 @@ namespace Survivebest.World
             int seed = Random.Range(1, int.MaxValue);
             geneticProfile = InheritanceResolver.BuildFounder(seed, founderBodySchema);
             ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Founder genes generated", 1f);
         }
 
         [ContextMenu("Inherit From Parent References")]
@@ -86,6 +89,7 @@ namespace Survivebest.World
             geneticProfile = InheritanceResolver.Inherit(parentA.Profile, parentB.Profile, mutationChance);
             geneticProfile.Seed = Random.Range(1, int.MaxValue);
             ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Inherited genes from parent references", 1.5f);
         }
 
 
@@ -136,6 +140,7 @@ namespace Survivebest.World
         {
             environmentPressure = Mathf.Clamp01(pressure01);
             ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Environment pressure adjusted", environmentPressure);
         }
 
         public void OverrideGenetics(GeneticProfile profile, bool reapply = true)
@@ -159,6 +164,7 @@ namespace Survivebest.World
             phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, environmentPressure);
             ApplyResolvedPhenotype(phenotypeProfile);
             ApplyDynamicPresentationState();
+            PublishGeneticsEvent("Phenotype resolved and applied", phenotypeProfile != null ? 1f : 0f);
         }
 
         private void ApplyResolvedPhenotype(PhenotypeProfile phenotype)
@@ -356,6 +362,21 @@ namespace Survivebest.World
             if (height < 0.86f) return NoseShapeType.Aquiline;
             if (height < 0.94f) return NoseShapeType.Broad;
             return NoseShapeType.Nubian;
+        }
+
+
+        private void PublishGeneticsEvent(string reason, float magnitude)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.GeneticsResolved,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(GeneticsSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = founderBodySchema.ToString(),
+                Reason = reason,
+                Magnitude = Mathf.Clamp(magnitude, 0f, 100f)
+            });
         }
 
         private static LipShapeType ToLipShape(float fullness)

@@ -70,6 +70,8 @@ namespace Survivebest.World
 
         public event Action<WorldAmbientEventDefinition, string> OnAmbientEventStarted;
 
+        private readonly Dictionary<string, int> lastTriggeredAbsoluteHour = new();
+
         private void OnEnable()
         {
             if (worldClock == null)
@@ -77,7 +79,7 @@ namespace Survivebest.World
                 return;
             }
 
-            worldClock.OnDayPassed += HandleDayPassed;
+            worldClock.OnHourPassed += HandleHourPassed;
         }
 
         private void OnDisable()
@@ -87,17 +89,19 @@ namespace Survivebest.World
                 return;
             }
 
-            worldClock.OnDayPassed -= HandleDayPassed;
+            worldClock.OnHourPassed -= HandleHourPassed;
         }
 
-        private void HandleDayPassed(int day)
+        private void HandleHourPassed(int hour)
         {
             if (worldClock == null)
             {
                 return;
             }
 
-            int dayOfSeason = ResolveDayOfSeason(worldClock.Month, day, worldClock.DaysPerMonth, worldClock.MonthsPerYear);
+            int dayOfSeason = ResolveDayOfSeason(worldClock.Month, worldClock.Day, worldClock.DaysPerMonth, worldClock.MonthsPerYear);
+            int absoluteHour = (worldClock.Day * 24) + hour;
+
             for (int i = 0; i < ambientEvents.Count; i++)
             {
                 WorldAmbientEventDefinition definition = ambientEvents[i];
@@ -106,11 +110,17 @@ namespace Survivebest.World
                     continue;
                 }
 
-                if (definition.Season != worldClock.CurrentSeason || definition.DayOfSeason != dayOfSeason)
+                if (definition.Season != worldClock.CurrentSeason || definition.DayOfSeason != dayOfSeason || definition.StartHour != hour)
                 {
                     continue;
                 }
 
+                if (lastTriggeredAbsoluteHour.TryGetValue(definition.Name, out int lastHour) && (absoluteHour - lastHour) < 24)
+                {
+                    continue;
+                }
+
+                lastTriggeredAbsoluteHour[definition.Name] = absoluteHour;
                 string narrative = BuildSensoryNarrative(definition);
                 OnAmbientEventStarted?.Invoke(definition, narrative);
 
@@ -121,7 +131,7 @@ namespace Survivebest.World
                     SystemName = nameof(WorldEventDirector),
                     ChangeKey = definition.Name,
                     Reason = narrative,
-                    Magnitude = 1f
+                    Magnitude = (int)definition.EventType + 1f
                 });
             }
         }
