@@ -205,5 +205,41 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void BuildTravelMapPrompt_ExplainsMapClickAndIndoorArrows()
+        {
+            GameObject go = new GameObject("PresentationTravelPrompt");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            string prompt = layer.BuildTravelMapPrompt();
+
+            Assert.IsTrue(prompt.Contains("click", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(prompt.Contains("map", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(prompt.Contains("doorway", System.StringComparison.OrdinalIgnoreCase) || prompt.Contains("arrow", System.StringComparison.OrdinalIgnoreCase));
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryTravelToDistrict_ReturnsTrueWhenMatchingRoomExists()
+        {
+            GameObject go = new GameObject("PresentationTravelMap");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            LocationManager location = go.AddComponent<LocationManager>();
+            location.SetRooms(new System.Collections.Generic.List<Room>
+            {
+                new Room { RoomName = "Downtown Grocery", AreaName = "Downtown Grocery" }
+            });
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, location);
+
+            bool moved = layer.TryTravelToDistrict("Downtown Grocery");
+
+            Assert.IsTrue(moved);
+            Object.DestroyImmediate(go);
+        }
+
+
     }
 }
