@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
+using Survivebest.LifeStage;
 
 namespace Survivebest.World
 {
@@ -20,6 +22,14 @@ namespace Survivebest.World
         [Range(1, 31)] public int Day = 1;
     }
 
+    [Serializable]
+    public class SeasonalHolidayDefinition
+    {
+        public string Name;
+        public Season Season = Season.Winter;
+        [Min(1)] public int DayOfSeason = 1;
+    }
+
     public class WorldClock : MonoBehaviour
     {
         [SerializeField, Min(0.1f)] private float realSecondsPerGameMinute = 5f;
@@ -35,6 +45,14 @@ namespace Survivebest.World
 
         [Header("Calendar Events")]
         [SerializeField] private List<HolidayDefinition> holidays = new();
+        [SerializeField] private List<SeasonalHolidayDefinition> seasonalHolidays = new()
+        {
+            new SeasonalHolidayDefinition { Name = "Winterfest", Season = Season.Winter, DayOfSeason = 25 }
+        };
+
+        [Header("Aging Hook")]
+        [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private bool ageUpHouseholdOnYearPassed = true;
 
         private float timer;
 
@@ -55,6 +73,7 @@ namespace Survivebest.World
         public int Month { get; private set; }
         public int Year { get; private set; }
         public Season CurrentSeason { get; private set; }
+        public bool UsesHouseholdAgeUpHook => ageUpHouseholdOnYearPassed && householdManager != null;
 
         private void Awake()
         {
@@ -116,6 +135,7 @@ namespace Survivebest.World
             {
                 Month = 1;
                 Year++;
+                TriggerHouseholdAgeUp();
                 OnYearPassed?.Invoke(Year);
             }
 
@@ -142,6 +162,50 @@ namespace Survivebest.World
                     OnHolidayStarted?.Invoke(holiday.Name, Day, Month, Year);
                 }
             }
+
+            int dayOfSeason = ResolveDayOfSeason(Month, Day);
+            for (int i = 0; i < seasonalHolidays.Count; i++)
+            {
+                SeasonalHolidayDefinition holiday = seasonalHolidays[i];
+                if (holiday == null || string.IsNullOrWhiteSpace(holiday.Name))
+                {
+                    continue;
+                }
+
+                if (holiday.Season == CurrentSeason && holiday.DayOfSeason == dayOfSeason)
+                {
+                    OnHolidayStarted?.Invoke(holiday.Name, Day, Month, Year);
+                }
+            }
+        }
+
+        private void TriggerHouseholdAgeUp()
+        {
+            if (!UsesHouseholdAgeUpHook)
+            {
+                return;
+            }
+
+            IReadOnlyList<CharacterCore> members = householdManager.Members;
+            for (int i = 0; i < members.Count; i++)
+            {
+                CharacterCore member = members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                LifeStageManager lifeStageManager = member.GetComponent<LifeStageManager>();
+                lifeStageManager?.AgeUp();
+            }
+        }
+
+        private int ResolveDayOfSeason(int month, int day)
+        {
+            int seasonLengthMonths = Mathf.Max(1, monthsPerYear / 4);
+            int monthIndex = Mathf.Clamp(month - 1, 0, monthsPerYear - 1);
+            int monthInSeason = monthIndex % seasonLengthMonths;
+            return monthInSeason * daysPerMonth + Mathf.Clamp(day, 1, daysPerMonth);
         }
 
 

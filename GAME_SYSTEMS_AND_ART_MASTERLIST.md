@@ -22,6 +22,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - USA baseline templates/roles/skills are integrated (world areas, NPC professions, skill catalog expansions).
 - Human-life interaction coverage now includes leisure, kitchen, fishing, bathroom loops, towel dry-off, and per-character closet history.
 - UI action routing and hotspot packs are aligned with these systems (map travel prompts, bathroom/closet actions, clothing store flows).
+- World clock/calendar now supports minutes→years progression, seasonal holiday definitions (including Winterfest on Winter day 25), and household-wide annual aging hook integration with `LifeStageManager`.
+- Weather now supports a global simple seasonal state mapping (`Sunny`, `Rainy`, `Snowy`) in addition to weighted seasonal variability.
 
 ## 1) Implemented Runtime Systems (by script)
 
