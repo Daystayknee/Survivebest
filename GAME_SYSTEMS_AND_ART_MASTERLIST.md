@@ -535,7 +535,17 @@ Additional progress this pass:
 
 ### Current top-priority next features to build
 - **End-to-end balancing pipeline**: telemetry capture, scenario packs, baseline targets, and automated comparison reports.
+  - Progress: `GameBalanceManager` now includes balance telemetry snapshots, target-band scoring, stability reporting, and tuning recommendations to support repeatable balancing sweeps.
 - **Prefab/scene integration pass**: guarantee each foundational manager is wired in shipping scenes with validated dependencies.
 - **Quest/contract productionization**: contract data model, authoring workflow, progression ladders, and fail/success UX.
 - **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
 - **Polish production sprint**: animation sets, VFX/SFX layers, accessibility options, controller UX, and microinteraction tuning.
+- **Immersive profession minigames + realistic pantry coverage**: expanded minigame types include Surgery/RestaurantService/EmergencyResponse with job mapping, scene prompts, and skill-specific tuning; ingredient essentials now inject core seasonings/liquids (salt, pepper, oils, stocks, water, milk, etc.) for realistic recipe coverage.
+- **Cross-domain world essentials injection**: core non-food essentials now auto-seed across supply/inventory/household layers (clothing/accessories/objects/stores/foliage/pets/consumables, starter household containers, pet supplies, and household autonomy notes + character rotation support).
+- **Appearance diversity expansion**: broadened skin-tone and eye-color ranges, expanded nose/body/face option families, and added feminine/masculine/androgynous feature-expression sliders for inclusive character creation coverage.
+- **Genetics-to-art layer pipeline deepening**: avatar layer contracts now include eye/mouth expression sets, schema-driven feminine/masculine/androgynous presentation biases, and life-stage art modes (bundle infant, toddler crawl, youth rig, teen/adult/elder rig) with outfit/pose flags for age-aware art production.
+  - Added explicit art-contract key outputs for body/face layers, expression presets, skin-age overlays, outfit layers, and toddler crawl pose sets so 2D asset teams have stable naming targets.
+  - Added dynamic presentation state resolver hooks so stress/anger/affection/energy can drive live eye-brow-mouth expression preset swaps and skin fatigue/pallor overlays at runtime.
+  - Added click-to-overlay dialogue flow scaffolding: character clicks now emit interaction events, dialogue emits presentation payloads, and `DialogueOverlayController` displays portrait/name/line/tone in a visual-novel-style popup layer.
+  - Added `InteractionDialogueBridge` so character clicks can auto-run intent-aware dialogue and immediately feed overlay payloads, plus non-character clickable context messages in the overlay.
+  - Dialogue depth expanded with procedural generation targeting 100+ options per mood/situation/memory bucket plus species-specific pet interaction dialogue pools.

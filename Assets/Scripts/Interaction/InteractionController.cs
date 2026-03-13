@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Needs;
@@ -15,6 +16,9 @@ namespace Survivebest.Interaction
         [SerializeField] private FoodDatabase foodDatabase;
         [SerializeField] private DrinkDatabase drinkDatabase;
         [SerializeField] private BuildModeManager buildModeManager;
+
+        public event Action<Interactable, CharacterCore> OnInteractableClicked;
+        public event Action<CharacterCore, CharacterCore> OnCharacterInteractionRequested;
 
         private void Update()
         {
@@ -81,6 +85,8 @@ namespace Survivebest.Interaction
                 return;
             }
 
+            OnInteractableClicked?.Invoke(interactable, activeCharacter);
+
             switch (interactable.Type)
             {
                 case InteractableType.Character:
@@ -88,6 +94,7 @@ namespace Survivebest.Interaction
                     CharacterCore targetCharacter = interactable.GetComponent<CharacterCore>();
                     if (targetCharacter != null)
                     {
+                        OnCharacterInteractionRequested?.Invoke(activeCharacter, targetCharacter);
                         householdManager.SetActiveCharacter(targetCharacter);
                     }
                     break;
