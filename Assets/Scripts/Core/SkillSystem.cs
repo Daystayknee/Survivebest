@@ -35,7 +35,10 @@ namespace Survivebest.Core
             {"Driving", 0f}, {"Customer service", 0f}, {"Office administration", 0f}, {"Bookkeeping", 0f},
             {"Sales", 0f}, {"Healthcare support", 0f}, {"Teaching", 0f}, {"Electrical repair", 0f},
             {"Plumbing", 0f}, {"HVAC maintenance", 0f}, {"Welding", 0f}, {"Logistics", 0f},
-            {"Forklift operation", 0f}, {"Project management", 0f}, {"Data analysis", 0f}
+            {"Forklift operation", 0f}, {"Project management", 0f}, {"Data analysis", 0f},
+            {"Childcare", 0f}, {"Elder care", 0f}, {"Home organization", 0f}, {"Meditation", 0f},
+            {"Fitness coaching", 0f}, {"Content creation", 0f}, {"Entrepreneurship", 0f}, {"Robotics", 0f},
+            {"Cybersecurity", 0f}, {"Language learning", 0f}, {"Conflict mediation", 0f}, {"Event planning", 0f}
         };
 
         public event Action<string, float> OnSkillChanged;

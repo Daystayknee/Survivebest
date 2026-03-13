@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
+using Survivebest.Emotion;
+using Survivebest.Needs;
 
 namespace Survivebest.Tasks
 {
@@ -148,8 +150,65 @@ namespace Survivebest.Tasks
                     case TaskResultType.RelationshipService:
                         stateUpdater?.ApplyRelationshipServiceResult(result, actor);
                         break;
+                    case TaskResultType.SkillExperience:
+                        ApplySkillExperienceResult(result, actor);
+                        break;
+                    case TaskResultType.MoodChange:
+                        ApplyMoodChangeResult(result, actor);
+                        break;
+                    case TaskResultType.EnergyChange:
+                        ApplyEnergyChangeResult(result, actor);
+                        break;
                 }
             }
+        }
+
+        private static void ApplySkillExperienceResult(TaskResultDefinition result, CharacterCore actor)
+        {
+            if (result == null || actor == null || string.IsNullOrWhiteSpace(result.SkillId) || result.SkillXp <= 0f)
+            {
+                return;
+            }
+
+            SkillSystem skills = actor.GetComponent<SkillSystem>();
+            skills?.AddExperience(result.SkillId, result.SkillXp);
+        }
+
+        private static void ApplyMoodChangeResult(TaskResultDefinition result, CharacterCore actor)
+        {
+            if (result == null || actor == null || Mathf.Abs(result.MoodDelta) < 0.01f)
+            {
+                return;
+            }
+
+            EmotionSystem emotion = actor.GetComponent<EmotionSystem>();
+            if (emotion == null)
+            {
+                return;
+            }
+
+            if (result.MoodDelta > 0f)
+            {
+                emotion.ModifyAffection(result.MoodDelta);
+                emotion.ModifyStress(-result.MoodDelta * 0.5f);
+            }
+            else
+            {
+                float penalty = Mathf.Abs(result.MoodDelta);
+                emotion.ModifyStress(penalty * 0.75f);
+                emotion.ModifyAnger(penalty * 0.35f);
+            }
+        }
+
+        private static void ApplyEnergyChangeResult(TaskResultDefinition result, CharacterCore actor)
+        {
+            if (result == null || actor == null || Mathf.Abs(result.EnergyDelta) < 0.01f)
+            {
+                return;
+            }
+
+            NeedsSystem needs = actor.GetComponent<NeedsSystem>();
+            needs?.ModifyEnergy(result.EnergyDelta);
         }
 
         private void PublishEvent(ActiveTaskSession session, SimulationEventType type, string reason, SimulationEventSeverity severity, float magnitude)

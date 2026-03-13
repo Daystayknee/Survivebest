@@ -14,15 +14,19 @@ namespace Survivebest.Core
         FirstRomance,
         Graduation,
         FirstJob,
+        FirstHome,
         MovingOut,
         Promotion,
         Marriage,
         Childbirth,
+        Adoption,
         FamilyLoss,
         Retirement,
         TherapyBreakthrough,
         CareerFailure,
-        PublicScandal
+        PublicScandal,
+        MidlifeReinvention,
+        CommunityRecognition
     }
 
     [Serializable]
@@ -159,13 +163,25 @@ namespace Survivebest.Core
                 {
                     TriggerMilestone(LifeMilestoneType.FirstJob, character);
                 }
+                else if (age == 23 && !HasMilestone(character.CharacterId, LifeMilestoneType.FirstHome))
+                {
+                    TriggerMilestone(LifeMilestoneType.FirstHome, character);
+                }
                 else if (age == 25 && !HasMilestone(character.CharacterId, LifeMilestoneType.MovingOut))
                 {
                     TriggerMilestone(LifeMilestoneType.MovingOut, character);
                 }
+                else if (age == 45 && !HasMilestone(character.CharacterId, LifeMilestoneType.MidlifeReinvention))
+                {
+                    TriggerMilestone(LifeMilestoneType.MidlifeReinvention, character);
+                }
                 else if (age == 65 && !HasMilestone(character.CharacterId, LifeMilestoneType.Retirement))
                 {
                     TriggerMilestone(LifeMilestoneType.Retirement, character);
+                }
+                else if (age == 70 && !HasMilestone(character.CharacterId, LifeMilestoneType.CommunityRecognition))
+                {
+                    TriggerMilestone(LifeMilestoneType.CommunityRecognition, character, ToCharacterList(householdManager.Members));
                 }
             }
         }
@@ -220,6 +236,11 @@ namespace Survivebest.Core
                     break;
                 case "disappointment":
                     emotion.ModifyStress(magnitude * 7f);
+                    break;
+                case "hope":
+                case "nostalgia":
+                    emotion.ModifyAffection(magnitude * 5f);
+                    emotion.ModifyStress(-magnitude * 3f);
                     break;
             }
         }
@@ -340,13 +361,17 @@ namespace Survivebest.Core
             {
                 LifeMilestoneType.Graduation => new MilestoneImpact("pride", 0.8f, 16f, 12f, "career_opportunities", "career_success", 0.8f),
                 LifeMilestoneType.FirstJob => new MilestoneImpact("pride", 0.65f, 10f, 8f, "financial_independence", "career_success", 0.6f),
+                LifeMilestoneType.FirstHome => new MilestoneImpact("pride", 0.72f, 11f, 9f, "household_stability", "career_success", 0.5f),
                 LifeMilestoneType.Promotion => new MilestoneImpact("pride", 0.75f, 18f, 6f, "status_growth", "career_success", 0.75f),
                 LifeMilestoneType.Marriage => new MilestoneImpact("joy", 0.8f, 12f, 20f, "family_expansion", "parenthood", 0.5f),
                 LifeMilestoneType.Childbirth => new MilestoneImpact("joy", 0.9f, 8f, 18f, "new_responsibilities", "parenthood", 0.8f),
+                LifeMilestoneType.Adoption => new MilestoneImpact("joy", 0.88f, 9f, 19f, "family_expansion", "parenthood", 0.75f),
                 LifeMilestoneType.FamilyLoss => new MilestoneImpact("grief", 1f, -8f, -10f, "identity_shift", "trauma", 0.9f),
                 LifeMilestoneType.CareerFailure => new MilestoneImpact("disappointment", 0.8f, -10f, -4f, "career_reassessment", "betrayal", 0.4f),
                 LifeMilestoneType.TherapyBreakthrough => new MilestoneImpact("joy", 0.5f, 4f, 6f, "emotional_healing", "therapy", 0.8f),
                 LifeMilestoneType.PublicScandal => new MilestoneImpact("sadness", 0.85f, -22f, -12f, "social_setback", "betrayal", 0.7f),
+                LifeMilestoneType.MidlifeReinvention => new MilestoneImpact("hope", 0.62f, 10f, 7f, "identity_renewal", "therapy", 0.55f),
+                LifeMilestoneType.CommunityRecognition => new MilestoneImpact("pride", 0.7f, 14f, 10f, "legacy_reflection", "career_success", 0.5f),
                 LifeMilestoneType.Retirement => new MilestoneImpact("nostalgia", 0.6f, 6f, 4f, "legacy_reflection", "career_success", 0.4f),
                 LifeMilestoneType.FirstRomance => new MilestoneImpact("joy", 0.7f, 6f, 16f, "emotional_growth", "career_success", 0.2f),
                 LifeMilestoneType.FirstDayOfSchool => new MilestoneImpact("anxiety", 0.45f, 2f, 4f, "independence_growth", "career_success", 0.1f),

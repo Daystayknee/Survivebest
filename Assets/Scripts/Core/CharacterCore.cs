@@ -25,7 +25,14 @@ namespace Survivebest.Core
         None,
         Artistic,
         Athletic,
-        Social
+        Social,
+        Academic,
+        Musical,
+        Technical,
+        Culinary,
+        Entrepreneurial,
+        Caregiving,
+        Performer
     }
 
     public enum FaceShapeType
@@ -96,7 +103,13 @@ namespace Survivebest.Core
         Sport,
         Formal,
         Medical,
-        Outdoor
+        Outdoor,
+        Streetwear,
+        Traditional,
+        Loungewear,
+        Festival,
+        Evening,
+        Utility
     }
 
     public class CharacterCore : MonoBehaviour
