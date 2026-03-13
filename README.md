@@ -33,6 +33,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 _Last updated: current branch state._
 
 ### ✅ Implemented and in repository
+- Documentation sync note: this README now reflects the current branch implementation including headless readiness tooling (`IntegrationDryRunService`, `BalanceTuningAdvisor`) and expanded home-life loops (bathroom/towel/closet/clothing-store actions).
 - Core simulation backbone (clock, weather, day slices, event hub, bootstrap, stability monitor).
 - Character simulation layers (needs, health/medical/status, emotion/conflict, social memory).
 - Economy and inventory authority (economy, unified inventory instances/stacks, grocery/order/recipe/crafting).
@@ -41,6 +42,7 @@ _Last updated: current branch state._
 - Home-life and realism extensions (chores, hygiene environment, utilities, repairs, appliance wear, weather home impact).
 - Food-depth extensions (ingredient taxonomy metadata, recipe quality/discovery, daily specials, seasonal grocery prices/availability, freshness states).
 - UI/controller foundation and scene tools (menus, HUD/feed/panels, action popups, readiness/bootstrap helpers).
+- Headless readiness utilities (optional UI coverage, runtime coverage, integration dry-runs, aggregated balance recommendations) to progress wiring/balancing work outside Unity PlayMode.
 - Broad EditMode test coverage across major domains (core/economy/social/story/home-life/food extensions).
 
 ### ⚠️ Partially complete (code ready, Unity wiring/balancing pending)

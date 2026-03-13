@@ -17,6 +17,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - Final save/load and long-run lifecycle parity verification across all active subsystems.
 
 ### Latest sync updates (current branch)
+- Accuracy note: this master list is synchronized to the current branch state and includes headless-readiness/balance tooling added for non-Unity progress.
 - Sandbox/standard balance mode is wired through world-creation settings and can be applied before world generation.
 - USA baseline templates/roles/skills are integrated (world areas, NPC professions, skill catalog expansions).
 - Human-life interaction coverage now includes leisure, kitchen, fishing, bathroom loops, towel dry-off, and per-character closet history.
@@ -182,6 +183,8 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Scripts/Utility/AssetReadinessReporter.cs`
 - `Assets/Scripts/Utility/PlaceholderGenerator.cs`
 - `Assets/Scripts/Utility/SimulationSceneBootstrapper.cs`
+- `Assets/Scripts/Utility/IntegrationDryRunService.cs`
+- `Assets/Scripts/Utility/BalanceTuningAdvisor.cs`
 
 ### Automated Tests
 - `Assets/Tests/EditMode/EconomyInventorySystemTests.cs`
@@ -201,6 +204,14 @@ This file is a comprehensive implementation inventory for the current codebase.
 - `Assets/Tests/EditMode/GameplayInteractionPresentationLayerTests.cs`
 - `Assets/Tests/EditMode/GameplayLifeLoopOrchestratorTests.cs`
 - `Assets/Tests/EditMode/AdaptiveLifeEventsDirectorTests.cs`
+- `Assets/Tests/EditMode/IntegrationDryRunServiceTests.cs`
+- `Assets/Tests/EditMode/BalanceTuningAdvisorTests.cs`
+- `Assets/Tests/EditMode/LifeActivityCatalogTests.cs`
+- `Assets/Tests/EditMode/WorldCreatorScreenControllerTests.cs`
+- `Assets/Tests/EditMode/SkillSystemTests.cs`
+- `Assets/Tests/EditMode/MinigameManagerTests.cs`
+- `Assets/Tests/EditMode/NpcCareerSystemTests.cs`
+- `Assets/Tests/EditMode/GameBalanceManagerTests.cs`
 
 ---
 
