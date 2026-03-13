@@ -23,6 +23,8 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(phenotype.AvatarLayers.FemininePresentation, phenotype.AvatarLayers.MasculinePresentation);
             Assert.AreEqual(EyeExpressionSet.Sleepy, phenotype.AvatarLayers.EyeExpressionSet);
             Assert.AreEqual(MouthExpressionSet.Smile, phenotype.AvatarLayers.MouthExpressionSet);
+            Assert.IsTrue(phenotype.AvatarLayers.BaseBodyLayerKey.StartsWith("body_base_"));
+            Assert.IsTrue(phenotype.AvatarLayers.ExpressionPresetKey.StartsWith("exp_"));
         }
 
         [Test]
@@ -34,10 +36,13 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(LifeStageArtMode.BundlePortrait, baby.AvatarLayers.LifeStageArtMode);
             Assert.IsTrue(baby.AvatarLayers.UseBundledInfantBody);
             Assert.IsTrue(baby.AvatarLayers.EnableOnesieLayer);
+            Assert.AreEqual("outfit_swaddle", baby.AvatarLayers.OutfitLayerKey);
+            Assert.AreEqual("skin_age_infant_soft", baby.AvatarLayers.SkinAgeOverlayKey);
 
             Assert.AreEqual(LifeStageArtMode.ToddlerCrawl, toddler.AvatarLayers.LifeStageArtMode);
             Assert.IsTrue(toddler.AvatarLayers.EnableCrawlingPoseSet);
             Assert.IsTrue(toddler.AvatarLayers.EnableOnesieLayer);
+            Assert.AreEqual("pose_crawl_set_a", toddler.AvatarLayers.CrawlPoseSetKey);
         }
 
         [Test]
@@ -49,10 +54,13 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(LifeStageArtMode.TeenRig, teen.AvatarLayers.LifeStageArtMode);
             Assert.IsTrue(teen.AvatarLayers.EnableAdultOutfitLayer);
             Assert.IsFalse(teen.AvatarLayers.UseBundledInfantBody);
+            Assert.AreEqual("outfit_teen", teen.AvatarLayers.OutfitLayerKey);
 
             Assert.AreEqual(LifeStageArtMode.AdultRig, adult.AvatarLayers.LifeStageArtMode);
             Assert.IsTrue(adult.AvatarLayers.EnableAdultOutfitLayer);
             Assert.IsFalse(adult.AvatarLayers.EnableOnesieLayer);
+            Assert.AreEqual("outfit_adult", adult.AvatarLayers.OutfitLayerKey);
+            Assert.AreEqual("skin_age_adult_base", adult.AvatarLayers.SkinAgeOverlayKey);
         }
     }
 }

@@ -165,6 +165,19 @@ namespace Survivebest.World
         [Range(0f, 1f)] public float MasculinePresentation = 0.5f;
         [Range(0f, 1f)] public float AndrogynyPresentation = 0.5f;
 
+        [Header("Art Layer Contract Keys")]
+        public string BaseBodyLayerKey;
+        public string EyeLayerKey;
+        public string NoseLayerKey;
+        public string MouthLayerKey;
+        public string BrowLayerKey;
+        public string SkinAgeOverlayKey;
+        public string WrinkleOverlayKey;
+        public string OutfitLayerKey;
+        public string OnesieLayerKey;
+        public string CrawlPoseSetKey;
+        public string ExpressionPresetKey;
+
         public LifeStageArtMode LifeStageArtMode = LifeStageArtMode.AdultRig;
         public bool UseBundledInfantBody;
         public bool EnableCrawlingPoseSet;
