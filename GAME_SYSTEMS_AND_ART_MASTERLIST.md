@@ -546,3 +546,4 @@ Additional progress this pass:
 - **Genetics-to-art layer pipeline deepening**: avatar layer contracts now include eye/mouth expression sets, schema-driven feminine/masculine/androgynous presentation biases, and life-stage art modes (bundle infant, toddler crawl, youth rig, teen/adult/elder rig) with outfit/pose flags for age-aware art production.
   - Added explicit art-contract key outputs for body/face layers, expression presets, skin-age overlays, outfit layers, and toddler crawl pose sets so 2D asset teams have stable naming targets.
   - Added dynamic presentation state resolver hooks so stress/anger/affection/energy can drive live eye-brow-mouth expression preset swaps and skin fatigue/pallor overlays at runtime.
+  - Added click-to-overlay dialogue flow scaffolding: character clicks now emit interaction events, dialogue emits presentation payloads, and `DialogueOverlayController` displays portrait/name/line/tone in a visual-novel-style popup layer.
