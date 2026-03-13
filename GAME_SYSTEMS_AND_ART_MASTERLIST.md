@@ -541,3 +541,4 @@ Additional progress this pass:
 - **Save migration hardening**: explicit save versioning, forward/backward compatibility policies, and migration fallback handling.
 - **Polish production sprint**: animation sets, VFX/SFX layers, accessibility options, controller UX, and microinteraction tuning.
 - **Immersive profession minigames + realistic pantry coverage**: expanded minigame types include Surgery/RestaurantService/EmergencyResponse with job mapping, scene prompts, and skill-specific tuning; ingredient essentials now inject core seasonings/liquids (salt, pepper, oils, stocks, water, milk, etc.) for realistic recipe coverage.
+- **Cross-domain world essentials injection**: core non-food essentials now auto-seed across supply/inventory/household layers (clothing/accessories/objects/stores/foliage/pets/consumables, starter household containers, pet supplies, and household autonomy notes + character rotation support).
