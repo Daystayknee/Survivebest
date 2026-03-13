@@ -34,7 +34,9 @@ namespace Survivebest.Core
         Round,
         Square,
         Heart,
-        Diamond
+        Diamond,
+        Rectangle,
+        Triangle
     }
 
     public enum EyeShapeType
@@ -50,9 +52,12 @@ namespace Survivebest.Core
     public enum BodyType
     {
         Slim,
+        Lean,
         Average,
         Curvy,
+        Athletic,
         Muscular,
+        PlusSize,
         Heavy
     }
 
@@ -70,7 +75,10 @@ namespace Survivebest.Core
         Straight,
         Aquiline,
         Button,
-        Broad
+        Broad,
+        Roman,
+        Snub,
+        Nubian
     }
 
     public enum LipShapeType
@@ -109,6 +117,10 @@ namespace Survivebest.Core
         [SerializeField] private NoseShapeType noseShape = NoseShapeType.Straight;
         [SerializeField] private LipShapeType lipShape = LipShapeType.Balanced;
         [SerializeField] private ClothingStyleType clothingStyle = ClothingStyleType.Casual;
+        [Header("Feature Expression")]
+        [SerializeField, Range(0f, 1f)] private float feminineExpression = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float masculineExpression = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float androgynyExpression = 0.5f;
 
         [Header("Birth Date")]
         [SerializeField, Min(1)] private int birthYear = 1;
@@ -133,6 +145,9 @@ namespace Survivebest.Core
         public NoseShapeType NoseShape => noseShape;
         public LipShapeType LipShape => lipShape;
         public ClothingStyleType ClothingStyle => clothingStyle;
+        public float FeminineExpression => feminineExpression;
+        public float MasculineExpression => masculineExpression;
+        public float AndrogynyExpression => androgynyExpression;
 
         public void Initialize(string id, string name, LifeStage stage)
         {
@@ -209,6 +224,8 @@ namespace Survivebest.Core
                 EyeColorType.Green => EyeShapeType.Upturned,
                 EyeColorType.Blue => EyeShapeType.Hooded,
                 EyeColorType.Gray => EyeShapeType.Downturned,
+                EyeColorType.Teal or EyeColorType.Violet => EyeShapeType.Upturned,
+                EyeColorType.DarkBrown or EyeColorType.LightBrown or EyeColorType.Honey => EyeShapeType.Almond,
                 _ => EyeShapeType.Monolid
             };
 
@@ -244,6 +261,13 @@ namespace Survivebest.Core
             }
 
             return 1f;
+        }
+
+        public void SetFeatureExpression(float feminine, float masculine, float androgyny)
+        {
+            feminineExpression = Mathf.Clamp01(feminine);
+            masculineExpression = Mathf.Clamp01(masculine);
+            androgynyExpression = Mathf.Clamp01(androgyny);
         }
 
         public void SetPlayerControlled(bool value)
