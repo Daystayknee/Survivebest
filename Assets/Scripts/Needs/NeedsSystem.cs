@@ -106,6 +106,7 @@ namespace Survivebest.Needs
 
         public CharacterCore Owner => owner;
         public float Hunger => hunger;
+        public float BurnoutRiskValue => burnoutRisk;
         public NeedsSnapshot CaptureSnapshot()
         {
             return new NeedsSnapshot

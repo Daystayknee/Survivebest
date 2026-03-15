@@ -73,6 +73,7 @@ namespace Survivebest.Economy
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Range(0.1f, 1f)] private float refrigeratedSpoilageMultiplier = 0.35f;
+        [SerializeField, Min(0f)] private float lowFundsWarningThreshold = 45f;
 
         private readonly Dictionary<string, int> inventoryByName = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, EconomyItemDefinition> definitionsById = new(StringComparer.OrdinalIgnoreCase);
@@ -130,6 +131,10 @@ namespace Survivebest.Economy
             funds -= amount;
             OnFundsChanged?.Invoke(funds);
             PublishInventoryEvent("Funds", reason, -amount, SimulationEventSeverity.Info);
+            if (funds <= lowFundsWarningThreshold)
+            {
+                PublishInventoryEvent("FundsLow", "Household funds are running low", funds, SimulationEventSeverity.Warning);
+            }
             return true;
         }
 

@@ -46,6 +46,7 @@ namespace Survivebest.Minigames
         [SerializeField, Min(0.2f)] private float defaultMinigameDuration = 1.25f;
         [SerializeField, Range(0f, 1f)] private float baseSuccessChance = 0.45f;
         [SerializeField, Range(0f, 1f)] private float maxBonusFromSkills = 0.45f;
+        [SerializeField, Min(1)] private int repeatPenaltyThreshold = 3;
         [SerializeField] private MinigameSceneProfile[] sceneProfiles =
         {
             new MinigameSceneProfile { Type = MinigameType.Cooking, SceneBackdropId = "kitchen_station", Prompt = "Keep prep clean, season correctly, and plate before service delay.", RecommendedSkill = "Cooking", DurationMultiplier = 1f },
@@ -65,6 +66,8 @@ namespace Survivebest.Minigames
         };
 
         private Coroutine runningMinigame;
+        private MinigameType lastMinigameType;
+        private int repeatCount;
 
         public event Action<MinigameType> OnMinigameStarted;
         public event Action<MinigameType, bool> OnMinigameCompleted;
@@ -168,6 +171,12 @@ namespace Survivebest.Minigames
             yield return new WaitForSeconds(duration);
 
             bool success = ResolveMinigameOutcome(type, performer);
+            repeatCount = type == lastMinigameType ? repeatCount + 1 : 1;
+            lastMinigameType = type;
+            if (repeatCount >= repeatPenaltyThreshold && UnityEngine.Random.value < 0.15f)
+            {
+                success = false;
+            }
             ApplyPostEffects(type, performer, success);
 
             SetOverlayActive(false);

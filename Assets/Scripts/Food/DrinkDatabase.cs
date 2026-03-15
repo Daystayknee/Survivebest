@@ -105,5 +105,16 @@ namespace Survivebest.Food
 
             return drinks[UnityEngine.Random.Range(0, drinks.Count)];
         }
+
+        public DrinkItem GetRandomByCategory(DrinkCategory category)
+        {
+            List<DrinkItem> matches = drinks.FindAll(x => x != null && x.Category == category);
+            if (matches == null || matches.Count == 0)
+            {
+                return null;
+            }
+
+            return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
     }
 }

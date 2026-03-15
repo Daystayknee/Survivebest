@@ -226,6 +226,17 @@ namespace Survivebest.Catalog
             return ingredient != null && ingredient.Tags != null && ingredient.Tags.Exists(t => string.Equals(t, tag, StringComparison.OrdinalIgnoreCase));
         }
 
+        public IngredientItem GetRandomByCategory(IngredientCategory category)
+        {
+            List<IngredientItem> matches = ingredients.FindAll(i => i != null && i.Category == category);
+            if (matches.Count == 0)
+            {
+                return null;
+            }
+
+            return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
+
         private void EnsureRealismEssentials()
         {
             AddIfMissing(new IngredientItem

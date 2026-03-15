@@ -200,6 +200,17 @@ namespace Survivebest.Social
                 profile.Tension = Mathf.Clamp(profile.Tension + 12f, 0f, 100f);
             }
 
+            if (personalityMatrixSystem != null)
+            {
+                PersonalityMatrixProfile profileA = personalityMatrixSystem.GetOrCreateProfile(characterAId);
+                PersonalityMatrixProfile profileB = personalityMatrixSystem.GetOrCreateProfile(characterBId);
+                float stressA = profileA != null ? Mathf.Clamp01((profileA.Anxiety + (100f - profileA.StressTolerance)) / 200f) : 0.4f;
+                float stressB = profileB != null ? Mathf.Clamp01((profileB.Anxiety + (100f - profileB.StressTolerance)) / 200f) : 0.4f;
+                float pairStress = Mathf.Clamp01((stressA + stressB) * 0.5f);
+                profile.Tension = Mathf.Clamp(profile.Tension + pairStress * 4f, 0f, 100f);
+                profile.Comfort = Mathf.Clamp(profile.Comfort - pairStress * 3f, 0f, 100f);
+            }
+
             if (relationshipMemorySystem != null)
             {
                 relationshipMemorySystem.RecordEvent(characterAId, characterBId, eventType, emotionalImpact, isPublic, "district_default");

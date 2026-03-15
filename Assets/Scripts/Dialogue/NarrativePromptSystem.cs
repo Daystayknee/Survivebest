@@ -11,6 +11,8 @@ namespace Survivebest.Dialogue
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text narrativeText;
+        [SerializeField, Min(1)] private int maxRecentPrompts = 30;
+        [SerializeField] private System.Collections.Generic.List<string> recentPrompts = new();
 
         public event Action<string> OnNarrativePromptGenerated;
 
@@ -54,6 +56,12 @@ namespace Survivebest.Dialogue
             if (narrativeText != null)
             {
                 narrativeText.text = prompt;
+            }
+
+            recentPrompts.Add(prompt);
+            while (recentPrompts.Count > maxRecentPrompts)
+            {
+                recentPrompts.RemoveAt(0);
             }
 
             OnNarrativePromptGenerated?.Invoke(prompt);

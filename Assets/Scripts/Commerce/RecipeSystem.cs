@@ -170,6 +170,55 @@ namespace Survivebest.Commerce
             return specials;
         }
 
+
+
+        public List<Recipe> GetSuggestedRecipesByPantry(int maxSuggestions = 5)
+        {
+            maxSuggestions = Mathf.Clamp(maxSuggestions, 1, 20);
+            List<Recipe> ranked = new();
+            Dictionary<Recipe, int> scores = new();
+
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                Recipe recipe = recipes[i];
+                if (recipe == null || !recipe.IsUnlocked || recipe.Ingredients == null || recipe.Ingredients.Count == 0)
+                {
+                    continue;
+                }
+
+                int score = 0;
+                for (int j = 0; j < recipe.Ingredients.Count; j++)
+                {
+                    RecipeIngredient ingredient = recipe.Ingredients[j];
+                    if (ingredient == null || string.IsNullOrWhiteSpace(ingredient.IngredientName))
+                    {
+                        continue;
+                    }
+
+                    if (grocerySystem != null && grocerySystem.HasIngredient(ingredient.IngredientName, ingredient.Quantity))
+                    {
+                        score += 2;
+                    }
+                    else
+                    {
+                        score -= 1;
+                    }
+                }
+
+                score += Mathf.RoundToInt((100f - recipe.Difficulty) * 0.05f);
+                scores[recipe] = score;
+                ranked.Add(recipe);
+            }
+
+            ranked.Sort((a, b) => scores[b].CompareTo(scores[a]));
+            if (ranked.Count > maxSuggestions)
+            {
+                ranked.RemoveRange(maxSuggestions, ranked.Count - maxSuggestions);
+            }
+
+            return ranked;
+        }
+
         public bool DiscoverRecipeFromIngredients(List<string> ingredientNames)
         {
             if (ingredientNames == null || ingredientNames.Count < 2)

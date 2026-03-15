@@ -48,6 +48,9 @@ namespace Survivebest.Commerce
         [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private SkillTreeSystem skillTreeSystem;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField, Range(0f, 1f)] private float batchCraftFatigueChance = 0.22f;
+        [SerializeField, Min(1)] private int fatigueCheckWindow = 3;
+        private int recentCraftSuccessStreak;
         [SerializeField] private List<CraftingStation> stations = new();
         [SerializeField] private List<CraftingBlueprint> blueprints = new();
 
@@ -78,6 +81,7 @@ namespace Survivebest.Commerce
 
             if (!StationAvailable(blueprint.RequiredStationId) || !ToolAvailable(blueprint.RequiredToolItemId))
             {
+                recentCraftSuccessStreak = 0;
                 PublishCraftingEvent(blueprint, false, "Missing station or tool", 0f);
                 OnCraftingResolved?.Invoke(blueprint, false);
                 return false;
@@ -85,6 +89,7 @@ namespace Survivebest.Commerce
 
             if (!MeetsSkillRequirements(blueprint))
             {
+                recentCraftSuccessStreak = 0;
                 PublishCraftingEvent(blueprint, false, "Skill requirements not met", 0f);
                 OnCraftingResolved?.Invoke(blueprint, false);
                 return false;
@@ -92,6 +97,7 @@ namespace Survivebest.Commerce
 
             if (!ConsumeIngredients(blueprint, allowSubstitutions))
             {
+                recentCraftSuccessStreak = 0;
                 PublishCraftingEvent(blueprint, false, "Missing ingredients", 0f);
                 OnCraftingResolved?.Invoke(blueprint, false);
                 return false;
@@ -100,6 +106,8 @@ namespace Survivebest.Commerce
             float quality = ComputeOutputQuality(blueprint, crafter);
             economyInventorySystem?.AddItemInstance(blueprint.OutputItemId, Mathf.Max(1, blueprint.OutputQuantity), InventoryScope.Household, crafter != null ? crafter.CharacterId : null, null, false, Mathf.Lerp(0.75f, 1.4f, quality / 100f));
 
+            recentCraftSuccessStreak++;
+            MaybeApplyBatchFatigue(crafter);
             PublishCraftingEvent(blueprint, true, "Craft successful", quality);
             OnCraftingResolved?.Invoke(blueprint, true);
             return true;
@@ -264,6 +272,25 @@ namespace Survivebest.Commerce
             float talentBonus = crafter != null && crafter.Talents != null && crafter.Talents.Contains(CharacterTalent.Artistic) ? 6f : 0f;
             float noise = UnityEngine.Random.Range(-8f, 8f);
             return Mathf.Clamp(35f + skill * 0.9f + talentBonus + noise, 1f, 100f);
+        }
+
+
+
+        private void MaybeApplyBatchFatigue(CharacterCore crafter)
+        {
+            if (crafter == null || recentCraftSuccessStreak < fatigueCheckWindow || UnityEngine.Random.value > batchCraftFatigueChance)
+            {
+                return;
+            }
+
+            Survivebest.Needs.NeedsSystem needs = crafter.GetComponent<Survivebest.Needs.NeedsSystem>();
+            if (needs != null)
+            {
+                needs.ModifyMentalFatigue(1.1f);
+                needs.ModifyEnergy(-1.8f);
+            }
+
+            PublishCraftingEvent(null, true, "Batch crafting fatigue applied", recentCraftSuccessStreak);
         }
 
         private static string MapCategoryToSkillName(ProfessionCategory category)
