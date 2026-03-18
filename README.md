@@ -8,6 +8,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
 - .NET profile compatible with Unity C# scripts
 - No external server required
+- Project package manifest now pins `com.unity.ugui`, `com.unity.textmeshpro`, and `com.unity.test-framework` so gameplay HUD/panel/dialogue scripts and EditMode tests resolve their Unity packages consistently.
 
 ## How to Run
 
@@ -27,6 +28,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 7. Press Play.
 
 > Tip: use `PlaceholderGenerator` if sprite slots are empty so UI portraits/world placeholders are still visible during setup.
+> Testing note: EditMode tests live under `Assets/Tests/EditMode` and are wired through `Survivebest.EditModeTests.asmdef`, which helps validate gameplay systems like economy, dialogue, world clock, and household flows without changing moment-to-moment gameplay behavior.
 
 ## Development Status Snapshot (Done So Far)
 
@@ -69,6 +71,9 @@ Current screen-flow architecture supports a forked path with back/forward naviga
 - Splash Screen (dedicated screen / optional timed auto-advance)
 - Main Menu
   - New Game → World Creator → Character Creator → Household Maker → Gameplay
+    - World Creator includes a `Government & Laws` tab so the player can define the starting legal climate before the first day begins.
+    - After the world is created, play moves into Character Creator so the player can define who will live inside that law-and-culture setup.
+    - Once gameplay begins, laws are not permanently locked: systems like `WorldCreatorManager` and `LawSystem` support in-game voting and law changes over time, so the world government can evolve as the simulation continues.
   - Load Game
   - Settings → Settings Page (audio, fullscreen, subtitles, pause focus loss, UI scale, full theme color pickers)
   - Character Screen (genetics, stats, traits, ailment/health overview with pill-style tags)
