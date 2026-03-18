@@ -56,6 +56,19 @@ namespace Survivebest.UI
     }
 
     [Serializable]
+    public class CharacterCreatorDraftSnapshot
+    {
+        public string CharacterId;
+        public string ActiveTab;
+        public string PreviewFocus;
+        public string PreviewBackground;
+        public bool Locked;
+        public HairProfile Hair = new();
+        public FacialHairProfile FacialHair = new();
+        public BodyHairProfile BodyHair = new();
+    }
+
+    [Serializable]
     public class CreatorTabPanel
     {
         public CharacterCreatorDashboardTab Tab;
@@ -141,6 +154,7 @@ namespace Survivebest.UI
         private readonly Dictionary<string, HairProfile> savedHairPresets = new();
         private readonly Dictionary<string, FacialHairProfile> savedFacialPresets = new();
         private readonly Dictionary<string, BodyHairProfile> savedBodyPresets = new();
+        private readonly HashSet<string> lockedCharacterIds = new();
 
         private bool isDraggingPreview;
 
@@ -239,6 +253,16 @@ namespace Survivebest.UI
         {
             hairTextureFilter = (HairTextureFamily)Mathf.Clamp(textureIndex, 0, Enum.GetValues(typeof(HairTextureFamily)).Length - 1);
             RefreshStyleCards();
+        }
+
+        public void NextSection()
+        {
+            SetTab((int)CurrentTab + 1);
+        }
+
+        public void PreviousSection()
+        {
+            SetTab((int)CurrentTab - 1);
         }
 
         public void SetHairLengthFilter(int lengthIndex)
@@ -460,6 +484,110 @@ namespace Survivebest.UI
             RefreshStyleCards();
             RefreshPreview();
             PublishUiEvent("LoadPreset", $"Loaded preset {presetId}", 1f);
+            return true;
+        }
+
+        public void LockActiveCharacterDesign()
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null || string.IsNullOrWhiteSpace(active.CharacterId))
+            {
+                return;
+            }
+
+            lockedCharacterIds.Add(active.CharacterId);
+            PublishUiEvent("LockCharacterDesign", $"Locked character design for {active.DisplayName}", lockedCharacterIds.Count);
+        }
+
+        public void UnlockActiveCharacterDesign()
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null || string.IsNullOrWhiteSpace(active.CharacterId))
+            {
+                return;
+            }
+
+            lockedCharacterIds.Remove(active.CharacterId);
+            PublishUiEvent("UnlockCharacterDesign", $"Unlocked character design for {active.DisplayName}", lockedCharacterIds.Count);
+        }
+
+        public bool IsActiveCharacterLocked()
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            return active != null && !string.IsNullOrWhiteSpace(active.CharacterId) && lockedCharacterIds.Contains(active.CharacterId);
+        }
+
+        public void SaveCharacterDraft(string slotId)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (appearanceManager == null || active == null || string.IsNullOrWhiteSpace(slotId))
+            {
+                return;
+            }
+
+            CharacterCreatorDraftSnapshot snapshot = new CharacterCreatorDraftSnapshot
+            {
+                CharacterId = active.CharacterId,
+                ActiveTab = CurrentTab.ToString(),
+                PreviewFocus = CurrentPreviewFocus.ToString(),
+                PreviewBackground = CurrentBackground.ToString(),
+                Locked = IsActiveCharacterLocked(),
+                Hair = CloneHair(appearanceManager.ScalpHairProfile),
+                FacialHair = CloneFacial(appearanceManager.FacialHairProfile),
+                BodyHair = CloneBody(appearanceManager.BodyHairProfile)
+            };
+
+            PlayerPrefs.SetString(BuildDraftKey(slotId), JsonUtility.ToJson(snapshot));
+            PlayerPrefs.Save();
+            PublishUiEvent("SaveCharacterDraft", $"Saved character draft slot {slotId}", 1f);
+        }
+
+        public bool LoadCharacterDraft(string slotId)
+        {
+            if (appearanceManager == null || string.IsNullOrWhiteSpace(slotId))
+            {
+                return false;
+            }
+
+            string key = BuildDraftKey(slotId);
+            if (!PlayerPrefs.HasKey(key))
+            {
+                return false;
+            }
+
+            CharacterCreatorDraftSnapshot snapshot = JsonUtility.FromJson<CharacterCreatorDraftSnapshot>(PlayerPrefs.GetString(key));
+            if (snapshot == null)
+            {
+                return false;
+            }
+
+            appearanceManager.SetHairProfile(CloneHair(snapshot.Hair));
+            appearanceManager.SetFacialHairProfile(CloneFacial(snapshot.FacialHair));
+            appearanceManager.SetBodyHairProfile(CloneBody(snapshot.BodyHair));
+
+            if (Enum.TryParse(snapshot.ActiveTab, out CharacterCreatorDashboardTab tab))
+            {
+                SetTab((int)tab);
+            }
+
+            if (Enum.TryParse(snapshot.PreviewFocus, out CharacterCreatorPreviewFocus focus))
+            {
+                SetPreviewFocus((int)focus);
+            }
+
+            if (Enum.TryParse(snapshot.PreviewBackground, out CharacterCreatorBackgroundOption background))
+            {
+                SetPreviewBackground((int)background);
+            }
+
+            if (snapshot.Locked && !string.IsNullOrWhiteSpace(snapshot.CharacterId))
+            {
+                lockedCharacterIds.Add(snapshot.CharacterId);
+            }
+
+            RefreshStyleCards();
+            RefreshPreview();
+            PublishUiEvent("LoadCharacterDraft", $"Loaded character draft slot {slotId}", 1f);
             return true;
         }
 
@@ -782,6 +910,11 @@ namespace Survivebest.UI
                 IsShavedLegs = source.IsShavedLegs,
                 LastBodyShaveDay = source.LastBodyShaveDay
             };
+        }
+
+        private static string BuildDraftKey(string slotId)
+        {
+            return $"creator_draft_{slotId}";
         }
     }
 }

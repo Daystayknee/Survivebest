@@ -12,6 +12,7 @@ namespace Survivebest.UI
     {
         Appearance,
         Genetics,
+        FamilyGenetics,
         Clothing,
         Shoes,
         Hats,
@@ -30,6 +31,24 @@ namespace Survivebest.UI
         public GameObject Root;
     }
 
+    [Serializable]
+    public class HouseholdDraftMemberSnapshot
+    {
+        public string CharacterId;
+        public string DisplayName;
+        public string LifeStage;
+        public bool Locked;
+    }
+
+    [Serializable]
+    public class HouseholdDraftSnapshot
+    {
+        public string ActiveCharacterId;
+        public string ActiveTab;
+        public bool FamilyLocked;
+        public List<HouseholdDraftMemberSnapshot> Members = new();
+    }
+
     public class HouseholdMakerScreenController : MonoBehaviour
     {
         [SerializeField] private MainMenuFlowController menuFlowController;
@@ -42,6 +61,7 @@ namespace Survivebest.UI
         [SerializeField] private Text tabText;
         [SerializeField] private Text characterNameText;
         [SerializeField] private Text creatorSummaryText;
+        [SerializeField] private Text familyLockStateText;
         [SerializeField] private List<HouseholdMakerTabPanel> tabPanels = new();
         [SerializeField] private bool wrapTabs = true;
 
@@ -58,6 +78,9 @@ namespace Survivebest.UI
 
         public HouseholdMakerTab CurrentTab { get; private set; }
         public int ActiveArtPivotIndex => Mathf.Clamp(activeArtPivotIndex, 0, Mathf.Max(0, characterArtPivots.Count - 1));
+
+        private readonly HashSet<string> lockedCharacterIds = new();
+        private bool familyDraftLocked;
 
         private void OnEnable()
         {
@@ -99,6 +122,11 @@ namespace Survivebest.UI
         public void PreviousTab()
         {
             SetTab((int)CurrentTab - 1);
+        }
+
+        public void OpenFamilyGeneticsSection()
+        {
+            SetTab((int)HouseholdMakerTab.FamilyGenetics);
         }
 
         public void NextHouseholdCharacter()
@@ -259,6 +287,122 @@ namespace Survivebest.UI
             menuFlowController?.ContinueFromHousehold();
         }
 
+        public void ToggleLockActiveCharacter()
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null || string.IsNullOrWhiteSpace(active.CharacterId))
+            {
+                return;
+            }
+
+            if (!lockedCharacterIds.Add(active.CharacterId))
+            {
+                lockedCharacterIds.Remove(active.CharacterId);
+            }
+
+            RefreshCreatorSummary();
+        }
+
+        public void LockFamilyDraft()
+        {
+            familyDraftLocked = true;
+            RefreshCreatorSummary();
+        }
+
+        public void UnlockFamilyDraft()
+        {
+            familyDraftLocked = false;
+            RefreshCreatorSummary();
+        }
+
+        public void SaveFamilyDraft(string slotId)
+        {
+            if (householdManager == null || string.IsNullOrWhiteSpace(slotId))
+            {
+                return;
+            }
+
+            HouseholdDraftSnapshot snapshot = new HouseholdDraftSnapshot
+            {
+                ActiveCharacterId = householdManager.ActiveCharacter != null ? householdManager.ActiveCharacter.CharacterId : null,
+                ActiveTab = CurrentTab.ToString(),
+                FamilyLocked = familyDraftLocked
+            };
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                snapshot.Members.Add(new HouseholdDraftMemberSnapshot
+                {
+                    CharacterId = member.CharacterId,
+                    DisplayName = member.DisplayName,
+                    LifeStage = member.CurrentLifeStage.ToString(),
+                    Locked = !string.IsNullOrWhiteSpace(member.CharacterId) && lockedCharacterIds.Contains(member.CharacterId)
+                });
+            }
+
+            PlayerPrefs.SetString(BuildHouseholdDraftKey(slotId), JsonUtility.ToJson(snapshot));
+            PlayerPrefs.Save();
+            RefreshCreatorSummary();
+        }
+
+        public bool LoadFamilyDraft(string slotId)
+        {
+            if (string.IsNullOrWhiteSpace(slotId))
+            {
+                return false;
+            }
+
+            string key = BuildHouseholdDraftKey(slotId);
+            if (!PlayerPrefs.HasKey(key))
+            {
+                return false;
+            }
+
+            HouseholdDraftSnapshot snapshot = JsonUtility.FromJson<HouseholdDraftSnapshot>(PlayerPrefs.GetString(key));
+            if (snapshot == null)
+            {
+                return false;
+            }
+
+            familyDraftLocked = snapshot.FamilyLocked;
+            lockedCharacterIds.Clear();
+            for (int i = 0; i < snapshot.Members.Count; i++)
+            {
+                HouseholdDraftMemberSnapshot member = snapshot.Members[i];
+                if (member != null && member.Locked && !string.IsNullOrWhiteSpace(member.CharacterId))
+                {
+                    lockedCharacterIds.Add(member.CharacterId);
+                }
+            }
+
+            if (Enum.TryParse(snapshot.ActiveTab, out HouseholdMakerTab tab))
+            {
+                SetTab((int)tab);
+            }
+
+            if (householdManager != null && !string.IsNullOrWhiteSpace(snapshot.ActiveCharacterId))
+            {
+                for (int i = 0; i < householdManager.Members.Count; i++)
+                {
+                    CharacterCore member = householdManager.Members[i];
+                    if (member != null && member.CharacterId == snapshot.ActiveCharacterId)
+                    {
+                        householdManager.SetActiveCharacter(member);
+                        break;
+                    }
+                }
+            }
+
+            RefreshCreatorSummary();
+            return true;
+        }
+
         private void HandleActiveCharacterChanged(CharacterCore character)
         {
             if (characterNameText != null)
@@ -304,8 +448,15 @@ namespace Survivebest.UI
                 $"Tab: {CurrentTab}\n" +
                 $"Members: {memberCount}\n" +
                 $"Active: {activeName}\n" +
+                $"Locked Characters: {lockedCharacterIds.Count}\n" +
+                $"Family Draft Locked: {(familyDraftLocked ? "Yes" : "No")}\n" +
                 $"Preview Assets: {characterArtPivots.Count}\n" +
                 $"Pivot Mode: {(rotateAllArtPivots ? "Rotate All" : "Rotate Active")}";
+
+            if (familyLockStateText != null)
+            {
+                familyLockStateText.text = familyDraftLocked ? "Family Locked In" : "Family Draft Editable";
+            }
         }
 
         private void PublishTabEvent()
@@ -343,6 +494,11 @@ namespace Survivebest.UI
             }
 
             return -1;
+        }
+
+        private static string BuildHouseholdDraftKey(string slotId)
+        {
+            return $"household_draft_{slotId}";
         }
     }
 }
