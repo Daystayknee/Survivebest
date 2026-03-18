@@ -34,6 +34,8 @@ namespace Survivebest.Core
                 return null;
             }
 
+            ApplyInheritedGenetics(parentA, parentB, baby);
+
             VisualGenome babyGenome = baby.GetComponent<VisualGenome>();
             VisualGenome genomeA = parentA != null ? parentA.GetComponent<VisualGenome>() : null;
             VisualGenome genomeB = parentB != null ? parentB.GetComponent<VisualGenome>() : null;
@@ -68,6 +70,18 @@ namespace Survivebest.Core
             baby.SetTalents(inheritedTalents);
             OnChildBorn?.Invoke(parentA, parentB, baby);
             return baby;
+        }
+
+        public OffspringPreviewCollection BuildOffspringPreview(CharacterCore parentA, CharacterCore parentB, int previewCount = 6)
+        {
+            GeneticsSystem geneticsA = parentA != null ? parentA.GetComponent<GeneticsSystem>() : null;
+            GeneticsSystem geneticsB = parentB != null ? parentB.GetComponent<GeneticsSystem>() : null;
+            if (geneticsA == null || geneticsB == null)
+            {
+                return new OffspringPreviewCollection();
+            }
+
+            return BloodlineInheritanceResolver.BuildPreviewSet(geneticsA.Profile, geneticsB.Profile, previewCount);
         }
 
         private CharacterCore SpawnCharacter(string defaultName, LifeStage stage)
@@ -106,6 +120,26 @@ namespace Survivebest.Core
             householdManager.AddMember(character);
             OnFamilyMemberCreated?.Invoke(character);
             return character;
+        }
+
+        private static void ApplyInheritedGenetics(CharacterCore parentA, CharacterCore parentB, CharacterCore baby)
+        {
+            GeneticsSystem babyGenetics = baby != null ? baby.GetComponent<GeneticsSystem>() : null;
+            GeneticsSystem geneticsA = parentA != null ? parentA.GetComponent<GeneticsSystem>() : null;
+            GeneticsSystem geneticsB = parentB != null ? parentB.GetComponent<GeneticsSystem>() : null;
+            if (babyGenetics == null || geneticsA == null || geneticsB == null)
+            {
+                return;
+            }
+
+            OffspringPreviewEntry child = BloodlineInheritanceResolver.BuildChildPreview(
+                geneticsA.Profile,
+                geneticsB.Profile,
+                Guid.NewGuid().GetHashCode(),
+                FamilyResemblanceMode.BalancedBlend);
+
+            babyGenetics.SetParentReferences(geneticsA, geneticsB);
+            babyGenetics.OverrideGenetics(child.GeneticProfile, reapply: true);
         }
     }
 }

@@ -179,6 +179,7 @@ namespace Survivebest.World
         [Range(0f, 1f)] public float AddictionVulnerability;
         [Range(0f, 1f)] public float RecoveryTendency;
         [Range(0f, 1f)] public float IllnessVulnerability;
+        public string BloodTypeKey = "O+";
     }
 
     [Serializable]

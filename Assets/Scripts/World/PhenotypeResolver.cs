@@ -159,7 +159,8 @@ namespace Survivebest.World
                 StressSensitivity = genes.StressSensitivity,
                 AddictionVulnerability = genes.AddictionVulnerability,
                 RecoveryTendency = genes.RecoveryTendency,
-                IllnessVulnerability = genes.IllnessVulnerability
+                IllnessVulnerability = genes.IllnessVulnerability,
+                BloodTypeKey = genes.Blood.ToDisplayString()
             };
         }
 
