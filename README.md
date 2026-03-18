@@ -71,6 +71,9 @@ Current screen-flow architecture supports a forked path with back/forward naviga
 - Splash Screen (dedicated screen / optional timed auto-advance)
 - Main Menu
   - New Game → World Creator → Character Creator → Household Maker → Gameplay
+    - World Creator includes a `Government & Laws` tab so the player can define the starting legal climate before the first day begins.
+    - After the world is created, play moves into Character Creator so the player can define who will live inside that law-and-culture setup.
+    - Once gameplay begins, laws are not permanently locked: systems like `WorldCreatorManager` and `LawSystem` support in-game voting and law changes over time, so the world government can evolve as the simulation continues.
   - Load Game
   - Settings → Settings Page (audio, fullscreen, subtitles, pause focus loss, UI scale, full theme color pickers)
   - Character Screen (genetics, stats, traits, ailment/health overview with pill-style tags)
