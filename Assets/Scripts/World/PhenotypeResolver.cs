@@ -1,11 +1,12 @@
 using Survivebest.Core;
+using CoreLifeStage = Survivebest.Core.LifeStage;
 using UnityEngine;
 
 namespace Survivebest.World
 {
     public static class PhenotypeResolver
     {
-        public static PhenotypeProfile Resolve(GeneticProfile genes, LifeStage lifeStage, float environmentPressure = 0f)
+        public static PhenotypeProfile Resolve(GeneticProfile genes, CoreLifeStage lifeStage, float environmentPressure = 0f)
         {
             genes ??= new GeneticProfile();
             genes.ClampToNormalizedRange();
@@ -112,17 +113,17 @@ namespace Survivebest.World
             };
         }
 
-        private static HairProfile ResolveHair(GeneticProfile genes, LifeStage stage)
+        private static HairProfile ResolveHair(GeneticProfile genes, CoreLifeStage stage)
         {
-            float ageGray = stage is LifeStage.OlderAdult ? 0.7f : stage is LifeStage.Adult ? 0.25f : 0f;
-            float ageRecession = stage is LifeStage.OlderAdult ? 0.72f : stage is LifeStage.Adult ? 0.28f : 0f;
+            float ageGray = stage is CoreLifeStage.OlderAdult ? 0.7f : stage is CoreLifeStage.Adult ? 0.25f : 0f;
+            float ageRecession = stage is CoreLifeStage.OlderAdult ? 0.72f : stage is CoreLifeStage.Adult ? 0.28f : 0f;
             return new HairProfile
             {
                 Pigment = genes.HairPigment,
                 Curl = genes.HairCurl,
                 Density = genes.HairDensity,
-                Graying = Mathf.Clamp01(Mathf.Max(ageGray, genes.GrayingTendency * (stage is LifeStage.Teen ? 0.1f : 0.35f))),
-                HairlineRecession = Mathf.Clamp01(Mathf.Max(ageRecession, genes.BaldingTendency * (stage is LifeStage.OlderAdult ? 1f : 0.35f))),
+                Graying = Mathf.Clamp01(Mathf.Max(ageGray, genes.GrayingTendency * (stage is CoreLifeStage.Teen ? 0.1f : 0.35f))),
+                HairlineRecession = Mathf.Clamp01(Mathf.Max(ageRecession, genes.BaldingTendency * (stage is CoreLifeStage.OlderAdult ? 1f : 0.35f))),
                 FrontPieceDensity = Mathf.Clamp01(genes.HairDensity * Mathf.Lerp(1f, 0.7f, genes.HairlineShape)),
                 SidePieceDensity = Mathf.Clamp01(genes.HairDensity * 0.9f),
                 BackPieceDensity = Mathf.Clamp01(genes.HairDensity * 1.05f)

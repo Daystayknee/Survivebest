@@ -5,6 +5,7 @@ using Survivebest.Health;
 using Survivebest.Needs;
 using Survivebest.World;
 using Survivebest.Events;
+using Survivebest.Society;
 
 namespace Survivebest.Crime
 {

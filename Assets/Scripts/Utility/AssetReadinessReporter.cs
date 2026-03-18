@@ -431,7 +431,7 @@ namespace Survivebest.Utility
             }
         }
 
-        private int CheckNull(Object value, string fieldName)
+        private int CheckNull(UnityEngine.Object value, string fieldName)
         {
             if (value != null)
             {

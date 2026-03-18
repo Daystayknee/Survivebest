@@ -1,6 +1,7 @@
 using UnityEngine;
 using Survivebest.Appearance;
 using Survivebest.Core;
+using CoreLifeStage = Survivebest.Core.LifeStage;
 using Survivebest.LifeStage;
 using Survivebest.Emotion;
 using Survivebest.Needs;
@@ -160,7 +161,7 @@ namespace Survivebest.World
 
         private void ResolveAndApplyPhenotype()
         {
-            LifeStage stage = owner != null ? owner.CurrentLifeStage : LifeStage.YoungAdult;
+            CoreLifeStage stage = owner != null ? owner.CurrentLifeStage : CoreLifeStage.YoungAdult;
             phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, environmentPressure);
             ApplyResolvedPhenotype(phenotypeProfile);
             ApplyDynamicPresentationState();
@@ -268,7 +269,7 @@ namespace Survivebest.World
             AvatarPresentationStateResolver.ApplyDynamicState(phenotypeProfile, stressValue, angerValue, affectionValue, energyValue, illness);
         }
 
-        private void HandleLifeStageChanged(CharacterCore character, int _, LifeStage __)
+        private void HandleLifeStageChanged(CharacterCore character, int _, CoreLifeStage __)
         {
             if (character != owner)
             {
