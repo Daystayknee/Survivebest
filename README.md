@@ -8,6 +8,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
 - .NET profile compatible with Unity C# scripts
 - No external server required
+- Project package manifest now pins `com.unity.ugui`, `com.unity.textmeshpro`, and `com.unity.test-framework` so gameplay HUD/panel/dialogue scripts and EditMode tests resolve their Unity packages consistently.
 
 ## How to Run
 
@@ -27,6 +28,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 7. Press Play.
 
 > Tip: use `PlaceholderGenerator` if sprite slots are empty so UI portraits/world placeholders are still visible during setup.
+> Testing note: EditMode tests live under `Assets/Tests/EditMode` and are wired through `Survivebest.EditModeTests.asmdef`, which helps validate gameplay systems like economy, dialogue, world clock, and household flows without changing moment-to-moment gameplay behavior.
 
 ## Development Status Snapshot (Done So Far)
 
@@ -69,6 +71,9 @@ Current screen-flow architecture supports a forked path with back/forward naviga
 - Splash Screen (dedicated screen / optional timed auto-advance)
 - Main Menu
   - New Game → World Creator → Character Creator → Household Maker → Gameplay
+    - World Creator includes a `Government & Laws` tab so the player can define the starting legal climate before the first day begins.
+    - After the world is created, play moves into Character Creator so the player can define who will live inside that law-and-culture setup.
+    - Once gameplay begins, laws are not permanently locked: systems like `WorldCreatorManager` and `LawSystem` support in-game voting and law changes over time, so the world government can evolve as the simulation continues.
   - Load Game
   - Settings → Settings Page (audio, fullscreen, subtitles, pause focus loss, UI scale, full theme color pickers)
   - Character Screen (genetics, stats, traits, ailment/health overview with pill-style tags)
@@ -77,7 +82,7 @@ These transitions are managed by `MainMenuFlowController`, splash timing/skip by
 
 Load Game screen presents 3 save slots (world name, playtime, date, household size) via `LoadGameScreenController`.
 World creator is tabbed (`Appearance & Environment`, `Ecology & Inhabitants`, `Government & Laws`, `Starting Origins`, `Survival Mechanics`) via `WorldCreatorScreenController`.
-Household maker now supports expanded tabs, wrap navigation, multi-asset preview rotation, per-character switching, zoom controls, and a household genetics validation action via `HouseholdMakerScreenController`.
+Household maker now supports expanded tabs, wrap navigation, multi-asset preview rotation, per-character switching, zoom controls, a dedicated family-genetics section, family surname/home-district/planning-priority setup, lock-in flows for active characters/family drafts, save/load family draft slots, and a household genetics validation action via `HouseholdMakerScreenController`.
 Gameplay map layout orchestration (location nav, map label, environment/ecology/government summaries, resources, character vitals) is handled by `GameplayScreenController`.
 Contextual action popups for buy/sell/medical/forage/skill actions are handled by `ActionPopupController` (fed by `SidebarContextMenu`).
 
@@ -216,7 +221,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Furniture store purchase flow with wallet spend + instant placement spawn + build-mode handoff (`FurnitureStoreController`).
 - Added `ExperiencePacingOrchestrator` as a cross-system cadence layer to monitor survival/social/progression/expression/risk pillars and inject dynamic beats (director spikes, emergency opportunities, social memory beats, progression minigame nudges) when play gets too quiet.
 - Added modular layered hair pipeline for 2D avatars (`HairLayerSystem` + `HairGroomingSystem`) with slot-based assembly (back/side/front/bangs/flyaways/hairline), facial/body hair overlays, growth stages, shave/trim regrowth timers, and renderer contracts compatible with `AppearanceManager` + `CharacterPortraitRenderer`.
-- Added `CharacterCreatorDashboardController` for modern paper-doll dashboard flow (Appearance/Traits/Clothing tabs, filter-driven style cards, swatch colors, advanced sliders, preview rotate/zoom/drag, randomize, and preset save/load hooks).
+- Added `CharacterCreatorDashboardController` for modern paper-doll dashboard flow (Appearance/Genetics/Face/Body/Traits/Clothing tabs, filter-driven style cards, swatch colors, dedicated face/body/genetics detail labels, facial feature selectors, skin/eye customization, preview rotate/zoom/drag, background switching, 2D orthographic focus modes for full body vs face/body closeups, forward/back section helpers, character lock-in, and draft save/load hooks).
 - Added `TaskInteractionManager` pipeline for **Optional Interactive Task Actions** (Auto vs Interactive mode) with step-based task sessions and result routing (`TaskDatabase`, `AutoTaskRunner`, `InteractiveTaskRunner`, `TaskResultSpawner`, `TaskStateUpdater`) so life tasks can be performed manually without score/rank mechanics.
 - Added `HumanLifeExperienceLayerSystem` to bridge portrait/dashboard-first simulation loops with routine completion signals, embodiment prompts, thought-message logging, and place-attachment tracking for non-walking life-sim flow.
 - Upgraded `GameplayScreenController` into a readable daily-life dashboard layer with top-state (time/weather/location), immediate pressure summaries, suggested next actions, and world-pulse snippets (latest event + thought) so the main loop is legible at a glance.
