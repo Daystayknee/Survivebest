@@ -180,61 +180,35 @@ namespace Survivebest.World
         [Range(0f, 1f)] public float SpeechCadence = 0.5f;
     }
 
+
     [Serializable]
-    public class AllelePairGene
+    public class HormoneRegulationProfile
     {
-        [Range(0f, 1f)] public float DominantA = 0.5f;
-        [Range(0f, 1f)] public float RecessiveB = 0.5f;
-        [Range(0f, 1f)] public float HiddenGenerationCarry = 0.2f;
+        [Range(0f, 1f)] public float EstrogenAndrogenBalance = 0.5f;
+        [Range(0f, 1f)] public float GrowthHormoneSensitivity = 0.5f;
+        [Range(0f, 1f)] public float CortisolRegulation = 0.5f;
+        [Range(0f, 1f)] public float AgingResilience = 0.5f;
     }
 
     [Serializable]
-    public class PolygenicTraitCluster
+    public class MicroDetailGenomeProfile
     {
-        [Range(0f, 1f)] public float HeightScore = 0.5f;
-        [Range(0f, 1f)] public float CognitionScore = 0.5f;
-        [Range(0f, 1f)] public float TemperamentScore = 0.5f;
-        [Range(0f, 1f)] public float AthleticScore = 0.5f;
-        [Range(0f, 1f)] public float ImmuneScore = 0.5f;
+        [Range(0f, 1f)] public float AcneScarRisk = 0.25f;
+        [Range(0f, 1f)] public float StretchResponse = 0.3f;
+        [Range(0f, 1f)] public float ToothCrowding = 0.4f;
+        [Range(0f, 1f)] public float LashLength = 0.5f;
+        [Range(0f, 1f)] public float IrisRingDepth = 0.45f;
+        [Range(0f, 1f)] public float HairlineAsymmetry = 0.25f;
     }
 
     [Serializable]
-    public class EpigeneticMarkerProfile
+    public class ReproductiveGenomeProfile
     {
-        [Range(0f, 1f)] public float StressImprint = 0.2f;
-        [Range(0f, 1f)] public float DietQualityImprint = 0.6f;
-        [Range(0f, 1f)] public float ToxinExposure = 0.05f;
-        [Range(0f, 1f)] public float SocialSafetySignal = 0.5f;
-    }
-
-    [Serializable]
-    public class MutationProfile
-    {
-        [Range(0f, 1f)] public float RandomMutationLoad = 0.05f;
-        [Range(0f, 1f)] public float EnvironmentalMutationLoad = 0.02f;
-        [Range(0f, 1f)] public float HiddenTraitSkipChance = 0.18f;
-    }
-
-    [Serializable]
-    public class PsychologicalGeneticsProfile
-    {
-        [Range(0f, 1f)] public float BigFiveOpenness = 0.5f;
-        [Range(0f, 1f)] public float BigFiveConscientiousness = 0.5f;
-        [Range(0f, 1f)] public float BigFiveExtraversion = 0.5f;
-        [Range(0f, 1f)] public float BigFiveAgreeableness = 0.5f;
-        [Range(0f, 1f)] public float BigFiveNeuroticism = 0.5f;
-        [Range(0f, 1f)] public float TraumaSensitivity = 0.35f;
-        [Range(0f, 1f)] public float AddictionRisk = 0.25f;
-    }
-
-    [Serializable]
-    public class TalentGeneticsProfile
-    {
-        [Range(0f, 1f)] public float MusicAffinity = 0.5f;
-        [Range(0f, 1f)] public float AthleticAffinity = 0.5f;
-        [Range(0f, 1f)] public float SocialAffinity = 0.5f;
-        [Range(0f, 1f)] public float AnalyticalAffinity = 0.5f;
-        [Range(0f, 1f)] public float ArtisticAffinity = 0.5f;
+        [Range(0f, 1f)] public float FertilitySignal = 0.5f;
+        [Range(0f, 1f)] public float TwinChance = 0.05f;
+        [Range(0f, 1f)] public float MeioticStability = 0.75f;
+        [Range(0f, 1f)] public float RecombinationRate = 0.45f;
+        [Range(0f, 1f)] public float RareTraitResurfacing = 0.2f;
     }
 
     [Serializable]
@@ -320,20 +294,13 @@ namespace Survivebest.World
         public PsychologicalGeneticsProfile Psychology = new();
         public TalentGeneticsProfile Talents = new();
         public IdentityGeneticsProfile Identity = new();
+        public HormoneRegulationProfile Hormones = new();
+        public MicroDetailGenomeProfile MicroDetails = new();
+        public ReproductiveGenomeProfile Reproduction = new();
 
         [Header("Environmental Layers")]
         public EpigeneticMarkerProfile Epigenetics = new();
         public MutationProfile Mutations = new();
-
-        [Header("Deep Genetics")]
-        public AllelePairGene EyeColorAlleles = new();
-        public AllelePairGene HairTextureAlleles = new();
-        public AllelePairGene HeightAlleles = new();
-        public PolygenicTraitCluster PolygenicTraits = new();
-        public EpigeneticMarkerProfile Epigenetics = new();
-        public MutationProfile Mutations = new();
-        public PsychologicalGeneticsProfile Psychology = new();
-        public TalentGeneticsProfile Talents = new();
 
         public void ClampToNormalizedRange()
         {
@@ -441,6 +408,21 @@ namespace Survivebest.World
             Identity.CulturalAffinity = Mathf.Clamp01(Identity.CulturalAffinity);
             Identity.VoicePitchRange = Mathf.Clamp01(Identity.VoicePitchRange);
             Identity.SpeechCadence = Mathf.Clamp01(Identity.SpeechCadence);
+            Hormones.EstrogenAndrogenBalance = Mathf.Clamp01(Hormones.EstrogenAndrogenBalance);
+            Hormones.GrowthHormoneSensitivity = Mathf.Clamp01(Hormones.GrowthHormoneSensitivity);
+            Hormones.CortisolRegulation = Mathf.Clamp01(Hormones.CortisolRegulation);
+            Hormones.AgingResilience = Mathf.Clamp01(Hormones.AgingResilience);
+            MicroDetails.AcneScarRisk = Mathf.Clamp01(MicroDetails.AcneScarRisk);
+            MicroDetails.StretchResponse = Mathf.Clamp01(MicroDetails.StretchResponse);
+            MicroDetails.ToothCrowding = Mathf.Clamp01(MicroDetails.ToothCrowding);
+            MicroDetails.LashLength = Mathf.Clamp01(MicroDetails.LashLength);
+            MicroDetails.IrisRingDepth = Mathf.Clamp01(MicroDetails.IrisRingDepth);
+            MicroDetails.HairlineAsymmetry = Mathf.Clamp01(MicroDetails.HairlineAsymmetry);
+            Reproduction.FertilitySignal = Mathf.Clamp01(Reproduction.FertilitySignal);
+            Reproduction.TwinChance = Mathf.Clamp01(Reproduction.TwinChance);
+            Reproduction.MeioticStability = Mathf.Clamp01(Reproduction.MeioticStability);
+            Reproduction.RecombinationRate = Mathf.Clamp01(Reproduction.RecombinationRate);
+            Reproduction.RareTraitResurfacing = Mathf.Clamp01(Reproduction.RareTraitResurfacing);
 
             for (int pairIndex = 0; pairIndex < ChromosomePairs.Count; pairIndex++)
             {
@@ -493,7 +475,7 @@ namespace Survivebest.World
             NostrilWidth = EvaluateGene("nostril_width", 0.5f, env);
             LipFullness = EvaluateGene("lip_fullness", 0.5f, env);
             BrowHeaviness = EvaluateGene("brow_heaviness", 0.45f, env);
-            HeightPotential = EvaluateGene("height_potential", 0.5f, env, RegionProfile.HeightBias, Epigenetics.DietQualityImprint * 0.12f);
+            HeightPotential = EvaluateGene("height_potential", 0.5f, env, RegionProfile.HeightBias, Epigenetics.DietQualityImprint * 0.12f + Hormones.GrowthHormoneSensitivity * 0.08f);
             FrameSize = EvaluateGene("frame_size", 0.5f, env);
             ShoulderWidth = EvaluateGene("shoulder_width", 0.5f, env);
             ChestBustPotential = EvaluateGene("chest_bust_potential", 0.5f, env);
@@ -506,24 +488,24 @@ namespace Survivebest.World
             FingerLength = EvaluateGene("finger_length", 0.5f, env);
             AnkleSize = EvaluateGene("ankle_size", 0.5f, env);
             FootSize = EvaluateGene("foot_size", 0.5f, env);
-            MusclePotential = EvaluateGene("muscle_potential", 0.5f, env, 0.5f, (1f - Epigenetics.StressImprint) * 0.08f);
-            FatDistribution = EvaluateGene("fat_distribution", 0.5f, env);
+            MusclePotential = EvaluateGene("muscle_potential", 0.5f, env, 0.5f, (1f - Epigenetics.StressImprint) * 0.08f + Hormones.EstrogenAndrogenBalance * 0.05f);
+            FatDistribution = EvaluateGene("fat_distribution", 0.5f, env, 0.5f, (1f - Hormones.EstrogenAndrogenBalance) * 0.04f);
             BoneDensity = EvaluateGene("bone_density", 0.5f, env, 0.5f, Epigenetics.DietQualityImprint * 0.1f);
             PostureBaseline = EvaluateGene("posture_baseline", 0.5f, env);
             LimbProportion = EvaluateGene("limb_proportion", 0.5f, env);
             HairPigment = EvaluateGene("hair_pigment", 0.5f, env, RegionProfile.MelaninBias);
             HairCurl = EvaluateGene("hair_curl", 0.4f, env, RegionProfile.CurlBias);
             HairDensity = EvaluateGene("hair_density", 0.6f, env);
-            HairlineShape = EvaluateGene("hairline_shape", 0.5f, env);
+            HairlineShape = EvaluateGene("hairline_shape", 0.5f, env, 0.5f, MicroDetails.HairlineAsymmetry * 0.05f);
             HairStrandThickness = EvaluateGene("hair_strand_thickness", 0.5f, env);
-            EyelashDensity = EvaluateGene("eyelash_density", 0.5f, env);
-            TeethSpacing = EvaluateGene("teeth_spacing", 0.5f, env);
+            EyelashDensity = EvaluateGene("eyelash_density", 0.5f, env, 0.5f, MicroDetails.LashLength * 0.08f);
+            TeethSpacing = EvaluateGene("teeth_spacing", 0.5f, env, 0.5f, MicroDetails.ToothCrowding * -0.08f);
             GumExposure = EvaluateGene("gum_exposure", 0.5f, env);
-            EyeWetness = EvaluateGene("eye_wetness", 0.5f, env, 0.5f, (1f - Epigenetics.StressImprint) * 0.05f);
+            EyeWetness = EvaluateGene("eye_wetness", 0.5f, env, 0.5f, (1f - Epigenetics.StressImprint) * 0.05f + MicroDetails.IrisRingDepth * 0.03f);
             GrayingTendency = EvaluateGene("graying_tendency", 0.3f, env, 0.5f, Epigenetics.StressImprint * 0.12f);
             BaldingTendency = EvaluateGene("balding_tendency", 0.2f, env);
-            AcneTendency = EvaluateGene("acne_tendency", 0.25f, env, 0.5f, Epigenetics.StressImprint * 0.1f);
-            StretchMarkChance = EvaluateGene("stretch_mark_chance", 0.2f, env);
+            AcneTendency = EvaluateGene("acne_tendency", 0.25f, env, 0.5f, Epigenetics.StressImprint * 0.1f + MicroDetails.AcneScarRisk * 0.03f);
+            StretchMarkChance = EvaluateGene("stretch_mark_chance", 0.2f, env, 0.5f, MicroDetails.StretchResponse * 0.04f);
             AllergySusceptibility = EvaluateGene("allergy_susceptibility", 0.35f, env);
             SkinSensitivity = EvaluateGene("skin_sensitivity", 0.4f, env);
             MetabolismRate = EvaluateGene("metabolism_rate", 0.5f, env);
@@ -532,7 +514,7 @@ namespace Survivebest.World
             AddictionVulnerability = EvaluateGene("addiction_vulnerability", 0.25f, env);
             RecoveryTendency = EvaluateGene("recovery_tendency", 0.5f, env, 0.5f, Epigenetics.SocialSafetySignal * 0.08f);
             IllnessVulnerability = EvaluateGene("illness_vulnerability", 0.35f, env);
-            AgingSpeed = EvaluateGene("aging_speed", 0.5f, env, 0.5f, Epigenetics.StressImprint * 0.1f);
+            AgingSpeed = EvaluateGene("aging_speed", 0.5f, env, 0.5f, Epigenetics.StressImprint * 0.1f - Hormones.AgingResilience * 0.06f);
 
             Psychology.BigFiveOpenness = EvaluateGene("psych_openness", Psychology.BigFiveOpenness, env);
             Psychology.BigFiveConscientiousness = EvaluateGene("psych_conscientiousness", Psychology.BigFiveConscientiousness, env);

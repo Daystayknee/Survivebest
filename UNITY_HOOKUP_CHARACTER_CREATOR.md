@@ -19,7 +19,7 @@
 - Background roots for creator themes (neutral, genetics, neighborhood, government/laws, home)
 - Face-close and body-close focus buttons/labels if used
 - Face/body/genetics detail labels plus selectors for face shape, jaw, nose, lips, skin tone, and eye color
-- DNA-mode controls for creation mode switching (Random Population / DNA Edit / Visual Sculpt), population region templates, direct gene edits for melanin/height/body fat/muscle/cognition, epigenetic stress/diet inputs, and mutation triggers if exposing the genome editor
+- DNA-mode controls for creation mode switching (Random Population / DNA Edit / Visual Sculpt), population region templates, direct gene edits for melanin/height/body fat/muscle/cognition plus hormone balance and hair strand thickness, developmental-year simulation inputs, and mutation triggers if exposing the genome editor
 
 ## Expected Art Assets
 - Background(s)

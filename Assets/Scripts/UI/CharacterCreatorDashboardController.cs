@@ -73,6 +73,8 @@ namespace Survivebest.UI
         public float GeneEditCognition;
         public float GeneEditStress;
         public float GeneEditDiet;
+        public float GeneEditHormoneBalance;
+        public float GeneEditHairThickness;
         public int FaceShape;
         public int EyeShape;
         public int BodyType;
@@ -440,6 +442,24 @@ namespace Survivebest.UI
             SetGeneValue("talent_analytical", value);
         }
 
+        public void SetGenomeHormoneBalance(float value)
+        {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneticScalar(profile => profile.Hormones.EstrogenAndrogenBalance = Mathf.Clamp01(value));
+        }
+
+        public void SetGenomeHairThickness(float value)
+        {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneValue("hair_strand_thickness", value);
+        }
+
+        public void SimulateDevelopmentalYear(float nutritionQuality, float chronicStress, float sunlightExposure)
+        {
+            ResolveActiveGeneticsSystem()?.AdvanceDevelopmentalYear(Mathf.Clamp01(nutritionQuality), Mathf.Clamp01(chronicStress), Mathf.Clamp01(sunlightExposure));
+            RefreshPreview();
+        }
+
         public void SetGenomeStressEpigenetics(float value)
         {
             GeneticsSystem genetics = ResolveActiveGeneticsSystem();
@@ -767,6 +787,8 @@ namespace Survivebest.UI
                 GeneEditCognition = ResolveActiveGeneticsSystem()?.Profile?.Psychology.BigFiveOpenness ?? 0.5f,
                 GeneEditStress = ResolveActiveGeneticsSystem()?.Profile?.Epigenetics.StressImprint ?? 0.2f,
                 GeneEditDiet = ResolveActiveGeneticsSystem()?.Profile?.Epigenetics.DietQualityImprint ?? 0.6f,
+                GeneEditHormoneBalance = ResolveActiveGeneticsSystem()?.Profile?.Hormones.EstrogenAndrogenBalance ?? 0.5f,
+                GeneEditHairThickness = ResolveActiveGeneticsSystem()?.Profile?.HairStrandThickness ?? 0.5f,
                 FaceShape = (int)active.FaceShape,
                 EyeShape = (int)active.EyeShape,
                 BodyType = (int)active.CurrentBodyType,
@@ -861,6 +883,8 @@ namespace Survivebest.UI
             SetGenomeCognition(snapshot.GeneEditCognition);
             SetGenomeStressEpigenetics(snapshot.GeneEditStress);
             SetGenomeDietEpigenetics(snapshot.GeneEditDiet);
+            SetGenomeHormoneBalance(snapshot.GeneEditHormoneBalance);
+            SetGenomeHairThickness(snapshot.GeneEditHairThickness);
 
             if (snapshot.Locked && !string.IsNullOrWhiteSpace(snapshot.CharacterId))
             {
@@ -947,13 +971,17 @@ namespace Survivebest.UI
             return new CharacterCreatorDashboardViewModel
             {
                 ActiveTab = CurrentTab.ToString(),
+                CreatorMode = creatorMode.ToString(),
+                PopulationRegion = ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId ?? string.Empty,
+                HormoneSummary = ResolveActiveGeneticsSystem() != null ? $"EA {ResolveActiveGeneticsSystem().Profile.Hormones.EstrogenAndrogenBalance:0.00} / GH {ResolveActiveGeneticsSystem().Profile.Hormones.GrowthHormoneSensitivity:0.00}" : string.Empty,
+                ReproductionSummary = ResolveActiveGeneticsSystem() != null ? $"fertility {ResolveActiveGeneticsSystem().Profile.Reproduction.FertilitySignal:0.00} / meiosis {ResolveActiveGeneticsSystem().Profile.Reproduction.MeioticStability:0.00}" : string.Empty,
                 HairTextureFilter = hairTextureFilter.ToString(),
                 HairLengthFilter = hairLengthFilter.ToString(),
                 FacialHairFilter = facialHairFilter.ToString(),
                 FaceSummary = active != null ? $"{active.FaceShape} / {active.JawShape} / {active.NoseShape} / {active.LipShape}" : string.Empty,
                 BodySummary = active != null ? $"{active.CurrentBodyType} / {active.ClothingStyle}" : string.Empty,
                 GeneticsSummary = appearanceManager != null && appearanceManager.CurrentProfile != null
-                    ? $"{creatorMode} / {appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor} / {ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId}"
+                    ? $"{creatorMode} / {appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor} / {ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId} / HR {ResolveActiveGeneticsSystem()?.Profile?.Hormones.EstrogenAndrogenBalance:0.00}"
                     : string.Empty,
                 AvailableStyles = appearanceManager != null ? appearanceManager.GetHairstylesByFilter(hairTextureFilter, hairLengthFilter).Count : 0,
                 SavedPresetCount = savedHairPresets.Count,

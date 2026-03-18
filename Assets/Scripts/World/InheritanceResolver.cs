@@ -116,6 +116,9 @@ namespace Survivebest.World
                     NotableTraitKey = BlueprintCatalog[Random.Range(0, BlueprintCatalog.Length)].TraitKey,
                     RareTraitStrength = Random.Range(0.05f, 0.35f)
                 },
+                Hormones = RandomHormoneProfile(),
+                MicroDetails = RandomMicroDetails(),
+                Reproduction = RandomReproductionProfile(),
                 Epigenetics = RandomEpigenetics(),
                 Mutations = RandomMutationProfile(),
                 ChromosomePairs = BuildRandomGenome()
@@ -139,6 +142,9 @@ namespace Survivebest.World
                 RegionProfile = InheritRegionProfile(a.RegionProfile, b.RegionProfile, mutationChance),
                 PopulationPool = InheritPopulationPool(a.PopulationPool, b.PopulationPool, mutationChance),
                 Lineage = InheritLineage(a.Lineage, b.Lineage),
+                Hormones = InheritHormones(a.Hormones, b.Hormones, mutationChance),
+                MicroDetails = InheritMicroDetails(a.MicroDetails, b.MicroDetails, mutationChance),
+                Reproduction = InheritReproduction(a.Reproduction, b.Reproduction, mutationChance),
                 Epigenetics = InheritEpigenetics(a.Epigenetics, b.Epigenetics, mutationChance),
                 Mutations = InheritMutationProfile(a.Mutations, b.Mutations, mutationChance),
                 ChromosomePairs = CrossoverGenome(a, b, mutationChance)
@@ -202,7 +208,7 @@ namespace Survivebest.World
 
                     Gene geneA = FindGene(sourceA, blueprint.TraitKey) ?? RandomGene(blueprint);
                     Gene geneB = FindGene(sourceB, blueprint.TraitKey) ?? RandomGene(blueprint);
-                    childPair.Genes.Add(RecombineGene(geneA, geneB, blueprint, mutationChance));
+                    childPair.Genes.Add(RecombineGene(geneA, geneB, blueprint, mutationChance, Mathf.Lerp(a.Reproduction.RecombinationRate, b.Reproduction.RecombinationRate, 0.5f), Mathf.Lerp(a.Reproduction.RareTraitResurfacing, b.Reproduction.RareTraitResurfacing, 0.5f)));
                 }
 
                 childPairs.Add(childPair);
@@ -250,7 +256,7 @@ namespace Survivebest.World
             };
         }
 
-        private static Gene RecombineGene(Gene a, Gene b, GeneBlueprint blueprint, float mutationChance)
+        private static Gene RecombineGene(Gene a, Gene b, GeneBlueprint blueprint, float mutationChance, float recombinationRate, float resurfacingChance)
         {
             Gene child = new Gene
             {
@@ -263,10 +269,10 @@ namespace Survivebest.World
                     Mode = Random.value < 0.45f ? a.Expression.Mode : Random.value < 0.9f ? b.Expression.Mode : blueprint.ExpressionMode,
                     Threshold = Blend(a.Expression.Threshold, b.Expression.Threshold, mutationChance * 0.6f),
                     EnvironmentalSensitivity = Blend(a.Expression.EnvironmentalSensitivity, b.Expression.EnvironmentalSensitivity, mutationChance),
-                    CarryChance = Blend(a.Expression.CarryChance, b.Expression.CarryChance, mutationChance * 0.5f)
+                    CarryChance = Mathf.Clamp01(Blend(a.Expression.CarryChance, b.Expression.CarryChance, mutationChance * 0.5f) + resurfacingChance * 0.1f)
                 },
-                AlleleA = ChooseGameteAllele(a, mutationChance),
-                AlleleB = ChooseGameteAllele(b, mutationChance),
+                AlleleA = ChooseGameteAllele(a, mutationChance, recombinationRate, resurfacingChance),
+                AlleleB = ChooseGameteAllele(b, mutationChance, recombinationRate, resurfacingChance),
                 MutationFlags = new List<MutationFlag>()
             };
 
@@ -280,9 +286,9 @@ namespace Survivebest.World
             return child;
         }
 
-        private static AlleleDefinition ChooseGameteAllele(Gene source, float mutationChance)
+        private static AlleleDefinition ChooseGameteAllele(Gene source, float mutationChance, float recombinationRate, float resurfacingChance)
         {
-            AlleleDefinition picked = Random.value < 0.5f ? source.AlleleA : source.AlleleB;
+            AlleleDefinition picked = Random.value < (0.5f + recombinationRate * 0.1f) ? source.AlleleA : source.AlleleB;
             AlleleDefinition allele = new AlleleDefinition
             {
                 Code = picked.Code,
@@ -291,6 +297,281 @@ namespace Survivebest.World
                 Active = picked.Active
             };
 
+            if (Random.value <= resurfacingChance)
+            {
+                allele.Active = true;
+                allele.Value = Mathf.Clamp01(Mathf.Lerp(allele.Value, 1f - allele.Value, 0.35f));
+                allele.Code = $"{allele.Code}-resurface";
+            }
+
+            if (Random.value <= mutationChance * Mathf.Lerp(1.15f, 0.75f, recombinationRate))
+            {
+                allele.Value = Mathf.Clamp01(allele.Value + Random.Range(-0.12f, 0.12f));
+                allele.Dominance = Mathf.Clamp(allele.Dominance + Random.Range(-0.2f, 0.2f), -1f, 1f);
+                allele.Code = $"{allele.Code}-mut";
+            }
+
+            return allele;
+        }
+
+        private static void AppendInheritedMutations(List<MutationFlag> target, List<MutationFlag> source, float mutationChance, MutationOrigin origin)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                MutationFlag mutation = source[i];
+                if (mutation == null || Random.value > 0.35f + mutationChance)
+                {
+                    continue;
+                }
+
+                target.Add(new MutationFlag
+                {
+                    Origin = origin,
+                    Label = mutation.Label,
+                    Severity = Mathf.Clamp01(mutation.Severity * Random.Range(0.75f, 1.15f)),
+                    Beneficial = mutation.Beneficial
+                });
+            }
+        }
+
+        private static MutationFlag RandomMutationFlag(MutationOrigin origin)
+        {
+            return new MutationFlag
+            {
+                Origin = origin,
+                Label = origin switch
+                {
+                    MutationOrigin.Environmental => "toxin_shift",
+                    MutationOrigin.InheritedChain => "family_chain",
+                    _ => "natural_variant"
+                },
+                Severity = Random.Range(0.03f, 0.22f),
+                Beneficial = Random.value < 0.18f
+            };
+        }
+
+        private static GenomeRegionProfile RandomRegionProfile(int seed)
+        {
+            int roll = Mathf.Abs(seed % 5);
+            return roll switch
+            {
+                0 => new GenomeRegionProfile { RegionId = "temperate_coastal", MelaninBias = 0.42f, HeightBias = 0.55f, CurlBias = 0.45f, RareTraitBias = 0.14f },
+                1 => new GenomeRegionProfile { RegionId = "equatorial_urban", MelaninBias = 0.78f, HeightBias = 0.52f, CurlBias = 0.76f, RareTraitBias = 0.11f },
+                2 => new GenomeRegionProfile { RegionId = "northern_highland", MelaninBias = 0.28f, HeightBias = 0.61f, CurlBias = 0.35f, RareTraitBias = 0.18f },
+                3 => new GenomeRegionProfile { RegionId = "continental_plains", MelaninBias = 0.5f, HeightBias = 0.58f, CurlBias = 0.48f, RareTraitBias = 0.09f },
+                _ => new GenomeRegionProfile { RegionId = "mixed_metro", MelaninBias = 0.56f, HeightBias = 0.53f, CurlBias = 0.54f, RareTraitBias = 0.16f }
+            };
+        }
+
+        private static PopulationGenePoolReference RandomPopulationPool(int seed)
+        {
+            return new PopulationGenePoolReference
+            {
+                PoolId = $"pool-{Mathf.Abs(seed % 7)}",
+                RegionId = ResolveRegionId(seed),
+                Diversity = Random.Range(0.45f, 0.92f),
+                MutationVolatility = Random.Range(0.03f, 0.15f)
+            };
+        }
+
+        private static string ResolveRegionId(int seed)
+        {
+            string[] regions = { "temperate_coastal", "equatorial_urban", "northern_highland", "continental_plains", "mixed_metro" };
+            return regions[Mathf.Abs(seed) % regions.Length];
+        }
+
+        private static EpigeneticMarkerProfile RandomEpigenetics()
+        {
+            return new EpigeneticMarkerProfile
+            {
+                StressImprint = Random.Range(0f, 0.45f),
+                DietQualityImprint = Random.Range(0.35f, 0.9f),
+                ToxinExposure = Random.Range(0f, 0.25f),
+                SocialSafetySignal = Random.Range(0.2f, 0.85f),
+                SunExposure = Random.Range(0.15f, 0.9f),
+                TraumaExpression = Random.Range(0f, 0.35f)
+            };
+        }
+
+        private static MutationProfile RandomMutationProfile()
+        {
+            return new MutationProfile
+            {
+                RandomMutationLoad = Random.Range(0f, 0.12f),
+                EnvironmentalMutationLoad = Random.Range(0f, 0.08f),
+                InheritedMutationChain = Random.Range(0f, 0.15f),
+                BeneficialMutationChance = Random.Range(0.02f, 0.14f),
+                HiddenTraitSkipChance = Random.Range(0.05f, 0.35f)
+            };
+        }
+
+        private static void RandomizeBehaviorLayers(GeneticProfile profile)
+        {
+            profile.Psychology.BigFiveOpenness = profile.EvaluateGene("psych_openness", Random.value);
+            profile.Psychology.BigFiveConscientiousness = profile.EvaluateGene("psych_conscientiousness", Random.value);
+            profile.Psychology.BigFiveExtraversion = profile.EvaluateGene("psych_extraversion", Random.value);
+            profile.Psychology.BigFiveAgreeableness = profile.EvaluateGene("psych_agreeableness", Random.value);
+            profile.Psychology.BigFiveNeuroticism = profile.EvaluateGene("psych_neuroticism", Random.value);
+            profile.Psychology.Impulsivity = profile.EvaluateGene("psych_impulsivity", Random.value);
+            profile.Psychology.RiskTolerance = profile.EvaluateGene("psych_risk_tolerance", Random.value);
+            profile.Psychology.EmpathyDepth = profile.EvaluateGene("psych_empathy", Random.value);
+            profile.Psychology.Narcissism = profile.EvaluateGene("psych_narcissism", Random.Range(0.05f, 0.35f));
+            profile.Psychology.TraumaSensitivity = profile.EvaluateGene("psych_trauma_sensitivity", Random.value);
+            profile.Psychology.AddictionRisk = profile.EvaluateGene("psych_addiction_risk", Random.value);
+            profile.Talents.MusicAffinity = profile.EvaluateGene("talent_music", Random.value);
+            profile.Talents.AthleticAffinity = profile.EvaluateGene("talent_athletic", Random.value);
+            profile.Talents.SocialAffinity = profile.EvaluateGene("talent_social", Random.value);
+            profile.Talents.AnalyticalAffinity = profile.EvaluateGene("talent_analytical", Random.value);
+            profile.Talents.ArtisticAffinity = profile.EvaluateGene("talent_artistic", Random.value);
+            profile.Talents.VocalTexturePotential = profile.EvaluateGene("talent_vocal_texture", Random.value);
+            profile.Identity.GenderIdentitySpectrum = profile.EvaluateGene("identity_gender", Random.value);
+            profile.Identity.SexualOrientationSpectrum = profile.EvaluateGene("identity_orientation", Random.value);
+            profile.Identity.CulturalAffinity = profile.EvaluateGene("identity_cultural_affinity", Random.value);
+            profile.Identity.VoicePitchRange = profile.EvaluateGene("identity_voice_pitch", Random.value);
+            profile.Identity.SpeechCadence = profile.EvaluateGene("identity_speech_cadence", Random.value);
+        }
+
+
+        private static HormoneRegulationProfile RandomHormoneProfile()
+        {
+            return new HormoneRegulationProfile
+            {
+                EstrogenAndrogenBalance = Random.value,
+                GrowthHormoneSensitivity = Random.value,
+                CortisolRegulation = Random.value,
+                AgingResilience = Random.value
+            };
+        }
+
+        private static MicroDetailGenomeProfile RandomMicroDetails()
+        {
+            return new MicroDetailGenomeProfile
+            {
+                AcneScarRisk = Random.value,
+                StretchResponse = Random.value,
+                ToothCrowding = Random.value,
+                LashLength = Random.value,
+                IrisRingDepth = Random.value,
+                HairlineAsymmetry = Random.value
+            };
+        }
+
+        private static ReproductiveGenomeProfile RandomReproductionProfile()
+        {
+            return new ReproductiveGenomeProfile
+            {
+                FertilitySignal = Random.Range(0.3f, 0.95f),
+                TwinChance = Random.Range(0.01f, 0.12f),
+                MeioticStability = Random.Range(0.55f, 0.95f),
+                RecombinationRate = Random.Range(0.25f, 0.75f),
+                RareTraitResurfacing = Random.Range(0.08f, 0.35f)
+            };
+        }
+
+        private static HormoneRegulationProfile InheritHormones(HormoneRegulationProfile a, HormoneRegulationProfile b, float mutationChance)
+        {
+            return new HormoneRegulationProfile
+            {
+                EstrogenAndrogenBalance = Blend(a.EstrogenAndrogenBalance, b.EstrogenAndrogenBalance, mutationChance),
+                GrowthHormoneSensitivity = Blend(a.GrowthHormoneSensitivity, b.GrowthHormoneSensitivity, mutationChance),
+                CortisolRegulation = Blend(a.CortisolRegulation, b.CortisolRegulation, mutationChance),
+                AgingResilience = Blend(a.AgingResilience, b.AgingResilience, mutationChance)
+            };
+        }
+
+        private static MicroDetailGenomeProfile InheritMicroDetails(MicroDetailGenomeProfile a, MicroDetailGenomeProfile b, float mutationChance)
+        {
+            return new MicroDetailGenomeProfile
+            {
+                AcneScarRisk = Blend(a.AcneScarRisk, b.AcneScarRisk, mutationChance),
+                StretchResponse = Blend(a.StretchResponse, b.StretchResponse, mutationChance),
+                ToothCrowding = Blend(a.ToothCrowding, b.ToothCrowding, mutationChance),
+                LashLength = Blend(a.LashLength, b.LashLength, mutationChance),
+                IrisRingDepth = Blend(a.IrisRingDepth, b.IrisRingDepth, mutationChance),
+                HairlineAsymmetry = Blend(a.HairlineAsymmetry, b.HairlineAsymmetry, mutationChance)
+            };
+        }
+
+        private static ReproductiveGenomeProfile InheritReproduction(ReproductiveGenomeProfile a, ReproductiveGenomeProfile b, float mutationChance)
+        {
+            return new ReproductiveGenomeProfile
+            {
+                FertilitySignal = Blend(a.FertilitySignal, b.FertilitySignal, mutationChance * 0.4f),
+                TwinChance = Blend(a.TwinChance, b.TwinChance, mutationChance * 0.3f),
+                MeioticStability = Blend(a.MeioticStability, b.MeioticStability, mutationChance),
+                RecombinationRate = Blend(a.RecombinationRate, b.RecombinationRate, mutationChance * 0.5f),
+                RareTraitResurfacing = Blend(a.RareTraitResurfacing, b.RareTraitResurfacing, mutationChance * 0.5f)
+            };
+        }
+
+        private static GenomeRegionProfile InheritRegionProfile(GenomeRegionProfile a, GenomeRegionProfile b, float mutationChance)
+        {
+            return new GenomeRegionProfile
+            {
+                RegionId = ResolveDominantString(a.RegionId, b.RegionId),
+                MelaninBias = Blend(a.MelaninBias, b.MelaninBias, mutationChance),
+                HeightBias = Blend(a.HeightBias, b.HeightBias, mutationChance),
+                CurlBias = Blend(a.CurlBias, b.CurlBias, mutationChance),
+                RareTraitBias = Blend(a.RareTraitBias, b.RareTraitBias, mutationChance * 0.5f)
+            };
+        }
+
+        private static PopulationGenePoolReference InheritPopulationPool(PopulationGenePoolReference a, PopulationGenePoolReference b, float mutationChance)
+        {
+            return new PopulationGenePoolReference
+            {
+                PoolId = ResolveDominantString(a.PoolId, b.PoolId),
+                RegionId = ResolveDominantString(a.RegionId, b.RegionId),
+                Diversity = Blend(a.Diversity, b.Diversity, mutationChance * 0.5f),
+                MutationVolatility = Blend(a.MutationVolatility, b.MutationVolatility, mutationChance)
+            };
+        }
+
+        private static GeneticLineageRecord InheritLineage(GeneticLineageRecord a, GeneticLineageRecord b)
+        {
+            return new GeneticLineageRecord
+            {
+                FamilyId = $"{a.FamilyId}-{b.FamilyId}",
+                FamilyName = ResolveDominantString(a.FamilyName, b.FamilyName),
+                GenerationDepth = Mathf.Max(a.GenerationDepth, b.GenerationDepth) + 1,
+                NotableTraitKey = Random.value < 0.5f ? a.NotableTraitKey : b.NotableTraitKey,
+                RareTraitStrength = Mathf.Clamp01((a.RareTraitStrength + b.RareTraitStrength) * 0.5f)
+            };
+        }
+
+        private static EpigeneticMarkerProfile InheritEpigenetics(EpigeneticMarkerProfile a, EpigeneticMarkerProfile b, float mutationChance)
+        {
+            return new EpigeneticMarkerProfile
+            {
+                StressImprint = Blend(a.StressImprint, b.StressImprint, mutationChance),
+                DietQualityImprint = Blend(a.DietQualityImprint, b.DietQualityImprint, mutationChance * 0.5f),
+                ToxinExposure = Blend(a.ToxinExposure, b.ToxinExposure, mutationChance),
+                SocialSafetySignal = Blend(a.SocialSafetySignal, b.SocialSafetySignal, mutationChance * 0.5f),
+                SunExposure = Blend(a.SunExposure, b.SunExposure, mutationChance),
+                TraumaExpression = Blend(a.TraumaExpression, b.TraumaExpression, mutationChance)
+            };
+        }
+
+        private static MutationProfile InheritMutationProfile(MutationProfile a, MutationProfile b, float mutationChance)
+        {
+            return new MutationProfile
+            {
+                RandomMutationLoad = Blend(a.RandomMutationLoad, b.RandomMutationLoad, mutationChance),
+                EnvironmentalMutationLoad = Blend(a.EnvironmentalMutationLoad, b.EnvironmentalMutationLoad, mutationChance),
+                InheritedMutationChain = Mathf.Clamp01(((a.InheritedMutationChain + b.InheritedMutationChain) * 0.5f) + mutationChance * 0.1f),
+                BeneficialMutationChance = Blend(a.BeneficialMutationChance, b.BeneficialMutationChance, mutationChance * 0.5f),
+                HiddenTraitSkipChance = Blend(a.HiddenTraitSkipChance, b.HiddenTraitSkipChance, mutationChance * 0.5f)
+            };
+        }
+
+        private static float Blend(float a, float b, float mutationChance)
+        {
+            float value = Mathf.Lerp(a, b, Random.Range(0.35f, 0.65f));
             if (Random.value <= mutationChance)
             {
                 allele.Value = Mathf.Clamp01(allele.Value + Random.Range(-0.12f, 0.12f));
@@ -554,144 +835,6 @@ namespace Survivebest.World
                 Category = category;
                 ExpressionMode = expressionMode;
             }
-        }
-
-        private static AllelePairGene RandomAlleles()
-        {
-            return new AllelePairGene
-            {
-                DominantA = Random.value,
-                RecessiveB = Random.value,
-                HiddenGenerationCarry = Random.Range(0f, 0.4f)
-            };
-        }
-
-        private static PolygenicTraitCluster RandomPolygenicCluster()
-        {
-            return new PolygenicTraitCluster
-            {
-                HeightScore = Random.value,
-                CognitionScore = Random.value,
-                TemperamentScore = Random.value,
-                AthleticScore = Random.value,
-                ImmuneScore = Random.value
-            };
-        }
-
-        private static EpigeneticMarkerProfile RandomEpigenetics()
-        {
-            return new EpigeneticMarkerProfile
-            {
-                StressImprint = Random.Range(0f, 0.4f),
-                DietQualityImprint = Random.Range(0.35f, 0.9f),
-                ToxinExposure = Random.Range(0f, 0.2f),
-                SocialSafetySignal = Random.Range(0.2f, 0.85f)
-            };
-        }
-
-        private static MutationProfile RandomMutationProfile()
-        {
-            return new MutationProfile
-            {
-                RandomMutationLoad = Random.Range(0f, 0.12f),
-                EnvironmentalMutationLoad = Random.Range(0f, 0.08f),
-                HiddenTraitSkipChance = Random.Range(0.05f, 0.35f)
-            };
-        }
-
-        private static PsychologicalGeneticsProfile RandomPsychologyProfile()
-        {
-            return new PsychologicalGeneticsProfile
-            {
-                BigFiveOpenness = Random.value,
-                BigFiveConscientiousness = Random.value,
-                BigFiveExtraversion = Random.value,
-                BigFiveAgreeableness = Random.value,
-                BigFiveNeuroticism = Random.value,
-                TraumaSensitivity = Random.value,
-                AddictionRisk = Random.value
-            };
-        }
-
-        private static TalentGeneticsProfile RandomTalentProfile()
-        {
-            return new TalentGeneticsProfile
-            {
-                MusicAffinity = Random.value,
-                AthleticAffinity = Random.value,
-                SocialAffinity = Random.value,
-                AnalyticalAffinity = Random.value,
-                ArtisticAffinity = Random.value
-            };
-        }
-
-        private static AllelePairGene InheritAlleles(AllelePairGene a, AllelePairGene b, float mutationChance)
-        {
-            return new AllelePairGene
-            {
-                DominantA = Blend(a.DominantA, b.DominantA, mutationChance),
-                RecessiveB = Blend(a.RecessiveB, b.RecessiveB, mutationChance),
-                HiddenGenerationCarry = Blend(a.HiddenGenerationCarry, b.HiddenGenerationCarry, mutationChance * 0.5f)
-            };
-        }
-
-        private static PolygenicTraitCluster InheritPolygenicCluster(PolygenicTraitCluster a, PolygenicTraitCluster b, float mutationChance)
-        {
-            return new PolygenicTraitCluster
-            {
-                HeightScore = Blend(a.HeightScore, b.HeightScore, mutationChance),
-                CognitionScore = Blend(a.CognitionScore, b.CognitionScore, mutationChance),
-                TemperamentScore = Blend(a.TemperamentScore, b.TemperamentScore, mutationChance),
-                AthleticScore = Blend(a.AthleticScore, b.AthleticScore, mutationChance),
-                ImmuneScore = Blend(a.ImmuneScore, b.ImmuneScore, mutationChance)
-            };
-        }
-
-        private static EpigeneticMarkerProfile InheritEpigenetics(EpigeneticMarkerProfile a, EpigeneticMarkerProfile b, float mutationChance)
-        {
-            return new EpigeneticMarkerProfile
-            {
-                StressImprint = Blend(a.StressImprint, b.StressImprint, mutationChance),
-                DietQualityImprint = Blend(a.DietQualityImprint, b.DietQualityImprint, mutationChance * 0.5f),
-                ToxinExposure = Blend(a.ToxinExposure, b.ToxinExposure, mutationChance),
-                SocialSafetySignal = Blend(a.SocialSafetySignal, b.SocialSafetySignal, mutationChance * 0.5f)
-            };
-        }
-
-        private static MutationProfile InheritMutationProfile(MutationProfile a, MutationProfile b, float mutationChance)
-        {
-            return new MutationProfile
-            {
-                RandomMutationLoad = Blend(a.RandomMutationLoad, b.RandomMutationLoad, mutationChance),
-                EnvironmentalMutationLoad = Blend(a.EnvironmentalMutationLoad, b.EnvironmentalMutationLoad, mutationChance),
-                HiddenTraitSkipChance = Blend(a.HiddenTraitSkipChance, b.HiddenTraitSkipChance, mutationChance * 0.5f)
-            };
-        }
-
-        private static PsychologicalGeneticsProfile InheritPsychologyProfile(PsychologicalGeneticsProfile a, PsychologicalGeneticsProfile b, float mutationChance)
-        {
-            return new PsychologicalGeneticsProfile
-            {
-                BigFiveOpenness = Blend(a.BigFiveOpenness, b.BigFiveOpenness, mutationChance),
-                BigFiveConscientiousness = Blend(a.BigFiveConscientiousness, b.BigFiveConscientiousness, mutationChance),
-                BigFiveExtraversion = Blend(a.BigFiveExtraversion, b.BigFiveExtraversion, mutationChance),
-                BigFiveAgreeableness = Blend(a.BigFiveAgreeableness, b.BigFiveAgreeableness, mutationChance),
-                BigFiveNeuroticism = Blend(a.BigFiveNeuroticism, b.BigFiveNeuroticism, mutationChance),
-                TraumaSensitivity = Blend(a.TraumaSensitivity, b.TraumaSensitivity, mutationChance),
-                AddictionRisk = Blend(a.AddictionRisk, b.AddictionRisk, mutationChance)
-            };
-        }
-
-        private static TalentGeneticsProfile InheritTalentProfile(TalentGeneticsProfile a, TalentGeneticsProfile b, float mutationChance)
-        {
-            return new TalentGeneticsProfile
-            {
-                MusicAffinity = Blend(a.MusicAffinity, b.MusicAffinity, mutationChance),
-                AthleticAffinity = Blend(a.AthleticAffinity, b.AthleticAffinity, mutationChance),
-                SocialAffinity = Blend(a.SocialAffinity, b.SocialAffinity, mutationChance),
-                AnalyticalAffinity = Blend(a.AnalyticalAffinity, b.AnalyticalAffinity, mutationChance),
-                ArtisticAffinity = Blend(a.ArtisticAffinity, b.ArtisticAffinity, mutationChance)
-            };
         }
     }
 }

@@ -16,6 +16,8 @@ namespace Survivebest.UI.ViewModels
         public string PreviewBackground;
         public string CreatorMode;
         public string PopulationRegion;
+        public string HormoneSummary;
+        public string ReproductionSummary;
         public string FaceSummary;
         public string BodySummary;
         public string GeneticsSummary;

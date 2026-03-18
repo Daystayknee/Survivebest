@@ -225,9 +225,36 @@ namespace Survivebest.World
                  (Mathf.Abs(Profile.Psychology.EmpathyDepth - relative.Profile.Psychology.EmpathyDepth) * 0.12f));
 
             float resemblance = Mathf.Clamp01((sharedGenome * 0.6f) + (Mathf.Clamp01(sharedTraits) * 0.4f));
-            return $"Genome match {(sharedGenome * 100f):0}% • resemblance {(resemblance * 100f):0}% • lineage {Profile.Lineage.FamilyName} • mutation chain {(Profile.Mutations.InheritedMutationChain * 100f):0}%";
+            return $"Genome match {(sharedGenome * 100f):0}% • resemblance {(resemblance * 100f):0}% • lineage {Profile.Lineage.FamilyName} • mutation chain {(Profile.Mutations.InheritedMutationChain * 100f):0}% • resurfacing {(Profile.Reproduction.RareTraitResurfacing * 100f):0}%";
         }
 
+
+
+        public void AdvanceDevelopmentalYear(float nutritionQuality, float chronicStress, float sunlightExposure)
+        {
+            geneticProfile.Epigenetics.DietQualityImprint = Mathf.Clamp01(Mathf.Lerp(geneticProfile.Epigenetics.DietQualityImprint, nutritionQuality, 0.35f));
+            geneticProfile.Epigenetics.StressImprint = Mathf.Clamp01(Mathf.Lerp(geneticProfile.Epigenetics.StressImprint, chronicStress, 0.4f));
+            geneticProfile.Epigenetics.SunExposure = Mathf.Clamp01(Mathf.Lerp(geneticProfile.Epigenetics.SunExposure, sunlightExposure, 0.3f));
+            geneticProfile.Hormones.CortisolRegulation = Mathf.Clamp01(Mathf.Lerp(geneticProfile.Hormones.CortisolRegulation, 1f - chronicStress, 0.25f));
+            geneticProfile.Hormones.AgingResilience = Mathf.Clamp01(geneticProfile.Hormones.AgingResilience - chronicStress * 0.04f + nutritionQuality * 0.02f);
+            ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Developmental year simulated", nutritionQuality + chronicStress + sunlightExposure);
+        }
+
+        public string BuildReproductionForecast(GeneticsSystem partner)
+        {
+            if (partner == null || partner.Profile == null)
+            {
+                return "No partner genome available.";
+            }
+
+            float fertility = Mathf.Clamp01((Profile.Reproduction.FertilitySignal + partner.Profile.Reproduction.FertilitySignal) * 0.5f);
+            float meioticStability = Mathf.Clamp01((Profile.Reproduction.MeioticStability + partner.Profile.Reproduction.MeioticStability) * 0.5f);
+            float twinChance = Mathf.Clamp01((Profile.Reproduction.TwinChance + partner.Profile.Reproduction.TwinChance) * 0.5f);
+            float resurfacing = Mathf.Clamp01((Profile.Reproduction.RareTraitResurfacing + partner.Profile.Reproduction.RareTraitResurfacing) * 0.5f);
+            float mutationRisk = Mathf.Clamp01((Profile.Mutations.RandomMutationLoad + partner.Profile.Mutations.RandomMutationLoad + Profile.Mutations.EnvironmentalMutationLoad + partner.Profile.Mutations.EnvironmentalMutationLoad) * 0.35f);
+            return $"fertility {(fertility * 100f):0}% • meiotic stability {(meioticStability * 100f):0}% • twin chance {(twinChance * 100f):0.0}% • resurfacing {(resurfacing * 100f):0}% • mutation risk {(mutationRisk * 100f):0}%";
+        }
 
         public void SetCreatorMode(CreatorGeneticsMode mode)
         {
