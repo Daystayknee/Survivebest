@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Survivebest.Core;
+using CoreLifeStage = Survivebest.Core.LifeStage;
 
 namespace Survivebest.World
 {
@@ -205,6 +206,6 @@ namespace Survivebest.World
         public HairProfile Hair = new();
         public HealthPredispositionProfile Health = new();
         public AvatarLayerProfile AvatarLayers = new();
-        public LifeStage LifeStage = LifeStage.YoungAdult;
+        public CoreLifeStage LifeStage = CoreLifeStage.YoungAdult;
     }
 }
