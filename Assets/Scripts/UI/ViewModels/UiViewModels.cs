@@ -14,6 +14,8 @@ namespace Survivebest.UI.ViewModels
         public string ActiveTab;
         public string PreviewMode;
         public string PreviewBackground;
+        public string CreatorMode;
+        public string PopulationRegion;
         public string FaceSummary;
         public string BodySummary;
         public string GeneticsSummary;

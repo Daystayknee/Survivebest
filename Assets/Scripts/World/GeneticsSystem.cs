@@ -166,7 +166,9 @@ namespace Survivebest.World
                 environmentPressure +
                 geneticProfile.Epigenetics.StressImprint * 0.2f +
                 (1f - geneticProfile.Epigenetics.DietQualityImprint) * 0.1f +
-                geneticProfile.Epigenetics.ToxinExposure * 0.15f);
+                geneticProfile.Epigenetics.ToxinExposure * 0.15f +
+                geneticProfile.Epigenetics.TraumaExpression * 0.1f);
+            geneticProfile.RebuildDerivedTraitsFromGenome(effectivePressure);
             phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, effectivePressure);
             ApplyResolvedPhenotype(phenotypeProfile);
             ApplyDynamicPresentationState();
@@ -186,10 +188,10 @@ namespace Survivebest.World
 
         public void ApplyTargetedGeneEdit(float melanin, float heightPotential, float cognition, float athleticism)
         {
-            geneticProfile.MelaninRange = Mathf.Clamp01(melanin);
-            geneticProfile.HeightPotential = Mathf.Clamp01(heightPotential);
-            geneticProfile.PolygenicTraits.CognitionScore = Mathf.Clamp01(cognition);
-            geneticProfile.PolygenicTraits.AthleticScore = Mathf.Clamp01(athleticism);
+            EditGene("skin_melanin", melanin);
+            EditGene("height_potential", heightPotential);
+            EditGene("psych_openness", cognition);
+            EditGene("talent_athletic", athleticism);
             geneticProfile.Mutations.RandomMutationLoad = Mathf.Clamp01(geneticProfile.Mutations.RandomMutationLoad * 0.8f);
             geneticProfile.ClampToNormalizedRange();
             ResolveAndApplyPhenotype();
@@ -200,10 +202,7 @@ namespace Survivebest.World
         {
             float spike = Random.Range(0.01f, 0.08f);
             geneticProfile.Mutations.RandomMutationLoad = Mathf.Clamp01(geneticProfile.Mutations.RandomMutationLoad + spike);
-            geneticProfile.MelaninRange = Mathf.Clamp01(geneticProfile.MelaninRange + Random.Range(-spike, spike));
-            geneticProfile.HairCurl = Mathf.Clamp01(geneticProfile.HairCurl + Random.Range(-spike, spike));
-            geneticProfile.HeightPotential = Mathf.Clamp01(geneticProfile.HeightPotential + Random.Range(-spike, spike));
-            geneticProfile.PolygenicTraits.TemperamentScore = Mathf.Clamp01(geneticProfile.PolygenicTraits.TemperamentScore + Random.Range(-spike, spike));
+            MutateRandomGene(spike, MutationOrigin.Natural);
             geneticProfile.ClampToNormalizedRange();
             ResolveAndApplyPhenotype();
             PublishGeneticsEvent("Spontaneous mutation rolled", spike);
@@ -216,17 +215,135 @@ namespace Survivebest.World
                 return "No comparable relative profile.";
             }
 
-            float resemblance =
-                1f -
-                ((Mathf.Abs(Profile.FaceWidth - relative.Profile.FaceWidth) * 0.2f) +
-                 (Mathf.Abs(Profile.JawWidth - relative.Profile.JawWidth) * 0.15f) +
-                 (Mathf.Abs(Profile.MelaninRange - relative.Profile.MelaninRange) * 0.2f) +
-                 (Mathf.Abs(Profile.HeightPotential - relative.Profile.HeightPotential) * 0.2f) +
+            float sharedGenome = CalculateSharedGenome(relative.Profile);
+            float sharedTraits = 1f -
+                ((Mathf.Abs(Profile.FaceWidth - relative.Profile.FaceWidth) * 0.18f) +
+                 (Mathf.Abs(Profile.JawWidth - relative.Profile.JawWidth) * 0.12f) +
+                 (Mathf.Abs(Profile.MelaninRange - relative.Profile.MelaninRange) * 0.15f) +
+                 (Mathf.Abs(Profile.HeightPotential - relative.Profile.HeightPotential) * 0.15f) +
                  (Mathf.Abs(Profile.HairCurl - relative.Profile.HairCurl) * 0.1f) +
-                 (Mathf.Abs(Profile.PolygenicTraits.TemperamentScore - relative.Profile.PolygenicTraits.TemperamentScore) * 0.15f));
+                 (Mathf.Abs(Profile.Psychology.EmpathyDepth - relative.Profile.Psychology.EmpathyDepth) * 0.12f));
 
-            resemblance = Mathf.Clamp01(resemblance);
-            return $"Resemblance {(resemblance * 100f):0}% • hidden gene carry {(Profile.Mutations.HiddenTraitSkipChance * 100f):0}% • cognition {(Profile.PolygenicTraits.CognitionScore * 100f):0}%";
+            float resemblance = Mathf.Clamp01((sharedGenome * 0.6f) + (Mathf.Clamp01(sharedTraits) * 0.4f));
+            return $"Genome match {(sharedGenome * 100f):0}% • resemblance {(resemblance * 100f):0}% • lineage {Profile.Lineage.FamilyName} • mutation chain {(Profile.Mutations.InheritedMutationChain * 100f):0}%";
+        }
+
+
+        public void SetCreatorMode(CreatorGeneticsMode mode)
+        {
+            geneticProfile.CreatorMode = mode;
+            PublishGeneticsEvent($"Creator mode set to {mode}", (int)mode + 1f);
+        }
+
+        public void ApplyVisualSculptToGenome(float faceWidth, float jawWidth, float noseBridgeHeight, float lipFullness, float frameSize, float postureBaseline)
+        {
+            geneticProfile.CreatorMode = CreatorGeneticsMode.VisualSculpt;
+            EditGene("face_width", faceWidth);
+            EditGene("jaw_width", jawWidth);
+            EditGene("nose_bridge_height", noseBridgeHeight);
+            EditGene("lip_fullness", lipFullness);
+            EditGene("frame_size", frameSize);
+            EditGene("posture_baseline", postureBaseline);
+            ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Visual sculpt translated into DNA", 1.1f);
+        }
+
+        public void ApplyPopulationTemplate(string regionId, float diversityBias = 0.65f)
+        {
+            if (string.IsNullOrWhiteSpace(regionId))
+            {
+                return;
+            }
+
+            geneticProfile.CreatorMode = CreatorGeneticsMode.RandomPopulation;
+            geneticProfile.PopulationRegionId = regionId;
+            geneticProfile.RegionProfile.RegionId = regionId;
+            geneticProfile.PopulationPool.RegionId = regionId;
+            geneticProfile.PopulationPool.Diversity = Mathf.Clamp01(diversityBias);
+            geneticProfile.RegionProfile.MelaninBias = regionId.Contains("equatorial") ? 0.78f : regionId.Contains("northern") ? 0.28f : 0.52f;
+            geneticProfile.RegionProfile.HeightBias = regionId.Contains("highland") ? 0.62f : 0.54f;
+            geneticProfile.RegionProfile.CurlBias = regionId.Contains("equatorial") ? 0.76f : regionId.Contains("northern") ? 0.35f : 0.5f;
+            ResolveAndApplyPhenotype();
+            PublishGeneticsEvent($"Population template applied: {regionId}", diversityBias);
+        }
+
+        private void EditGene(string traitKey, float normalizedValue)
+        {
+            Gene gene = geneticProfile.FindGene(traitKey);
+            if (gene == null)
+            {
+                return;
+            }
+
+            float value = Mathf.Clamp01(normalizedValue);
+            gene.AlleleA.Value = Mathf.Lerp(gene.AlleleA.Value, value, 0.8f);
+            gene.AlleleB.Value = Mathf.Lerp(gene.AlleleB.Value, value, 0.6f);
+            gene.Expression.Mode = TraitExpressionMode.Polygenic;
+        }
+
+        private void MutateRandomGene(float spike, MutationOrigin origin)
+        {
+            if (geneticProfile.ChromosomePairs == null || geneticProfile.ChromosomePairs.Count == 0)
+            {
+                return;
+            }
+
+            ChromosomePair pair = geneticProfile.ChromosomePairs[Random.Range(0, geneticProfile.ChromosomePairs.Count)];
+            if (pair == null || pair.Genes == null || pair.Genes.Count == 0)
+            {
+                return;
+            }
+
+            Gene gene = pair.Genes[Random.Range(0, pair.Genes.Count)];
+            if (gene == null)
+            {
+                return;
+            }
+
+            AlleleDefinition allele = Random.value < 0.5f ? gene.AlleleA : gene.AlleleB;
+            allele.Value = Mathf.Clamp01(allele.Value + Random.Range(-spike, spike));
+            allele.Dominance = Mathf.Clamp(allele.Dominance + Random.Range(-spike * 2f, spike * 2f), -1f, 1f);
+            gene.MutationFlags.Add(new MutationFlag
+            {
+                Origin = origin,
+                Label = $"{gene.TraitKey}_shift",
+                Severity = Mathf.Clamp01(spike),
+                Beneficial = Random.value < geneticProfile.Mutations.BeneficialMutationChance
+            });
+        }
+
+        private float CalculateSharedGenome(GeneticProfile relative)
+        {
+            if (relative == null || relative.ChromosomePairs == null || geneticProfile.ChromosomePairs == null)
+            {
+                return 0f;
+            }
+
+            int compared = 0;
+            float similarity = 0f;
+            for (int pairIndex = 0; pairIndex < geneticProfile.ChromosomePairs.Count; pairIndex++)
+            {
+                ChromosomePair pair = geneticProfile.ChromosomePairs[pairIndex];
+                if (pair == null || pair.Genes == null)
+                {
+                    continue;
+                }
+
+                for (int geneIndex = 0; geneIndex < pair.Genes.Count; geneIndex++)
+                {
+                    Gene gene = pair.Genes[geneIndex];
+                    Gene other = relative.FindGene(gene?.TraitKey);
+                    if (gene == null || other == null)
+                    {
+                        continue;
+                    }
+
+                    compared++;
+                    similarity += 1f - ((Mathf.Abs(gene.AlleleA.Value - other.AlleleA.Value) + Mathf.Abs(gene.AlleleB.Value - other.AlleleB.Value)) * 0.5f);
+                }
+            }
+
+            return compared > 0 ? Mathf.Clamp01(similarity / compared) : 0f;
         }
 
         private void ApplyResolvedPhenotype(PhenotypeProfile phenotype)

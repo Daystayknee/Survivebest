@@ -7,6 +7,7 @@ using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.UI.ViewModels;
 using Survivebest.Tasks;
+using Survivebest.World;
 
 namespace Survivebest.UI
 {
@@ -63,6 +64,15 @@ namespace Survivebest.UI
         public string PreviewFocus;
         public string PreviewBackground;
         public bool Locked;
+        public string CreatorMode;
+        public string PopulationRegionId;
+        public float GeneEditMelanin;
+        public float GeneEditHeight;
+        public float GeneEditBodyFat;
+        public float GeneEditMuscle;
+        public float GeneEditCognition;
+        public float GeneEditStress;
+        public float GeneEditDiet;
         public int FaceShape;
         public int EyeShape;
         public int BodyType;
@@ -168,6 +178,7 @@ namespace Survivebest.UI
         private readonly Dictionary<string, BodyHairProfile> savedBodyPresets = new();
         private readonly HashSet<string> lockedCharacterIds = new();
 
+        private CreatorGeneticsMode creatorMode = CreatorGeneticsMode.RandomPopulation;
         private bool isDraggingPreview;
 
         private void OnEnable()
@@ -368,29 +379,65 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void UseRandomPopulationMode()
+        {
+            creatorMode = CreatorGeneticsMode.RandomPopulation;
+            ResolveActiveGeneticsSystem()?.SetCreatorMode(creatorMode);
+            RefreshPreview();
+        }
+
+        public void UseDnaEditMode()
+        {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            ResolveActiveGeneticsSystem()?.SetCreatorMode(creatorMode);
+            RefreshPreview();
+        }
+
+        public void UseVisualSculptMode()
+        {
+            creatorMode = CreatorGeneticsMode.VisualSculpt;
+            ResolveActiveGeneticsSystem()?.SetCreatorMode(creatorMode);
+            RefreshPreview();
+        }
+
+        public void SetPopulationRegionTemplate(int regionIndex)
+        {
+            string[] regions = { "temperate_coastal", "equatorial_urban", "northern_highland", "continental_plains", "mixed_metro" };
+            int clamped = Mathf.Clamp(regionIndex, 0, regions.Length - 1);
+            creatorMode = CreatorGeneticsMode.RandomPopulation;
+            ResolveActiveGeneticsSystem()?.ApplyPopulationTemplate(regions[clamped]);
+            RefreshPreview();
+        }
+
         public void SetGenomeMelanin(float value)
         {
-            SetGeneticScalar(profile => profile.MelaninRange = Mathf.Clamp01(value));
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneValue("skin_melanin", value);
         }
 
         public void SetGenomeHeight(float value)
         {
-            SetGeneticScalar(profile => profile.HeightPotential = Mathf.Clamp01(value));
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneValue("height_potential", value);
         }
 
         public void SetGenomeBodyFat(float value)
         {
-            SetGeneticScalar(profile => profile.FatDistribution = Mathf.Clamp01(value));
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneValue("fat_distribution", value);
         }
 
         public void SetGenomeMuscle(float value)
         {
-            SetGeneticScalar(profile => profile.MusclePotential = Mathf.Clamp01(value));
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneValue("muscle_potential", value);
         }
 
         public void SetGenomeCognition(float value)
         {
-            SetGeneticScalar(profile => profile.PolygenicTraits.CognitionScore = Mathf.Clamp01(value));
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGeneValue("psych_openness", value);
+            SetGeneValue("talent_analytical", value);
         }
 
         public void SetGenomeStressEpigenetics(float value)
@@ -429,6 +476,7 @@ namespace Survivebest.UI
 
         public void RollGenomeMutation()
         {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
             ResolveActiveGeneticsSystem()?.RollSpontaneousMutation();
             RefreshPreview();
         }
@@ -710,6 +758,15 @@ namespace Survivebest.UI
                 PreviewFocus = CurrentPreviewFocus.ToString(),
                 PreviewBackground = CurrentBackground.ToString(),
                 Locked = IsActiveCharacterLocked(),
+                CreatorMode = creatorMode.ToString(),
+                PopulationRegionId = ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId ?? "global",
+                GeneEditMelanin = ResolveActiveGeneticsSystem()?.Profile?.MelaninRange ?? 0.5f,
+                GeneEditHeight = ResolveActiveGeneticsSystem()?.Profile?.HeightPotential ?? 0.5f,
+                GeneEditBodyFat = ResolveActiveGeneticsSystem()?.Profile?.FatDistribution ?? 0.5f,
+                GeneEditMuscle = ResolveActiveGeneticsSystem()?.Profile?.MusclePotential ?? 0.5f,
+                GeneEditCognition = ResolveActiveGeneticsSystem()?.Profile?.Psychology.BigFiveOpenness ?? 0.5f,
+                GeneEditStress = ResolveActiveGeneticsSystem()?.Profile?.Epigenetics.StressImprint ?? 0.2f,
+                GeneEditDiet = ResolveActiveGeneticsSystem()?.Profile?.Epigenetics.DietQualityImprint ?? 0.6f,
                 FaceShape = (int)active.FaceShape,
                 EyeShape = (int)active.EyeShape,
                 BodyType = (int)active.CurrentBodyType,
@@ -751,6 +808,15 @@ namespace Survivebest.UI
             appearanceManager.SetHairProfile(CloneHair(snapshot.Hair));
             appearanceManager.SetFacialHairProfile(CloneFacial(snapshot.FacialHair));
             appearanceManager.SetBodyHairProfile(CloneBody(snapshot.BodyHair));
+            if (Enum.TryParse(snapshot.CreatorMode, out CreatorGeneticsMode savedMode))
+            {
+                creatorMode = savedMode;
+                ResolveActiveGeneticsSystem()?.SetCreatorMode(creatorMode);
+            }
+            if (!string.IsNullOrWhiteSpace(snapshot.PopulationRegionId))
+            {
+                ResolveActiveGeneticsSystem()?.ApplyPopulationTemplate(snapshot.PopulationRegionId);
+            }
 
             if (Enum.TryParse(snapshot.ActiveTab, out CharacterCreatorDashboardTab tab))
             {
@@ -787,6 +853,14 @@ namespace Survivebest.UI
                 appearanceManager.SetSkinTone((SkinToneType)snapshot.SkinTone);
                 active?.SyncPortraitDataFromAppearance(appearanceManager);
             }
+
+            SetGenomeMelanin(snapshot.GeneEditMelanin);
+            SetGenomeHeight(snapshot.GeneEditHeight);
+            SetGenomeBodyFat(snapshot.GeneEditBodyFat);
+            SetGenomeMuscle(snapshot.GeneEditMuscle);
+            SetGenomeCognition(snapshot.GeneEditCognition);
+            SetGenomeStressEpigenetics(snapshot.GeneEditStress);
+            SetGenomeDietEpigenetics(snapshot.GeneEditDiet);
 
             if (snapshot.Locked && !string.IsNullOrWhiteSpace(snapshot.CharacterId))
             {
@@ -879,7 +953,7 @@ namespace Survivebest.UI
                 FaceSummary = active != null ? $"{active.FaceShape} / {active.JawShape} / {active.NoseShape} / {active.LipShape}" : string.Empty,
                 BodySummary = active != null ? $"{active.CurrentBodyType} / {active.ClothingStyle}" : string.Empty,
                 GeneticsSummary = appearanceManager != null && appearanceManager.CurrentProfile != null
-                    ? $"{appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor}"
+                    ? $"{creatorMode} / {appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor} / {ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId}"
                     : string.Empty,
                 AvailableStyles = appearanceManager != null ? appearanceManager.GetHairstylesByFilter(hairTextureFilter, hairLengthFilter).Count : 0,
                 SavedPresetCount = savedHairPresets.Count,
@@ -1040,10 +1114,27 @@ namespace Survivebest.UI
             if (geneticsDetailsText != null && appearanceManager != null && appearanceManager.CurrentProfile != null)
             {
                 string advanced = genetics != null
-                    ? $"Melanin: {genetics.Profile.MelaninRange:0.00}\nHeight Gene: {genetics.Profile.HeightPotential:0.00}\nBody Fat Gene: {genetics.Profile.FatDistribution:0.00}\nMuscle Gene: {genetics.Profile.MusclePotential:0.00}\nCognition: {genetics.Profile.PolygenicTraits.CognitionScore:0.00}\nStress Imprint: {genetics.Profile.Epigenetics.StressImprint:0.00}\nMutation Load: {genetics.Profile.Mutations.RandomMutationLoad:0.00}"
+                    ? $"Mode: {creatorMode}\nRegion Pool: {genetics.Profile.PopulationRegionId}\nChromosomes: {genetics.Profile.ChromosomePairs.Count}\nMelanin Gene: {genetics.Profile.MelaninRange:0.00}\nHeight Gene: {genetics.Profile.HeightPotential:0.00}\nBody Fat Gene: {genetics.Profile.FatDistribution:0.00}\nMuscle Gene: {genetics.Profile.MusclePotential:0.00}\nOpenness/Cognition: {genetics.Profile.Psychology.BigFiveOpenness:0.00}\nStress Imprint: {genetics.Profile.Epigenetics.StressImprint:0.00}\nMutation Chain: {genetics.Profile.Mutations.InheritedMutationChain:0.00}"
                     : "Genetics system unavailable.";
                 geneticsDetailsText.text = $"Skin Tone: {appearanceManager.CurrentProfile.SkinTone}\nEye Color: {appearanceManager.CurrentProfile.EyeColor}\nHair Texture: {hairTextureFilter}\nLocked: {(IsActiveCharacterLocked() ? "Yes" : "No")}\n{advanced}";
             }
+        }
+
+
+        private void SetGeneValue(string traitKey, float value)
+        {
+            SetGeneticScalar(profile =>
+            {
+                Gene gene = profile.FindGene(traitKey);
+                if (gene == null)
+                {
+                    return;
+                }
+
+                float normalized = Mathf.Clamp01(value);
+                gene.AlleleA.Value = normalized;
+                gene.AlleleB.Value = Mathf.Lerp(gene.AlleleB.Value, normalized, 0.85f);
+            });
         }
 
         private GeneticsSystem ResolveActiveGeneticsSystem()
@@ -1061,6 +1152,7 @@ namespace Survivebest.UI
                 return;
             }
 
+            genetics.SetCreatorMode(creatorMode);
             GeneticProfile profile = genetics.Profile;
             applyChange(profile);
             genetics.OverrideGenetics(profile, true);
