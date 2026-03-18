@@ -12,6 +12,11 @@ namespace Survivebest.UI.ViewModels
     [Serializable] public class CharacterCreatorDashboardViewModel
     {
         public string ActiveTab;
+        public string PreviewMode;
+        public string PreviewBackground;
+        public string FaceSummary;
+        public string BodySummary;
+        public string GeneticsSummary;
         public string HairTextureFilter;
         public string HairLengthFilter;
         public string FacialHairFilter;
@@ -24,7 +29,16 @@ namespace Survivebest.UI.ViewModels
         public float HighlightIntensity;
     }
 
-    [Serializable] public class HouseholdMakerViewModel { public string HouseholdName; public int MemberCount; public int StartingFunds; }
+    [Serializable] public class HouseholdMakerViewModel
+    {
+        public string HouseholdName;
+        public int MemberCount;
+        public int StartingFunds;
+        public string FamilySurname;
+        public string HomeDistrict;
+        public string PlanningPriority;
+        public string HouseholdStoryPrompt;
+    }
     [Serializable] public class GameplayHudViewModel { public int Day; public string Time; public string Weather; public int Funds; public float TownPressure; }
     [Serializable] public class JournalCardViewModel { public string Title; public string Body; public string DistrictId; public string Timestamp; public string Severity; }
     [Serializable] public class ActionPopupViewModel { public string Title; public string Description; public List<string> Options = new(); public bool CanConfirm; }

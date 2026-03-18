@@ -20,6 +20,63 @@ namespace Survivebest.World
     }
 
     [Serializable]
+    public class AllelePairGene
+    {
+        [Range(0f, 1f)] public float DominantA = 0.5f;
+        [Range(0f, 1f)] public float RecessiveB = 0.5f;
+        [Range(0f, 1f)] public float HiddenGenerationCarry = 0.2f;
+    }
+
+    [Serializable]
+    public class PolygenicTraitCluster
+    {
+        [Range(0f, 1f)] public float HeightScore = 0.5f;
+        [Range(0f, 1f)] public float CognitionScore = 0.5f;
+        [Range(0f, 1f)] public float TemperamentScore = 0.5f;
+        [Range(0f, 1f)] public float AthleticScore = 0.5f;
+        [Range(0f, 1f)] public float ImmuneScore = 0.5f;
+    }
+
+    [Serializable]
+    public class EpigeneticMarkerProfile
+    {
+        [Range(0f, 1f)] public float StressImprint = 0.2f;
+        [Range(0f, 1f)] public float DietQualityImprint = 0.6f;
+        [Range(0f, 1f)] public float ToxinExposure = 0.05f;
+        [Range(0f, 1f)] public float SocialSafetySignal = 0.5f;
+    }
+
+    [Serializable]
+    public class MutationProfile
+    {
+        [Range(0f, 1f)] public float RandomMutationLoad = 0.05f;
+        [Range(0f, 1f)] public float EnvironmentalMutationLoad = 0.02f;
+        [Range(0f, 1f)] public float HiddenTraitSkipChance = 0.18f;
+    }
+
+    [Serializable]
+    public class PsychologicalGeneticsProfile
+    {
+        [Range(0f, 1f)] public float BigFiveOpenness = 0.5f;
+        [Range(0f, 1f)] public float BigFiveConscientiousness = 0.5f;
+        [Range(0f, 1f)] public float BigFiveExtraversion = 0.5f;
+        [Range(0f, 1f)] public float BigFiveAgreeableness = 0.5f;
+        [Range(0f, 1f)] public float BigFiveNeuroticism = 0.5f;
+        [Range(0f, 1f)] public float TraumaSensitivity = 0.35f;
+        [Range(0f, 1f)] public float AddictionRisk = 0.25f;
+    }
+
+    [Serializable]
+    public class TalentGeneticsProfile
+    {
+        [Range(0f, 1f)] public float MusicAffinity = 0.5f;
+        [Range(0f, 1f)] public float AthleticAffinity = 0.5f;
+        [Range(0f, 1f)] public float SocialAffinity = 0.5f;
+        [Range(0f, 1f)] public float AnalyticalAffinity = 0.5f;
+        [Range(0f, 1f)] public float ArtisticAffinity = 0.5f;
+    }
+
+    [Serializable]
     public class GeneticProfile
     {
         [Header("Identity")]
@@ -92,6 +149,16 @@ namespace Survivebest.World
         public TraitExpressionMode BodyExpression = TraitExpressionMode.Blended;
         public TraitExpressionMode HairExpression = TraitExpressionMode.Blended;
 
+        [Header("Deep Genetics")]
+        public AllelePairGene EyeColorAlleles = new();
+        public AllelePairGene HairTextureAlleles = new();
+        public AllelePairGene HeightAlleles = new();
+        public PolygenicTraitCluster PolygenicTraits = new();
+        public EpigeneticMarkerProfile Epigenetics = new();
+        public MutationProfile Mutations = new();
+        public PsychologicalGeneticsProfile Psychology = new();
+        public TalentGeneticsProfile Talents = new();
+
         public void ClampToNormalizedRange()
         {
             MelaninRange = Mathf.Clamp01(MelaninRange);
@@ -144,6 +211,40 @@ namespace Survivebest.World
             AddictionVulnerability = Mathf.Clamp01(AddictionVulnerability);
             RecoveryTendency = Mathf.Clamp01(RecoveryTendency);
             IllnessVulnerability = Mathf.Clamp01(IllnessVulnerability);
+
+            EyeColorAlleles.DominantA = Mathf.Clamp01(EyeColorAlleles.DominantA);
+            EyeColorAlleles.RecessiveB = Mathf.Clamp01(EyeColorAlleles.RecessiveB);
+            EyeColorAlleles.HiddenGenerationCarry = Mathf.Clamp01(EyeColorAlleles.HiddenGenerationCarry);
+            HairTextureAlleles.DominantA = Mathf.Clamp01(HairTextureAlleles.DominantA);
+            HairTextureAlleles.RecessiveB = Mathf.Clamp01(HairTextureAlleles.RecessiveB);
+            HairTextureAlleles.HiddenGenerationCarry = Mathf.Clamp01(HairTextureAlleles.HiddenGenerationCarry);
+            HeightAlleles.DominantA = Mathf.Clamp01(HeightAlleles.DominantA);
+            HeightAlleles.RecessiveB = Mathf.Clamp01(HeightAlleles.RecessiveB);
+            HeightAlleles.HiddenGenerationCarry = Mathf.Clamp01(HeightAlleles.HiddenGenerationCarry);
+            PolygenicTraits.HeightScore = Mathf.Clamp01(PolygenicTraits.HeightScore);
+            PolygenicTraits.CognitionScore = Mathf.Clamp01(PolygenicTraits.CognitionScore);
+            PolygenicTraits.TemperamentScore = Mathf.Clamp01(PolygenicTraits.TemperamentScore);
+            PolygenicTraits.AthleticScore = Mathf.Clamp01(PolygenicTraits.AthleticScore);
+            PolygenicTraits.ImmuneScore = Mathf.Clamp01(PolygenicTraits.ImmuneScore);
+            Epigenetics.StressImprint = Mathf.Clamp01(Epigenetics.StressImprint);
+            Epigenetics.DietQualityImprint = Mathf.Clamp01(Epigenetics.DietQualityImprint);
+            Epigenetics.ToxinExposure = Mathf.Clamp01(Epigenetics.ToxinExposure);
+            Epigenetics.SocialSafetySignal = Mathf.Clamp01(Epigenetics.SocialSafetySignal);
+            Mutations.RandomMutationLoad = Mathf.Clamp01(Mutations.RandomMutationLoad);
+            Mutations.EnvironmentalMutationLoad = Mathf.Clamp01(Mutations.EnvironmentalMutationLoad);
+            Mutations.HiddenTraitSkipChance = Mathf.Clamp01(Mutations.HiddenTraitSkipChance);
+            Psychology.BigFiveOpenness = Mathf.Clamp01(Psychology.BigFiveOpenness);
+            Psychology.BigFiveConscientiousness = Mathf.Clamp01(Psychology.BigFiveConscientiousness);
+            Psychology.BigFiveExtraversion = Mathf.Clamp01(Psychology.BigFiveExtraversion);
+            Psychology.BigFiveAgreeableness = Mathf.Clamp01(Psychology.BigFiveAgreeableness);
+            Psychology.BigFiveNeuroticism = Mathf.Clamp01(Psychology.BigFiveNeuroticism);
+            Psychology.TraumaSensitivity = Mathf.Clamp01(Psychology.TraumaSensitivity);
+            Psychology.AddictionRisk = Mathf.Clamp01(Psychology.AddictionRisk);
+            Talents.MusicAffinity = Mathf.Clamp01(Talents.MusicAffinity);
+            Talents.AthleticAffinity = Mathf.Clamp01(Talents.AthleticAffinity);
+            Talents.SocialAffinity = Mathf.Clamp01(Talents.SocialAffinity);
+            Talents.AnalyticalAffinity = Mathf.Clamp01(Talents.AnalyticalAffinity);
+            Talents.ArtisticAffinity = Mathf.Clamp01(Talents.ArtisticAffinity);
         }
     }
 }
