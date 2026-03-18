@@ -12,6 +12,8 @@ namespace Survivebest.UI.ViewModels
     [Serializable] public class CharacterCreatorDashboardViewModel
     {
         public string ActiveTab;
+        public string PreviewMode;
+        public string PreviewBackground;
         public string HairTextureFilter;
         public string HairLengthFilter;
         public string FacialHairFilter;
