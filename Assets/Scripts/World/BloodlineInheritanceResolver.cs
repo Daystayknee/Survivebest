@@ -32,6 +32,7 @@ namespace Survivebest.World
         public GeneticProfile GeneticProfile = new();
         public List<TraitAnchorDescriptor> Anchors = new();
         public string Summary;
+        public string TraitSummary;
     }
 
     [Serializable]
@@ -104,7 +105,8 @@ namespace Survivebest.World
                 ResemblanceMode = mode,
                 GeneticProfile = child,
                 Anchors = BuildAnchors(mode),
-                Summary = BuildSummary(child, mode)
+                Summary = BuildSummary(child, mode),
+                TraitSummary = GeneticTraitCatalog.BuildPreviewSummary(child)
             };
 
             return entry;
@@ -235,7 +237,7 @@ namespace Survivebest.World
 
         private static string BuildSummary(GeneticProfile child, FamilyResemblanceMode mode)
         {
-            return $"{mode} • blood {child.Blood.ToDisplayString()} • eyes {child.EyeSize:0.00}/{child.EyeSpacing:0.00} • nose {child.NoseBridgeHeight:0.00}/{child.NostrilWidth:0.00} • lips {child.LipFullness:0.00} • body {child.FrameSize:0.00}/{child.WaistHipBias:0.00} • hair {child.HairCurl:0.00}/{child.HairDensity:0.00}";
+            return $"{mode} • blood {child.Blood.ToDisplayString()} • {GeneticTraitCatalog.BuildPreviewSummary(child, 5)}";
         }
 
         private static float ReadScalar(GeneticProfile profile, string fieldName)

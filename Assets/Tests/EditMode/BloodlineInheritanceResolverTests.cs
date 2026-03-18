@@ -50,6 +50,7 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(FamilyResemblanceMode.FavorsParentB, previews.Entries[2].ResemblanceMode);
             Assert.IsNotEmpty(previews.HealthSummary);
             Assert.IsNotEmpty(previews.ResemblanceSummary);
+            Assert.IsNotEmpty(previews.Entries[0].TraitSummary);
         }
 
         [Test]
@@ -98,6 +99,29 @@ namespace Survivebest.Tests.EditMode
             Assert.Contains(child.GeneticProfile.Blood.RhParentAlleleA, new[] { RhAllele.Positive, RhAllele.Negative });
             Assert.Contains(child.GeneticProfile.Blood.RhParentAlleleB, new[] { RhAllele.Negative });
             Assert.IsTrue(child.Summary.Contains("blood "));
+        }
+
+        [Test]
+        public void GeneticTraitCatalog_BuildPreviewSummary_UsesResolverBands()
+        {
+            GeneticProfile profile = new GeneticProfile
+            {
+                EyeSize = 0.82f,
+                NoseBridgeHeight = 0.18f,
+                LipFullness = 0.52f,
+                Blood = new BloodGeneticsProfile
+                {
+                    ParentAlleleA = AboAllele.A,
+                    ParentAlleleB = AboAllele.B,
+                    RhParentAlleleA = RhAllele.Positive,
+                    RhParentAlleleB = RhAllele.Negative
+                }
+            };
+
+            string summary = GeneticTraitCatalog.BuildPreviewSummary(profile, 4);
+
+            Assert.IsTrue(summary.Contains("Eye Size:very_high"));
+            Assert.IsTrue(summary.Contains("Nose Bridge Height:very_low"));
         }
     }
 }
