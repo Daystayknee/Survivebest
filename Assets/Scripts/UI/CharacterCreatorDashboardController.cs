@@ -13,6 +13,9 @@ namespace Survivebest.UI
     public enum CharacterCreatorDashboardTab
     {
         Appearance,
+        Genetics,
+        Face,
+        Body,
         Traits,
         Clothing
     }
@@ -23,6 +26,33 @@ namespace Survivebest.UI
         None,
         Stubble,
         Beard
+    }
+
+    public enum CharacterCreatorPreviewFocus
+    {
+        FullBody,
+        FaceClose,
+        BodyClose,
+        Genetics,
+        AreaView
+    }
+
+    public enum CharacterCreatorBackgroundOption
+    {
+        NeutralStudio,
+        GeneticsStudio,
+        Neighborhood,
+        GovernmentAndLaws,
+        HomeInterior
+    }
+
+    [Serializable]
+    public class CharacterCreatorBackgroundView
+    {
+        public CharacterCreatorBackgroundOption Background;
+        public GameObject Root;
+        public Color CameraBackground = new(0.12f, 0.14f, 0.18f, 1f);
+        [TextArea] public string Description;
     }
 
     [Serializable]
@@ -58,6 +88,20 @@ namespace Survivebest.UI
         [SerializeField] private float zoomSpeed = 2f;
         [SerializeField] private float minZoom = 2f;
         [SerializeField] private float maxZoom = 8f;
+        [SerializeField] private bool forceOrthographic2D = true;
+        [SerializeField] private float fullBodyOrthographicSize = 4.5f;
+        [SerializeField] private float faceCloseOrthographicSize = 2f;
+        [SerializeField] private float bodyCloseOrthographicSize = 3f;
+        [SerializeField] private float geneticsOrthographicSize = 3.4f;
+        [SerializeField] private float areaOrthographicSize = 5.75f;
+        [SerializeField] private Vector3 fullBodyCameraLocalPosition = new(0f, 1.25f, -5.5f);
+        [SerializeField] private Vector3 faceCameraLocalPosition = new(0f, 1.6f, -3.2f);
+        [SerializeField] private Vector3 bodyCameraLocalPosition = new(0f, 1.15f, -4.2f);
+        [SerializeField] private Vector3 geneticsCameraLocalPosition = new(0f, 1.35f, -4.6f);
+        [SerializeField] private Vector3 areaCameraLocalPosition = new(0f, 1.4f, -6.4f);
+        [SerializeField] private CharacterCreatorPreviewFocus defaultPreviewFocus = CharacterCreatorPreviewFocus.FullBody;
+        [SerializeField] private List<CharacterCreatorBackgroundView> previewBackgrounds = new();
+        [SerializeField] private CharacterCreatorBackgroundOption defaultBackground = CharacterCreatorBackgroundOption.NeutralStudio;
 
         [Header("Dashboard Tabs")]
         [SerializeField] private List<CreatorTabPanel> tabPanels = new();
@@ -87,8 +131,12 @@ namespace Survivebest.UI
         [Header("Optional UI text")]
         [SerializeField] private Text tabTitleText;
         [SerializeField] private Text selectedStyleText;
+        [SerializeField] private Text previewModeText;
+        [SerializeField] private Text previewBackgroundText;
 
         public CharacterCreatorDashboardTab CurrentTab { get; private set; }
+        public CharacterCreatorPreviewFocus CurrentPreviewFocus { get; private set; }
+        public CharacterCreatorBackgroundOption CurrentBackground { get; private set; }
 
         private readonly Dictionary<string, HairProfile> savedHairPresets = new();
         private readonly Dictionary<string, FacialHairProfile> savedFacialPresets = new();
@@ -105,6 +153,8 @@ namespace Survivebest.UI
             }
 
             SetTab((int)defaultTab);
+            SetPreviewBackground((int)defaultBackground);
+            SetPreviewFocus((int)defaultPreviewFocus);
             RefreshStyleCards();
         }
 
@@ -139,6 +189,51 @@ namespace Survivebest.UI
 
             PublishUiEvent("CreatorTab", $"Dashboard tab switched to {CurrentTab}", (int)CurrentTab);
         }
+
+        public void SetPreviewBackground(int backgroundIndex)
+        {
+            CurrentBackground = (CharacterCreatorBackgroundOption)Mathf.Clamp(backgroundIndex, 0, Enum.GetValues(typeof(CharacterCreatorBackgroundOption)).Length - 1);
+            for (int i = 0; i < previewBackgrounds.Count; i++)
+            {
+                CharacterCreatorBackgroundView entry = previewBackgrounds[i];
+                if (entry == null || entry.Root == null)
+                {
+                    continue;
+                }
+
+                bool active = entry.Background == CurrentBackground;
+                entry.Root.SetActive(active);
+                if (active && characterPreviewCamera != null)
+                {
+                    characterPreviewCamera.backgroundColor = entry.CameraBackground;
+                }
+            }
+
+            if (previewBackgroundText != null)
+            {
+                previewBackgroundText.text = CurrentBackground.ToString();
+            }
+
+            PublishUiEvent("CreatorBackground", $"Character creator background set to {CurrentBackground}", (int)CurrentBackground);
+        }
+
+        public void SetPreviewFocus(int focusIndex)
+        {
+            CurrentPreviewFocus = (CharacterCreatorPreviewFocus)Mathf.Clamp(focusIndex, 0, Enum.GetValues(typeof(CharacterCreatorPreviewFocus)).Length - 1);
+            ApplyPreviewCameraState();
+            if (previewModeText != null)
+            {
+                previewModeText.text = CurrentPreviewFocus.ToString();
+            }
+
+            PublishUiEvent("CreatorPreviewFocus", $"Character creator focus set to {CurrentPreviewFocus}", (int)CurrentPreviewFocus);
+        }
+
+        public void FocusFullBody() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.FullBody);
+        public void FocusFaceClose() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.FaceClose);
+        public void FocusBodyClose() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.BodyClose);
+        public void FocusGenetics() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.Genetics);
+        public void FocusAreaView() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.AreaView);
 
         public void SetHairTextureFilter(int textureIndex)
         {
@@ -450,7 +545,9 @@ namespace Survivebest.UI
                 NaturalHairHex = hair != null ? ColorUtility.ToHtmlStringRGB(hair.NaturalHairColor) : "000000",
                 DyedHairHex = hair != null ? ColorUtility.ToHtmlStringRGB(hair.DyedHairColor) : "000000",
                 OmbreAmount = hair != null ? hair.OmbreAmount : 0f,
-                HighlightIntensity = hair != null ? hair.HighlightIntensity : 0f
+                HighlightIntensity = hair != null ? hair.HighlightIntensity : 0f,
+                PreviewMode = CurrentPreviewFocus.ToString(),
+                PreviewBackground = CurrentBackground.ToString()
             };
         }
 
@@ -571,9 +668,55 @@ namespace Survivebest.UI
 
         private void RefreshPreview()
         {
+            ApplyPreviewCameraState();
             if (portraitRenderer != null)
             {
                 portraitRenderer.RefreshPortrait();
+            }
+        }
+
+        private void ApplyPreviewCameraState()
+        {
+            if (characterPreviewCamera == null)
+            {
+                return;
+            }
+
+            if (forceOrthographic2D)
+            {
+                characterPreviewCamera.orthographic = true;
+            }
+
+            Vector3 localPosition = fullBodyCameraLocalPosition;
+            float orthoSize = fullBodyOrthographicSize;
+
+            switch (CurrentPreviewFocus)
+            {
+                case CharacterCreatorPreviewFocus.FaceClose:
+                    localPosition = faceCameraLocalPosition;
+                    orthoSize = faceCloseOrthographicSize;
+                    break;
+                case CharacterCreatorPreviewFocus.BodyClose:
+                    localPosition = bodyCameraLocalPosition;
+                    orthoSize = bodyCloseOrthographicSize;
+                    break;
+                case CharacterCreatorPreviewFocus.Genetics:
+                    localPosition = geneticsCameraLocalPosition;
+                    orthoSize = geneticsOrthographicSize;
+                    break;
+                case CharacterCreatorPreviewFocus.AreaView:
+                    localPosition = areaCameraLocalPosition;
+                    orthoSize = areaOrthographicSize;
+                    break;
+            }
+
+            Transform cameraTransform = characterPreviewCamera.transform;
+            cameraTransform.localPosition = localPosition;
+            cameraTransform.localRotation = Quaternion.identity;
+
+            if (characterPreviewCamera.orthographic)
+            {
+                characterPreviewCamera.orthographicSize = Mathf.Clamp(orthoSize, minZoom, maxZoom);
             }
         }
 
