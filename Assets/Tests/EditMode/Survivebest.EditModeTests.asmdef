@@ -1,0 +1,12 @@
+{
+  "name": "Survivebest.EditModeTests",
+  "references": [
+    "Assembly-CSharp"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
