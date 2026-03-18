@@ -15,6 +15,10 @@
 - Primary buttons
 - Text labels
 - Optional icon/image references
+- Family-genetics section root/panel
+- Lock-family / lock-character buttons
+- Save-family-draft and load-family-draft buttons or input hooks
+- Inputs for surname, home district, family story prompt, origin focus, and planning priority
 
 ## Expected Art Assets
 - Background(s)
@@ -26,3 +30,6 @@
 - Open/close transitions work.
 - Null-safe if optional assets are missing.
 - View binding does not mutate simulation state directly.
+- Forward/back tab flow works between appearance, genetics, family-genetics, and household sections.
+- Family lock state and draft save/load affordances are visible enough for a life-sim household setup flow.
+- Family-planning fields read like a believable household brief for a human-life simulation setting.

@@ -1,11 +1,12 @@
 using Survivebest.Core;
+using CoreLifeStage = Survivebest.Core.LifeStage;
 using UnityEngine;
 
 namespace Survivebest.World
 {
     public static class LifeStageMorphResolver
     {
-        public static void ApplyLifeStageMorph(PhenotypeProfile phenotype, LifeStage stage)
+        public static void ApplyLifeStageMorph(PhenotypeProfile phenotype, CoreLifeStage stage)
         {
             if (phenotype == null)
             {
@@ -15,15 +16,15 @@ namespace Survivebest.World
             phenotype.LifeStage = stage;
             float maturity = stage switch
             {
-                LifeStage.Baby => 0.2f,
-                LifeStage.Infant => 0.3f,
-                LifeStage.Toddler => 0.42f,
-                LifeStage.Child => 0.58f,
-                LifeStage.Preteen => 0.74f,
-                LifeStage.Teen => 0.88f,
-                LifeStage.YoungAdult => 1f,
-                LifeStage.Adult => 1f,
-                LifeStage.OlderAdult => 0.95f,
+                CoreLifeStage.Baby => 0.2f,
+                CoreLifeStage.Infant => 0.3f,
+                CoreLifeStage.Toddler => 0.42f,
+                CoreLifeStage.Child => 0.58f,
+                CoreLifeStage.Preteen => 0.74f,
+                CoreLifeStage.Teen => 0.88f,
+                CoreLifeStage.YoungAdult => 1f,
+                CoreLifeStage.Adult => 1f,
+                CoreLifeStage.OlderAdult => 0.95f,
                 _ => 1f
             };
 
@@ -36,16 +37,16 @@ namespace Survivebest.World
             phenotype.Face.ChinProminence = Mathf.Clamp01(Mathf.Lerp(phenotype.Face.ChinProminence * 0.55f, phenotype.Face.ChinProminence, maturity));
             phenotype.Face.CheekFullness = Mathf.Clamp01(Mathf.Lerp(phenotype.Face.CheekFullness + 0.15f, phenotype.Face.CheekFullness, maturity));
 
-            float wrinkleAge = stage is LifeStage.Adult or LifeStage.OlderAdult ? Mathf.InverseLerp(0.75f, 1f, maturity) : 0f;
-            if (stage == LifeStage.OlderAdult)
+            float wrinkleAge = stage is CoreLifeStage.Adult or CoreLifeStage.OlderAdult ? Mathf.InverseLerp(0.75f, 1f, maturity) : 0f;
+            if (stage == CoreLifeStage.OlderAdult)
             {
                 wrinkleAge = 1f;
             }
 
             phenotype.Skin.Overlays.Wrinkles = Mathf.Clamp01(Mathf.Max(phenotype.Skin.Overlays.Wrinkles, wrinkleAge * 0.7f));
             phenotype.Skin.Overlays.UnderEyeDiscoloration = Mathf.Clamp01(phenotype.Skin.Overlays.UnderEyeDiscoloration * (0.65f + (1f - maturity) * 0.35f));
-            phenotype.Hair.Graying = Mathf.Clamp01(Mathf.Max(phenotype.Hair.Graying, stage == LifeStage.OlderAdult ? 0.65f : phenotype.Hair.Graying * 0.4f));
-            phenotype.Hair.HairlineRecession = Mathf.Clamp01(Mathf.Max(phenotype.Hair.HairlineRecession, stage == LifeStage.OlderAdult ? 0.6f : phenotype.Hair.HairlineRecession * 0.55f));
+            phenotype.Hair.Graying = Mathf.Clamp01(Mathf.Max(phenotype.Hair.Graying, stage == CoreLifeStage.OlderAdult ? 0.65f : phenotype.Hair.Graying * 0.4f));
+            phenotype.Hair.HairlineRecession = Mathf.Clamp01(Mathf.Max(phenotype.Hair.HairlineRecession, stage == CoreLifeStage.OlderAdult ? 0.6f : phenotype.Hair.HairlineRecession * 0.55f));
 
             if (phenotype.AvatarLayers != null)
             {
@@ -62,37 +63,37 @@ namespace Survivebest.World
             }
         }
 
-        private static void ApplyLifeStageArtMode(AvatarLayerProfile layers, LifeStage stage)
+        private static void ApplyLifeStageArtMode(AvatarLayerProfile layers, CoreLifeStage stage)
         {
             if (layers == null)
             {
                 return;
             }
 
-            layers.UseBundledInfantBody = stage is LifeStage.Baby or LifeStage.Infant;
-            layers.EnableCrawlingPoseSet = stage == LifeStage.Toddler;
-            layers.EnableOnesieLayer = stage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler;
-            layers.EnableYouthOutfitLayer = stage is LifeStage.Child or LifeStage.Preteen;
-            layers.EnableAdultOutfitLayer = stage is LifeStage.Teen or LifeStage.YoungAdult or LifeStage.Adult or LifeStage.OlderAdult or LifeStage.Elder;
+            layers.UseBundledInfantBody = stage is CoreLifeStage.Baby or CoreLifeStage.Infant;
+            layers.EnableCrawlingPoseSet = stage == CoreLifeStage.Toddler;
+            layers.EnableOnesieLayer = stage is CoreLifeStage.Baby or CoreLifeStage.Infant or CoreLifeStage.Toddler;
+            layers.EnableYouthOutfitLayer = stage is CoreLifeStage.Child or CoreLifeStage.Preteen;
+            layers.EnableAdultOutfitLayer = stage is CoreLifeStage.Teen or CoreLifeStage.YoungAdult or CoreLifeStage.Adult or CoreLifeStage.OlderAdult or CoreLifeStage.Elder;
 
             layers.SkinAgeOverlayKey = stage switch
             {
-                LifeStage.Baby or LifeStage.Infant => "skin_age_infant_soft",
-                LifeStage.Toddler => "skin_age_toddler_soft",
-                LifeStage.Child or LifeStage.Preteen => "skin_age_youth_clear",
-                LifeStage.Teen => "skin_age_teen_transition",
-                LifeStage.YoungAdult or LifeStage.Adult => "skin_age_adult_base",
-                LifeStage.OlderAdult => "skin_age_older_adult",
+                CoreLifeStage.Baby or CoreLifeStage.Infant => "skin_age_infant_soft",
+                CoreLifeStage.Toddler => "skin_age_toddler_soft",
+                CoreLifeStage.Child or CoreLifeStage.Preteen => "skin_age_youth_clear",
+                CoreLifeStage.Teen => "skin_age_teen_transition",
+                CoreLifeStage.YoungAdult or CoreLifeStage.Adult => "skin_age_adult_base",
+                CoreLifeStage.OlderAdult => "skin_age_older_adult",
                 _ => "skin_age_elder"
             };
-            layers.WrinkleOverlayKey = stage is LifeStage.OlderAdult or LifeStage.Elder ? "wrinkle_high" : stage is LifeStage.Adult ? "wrinkle_light" : "wrinkle_none";
-            layers.OutfitLayerKey = stage is LifeStage.Baby or LifeStage.Infant
+            layers.WrinkleOverlayKey = stage is CoreLifeStage.OlderAdult or CoreLifeStage.Elder ? "wrinkle_high" : stage is CoreLifeStage.Adult ? "wrinkle_light" : "wrinkle_none";
+            layers.OutfitLayerKey = stage is CoreLifeStage.Baby or CoreLifeStage.Infant
                 ? "outfit_swaddle"
-                : stage == LifeStage.Toddler
+                : stage == CoreLifeStage.Toddler
                     ? "outfit_onesie"
-                    : stage is LifeStage.Child or LifeStage.Preteen
+                    : stage is CoreLifeStage.Child or CoreLifeStage.Preteen
                         ? "outfit_youth"
-                        : stage == LifeStage.Teen
+                        : stage == CoreLifeStage.Teen
                             ? "outfit_teen"
                             : "outfit_adult";
             layers.OnesieLayerKey = layers.EnableOnesieLayer ? "onesie_default" : null;
@@ -100,11 +101,11 @@ namespace Survivebest.World
 
             layers.LifeStageArtMode = stage switch
             {
-                LifeStage.Baby or LifeStage.Infant => LifeStageArtMode.BundlePortrait,
-                LifeStage.Toddler => LifeStageArtMode.ToddlerCrawl,
-                LifeStage.Child or LifeStage.Preteen => LifeStageArtMode.ChildSimpleRig,
-                LifeStage.Teen => LifeStageArtMode.TeenRig,
-                LifeStage.YoungAdult or LifeStage.Adult => LifeStageArtMode.AdultRig,
+                CoreLifeStage.Baby or CoreLifeStage.Infant => LifeStageArtMode.BundlePortrait,
+                CoreLifeStage.Toddler => LifeStageArtMode.ToddlerCrawl,
+                CoreLifeStage.Child or CoreLifeStage.Preteen => LifeStageArtMode.ChildSimpleRig,
+                CoreLifeStage.Teen => LifeStageArtMode.TeenRig,
+                CoreLifeStage.YoungAdult or CoreLifeStage.Adult => LifeStageArtMode.AdultRig,
                 _ => LifeStageArtMode.ElderRig
             };
         }
