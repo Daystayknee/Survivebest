@@ -14,6 +14,9 @@ namespace Survivebest.UI.ViewModels
         public string ActiveTab;
         public string PreviewMode;
         public string PreviewBackground;
+        public string FaceSummary;
+        public string BodySummary;
+        public string GeneticsSummary;
         public string HairTextureFilter;
         public string HairLengthFilter;
         public string FacialHairFilter;

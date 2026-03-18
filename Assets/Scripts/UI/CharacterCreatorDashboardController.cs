@@ -63,6 +63,15 @@ namespace Survivebest.UI
         public string PreviewFocus;
         public string PreviewBackground;
         public bool Locked;
+        public int FaceShape;
+        public int EyeShape;
+        public int BodyType;
+        public int JawShape;
+        public int NoseShape;
+        public int LipShape;
+        public int ClothingStyle;
+        public int EyeColor;
+        public int SkinTone;
         public HairProfile Hair = new();
         public FacialHairProfile FacialHair = new();
         public BodyHairProfile BodyHair = new();
@@ -146,6 +155,9 @@ namespace Survivebest.UI
         [SerializeField] private Text selectedStyleText;
         [SerializeField] private Text previewModeText;
         [SerializeField] private Text previewBackgroundText;
+        [SerializeField] private Text faceDetailsText;
+        [SerializeField] private Text bodyDetailsText;
+        [SerializeField] private Text geneticsDetailsText;
 
         public CharacterCreatorDashboardTab CurrentTab { get; private set; }
         public CharacterCreatorPreviewFocus CurrentPreviewFocus { get; private set; }
@@ -253,6 +265,107 @@ namespace Survivebest.UI
         {
             hairTextureFilter = (HairTextureFamily)Mathf.Clamp(textureIndex, 0, Enum.GetValues(typeof(HairTextureFamily)).Length - 1);
             RefreshStyleCards();
+        }
+
+        public void SetFaceShape(int faceShapeIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            active.SetPortraitData(
+                (FaceShapeType)Mathf.Clamp(faceShapeIndex, 0, Enum.GetValues(typeof(FaceShapeType)).Length - 1),
+                active.EyeShape,
+                active.CurrentBodyType,
+                active.ClothingStyle);
+            RefreshPreview();
+        }
+
+        public void SetBodyType(int bodyTypeIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            active.SetPortraitData(
+                active.FaceShape,
+                active.EyeShape,
+                (BodyType)Mathf.Clamp(bodyTypeIndex, 0, Enum.GetValues(typeof(BodyType)).Length - 1),
+                active.ClothingStyle);
+            RefreshPreview();
+        }
+
+        public void SetJawShape(int jawShapeIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            active.SetFacialFeatureData(
+                (JawShapeType)Mathf.Clamp(jawShapeIndex, 0, Enum.GetValues(typeof(JawShapeType)).Length - 1),
+                active.NoseShape,
+                active.LipShape);
+            RefreshPreview();
+        }
+
+        public void SetNoseShape(int noseShapeIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            active.SetFacialFeatureData(
+                active.JawShape,
+                (NoseShapeType)Mathf.Clamp(noseShapeIndex, 0, Enum.GetValues(typeof(NoseShapeType)).Length - 1),
+                active.LipShape);
+            RefreshPreview();
+        }
+
+        public void SetLipShape(int lipShapeIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            active.SetFacialFeatureData(
+                active.JawShape,
+                active.NoseShape,
+                (LipShapeType)Mathf.Clamp(lipShapeIndex, 0, Enum.GetValues(typeof(LipShapeType)).Length - 1));
+            RefreshPreview();
+        }
+
+        public void SetEyeColor(int eyeColorIndex)
+        {
+            if (appearanceManager == null)
+            {
+                return;
+            }
+
+            appearanceManager.SetEyeColor((EyeColorType)Mathf.Clamp(eyeColorIndex, 0, Enum.GetValues(typeof(EyeColorType)).Length - 1));
+            householdManager?.ActiveCharacter?.SyncPortraitDataFromAppearance(appearanceManager);
+            RefreshPreview();
+        }
+
+        public void SetSkinTone(int skinToneIndex)
+        {
+            if (appearanceManager == null)
+            {
+                return;
+            }
+
+            appearanceManager.SetSkinTone((SkinToneType)Mathf.Clamp(skinToneIndex, 0, Enum.GetValues(typeof(SkinToneType)).Length - 1));
+            householdManager?.ActiveCharacter?.SyncPortraitDataFromAppearance(appearanceManager);
+            RefreshPreview();
         }
 
         public void NextSection()
@@ -532,6 +645,15 @@ namespace Survivebest.UI
                 PreviewFocus = CurrentPreviewFocus.ToString(),
                 PreviewBackground = CurrentBackground.ToString(),
                 Locked = IsActiveCharacterLocked(),
+                FaceShape = (int)active.FaceShape,
+                EyeShape = (int)active.EyeShape,
+                BodyType = (int)active.CurrentBodyType,
+                JawShape = (int)active.JawShape,
+                NoseShape = (int)active.NoseShape,
+                LipShape = (int)active.LipShape,
+                ClothingStyle = (int)active.ClothingStyle,
+                EyeColor = appearanceManager != null && appearanceManager.CurrentProfile != null ? (int)appearanceManager.CurrentProfile.EyeColor : 0,
+                SkinTone = appearanceManager != null && appearanceManager.CurrentProfile != null ? (int)appearanceManager.CurrentProfile.SkinTone : 0,
                 Hair = CloneHair(appearanceManager.ScalpHairProfile),
                 FacialHair = CloneFacial(appearanceManager.FacialHairProfile),
                 BodyHair = CloneBody(appearanceManager.BodyHairProfile)
@@ -578,6 +700,27 @@ namespace Survivebest.UI
             if (Enum.TryParse(snapshot.PreviewBackground, out CharacterCreatorBackgroundOption background))
             {
                 SetPreviewBackground((int)background);
+            }
+
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null)
+            {
+                active.SetPortraitData(
+                    (FaceShapeType)snapshot.FaceShape,
+                    (EyeShapeType)snapshot.EyeShape,
+                    (BodyType)snapshot.BodyType,
+                    (ClothingStyleType)snapshot.ClothingStyle);
+                active.SetFacialFeatureData(
+                    (JawShapeType)snapshot.JawShape,
+                    (NoseShapeType)snapshot.NoseShape,
+                    (LipShapeType)snapshot.LipShape);
+            }
+
+            if (appearanceManager != null)
+            {
+                appearanceManager.SetEyeColor((EyeColorType)snapshot.EyeColor);
+                appearanceManager.SetSkinTone((SkinToneType)snapshot.SkinTone);
+                active?.SyncPortraitDataFromAppearance(appearanceManager);
             }
 
             if (snapshot.Locked && !string.IsNullOrWhiteSpace(snapshot.CharacterId))
@@ -661,12 +804,18 @@ namespace Survivebest.UI
         public CharacterCreatorDashboardViewModel CaptureViewModel()
         {
             HairProfile hair = appearanceManager != null ? appearanceManager.ScalpHairProfile : null;
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
             return new CharacterCreatorDashboardViewModel
             {
                 ActiveTab = CurrentTab.ToString(),
                 HairTextureFilter = hairTextureFilter.ToString(),
                 HairLengthFilter = hairLengthFilter.ToString(),
                 FacialHairFilter = facialHairFilter.ToString(),
+                FaceSummary = active != null ? $"{active.FaceShape} / {active.JawShape} / {active.NoseShape} / {active.LipShape}" : string.Empty,
+                BodySummary = active != null ? $"{active.CurrentBodyType} / {active.ClothingStyle}" : string.Empty,
+                GeneticsSummary = appearanceManager != null && appearanceManager.CurrentProfile != null
+                    ? $"{appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor}"
+                    : string.Empty,
                 AvailableStyles = appearanceManager != null ? appearanceManager.GetHairstylesByFilter(hairTextureFilter, hairLengthFilter).Count : 0,
                 SavedPresetCount = savedHairPresets.Count,
                 UseDyedHair = hair != null && hair.UseDyedColor,
@@ -797,9 +946,34 @@ namespace Survivebest.UI
         private void RefreshPreview()
         {
             ApplyPreviewCameraState();
+            RefreshDetailedLabels();
             if (portraitRenderer != null)
             {
                 portraitRenderer.RefreshPortrait();
+            }
+        }
+
+        private void RefreshDetailedLabels()
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            if (faceDetailsText != null)
+            {
+                faceDetailsText.text = $"Face: {active.FaceShape}\nJaw: {active.JawShape}\nNose: {active.NoseShape}\nLips: {active.LipShape}";
+            }
+
+            if (bodyDetailsText != null)
+            {
+                bodyDetailsText.text = $"Body: {active.CurrentBodyType}\nLife Stage: {active.CurrentLifeStage}\nStyle: {active.ClothingStyle}";
+            }
+
+            if (geneticsDetailsText != null && appearanceManager != null && appearanceManager.CurrentProfile != null)
+            {
+                geneticsDetailsText.text = $"Skin Tone: {appearanceManager.CurrentProfile.SkinTone}\nEye Color: {appearanceManager.CurrentProfile.EyeColor}\nHair Texture: {hairTextureFilter}\nLocked: {(IsActiveCharacterLocked() ? "Yes" : "No")}";
             }
         }
 
