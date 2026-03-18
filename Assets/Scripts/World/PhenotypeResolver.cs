@@ -1,11 +1,12 @@
 using Survivebest.Core;
+using CoreLifeStage = Survivebest.Core.LifeStage;
 using UnityEngine;
 
 namespace Survivebest.World
 {
     public static class PhenotypeResolver
     {
-        public static PhenotypeProfile Resolve(GeneticProfile genes, LifeStage lifeStage, float environmentPressure = 0f)
+        public static PhenotypeProfile Resolve(GeneticProfile genes, CoreLifeStage lifeStage, float environmentPressure = 0f)
         {
             genes ??= new GeneticProfile();
             genes.ClampToNormalizedRange();
@@ -62,12 +63,12 @@ namespace Survivebest.World
 
             return new BodyMorphProfile
             {
-                Height = genes.HeightPotential,
+                Height = Mathf.Clamp01(Mathf.Lerp(genes.HeightPotential, genes.BoneDensity, 0.12f)),
                 Neck = Mathf.Clamp01(Mathf.Lerp(genes.LimbProportion, genes.FrameSize, 0.35f)),
                 Shoulders = Mathf.Clamp01(Mathf.Lerp(genes.ShoulderWidth, schemaShoulderBias, 0.2f)),
-                ChestBustPresentation = Mathf.Clamp01((schemaChestBias + genes.ChestBustPotential + (1f - genes.MusclePotential)) / 3f),
+                ChestBustPresentation = Mathf.Clamp01((schemaChestBias + genes.ChestBustPotential + (1f - genes.MusclePotential) + genes.Hormones.EstrogenAndrogenBalance * 0.2f) / 3.2f),
                 Waist = Mathf.Clamp01(Mathf.Lerp(1f - genes.WaistHipBias, genes.FrameSize, 0.25f)),
-                Stomach = Mathf.Clamp01(Mathf.Lerp(genes.FatDistribution, 1f - genes.MusclePotential, 0.4f)),
+                Stomach = Mathf.Clamp01(Mathf.Lerp(genes.FatDistribution, 1f - genes.MusclePotential, 0.4f) * Mathf.Lerp(0.92f, 1.08f, genes.PostureBaseline)),
                 Hips = Mathf.Clamp01(Mathf.Lerp(genes.WaistHipBias, genes.FatDistribution, 0.5f)),
                 Thighs = Mathf.Clamp01(Mathf.Lerp(genes.ThighFullness, genes.FatDistribution, 0.5f)),
                 Knees = Mathf.Clamp01(Mathf.Lerp(genes.ThighFullness, genes.CalfShape, 0.5f)),
@@ -93,10 +94,10 @@ namespace Survivebest.World
                 BeautyMarks = Mathf.Clamp01(genes.MoleTendency * 0.6f),
                 Moles = genes.MoleTendency,
                 Vitiligo = Random.value <= genes.VitiligoChance ? Mathf.Lerp(0.2f, 0.9f, Random.value) : 0f,
-                Acne = Mathf.Clamp01(genes.SkinSensitivity * 0.35f + env * 0.35f),
-                Scars = Mathf.Clamp01(env * 0.3f),
-                Wrinkles = 0f,
-                UnderEyeDiscoloration = Mathf.Clamp01(env * 0.4f + (1f - genes.SleepQualityTendency) * 0.3f),
+                Acne = Mathf.Clamp01(genes.AcneTendency * 0.5f + genes.SkinSensitivity * 0.2f + env * 0.25f + (1f - genes.Hormones.CortisolRegulation) * 0.08f),
+                Scars = Mathf.Clamp01(env * 0.3f + genes.StretchMarkChance * 0.15f + genes.MicroDetails.AcneScarRisk * 0.08f),
+                Wrinkles = Mathf.Clamp01(genes.AgingSpeed * 0.18f + genes.Epigenetics.StressImprint * 0.08f),
+                UnderEyeDiscoloration = Mathf.Clamp01(env * 0.4f + (1f - genes.SleepQualityTendency) * 0.3f + (1f - genes.Hormones.CortisolRegulation) * 0.06f),
                 Hyperpigmentation = Mathf.Clamp01(genes.HyperpigmentationTendency * 0.7f + env * 0.2f),
                 IllnessPallor = Mathf.Clamp01(env * 0.2f + genes.IllnessVulnerability * 0.15f)
             };
@@ -112,20 +113,20 @@ namespace Survivebest.World
             };
         }
 
-        private static HairProfile ResolveHair(GeneticProfile genes, LifeStage stage)
+        private static HairProfile ResolveHair(GeneticProfile genes, CoreLifeStage stage)
         {
-            float ageGray = stage is LifeStage.OlderAdult ? 0.7f : stage is LifeStage.Adult ? 0.25f : 0f;
-            float ageRecession = stage is LifeStage.OlderAdult ? 0.72f : stage is LifeStage.Adult ? 0.28f : 0f;
+            float ageGray = stage is CoreLifeStage.OlderAdult ? 0.7f : stage is CoreLifeStage.Adult ? 0.25f : 0f;
+            float ageRecession = stage is CoreLifeStage.OlderAdult ? 0.72f : stage is CoreLifeStage.Adult ? 0.28f : 0f;
             return new HairProfile
             {
-                Pigment = genes.HairPigment,
+                Pigment = Mathf.Clamp01(Mathf.Lerp(genes.HairPigment, genes.HairStrandThickness, 0.08f)),
                 Curl = genes.HairCurl,
-                Density = genes.HairDensity,
-                Graying = Mathf.Clamp01(Mathf.Max(ageGray, genes.GrayingTendency * (stage is LifeStage.Teen ? 0.1f : 0.35f))),
-                HairlineRecession = Mathf.Clamp01(Mathf.Max(ageRecession, genes.BaldingTendency * (stage is LifeStage.OlderAdult ? 1f : 0.35f))),
+                Density = Mathf.Clamp01(Mathf.Lerp(genes.HairDensity, genes.HairStrandThickness, 0.18f)),
+                Graying = Mathf.Clamp01(Mathf.Max(ageGray, genes.GrayingTendency * (stage is CoreLifeStage.Teen ? 0.1f : 0.35f) + genes.AgingSpeed * 0.15f)),
+                HairlineRecession = Mathf.Clamp01(Mathf.Max(ageRecession, genes.BaldingTendency * (stage is CoreLifeStage.OlderAdult ? 1f : 0.35f))),
                 FrontPieceDensity = Mathf.Clamp01(genes.HairDensity * Mathf.Lerp(1f, 0.7f, genes.HairlineShape)),
-                SidePieceDensity = Mathf.Clamp01(genes.HairDensity * 0.9f),
-                BackPieceDensity = Mathf.Clamp01(genes.HairDensity * 1.05f)
+                SidePieceDensity = Mathf.Clamp01(genes.HairDensity * Mathf.Lerp(0.82f, 0.98f, genes.HairStrandThickness)),
+                BackPieceDensity = Mathf.Clamp01(genes.HairDensity * Mathf.Lerp(0.95f, 1.08f, genes.HairStrandThickness))
             };
         }
 
@@ -155,9 +156,9 @@ namespace Survivebest.World
                 JawFamily = ChooseFamily(genes.JawWidth),
                 EarFamily = ChooseFamily(genes.EarSize),
                 EyeExpressionSet = ChooseEyeExpressionSet(genes.EyeSize, genes.EyeSpacing),
-                MouthExpressionSet = ChooseMouthExpressionSet(genes.LipFullness, genes.BrowHeaviness),
+                MouthExpressionSet = ChooseMouthExpressionSet(Mathf.Lerp(genes.LipFullness, 1f - genes.MicroDetails.ToothCrowding, 0.1f), genes.BrowHeaviness),
                 BrowExpressionFamily = ChooseFamily(genes.BrowHeaviness),
-                EyelidExpressionFamily = ChooseFamily(Mathf.Lerp(genes.EyeSize, genes.SleepQualityTendency, 0.5f)),
+                EyelidExpressionFamily = ChooseFamily(Mathf.Lerp(genes.EyeSize, genes.SleepQualityTendency, 0.35f) + genes.EyeWetness * 0.15f),
                 BaseBodyLayerKey = BuildLayerKey("body_base", ChooseFamily(genes.FrameSize)),
                 EyeLayerKey = BuildLayerKey("eyes", ChooseFamily(genes.EyeSize)),
                 NoseLayerKey = BuildLayerKey("nose", ChooseFamily(genes.NoseBridgeHeight)),
