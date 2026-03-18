@@ -8,6 +8,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
 - .NET profile compatible with Unity C# scripts
 - No external server required
+- Project package manifest now pins `com.unity.ugui`, `com.unity.textmeshpro`, and `com.unity.test-framework` so gameplay HUD/panel/dialogue scripts and EditMode tests resolve their Unity packages consistently.
 
 ## How to Run
 
@@ -27,6 +28,7 @@ The project currently focuses on **foundational gameplay architecture**: world t
 7. Press Play.
 
 > Tip: use `PlaceholderGenerator` if sprite slots are empty so UI portraits/world placeholders are still visible during setup.
+> Testing note: EditMode tests live under `Assets/Tests/EditMode` and are wired through `Survivebest.EditModeTests.asmdef`, which helps validate gameplay systems like economy, dialogue, world clock, and household flows without changing moment-to-moment gameplay behavior.
 
 ## Development Status Snapshot (Done So Far)
 
