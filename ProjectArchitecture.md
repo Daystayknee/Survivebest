@@ -2,13 +2,25 @@
 
 Use this file as the **source of truth** for Copilot/Codex so generated scripts remain system-aware and compatible.
 
+## 0) Visual Direction Update — Paper Doll / Live Portrait First
+
+Survivebest should now be treated as a **2D paper-doll life sim with VTuber-style live portrait behavior**, not a project that depends on full 3D genetic mesh sculpting.
+
+Design rule:
+- hidden simulation: genetics, psychology, health, memory, relationships
+- resolver layer: part family selection, tinting, overlays, expression states, pose tendencies
+- presentation layer: face close-up, full-body paper doll, family resemblance comparison
+
+Use `2D_PAPERDOLL_GENETICS_PIPELINE.md` as the source-of-truth brief for how DNA/inheritance, portrait states, and layered avatar art should connect.
+
 ## 1) Master System Prompt (Bootstrapping)
 
 ```text
 I am building a 2D Life Sim Survival RPG in Unity. The game uses a Point-and-Click interface with Modular Paper Doll characters.
 Technical Requirements:
- * Modular 2D Avatars: Each character is a collection of separate SpriteRenderer child objects (Head, Nose, Mouth, Eyes, FrontHair, SideHair, BackHair, Chest, Hips, Booty, Arms, Thighs, Calves, Feet).
- * Scaling Genetics: Use Transform.localScale on specific body parts to handle different body shapes (e.g., 'BustSize', 'HipWidth', 'Height').
+ * Modular 2D Avatars: Each character is a collection of layered paper-doll parts for head, face, hair, body, clothing, and state overlays.
+ * Scaling Genetics: Use Transform.localScale and resolver-driven silhouette classes on specific body regions to handle different body shapes (e.g., `BustSize`, `HipWidth`, `Height`, `ShoulderWidth`, `WaistWidth`).
+ * Portrait Rigging: Facial parts should support state swapping/interpolation for eyes, brows, mouth, posture, and condition overlays so characters can feel alive in close-up dialogue/UI.
  * Life Stages: Create an Enum for: Baby, Infant, Toddler, Child, Preteen, Teen, Young Adult, Adult, Older Adult, Elder.
  * Household System: The player can switch between characters in a household. When a character dies, the player selects a successor.
  * Point-and-Click: Interactions are handled via Raycasting on 2D objects.
