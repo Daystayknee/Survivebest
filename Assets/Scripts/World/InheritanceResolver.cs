@@ -574,6 +574,201 @@ namespace Survivebest.World
             float value = Mathf.Lerp(a, b, Random.Range(0.35f, 0.65f));
             if (Random.value <= mutationChance)
             {
+                allele.Value = Mathf.Clamp01(allele.Value + Random.Range(-0.12f, 0.12f));
+                allele.Dominance = Mathf.Clamp(allele.Dominance + Random.Range(-0.2f, 0.2f), -1f, 1f);
+                allele.Code = $"{allele.Code}-mut";
+            }
+
+            return allele;
+        }
+
+        private static void AppendInheritedMutations(List<MutationFlag> target, List<MutationFlag> source, float mutationChance, MutationOrigin origin)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                MutationFlag mutation = source[i];
+                if (mutation == null || Random.value > 0.35f + mutationChance)
+                {
+                    continue;
+                }
+
+                target.Add(new MutationFlag
+                {
+                    Origin = origin,
+                    Label = mutation.Label,
+                    Severity = Mathf.Clamp01(mutation.Severity * Random.Range(0.75f, 1.15f)),
+                    Beneficial = mutation.Beneficial
+                });
+            }
+        }
+
+        private static MutationFlag RandomMutationFlag(MutationOrigin origin)
+        {
+            return new MutationFlag
+            {
+                Origin = origin,
+                Label = origin switch
+                {
+                    MutationOrigin.Environmental => "toxin_shift",
+                    MutationOrigin.InheritedChain => "family_chain",
+                    _ => "natural_variant"
+                },
+                Severity = Random.Range(0.03f, 0.22f),
+                Beneficial = Random.value < 0.18f
+            };
+        }
+
+        private static GenomeRegionProfile RandomRegionProfile(int seed)
+        {
+            int roll = Mathf.Abs(seed % 5);
+            return roll switch
+            {
+                0 => new GenomeRegionProfile { RegionId = "temperate_coastal", MelaninBias = 0.42f, HeightBias = 0.55f, CurlBias = 0.45f, RareTraitBias = 0.14f },
+                1 => new GenomeRegionProfile { RegionId = "equatorial_urban", MelaninBias = 0.78f, HeightBias = 0.52f, CurlBias = 0.76f, RareTraitBias = 0.11f },
+                2 => new GenomeRegionProfile { RegionId = "northern_highland", MelaninBias = 0.28f, HeightBias = 0.61f, CurlBias = 0.35f, RareTraitBias = 0.18f },
+                3 => new GenomeRegionProfile { RegionId = "continental_plains", MelaninBias = 0.5f, HeightBias = 0.58f, CurlBias = 0.48f, RareTraitBias = 0.09f },
+                _ => new GenomeRegionProfile { RegionId = "mixed_metro", MelaninBias = 0.56f, HeightBias = 0.53f, CurlBias = 0.54f, RareTraitBias = 0.16f }
+            };
+        }
+
+        private static PopulationGenePoolReference RandomPopulationPool(int seed)
+        {
+            return new PopulationGenePoolReference
+            {
+                PoolId = $"pool-{Mathf.Abs(seed % 7)}",
+                RegionId = ResolveRegionId(seed),
+                Diversity = Random.Range(0.45f, 0.92f),
+                MutationVolatility = Random.Range(0.03f, 0.15f)
+            };
+        }
+
+        private static string ResolveRegionId(int seed)
+        {
+            string[] regions = { "temperate_coastal", "equatorial_urban", "northern_highland", "continental_plains", "mixed_metro" };
+            return regions[Mathf.Abs(seed) % regions.Length];
+        }
+
+        private static EpigeneticMarkerProfile RandomEpigenetics()
+        {
+            return new EpigeneticMarkerProfile
+            {
+                StressImprint = Random.Range(0f, 0.45f),
+                DietQualityImprint = Random.Range(0.35f, 0.9f),
+                ToxinExposure = Random.Range(0f, 0.25f),
+                SocialSafetySignal = Random.Range(0.2f, 0.85f),
+                SunExposure = Random.Range(0.15f, 0.9f),
+                TraumaExpression = Random.Range(0f, 0.35f)
+            };
+        }
+
+        private static MutationProfile RandomMutationProfile()
+        {
+            return new MutationProfile
+            {
+                RandomMutationLoad = Random.Range(0f, 0.12f),
+                EnvironmentalMutationLoad = Random.Range(0f, 0.08f),
+                InheritedMutationChain = Random.Range(0f, 0.15f),
+                BeneficialMutationChance = Random.Range(0.02f, 0.14f),
+                HiddenTraitSkipChance = Random.Range(0.05f, 0.35f)
+            };
+        }
+
+        private static void RandomizeBehaviorLayers(GeneticProfile profile)
+        {
+            profile.Psychology.BigFiveOpenness = profile.EvaluateGene("psych_openness", Random.value);
+            profile.Psychology.BigFiveConscientiousness = profile.EvaluateGene("psych_conscientiousness", Random.value);
+            profile.Psychology.BigFiveExtraversion = profile.EvaluateGene("psych_extraversion", Random.value);
+            profile.Psychology.BigFiveAgreeableness = profile.EvaluateGene("psych_agreeableness", Random.value);
+            profile.Psychology.BigFiveNeuroticism = profile.EvaluateGene("psych_neuroticism", Random.value);
+            profile.Psychology.Impulsivity = profile.EvaluateGene("psych_impulsivity", Random.value);
+            profile.Psychology.RiskTolerance = profile.EvaluateGene("psych_risk_tolerance", Random.value);
+            profile.Psychology.EmpathyDepth = profile.EvaluateGene("psych_empathy", Random.value);
+            profile.Psychology.Narcissism = profile.EvaluateGene("psych_narcissism", Random.Range(0.05f, 0.35f));
+            profile.Psychology.TraumaSensitivity = profile.EvaluateGene("psych_trauma_sensitivity", Random.value);
+            profile.Psychology.AddictionRisk = profile.EvaluateGene("psych_addiction_risk", Random.value);
+            profile.Talents.MusicAffinity = profile.EvaluateGene("talent_music", Random.value);
+            profile.Talents.AthleticAffinity = profile.EvaluateGene("talent_athletic", Random.value);
+            profile.Talents.SocialAffinity = profile.EvaluateGene("talent_social", Random.value);
+            profile.Talents.AnalyticalAffinity = profile.EvaluateGene("talent_analytical", Random.value);
+            profile.Talents.ArtisticAffinity = profile.EvaluateGene("talent_artistic", Random.value);
+            profile.Talents.VocalTexturePotential = profile.EvaluateGene("talent_vocal_texture", Random.value);
+            profile.Identity.GenderIdentitySpectrum = profile.EvaluateGene("identity_gender", Random.value);
+            profile.Identity.SexualOrientationSpectrum = profile.EvaluateGene("identity_orientation", Random.value);
+            profile.Identity.CulturalAffinity = profile.EvaluateGene("identity_cultural_affinity", Random.value);
+            profile.Identity.VoicePitchRange = profile.EvaluateGene("identity_voice_pitch", Random.value);
+            profile.Identity.SpeechCadence = profile.EvaluateGene("identity_speech_cadence", Random.value);
+        }
+
+        private static GenomeRegionProfile InheritRegionProfile(GenomeRegionProfile a, GenomeRegionProfile b, float mutationChance)
+        {
+            return new GenomeRegionProfile
+            {
+                RegionId = ResolveDominantString(a.RegionId, b.RegionId),
+                MelaninBias = Blend(a.MelaninBias, b.MelaninBias, mutationChance),
+                HeightBias = Blend(a.HeightBias, b.HeightBias, mutationChance),
+                CurlBias = Blend(a.CurlBias, b.CurlBias, mutationChance),
+                RareTraitBias = Blend(a.RareTraitBias, b.RareTraitBias, mutationChance * 0.5f)
+            };
+        }
+
+        private static PopulationGenePoolReference InheritPopulationPool(PopulationGenePoolReference a, PopulationGenePoolReference b, float mutationChance)
+        {
+            return new PopulationGenePoolReference
+            {
+                PoolId = ResolveDominantString(a.PoolId, b.PoolId),
+                RegionId = ResolveDominantString(a.RegionId, b.RegionId),
+                Diversity = Blend(a.Diversity, b.Diversity, mutationChance * 0.5f),
+                MutationVolatility = Blend(a.MutationVolatility, b.MutationVolatility, mutationChance)
+            };
+        }
+
+        private static GeneticLineageRecord InheritLineage(GeneticLineageRecord a, GeneticLineageRecord b)
+        {
+            return new GeneticLineageRecord
+            {
+                FamilyId = $"{a.FamilyId}-{b.FamilyId}",
+                FamilyName = ResolveDominantString(a.FamilyName, b.FamilyName),
+                GenerationDepth = Mathf.Max(a.GenerationDepth, b.GenerationDepth) + 1,
+                NotableTraitKey = Random.value < 0.5f ? a.NotableTraitKey : b.NotableTraitKey,
+                RareTraitStrength = Mathf.Clamp01((a.RareTraitStrength + b.RareTraitStrength) * 0.5f)
+            };
+        }
+
+        private static EpigeneticMarkerProfile InheritEpigenetics(EpigeneticMarkerProfile a, EpigeneticMarkerProfile b, float mutationChance)
+        {
+            return new EpigeneticMarkerProfile
+            {
+                StressImprint = Blend(a.StressImprint, b.StressImprint, mutationChance),
+                DietQualityImprint = Blend(a.DietQualityImprint, b.DietQualityImprint, mutationChance * 0.5f),
+                ToxinExposure = Blend(a.ToxinExposure, b.ToxinExposure, mutationChance),
+                SocialSafetySignal = Blend(a.SocialSafetySignal, b.SocialSafetySignal, mutationChance * 0.5f),
+                SunExposure = Blend(a.SunExposure, b.SunExposure, mutationChance),
+                TraumaExpression = Blend(a.TraumaExpression, b.TraumaExpression, mutationChance)
+            };
+        }
+
+        private static MutationProfile InheritMutationProfile(MutationProfile a, MutationProfile b, float mutationChance)
+        {
+            return new MutationProfile
+            {
+                RandomMutationLoad = Blend(a.RandomMutationLoad, b.RandomMutationLoad, mutationChance),
+                EnvironmentalMutationLoad = Blend(a.EnvironmentalMutationLoad, b.EnvironmentalMutationLoad, mutationChance),
+                InheritedMutationChain = Mathf.Clamp01(((a.InheritedMutationChain + b.InheritedMutationChain) * 0.5f) + mutationChance * 0.1f),
+                BeneficialMutationChance = Blend(a.BeneficialMutationChance, b.BeneficialMutationChance, mutationChance * 0.5f),
+                HiddenTraitSkipChance = Blend(a.HiddenTraitSkipChance, b.HiddenTraitSkipChance, mutationChance * 0.5f)
+            };
+        }
+
+        private static float Blend(float a, float b, float mutationChance)
+        {
+            float value = Mathf.Lerp(a, b, Random.Range(0.35f, 0.65f));
+            if (Random.value <= mutationChance)
+            {
                 value += Random.Range(-0.08f, 0.08f);
             }
 
