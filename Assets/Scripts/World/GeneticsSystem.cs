@@ -162,10 +162,71 @@ namespace Survivebest.World
         private void ResolveAndApplyPhenotype()
         {
             CoreLifeStage stage = owner != null ? owner.CurrentLifeStage : CoreLifeStage.YoungAdult;
-            phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, environmentPressure);
+            float effectivePressure = Mathf.Clamp01(
+                environmentPressure +
+                geneticProfile.Epigenetics.StressImprint * 0.2f +
+                (1f - geneticProfile.Epigenetics.DietQualityImprint) * 0.1f +
+                geneticProfile.Epigenetics.ToxinExposure * 0.15f);
+            phenotypeProfile = PhenotypeResolver.Resolve(geneticProfile, stage, effectivePressure);
             ApplyResolvedPhenotype(phenotypeProfile);
             ApplyDynamicPresentationState();
             PublishGeneticsEvent("Phenotype resolved and applied", phenotypeProfile != null ? 1f : 0f);
+        }
+
+        public void ApplyEpigeneticPressure(float stressImprint, float dietQualityImprint, float toxinExposure, float socialSafetySignal)
+        {
+            geneticProfile.Epigenetics.StressImprint = Mathf.Clamp01(stressImprint);
+            geneticProfile.Epigenetics.DietQualityImprint = Mathf.Clamp01(dietQualityImprint);
+            geneticProfile.Epigenetics.ToxinExposure = Mathf.Clamp01(toxinExposure);
+            geneticProfile.Epigenetics.SocialSafetySignal = Mathf.Clamp01(socialSafetySignal);
+            environmentPressure = Mathf.Clamp01((geneticProfile.Epigenetics.StressImprint * 0.45f) + ((1f - geneticProfile.Epigenetics.DietQualityImprint) * 0.25f) + (geneticProfile.Epigenetics.ToxinExposure * 0.2f) + ((1f - geneticProfile.Epigenetics.SocialSafetySignal) * 0.1f));
+            ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Epigenetic pressure updated", environmentPressure);
+        }
+
+        public void ApplyTargetedGeneEdit(float melanin, float heightPotential, float cognition, float athleticism)
+        {
+            geneticProfile.MelaninRange = Mathf.Clamp01(melanin);
+            geneticProfile.HeightPotential = Mathf.Clamp01(heightPotential);
+            geneticProfile.PolygenicTraits.CognitionScore = Mathf.Clamp01(cognition);
+            geneticProfile.PolygenicTraits.AthleticScore = Mathf.Clamp01(athleticism);
+            geneticProfile.Mutations.RandomMutationLoad = Mathf.Clamp01(geneticProfile.Mutations.RandomMutationLoad * 0.8f);
+            geneticProfile.ClampToNormalizedRange();
+            ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Targeted gene edit applied", 1.2f);
+        }
+
+        public void RollSpontaneousMutation()
+        {
+            float spike = Random.Range(0.01f, 0.08f);
+            geneticProfile.Mutations.RandomMutationLoad = Mathf.Clamp01(geneticProfile.Mutations.RandomMutationLoad + spike);
+            geneticProfile.MelaninRange = Mathf.Clamp01(geneticProfile.MelaninRange + Random.Range(-spike, spike));
+            geneticProfile.HairCurl = Mathf.Clamp01(geneticProfile.HairCurl + Random.Range(-spike, spike));
+            geneticProfile.HeightPotential = Mathf.Clamp01(geneticProfile.HeightPotential + Random.Range(-spike, spike));
+            geneticProfile.PolygenicTraits.TemperamentScore = Mathf.Clamp01(geneticProfile.PolygenicTraits.TemperamentScore + Random.Range(-spike, spike));
+            geneticProfile.ClampToNormalizedRange();
+            ResolveAndApplyPhenotype();
+            PublishGeneticsEvent("Spontaneous mutation rolled", spike);
+        }
+
+        public string BuildFamilyResemblanceReport(GeneticsSystem relative)
+        {
+            if (relative == null || relative.Profile == null)
+            {
+                return "No comparable relative profile.";
+            }
+
+            float resemblance =
+                1f -
+                ((Mathf.Abs(Profile.FaceWidth - relative.Profile.FaceWidth) * 0.2f) +
+                 (Mathf.Abs(Profile.JawWidth - relative.Profile.JawWidth) * 0.15f) +
+                 (Mathf.Abs(Profile.MelaninRange - relative.Profile.MelaninRange) * 0.2f) +
+                 (Mathf.Abs(Profile.HeightPotential - relative.Profile.HeightPotential) * 0.2f) +
+                 (Mathf.Abs(Profile.HairCurl - relative.Profile.HairCurl) * 0.1f) +
+                 (Mathf.Abs(Profile.PolygenicTraits.TemperamentScore - relative.Profile.PolygenicTraits.TemperamentScore) * 0.15f));
+
+            resemblance = Mathf.Clamp01(resemblance);
+            return $"Resemblance {(resemblance * 100f):0}% • hidden gene carry {(Profile.Mutations.HiddenTraitSkipChance * 100f):0}% • cognition {(Profile.PolygenicTraits.CognitionScore * 100f):0}%";
         }
 
         private void ApplyResolvedPhenotype(PhenotypeProfile phenotype)

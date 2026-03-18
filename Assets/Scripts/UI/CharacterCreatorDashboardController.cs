@@ -368,6 +368,71 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void SetGenomeMelanin(float value)
+        {
+            SetGeneticScalar(profile => profile.MelaninRange = Mathf.Clamp01(value));
+        }
+
+        public void SetGenomeHeight(float value)
+        {
+            SetGeneticScalar(profile => profile.HeightPotential = Mathf.Clamp01(value));
+        }
+
+        public void SetGenomeBodyFat(float value)
+        {
+            SetGeneticScalar(profile => profile.FatDistribution = Mathf.Clamp01(value));
+        }
+
+        public void SetGenomeMuscle(float value)
+        {
+            SetGeneticScalar(profile => profile.MusclePotential = Mathf.Clamp01(value));
+        }
+
+        public void SetGenomeCognition(float value)
+        {
+            SetGeneticScalar(profile => profile.PolygenicTraits.CognitionScore = Mathf.Clamp01(value));
+        }
+
+        public void SetGenomeStressEpigenetics(float value)
+        {
+            GeneticsSystem genetics = ResolveActiveGeneticsSystem();
+            if (genetics == null)
+            {
+                return;
+            }
+
+            GeneticProfile profile = genetics.Profile;
+            genetics.ApplyEpigeneticPressure(
+                Mathf.Clamp01(value),
+                profile.Epigenetics.DietQualityImprint,
+                profile.Epigenetics.ToxinExposure,
+                profile.Epigenetics.SocialSafetySignal);
+            RefreshPreview();
+        }
+
+        public void SetGenomeDietEpigenetics(float value)
+        {
+            GeneticsSystem genetics = ResolveActiveGeneticsSystem();
+            if (genetics == null)
+            {
+                return;
+            }
+
+            GeneticProfile profile = genetics.Profile;
+            genetics.ApplyEpigeneticPressure(
+                profile.Epigenetics.StressImprint,
+                Mathf.Clamp01(value),
+                profile.Epigenetics.ToxinExposure,
+                profile.Epigenetics.SocialSafetySignal);
+            RefreshPreview();
+        }
+
+        public void RollGenomeMutation()
+        {
+            ResolveActiveGeneticsSystem()?.RollSpontaneousMutation();
+            RefreshPreview();
+        }
+
         public void NextSection()
         {
             SetTab((int)CurrentTab + 1);
@@ -956,6 +1021,7 @@ namespace Survivebest.UI
         private void RefreshDetailedLabels()
         {
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            GeneticsSystem genetics = ResolveActiveGeneticsSystem();
             if (active == null)
             {
                 return;
@@ -973,8 +1039,32 @@ namespace Survivebest.UI
 
             if (geneticsDetailsText != null && appearanceManager != null && appearanceManager.CurrentProfile != null)
             {
-                geneticsDetailsText.text = $"Skin Tone: {appearanceManager.CurrentProfile.SkinTone}\nEye Color: {appearanceManager.CurrentProfile.EyeColor}\nHair Texture: {hairTextureFilter}\nLocked: {(IsActiveCharacterLocked() ? "Yes" : "No")}";
+                string advanced = genetics != null
+                    ? $"Melanin: {genetics.Profile.MelaninRange:0.00}\nHeight Gene: {genetics.Profile.HeightPotential:0.00}\nBody Fat Gene: {genetics.Profile.FatDistribution:0.00}\nMuscle Gene: {genetics.Profile.MusclePotential:0.00}\nCognition: {genetics.Profile.PolygenicTraits.CognitionScore:0.00}\nStress Imprint: {genetics.Profile.Epigenetics.StressImprint:0.00}\nMutation Load: {genetics.Profile.Mutations.RandomMutationLoad:0.00}"
+                    : "Genetics system unavailable.";
+                geneticsDetailsText.text = $"Skin Tone: {appearanceManager.CurrentProfile.SkinTone}\nEye Color: {appearanceManager.CurrentProfile.EyeColor}\nHair Texture: {hairTextureFilter}\nLocked: {(IsActiveCharacterLocked() ? "Yes" : "No")}\n{advanced}";
             }
+        }
+
+        private GeneticsSystem ResolveActiveGeneticsSystem()
+        {
+            return householdManager != null && householdManager.ActiveCharacter != null
+                ? householdManager.ActiveCharacter.GetComponent<GeneticsSystem>()
+                : null;
+        }
+
+        private void SetGeneticScalar(Action<GeneticProfile> applyChange)
+        {
+            GeneticsSystem genetics = ResolveActiveGeneticsSystem();
+            if (genetics == null || applyChange == null)
+            {
+                return;
+            }
+
+            GeneticProfile profile = genetics.Profile;
+            applyChange(profile);
+            genetics.OverrideGenetics(profile, true);
+            RefreshPreview();
         }
 
         private void ApplyPreviewCameraState()

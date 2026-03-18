@@ -19,6 +19,7 @@
 - Background roots for creator themes (neutral, genetics, neighborhood, government/laws, home)
 - Face-close and body-close focus buttons/labels if used
 - Face/body/genetics detail labels plus selectors for face shape, jaw, nose, lips, skin tone, and eye color
+- Genetics sliders/inputs for melanin, height, body fat, muscle, cognition, epigenetic stress/diet, and mutation triggers if exposing the deep genome editor
 
 ## Expected Art Assets
 - Background(s)

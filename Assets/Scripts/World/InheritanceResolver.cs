@@ -66,7 +66,15 @@ namespace Survivebest.World
                 SkinExpression = RandomExpression(),
                 FaceExpression = RandomExpression(),
                 BodyExpression = RandomExpression(),
-                HairExpression = RandomExpression()
+                HairExpression = RandomExpression(),
+                EyeColorAlleles = RandomAlleles(),
+                HairTextureAlleles = RandomAlleles(),
+                HeightAlleles = RandomAlleles(),
+                PolygenicTraits = RandomPolygenicCluster(),
+                Epigenetics = RandomEpigenetics(),
+                Mutations = RandomMutationProfile(),
+                Psychology = RandomPsychologyProfile(),
+                Talents = RandomTalentProfile()
             };
 
             Random.state = old;
@@ -141,7 +149,15 @@ namespace Survivebest.World
                 StressSensitivity = Blend(a.StressSensitivity, b.StressSensitivity, mutationChance),
                 AddictionVulnerability = Blend(a.AddictionVulnerability, b.AddictionVulnerability, mutationChance),
                 RecoveryTendency = Blend(a.RecoveryTendency, b.RecoveryTendency, mutationChance),
-                IllnessVulnerability = Blend(a.IllnessVulnerability, b.IllnessVulnerability, mutationChance)
+                IllnessVulnerability = Blend(a.IllnessVulnerability, b.IllnessVulnerability, mutationChance),
+                EyeColorAlleles = InheritAlleles(a.EyeColorAlleles, b.EyeColorAlleles, mutationChance),
+                HairTextureAlleles = InheritAlleles(a.HairTextureAlleles, b.HairTextureAlleles, mutationChance),
+                HeightAlleles = InheritAlleles(a.HeightAlleles, b.HeightAlleles, mutationChance),
+                PolygenicTraits = InheritPolygenicCluster(a.PolygenicTraits, b.PolygenicTraits, mutationChance),
+                Epigenetics = InheritEpigenetics(a.Epigenetics, b.Epigenetics, mutationChance),
+                Mutations = InheritMutationProfile(a.Mutations, b.Mutations, mutationChance),
+                Psychology = InheritPsychologyProfile(a.Psychology, b.Psychology, mutationChance),
+                Talents = InheritTalentProfile(a.Talents, b.Talents, mutationChance)
             };
 
             child.ClampToNormalizedRange();
@@ -185,6 +201,144 @@ namespace Survivebest.World
             if (roll < 0.8f) return TraitExpressionMode.Blended;
             if (roll < 0.94f) return TraitExpressionMode.Partial;
             return TraitExpressionMode.Latent;
+        }
+
+        private static AllelePairGene RandomAlleles()
+        {
+            return new AllelePairGene
+            {
+                DominantA = Random.value,
+                RecessiveB = Random.value,
+                HiddenGenerationCarry = Random.Range(0f, 0.4f)
+            };
+        }
+
+        private static PolygenicTraitCluster RandomPolygenicCluster()
+        {
+            return new PolygenicTraitCluster
+            {
+                HeightScore = Random.value,
+                CognitionScore = Random.value,
+                TemperamentScore = Random.value,
+                AthleticScore = Random.value,
+                ImmuneScore = Random.value
+            };
+        }
+
+        private static EpigeneticMarkerProfile RandomEpigenetics()
+        {
+            return new EpigeneticMarkerProfile
+            {
+                StressImprint = Random.Range(0f, 0.4f),
+                DietQualityImprint = Random.Range(0.35f, 0.9f),
+                ToxinExposure = Random.Range(0f, 0.2f),
+                SocialSafetySignal = Random.Range(0.2f, 0.85f)
+            };
+        }
+
+        private static MutationProfile RandomMutationProfile()
+        {
+            return new MutationProfile
+            {
+                RandomMutationLoad = Random.Range(0f, 0.12f),
+                EnvironmentalMutationLoad = Random.Range(0f, 0.08f),
+                HiddenTraitSkipChance = Random.Range(0.05f, 0.35f)
+            };
+        }
+
+        private static PsychologicalGeneticsProfile RandomPsychologyProfile()
+        {
+            return new PsychologicalGeneticsProfile
+            {
+                BigFiveOpenness = Random.value,
+                BigFiveConscientiousness = Random.value,
+                BigFiveExtraversion = Random.value,
+                BigFiveAgreeableness = Random.value,
+                BigFiveNeuroticism = Random.value,
+                TraumaSensitivity = Random.value,
+                AddictionRisk = Random.value
+            };
+        }
+
+        private static TalentGeneticsProfile RandomTalentProfile()
+        {
+            return new TalentGeneticsProfile
+            {
+                MusicAffinity = Random.value,
+                AthleticAffinity = Random.value,
+                SocialAffinity = Random.value,
+                AnalyticalAffinity = Random.value,
+                ArtisticAffinity = Random.value
+            };
+        }
+
+        private static AllelePairGene InheritAlleles(AllelePairGene a, AllelePairGene b, float mutationChance)
+        {
+            return new AllelePairGene
+            {
+                DominantA = Blend(a.DominantA, b.DominantA, mutationChance),
+                RecessiveB = Blend(a.RecessiveB, b.RecessiveB, mutationChance),
+                HiddenGenerationCarry = Blend(a.HiddenGenerationCarry, b.HiddenGenerationCarry, mutationChance * 0.5f)
+            };
+        }
+
+        private static PolygenicTraitCluster InheritPolygenicCluster(PolygenicTraitCluster a, PolygenicTraitCluster b, float mutationChance)
+        {
+            return new PolygenicTraitCluster
+            {
+                HeightScore = Blend(a.HeightScore, b.HeightScore, mutationChance),
+                CognitionScore = Blend(a.CognitionScore, b.CognitionScore, mutationChance),
+                TemperamentScore = Blend(a.TemperamentScore, b.TemperamentScore, mutationChance),
+                AthleticScore = Blend(a.AthleticScore, b.AthleticScore, mutationChance),
+                ImmuneScore = Blend(a.ImmuneScore, b.ImmuneScore, mutationChance)
+            };
+        }
+
+        private static EpigeneticMarkerProfile InheritEpigenetics(EpigeneticMarkerProfile a, EpigeneticMarkerProfile b, float mutationChance)
+        {
+            return new EpigeneticMarkerProfile
+            {
+                StressImprint = Blend(a.StressImprint, b.StressImprint, mutationChance),
+                DietQualityImprint = Blend(a.DietQualityImprint, b.DietQualityImprint, mutationChance * 0.5f),
+                ToxinExposure = Blend(a.ToxinExposure, b.ToxinExposure, mutationChance),
+                SocialSafetySignal = Blend(a.SocialSafetySignal, b.SocialSafetySignal, mutationChance * 0.5f)
+            };
+        }
+
+        private static MutationProfile InheritMutationProfile(MutationProfile a, MutationProfile b, float mutationChance)
+        {
+            return new MutationProfile
+            {
+                RandomMutationLoad = Blend(a.RandomMutationLoad, b.RandomMutationLoad, mutationChance),
+                EnvironmentalMutationLoad = Blend(a.EnvironmentalMutationLoad, b.EnvironmentalMutationLoad, mutationChance),
+                HiddenTraitSkipChance = Blend(a.HiddenTraitSkipChance, b.HiddenTraitSkipChance, mutationChance * 0.5f)
+            };
+        }
+
+        private static PsychologicalGeneticsProfile InheritPsychologyProfile(PsychologicalGeneticsProfile a, PsychologicalGeneticsProfile b, float mutationChance)
+        {
+            return new PsychologicalGeneticsProfile
+            {
+                BigFiveOpenness = Blend(a.BigFiveOpenness, b.BigFiveOpenness, mutationChance),
+                BigFiveConscientiousness = Blend(a.BigFiveConscientiousness, b.BigFiveConscientiousness, mutationChance),
+                BigFiveExtraversion = Blend(a.BigFiveExtraversion, b.BigFiveExtraversion, mutationChance),
+                BigFiveAgreeableness = Blend(a.BigFiveAgreeableness, b.BigFiveAgreeableness, mutationChance),
+                BigFiveNeuroticism = Blend(a.BigFiveNeuroticism, b.BigFiveNeuroticism, mutationChance),
+                TraumaSensitivity = Blend(a.TraumaSensitivity, b.TraumaSensitivity, mutationChance),
+                AddictionRisk = Blend(a.AddictionRisk, b.AddictionRisk, mutationChance)
+            };
+        }
+
+        private static TalentGeneticsProfile InheritTalentProfile(TalentGeneticsProfile a, TalentGeneticsProfile b, float mutationChance)
+        {
+            return new TalentGeneticsProfile
+            {
+                MusicAffinity = Blend(a.MusicAffinity, b.MusicAffinity, mutationChance),
+                AthleticAffinity = Blend(a.AthleticAffinity, b.AthleticAffinity, mutationChance),
+                SocialAffinity = Blend(a.SocialAffinity, b.SocialAffinity, mutationChance),
+                AnalyticalAffinity = Blend(a.AnalyticalAffinity, b.AnalyticalAffinity, mutationChance),
+                ArtisticAffinity = Blend(a.ArtisticAffinity, b.ArtisticAffinity, mutationChance)
+            };
         }
     }
 }
