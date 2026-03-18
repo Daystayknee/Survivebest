@@ -181,6 +181,63 @@ namespace Survivebest.World
     }
 
     [Serializable]
+    public class AllelePairGene
+    {
+        [Range(0f, 1f)] public float DominantA = 0.5f;
+        [Range(0f, 1f)] public float RecessiveB = 0.5f;
+        [Range(0f, 1f)] public float HiddenGenerationCarry = 0.2f;
+    }
+
+    [Serializable]
+    public class PolygenicTraitCluster
+    {
+        [Range(0f, 1f)] public float HeightScore = 0.5f;
+        [Range(0f, 1f)] public float CognitionScore = 0.5f;
+        [Range(0f, 1f)] public float TemperamentScore = 0.5f;
+        [Range(0f, 1f)] public float AthleticScore = 0.5f;
+        [Range(0f, 1f)] public float ImmuneScore = 0.5f;
+    }
+
+    [Serializable]
+    public class EpigeneticMarkerProfile
+    {
+        [Range(0f, 1f)] public float StressImprint = 0.2f;
+        [Range(0f, 1f)] public float DietQualityImprint = 0.6f;
+        [Range(0f, 1f)] public float ToxinExposure = 0.05f;
+        [Range(0f, 1f)] public float SocialSafetySignal = 0.5f;
+    }
+
+    [Serializable]
+    public class MutationProfile
+    {
+        [Range(0f, 1f)] public float RandomMutationLoad = 0.05f;
+        [Range(0f, 1f)] public float EnvironmentalMutationLoad = 0.02f;
+        [Range(0f, 1f)] public float HiddenTraitSkipChance = 0.18f;
+    }
+
+    [Serializable]
+    public class PsychologicalGeneticsProfile
+    {
+        [Range(0f, 1f)] public float BigFiveOpenness = 0.5f;
+        [Range(0f, 1f)] public float BigFiveConscientiousness = 0.5f;
+        [Range(0f, 1f)] public float BigFiveExtraversion = 0.5f;
+        [Range(0f, 1f)] public float BigFiveAgreeableness = 0.5f;
+        [Range(0f, 1f)] public float BigFiveNeuroticism = 0.5f;
+        [Range(0f, 1f)] public float TraumaSensitivity = 0.35f;
+        [Range(0f, 1f)] public float AddictionRisk = 0.25f;
+    }
+
+    [Serializable]
+    public class TalentGeneticsProfile
+    {
+        [Range(0f, 1f)] public float MusicAffinity = 0.5f;
+        [Range(0f, 1f)] public float AthleticAffinity = 0.5f;
+        [Range(0f, 1f)] public float SocialAffinity = 0.5f;
+        [Range(0f, 1f)] public float AnalyticalAffinity = 0.5f;
+        [Range(0f, 1f)] public float ArtisticAffinity = 0.5f;
+    }
+
+    [Serializable]
     public class GeneticProfile
     {
         [Header("Identity")]
@@ -267,6 +324,16 @@ namespace Survivebest.World
         [Header("Environmental Layers")]
         public EpigeneticMarkerProfile Epigenetics = new();
         public MutationProfile Mutations = new();
+
+        [Header("Deep Genetics")]
+        public AllelePairGene EyeColorAlleles = new();
+        public AllelePairGene HairTextureAlleles = new();
+        public AllelePairGene HeightAlleles = new();
+        public PolygenicTraitCluster PolygenicTraits = new();
+        public EpigeneticMarkerProfile Epigenetics = new();
+        public MutationProfile Mutations = new();
+        public PsychologicalGeneticsProfile Psychology = new();
+        public TalentGeneticsProfile Talents = new();
 
         public void ClampToNormalizedRange()
         {
