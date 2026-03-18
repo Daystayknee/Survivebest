@@ -1,5 +1,6 @@
 {
   "name": "Survivebest.EditModeTests",
+  "rootNamespace": "Survivebest.Tests.EditMode",
   "references": [
     "Assembly-CSharp"
   ],
