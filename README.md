@@ -82,7 +82,7 @@ These transitions are managed by `MainMenuFlowController`, splash timing/skip by
 
 Load Game screen presents 3 save slots (world name, playtime, date, household size) via `LoadGameScreenController`.
 World creator is tabbed (`Appearance & Environment`, `Ecology & Inhabitants`, `Government & Laws`, `Starting Origins`, `Survival Mechanics`) via `WorldCreatorScreenController`.
-Household maker now supports expanded tabs, wrap navigation, multi-asset preview rotation, per-character switching, zoom controls, a dedicated family-genetics section, lock-in flows for active characters/family drafts, save/load family draft slots, and a household genetics validation action via `HouseholdMakerScreenController`.
+Household maker now supports expanded tabs, wrap navigation, multi-asset preview rotation, per-character switching, zoom controls, a dedicated family-genetics section, family surname/home-district/planning-priority setup, lock-in flows for active characters/family drafts, save/load family draft slots, and a household genetics validation action via `HouseholdMakerScreenController`.
 Gameplay map layout orchestration (location nav, map label, environment/ecology/government summaries, resources, character vitals) is handled by `GameplayScreenController`.
 Contextual action popups for buy/sell/medical/forage/skill actions are handled by `ActionPopupController` (fed by `SidebarContextMenu`).
 

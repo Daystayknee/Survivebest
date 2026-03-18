@@ -24,6 +24,24 @@ namespace Survivebest.UI
         Household
     }
 
+    public enum HouseholdOriginFocus
+    {
+        LocalRoots,
+        NewArrivals,
+        CivicFamily,
+        Survivalist,
+        Multigenerational
+    }
+
+    public enum FamilyPlanningPriority
+    {
+        Stability,
+        Growth,
+        Romance,
+        Legacy,
+        Community
+    }
+
     [Serializable]
     public class HouseholdMakerTabPanel
     {
@@ -46,6 +64,11 @@ namespace Survivebest.UI
         public string ActiveCharacterId;
         public string ActiveTab;
         public bool FamilyLocked;
+        public string FamilySurname;
+        public string HomeDistrict;
+        public string HouseholdStoryPrompt;
+        public string OriginFocus;
+        public string PlanningPriority;
         public List<HouseholdDraftMemberSnapshot> Members = new();
     }
 
@@ -62,8 +85,16 @@ namespace Survivebest.UI
         [SerializeField] private Text characterNameText;
         [SerializeField] private Text creatorSummaryText;
         [SerializeField] private Text familyLockStateText;
+        [SerializeField] private Text familyVisionText;
         [SerializeField] private List<HouseholdMakerTabPanel> tabPanels = new();
         [SerializeField] private bool wrapTabs = true;
+
+        [Header("Family Planning")]
+        [SerializeField] private string familySurname = "Rivera";
+        [SerializeField] private string homeDistrict = "Founders Row";
+        [SerializeField, TextArea] private string householdStoryPrompt = "A household trying to build a stable life while balancing work, care, and community expectations.";
+        [SerializeField] private HouseholdOriginFocus originFocus = HouseholdOriginFocus.LocalRoots;
+        [SerializeField] private FamilyPlanningPriority planningPriority = FamilyPlanningPriority.Stability;
 
         [Header("Multi-Asset Character Preview")]
         [SerializeField] private List<Transform> characterArtPivots = new();
@@ -127,6 +158,36 @@ namespace Survivebest.UI
         public void OpenFamilyGeneticsSection()
         {
             SetTab((int)HouseholdMakerTab.FamilyGenetics);
+        }
+
+        public void SetFamilySurname(string value)
+        {
+            familySurname = string.IsNullOrWhiteSpace(value) ? familySurname : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void SetHomeDistrict(string value)
+        {
+            homeDistrict = string.IsNullOrWhiteSpace(value) ? homeDistrict : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void SetHouseholdStoryPrompt(string value)
+        {
+            householdStoryPrompt = string.IsNullOrWhiteSpace(value) ? householdStoryPrompt : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void SetOriginFocus(int index)
+        {
+            originFocus = (HouseholdOriginFocus)Mathf.Clamp(index, 0, Enum.GetValues(typeof(HouseholdOriginFocus)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetPlanningPriority(int index)
+        {
+            planningPriority = (FamilyPlanningPriority)Mathf.Clamp(index, 0, Enum.GetValues(typeof(FamilyPlanningPriority)).Length - 1);
+            RefreshCreatorSummary();
         }
 
         public void NextHouseholdCharacter()
@@ -326,7 +387,12 @@ namespace Survivebest.UI
             {
                 ActiveCharacterId = householdManager.ActiveCharacter != null ? householdManager.ActiveCharacter.CharacterId : null,
                 ActiveTab = CurrentTab.ToString(),
-                FamilyLocked = familyDraftLocked
+                FamilyLocked = familyDraftLocked,
+                FamilySurname = familySurname,
+                HomeDistrict = homeDistrict,
+                HouseholdStoryPrompt = householdStoryPrompt,
+                OriginFocus = originFocus.ToString(),
+                PlanningPriority = planningPriority.ToString()
             };
 
             for (int i = 0; i < householdManager.Members.Count; i++)
@@ -371,6 +437,20 @@ namespace Survivebest.UI
             }
 
             familyDraftLocked = snapshot.FamilyLocked;
+            familySurname = string.IsNullOrWhiteSpace(snapshot.FamilySurname) ? familySurname : snapshot.FamilySurname;
+            homeDistrict = string.IsNullOrWhiteSpace(snapshot.HomeDistrict) ? homeDistrict : snapshot.HomeDistrict;
+            householdStoryPrompt = string.IsNullOrWhiteSpace(snapshot.HouseholdStoryPrompt) ? householdStoryPrompt : snapshot.HouseholdStoryPrompt;
+
+            if (Enum.TryParse(snapshot.OriginFocus, out HouseholdOriginFocus loadedOrigin))
+            {
+                originFocus = loadedOrigin;
+            }
+
+            if (Enum.TryParse(snapshot.PlanningPriority, out FamilyPlanningPriority loadedPriority))
+            {
+                planningPriority = loadedPriority;
+            }
+
             lockedCharacterIds.Clear();
             for (int i = 0; i < snapshot.Members.Count; i++)
             {
@@ -448,6 +528,10 @@ namespace Survivebest.UI
                 $"Tab: {CurrentTab}\n" +
                 $"Members: {memberCount}\n" +
                 $"Active: {activeName}\n" +
+                $"Surname: {familySurname}\n" +
+                $"Home District: {homeDistrict}\n" +
+                $"Origin Focus: {originFocus}\n" +
+                $"Planning Priority: {planningPriority}\n" +
                 $"Locked Characters: {lockedCharacterIds.Count}\n" +
                 $"Family Draft Locked: {(familyDraftLocked ? "Yes" : "No")}\n" +
                 $"Preview Assets: {characterArtPivots.Count}\n" +
@@ -456,6 +540,11 @@ namespace Survivebest.UI
             if (familyLockStateText != null)
             {
                 familyLockStateText.text = familyDraftLocked ? "Family Locked In" : "Family Draft Editable";
+            }
+
+            if (familyVisionText != null)
+            {
+                familyVisionText.text = $"{familySurname} • {homeDistrict}\n{originFocus} / {planningPriority}\n{householdStoryPrompt}";
             }
         }
 
