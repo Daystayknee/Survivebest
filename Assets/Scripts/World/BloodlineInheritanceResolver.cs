@@ -40,6 +40,7 @@ namespace Survivebest.World
         public List<OffspringPreviewEntry> Entries = new();
         public string HealthSummary;
         public string ResemblanceSummary;
+        public string BloodTypeSummary;
     }
 
     public static class BloodlineInheritanceResolver
@@ -80,6 +81,7 @@ namespace Survivebest.World
             float mutationRisk = Mathf.Clamp01((a.Mutations.RandomMutationLoad + b.Mutations.RandomMutationLoad + a.Mutations.EnvironmentalMutationLoad + b.Mutations.EnvironmentalMutationLoad) * 0.35f);
             collection.HealthSummary = $"fertility {(fertility * 100f):0}% • mutation risk {(mutationRisk * 100f):0}%";
             collection.ResemblanceSummary = string.Join(" | ", collection.Entries.ConvertAll(x => $"{x.Label}:{x.ResemblanceMode}"));
+            collection.BloodTypeSummary = $"parent blood types {a.Blood.ToDisplayString()} x {b.Blood.ToDisplayString()}";
             return collection;
         }
 
@@ -233,7 +235,7 @@ namespace Survivebest.World
 
         private static string BuildSummary(GeneticProfile child, FamilyResemblanceMode mode)
         {
-            return $"{mode} • eyes {child.EyeSize:0.00}/{child.EyeSpacing:0.00} • nose {child.NoseBridgeHeight:0.00}/{child.NostrilWidth:0.00} • lips {child.LipFullness:0.00} • body {child.FrameSize:0.00}/{child.WaistHipBias:0.00} • hair {child.HairCurl:0.00}/{child.HairDensity:0.00}";
+            return $"{mode} • blood {child.Blood.ToDisplayString()} • eyes {child.EyeSize:0.00}/{child.EyeSpacing:0.00} • nose {child.NoseBridgeHeight:0.00}/{child.NostrilWidth:0.00} • lips {child.LipFullness:0.00} • body {child.FrameSize:0.00}/{child.WaistHipBias:0.00} • hair {child.HairCurl:0.00}/{child.HairDensity:0.00}";
         }
 
         private static float ReadScalar(GeneticProfile profile, string fieldName)

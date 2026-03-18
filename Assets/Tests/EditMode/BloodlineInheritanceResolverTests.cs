@@ -65,5 +65,39 @@ namespace Survivebest.Tests.EditMode
             Assert.That(secondTwin.GeneticProfile.EyeSize, Is.EqualTo(firstTwin.GeneticProfile.EyeSize).Within(0.05f));
             Assert.That(secondTwin.GeneticProfile.HairCurl, Is.EqualTo(firstTwin.GeneticProfile.HairCurl).Within(0.05f));
         }
+
+        [Test]
+        public void BuildChildPreview_BloodTypeInheritance_UsesParentAlleles()
+        {
+            GeneticProfile parentA = new GeneticProfile
+            {
+                Blood = new BloodGeneticsProfile
+                {
+                    ParentAlleleA = AboAllele.A,
+                    ParentAlleleB = AboAllele.O,
+                    RhParentAlleleA = RhAllele.Positive,
+                    RhParentAlleleB = RhAllele.Negative
+                }
+            };
+
+            GeneticProfile parentB = new GeneticProfile
+            {
+                Blood = new BloodGeneticsProfile
+                {
+                    ParentAlleleA = AboAllele.B,
+                    ParentAlleleB = AboAllele.O,
+                    RhParentAlleleA = RhAllele.Negative,
+                    RhParentAlleleB = RhAllele.Negative
+                }
+            };
+
+            OffspringPreviewEntry child = BloodlineInheritanceResolver.BuildChildPreview(parentA, parentB, 2222, FamilyResemblanceMode.BalancedBlend);
+
+            Assert.Contains(child.GeneticProfile.Blood.ParentAlleleA, new[] { AboAllele.A, AboAllele.O });
+            Assert.Contains(child.GeneticProfile.Blood.ParentAlleleB, new[] { AboAllele.B, AboAllele.O });
+            Assert.Contains(child.GeneticProfile.Blood.RhParentAlleleA, new[] { RhAllele.Positive, RhAllele.Negative });
+            Assert.Contains(child.GeneticProfile.Blood.RhParentAlleleB, new[] { RhAllele.Negative });
+            Assert.IsTrue(child.Summary.Contains("blood "));
+        }
     }
 }

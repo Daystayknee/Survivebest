@@ -38,6 +38,31 @@ namespace Survivebest.World
         InheritedChain
     }
 
+    public enum AboAllele
+    {
+        O,
+        A,
+        B
+    }
+
+    public enum RhAllele
+    {
+        Negative,
+        Positive
+    }
+
+    public enum BloodType
+    {
+        ONegative,
+        OPositive,
+        ANegative,
+        APositive,
+        BNegative,
+        BPositive,
+        ABNegative,
+        ABPositive
+    }
+
     public enum CreatorGeneticsMode
     {
         RandomPopulation,
@@ -374,6 +399,55 @@ namespace Survivebest.World
     }
 
     [Serializable]
+    public class BloodGeneticsProfile
+    {
+        public AboAllele ParentAlleleA = AboAllele.O;
+        public AboAllele ParentAlleleB = AboAllele.O;
+        public RhAllele RhParentAlleleA = RhAllele.Positive;
+        public RhAllele RhParentAlleleB = RhAllele.Positive;
+
+        public BloodType ResolveBloodType()
+        {
+            bool hasA = ParentAlleleA == AboAllele.A || ParentAlleleB == AboAllele.A;
+            bool hasB = ParentAlleleA == AboAllele.B || ParentAlleleB == AboAllele.B;
+            bool rhPositive = RhParentAlleleA == RhAllele.Positive || RhParentAlleleB == RhAllele.Positive;
+
+            if (hasA && hasB)
+            {
+                return rhPositive ? BloodType.ABPositive : BloodType.ABNegative;
+            }
+
+            if (hasA)
+            {
+                return rhPositive ? BloodType.APositive : BloodType.ANegative;
+            }
+
+            if (hasB)
+            {
+                return rhPositive ? BloodType.BPositive : BloodType.BNegative;
+            }
+
+            return rhPositive ? BloodType.OPositive : BloodType.ONegative;
+        }
+
+        public string ToDisplayString()
+        {
+            return ResolveBloodType() switch
+            {
+                BloodType.ONegative => "O-",
+                BloodType.OPositive => "O+",
+                BloodType.ANegative => "A-",
+                BloodType.APositive => "A+",
+                BloodType.BNegative => "B-",
+                BloodType.BPositive => "B+",
+                BloodType.ABNegative => "AB-",
+                BloodType.ABPositive => "AB+",
+                _ => "O+"
+            };
+        }
+    }
+
+    [Serializable]
     public class GeneticProfile
     {
         [Header("Identity")]
@@ -468,6 +542,7 @@ namespace Survivebest.World
         public BodyGenomeProfile BodyGenome = new();
         public BiologyGenomeProfile Biology = new();
         public TemperamentGenomeProfile Temperament = new();
+        public BloodGeneticsProfile Blood = new();
 
         [Header("Environmental Layers")]
         public EpigeneticMarkerProfile Epigenetics = new();
