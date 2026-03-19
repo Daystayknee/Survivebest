@@ -11,6 +11,39 @@ namespace Survivebest.Tests.EditMode
 {
     public class HealthAndCombatRealismTests
     {
+
+        [Test]
+        public void HealthSystem_VampireSunlightExposure_DealsHeavyDamage()
+        {
+            GameObject go = new GameObject("VampireHealth");
+            CharacterCore character = go.AddComponent<CharacterCore>();
+            character.Initialize("vampire", "Vee", LifeStage.Adult, CharacterSpecies.Vampire);
+            HealthSystem health = go.AddComponent<HealthSystem>();
+            typeof(HealthSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(health, character);
+
+            float before = health.Vitality;
+            health.ApplySunlightExposure(2f);
+
+            Assert.Less(health.Vitality, before - 10f);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void MedicalConditionSystem_VampireRejectsHumanFluIllness()
+        {
+            GameObject go = new GameObject("VampireMedical");
+            CharacterCore character = go.AddComponent<CharacterCore>();
+            character.Initialize("vampire", "Vee", LifeStage.Adult, CharacterSpecies.Vampire);
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            typeof(MedicalConditionSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(medical, character);
+
+            bool added = medical.AddIllness(IllnessType.Flu, ConditionSeverity.Moderate);
+
+            Assert.IsFalse(added);
+            Assert.IsFalse(medical.ActiveConditions.Any());
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void MedicalConditionSystem_RadiationExposure_CanTriggerRadiationSickness()
         {

@@ -20,6 +20,12 @@ namespace Survivebest.Core
         Elder
     }
 
+    public enum CharacterSpecies
+    {
+        Human,
+        Vampire
+    }
+
     public enum CharacterTalent
     {
         None,
@@ -142,6 +148,7 @@ namespace Survivebest.Core
         [SerializeField] private LifeStage lifeStage = LifeStage.YoungAdult;
         [SerializeField] private bool isPlayerControlled;
         [SerializeField] private bool isDead;
+        [SerializeField] private CharacterSpecies species = CharacterSpecies.Human;
         [SerializeField] private List<CharacterTalent> talents = new();
         [SerializeField] private GameEventHub gameEventHub;
 
@@ -170,6 +177,9 @@ namespace Survivebest.Core
         public LifeStage CurrentLifeStage => lifeStage;
         public bool IsPlayerControlled => isPlayerControlled;
         public bool IsDead => isDead;
+        public CharacterSpecies Species => species;
+        public bool IsHuman => species == CharacterSpecies.Human;
+        public bool IsVampire => species == CharacterSpecies.Vampire;
         public IReadOnlyList<CharacterTalent> Talents => talents;
         public int BirthYear => birthYear;
         public int BirthMonth => birthMonth;
@@ -185,11 +195,12 @@ namespace Survivebest.Core
         public float MasculineExpression => masculineExpression;
         public float AndrogynyExpression => androgynyExpression;
 
-        public void Initialize(string id, string name, LifeStage stage)
+        public void Initialize(string id, string name, LifeStage stage, CharacterSpecies newSpecies = CharacterSpecies.Human)
         {
             characterId = id;
             displayName = name;
             lifeStage = stage;
+            species = newSpecies;
         }
 
         public void SetBirthDate(int year, int month, int day)
@@ -212,6 +223,16 @@ namespace Survivebest.Core
         public void SetLifeStage(LifeStage stage)
         {
             lifeStage = stage;
+        }
+
+        public void SetSpecies(CharacterSpecies value)
+        {
+            species = value;
+        }
+
+        public string GetSpeciesKey()
+        {
+            return species.ToString().ToLowerInvariant();
         }
 
         public void SetTalents(List<CharacterTalent> values)

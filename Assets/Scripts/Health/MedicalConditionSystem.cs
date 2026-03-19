@@ -119,7 +119,7 @@ namespace Survivebest.Health
 
         public bool AddIllness(IllnessType illnessType, ConditionSeverity severity)
         {
-            if (!IsIllnessAgeAppropriate(illnessType))
+            if (!IsIllnessAgeAppropriate(illnessType) || !IsIllnessSpeciesAppropriate(illnessType))
             {
                 return false;
             }
@@ -434,6 +434,32 @@ namespace Survivebest.Health
                 LifeStage.Toddler or LifeStage.Child => illness is not IllnessType.Migraine and not IllnessType.Hypertension and not IllnessType.Cancer,
                 _ => true
             };
+        }
+
+
+        private bool IsIllnessSpeciesAppropriate(IllnessType illness)
+        {
+            if (owner == null || owner.IsHuman)
+            {
+                return true;
+            }
+
+            if (owner.IsVampire)
+            {
+                return illness switch
+                {
+                    IllnessType.CommonCold or
+                    IllnessType.Flu or
+                    IllnessType.StomachBug or
+                    IllnessType.FoodPoisoning or
+                    IllnessType.EarInfection or
+                    IllnessType.Bronchitis or
+                    IllnessType.CovidLikeVirus => false,
+                    _ => true
+                };
+            }
+
+            return true;
         }
 
         private bool IsInjuryAgeAppropriate(InjuryType injury)
