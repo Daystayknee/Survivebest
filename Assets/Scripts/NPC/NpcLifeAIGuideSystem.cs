@@ -27,6 +27,7 @@ namespace Survivebest.NPC
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private SocialDramaEngine socialDramaEngine;
         [SerializeField] private LongTermProgressionSystem longTermProgressionSystem;
+        [SerializeField] private LifestyleBehaviorSystem lifestyleBehaviorSystem;
 
         public string LatestGuidance { get; private set; }
 
@@ -161,6 +162,36 @@ namespace Survivebest.NPC
                 });
             }
 
+            suggestions.Add(new NpcChatSuggestion
+            {
+                Label = isTextMessage ? "Plan Something Real" : "Pitch a Real Plan",
+                PreviewText = isTextMessage
+                    ? $"Want to turn this vibe into something real — dinner, errands, a walk, or a chaotic little night out?"
+                    : "Offer a specific adult-life plan instead of vague chemistry: dinner, chores together, or an actual night out.",
+                IsTextMessage = isTextMessage,
+                Category = "dating"
+            });
+
+            suggestions.Add(new NpcChatSuggestion
+            {
+                Label = isTextMessage ? "Talk Money Pressure" : "Check Their Money Stress",
+                PreviewText = isTextMessage
+                    ? $"How are bills, work, and the whole survival grind treating you this week?"
+                    : "Ask about money pressure, schedule load, and whether they need practical backup.",
+                IsTextMessage = isTextMessage,
+                Category = "finance"
+            });
+
+            suggestions.Add(new NpcChatSuggestion
+            {
+                Label = isTextMessage ? "Push the Side Hustle" : "Talk Ambition",
+                PreviewText = isTextMessage
+                    ? $"You still serious about that next chapter, or do we need to build a better plan together?"
+                    : "Open a conversation about ambition, burnout, and whether they want to chase a bigger move.",
+                IsTextMessage = isTextMessage,
+                Category = "creator"
+            });
+
             return suggestions;
         }
 
@@ -175,7 +206,7 @@ namespace Survivebest.NPC
 
             System.Random random = new System.Random(seed ^ npc.DisplayName.GetHashCode());
             string[] tones = { "gentle", "playful", "probing", "strategic", "nostalgic", "protective" };
-            string[] categories = { "routine", "work", "memory", "rumor", "legacy", "romance", "survival", "town" };
+            string[] categories = { "routine", "work", "memory", "rumor", "legacy", "romance", "survival", "town", "wellness", "finance", "creator", "dating" };
             string[] actions =
             {
                 "ask what they want next",
@@ -185,7 +216,10 @@ namespace Survivebest.NPC
                 "pull on a memory thread",
                 "invite them into a riskier plan",
                 "trade gossip for truth",
-                "talk about who they are becoming"
+                "talk about who they are becoming",
+                "check whether burnout is creeping in",
+                "turn attraction into an actual plan",
+                "ask how they are funding their next move"
             };
 
             NpcMemoryEntry strongest = GetMostImportantMemory(npc, includeSecrets: false);
@@ -230,7 +264,8 @@ namespace Survivebest.NPC
                 }
             }
 
-            return $"Replay AI: {options.Count} procedural social angles available across {categories.Count} categories.";
+            string lifestyleOverlay = lifestyleBehaviorSystem != null ? $" {lifestyleBehaviorSystem.BuildLifestyleDashboard()}" : string.Empty;
+            return $"Replay AI: {options.Count} procedural social angles available across {categories.Count} categories.{lifestyleOverlay}";
         }
 
         private static string BuildProceduralPreview(NpcProfile npc, bool isTextMessage, string tone, string category, string action, string memoryTopic)
@@ -244,6 +279,10 @@ namespace Survivebest.NPC
                 "memory" => $"what {memoryTopic} still means to them",
                 "survival" => $"what feels risky or necessary in their life right now",
                 "romance" => $"whether closeness fits into their current {state} rhythm",
+                "wellness" => $"what is draining or restoring them lately",
+                "finance" => $"how bills, work pressure, and survival math are shaping their choices",
+                "creator" => $"whether ambition, attention, and creative risk still feel worth it",
+                "dating" => $"whether chemistry can become an actual plan instead of a vague vibe",
                 "work" => $"how {job} pressure is changing their mood",
                 _ => $"how their current {state} routine is landing emotionally"
             };

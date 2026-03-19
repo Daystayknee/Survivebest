@@ -6,6 +6,7 @@ using Survivebest.Dialogue;
 using Survivebest.Location;
 using Survivebest.NPC;
 using Survivebest.UI;
+using System.Collections.Generic;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -18,6 +19,9 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickCreatorEconomyActivity()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickAdultErrand()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickGigWorkActivity()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialFeedActivity()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHomeUpgradeProject()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickAmbitionFocus()));
         }
 
         [Test]
@@ -42,6 +46,8 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("dating_app", flattened);
             StringAssert.Contains("stream_setup", flattened);
             StringAssert.Contains("pay_bills", flattened);
+            StringAssert.Contains("check_delivery", flattened);
+            StringAssert.Contains("sunset_photo_dump", flattened);
 
             Object.DestroyImmediate(root);
         }
@@ -53,8 +59,10 @@ namespace Survivebest.Tests.EditMode
             NarrativePromptSystem prompt = root.AddComponent<NarrativePromptSystem>();
             NpcLifeAIGuideSystem npcAi = root.AddComponent<NpcLifeAIGuideSystem>();
             NpcScheduleSystem schedule = root.AddComponent<NpcScheduleSystem>();
+            LifestyleBehaviorSystem lifestyle = root.AddComponent<LifestyleBehaviorSystem>();
             typeof(NpcLifeAIGuideSystem).GetField("npcScheduleSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(npcAi, schedule);
             typeof(NarrativePromptSystem).GetField("npcLifeAIGuideSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(prompt, npcAi);
+            typeof(NarrativePromptSystem).GetField("lifestyleBehaviorSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(prompt, lifestyle);
 
             var npcProfiles = new System.Collections.Generic.List<NpcProfile>
             {
@@ -67,6 +75,46 @@ namespace Survivebest.Tests.EditMode
 
             StringAssert.Contains("Replay AI:", result);
             StringAssert.Contains("Modern hooks:", result);
+            StringAssert.Contains("Lifestyle AI:", result);
+            StringAssert.Contains("Lifestyle hooks:", result);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void LifestyleBehaviorSystem_BuildLifestyleHooks_SeedsModernAdultArcs()
+        {
+            GameObject root = new GameObject("Lifestyle");
+            LifestyleBehaviorSystem lifestyle = root.AddComponent<LifestyleBehaviorSystem>();
+
+            List<string> hooks = lifestyle.BuildLifestyleHooks(5);
+            string combined = string.Join(" | ", hooks);
+
+            Assert.GreaterOrEqual(hooks.Count, 4);
+            Assert.IsTrue(combined.Contains("Money arc:") || combined.Contains("Relationship arc:") || combined.Contains("Creator arc:"));
+            StringAssert.Contains("Lifestyle AI:", lifestyle.BuildLifestyleDashboard());
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void NpcLifeAIGuideSystem_BuildChatSuggestions_IncludesAdultModernTopics()
+        {
+            GameObject root = new GameObject("NpcGuide");
+            NpcLifeAIGuideSystem npcAi = root.AddComponent<NpcLifeAIGuideSystem>();
+            NpcScheduleSystem schedule = root.AddComponent<NpcScheduleSystem>();
+            typeof(NpcLifeAIGuideSystem).GetField("npcScheduleSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(npcAi, schedule);
+            typeof(NpcScheduleSystem).GetField("npcProfiles", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(schedule, new List<NpcProfile>
+            {
+                new NpcProfile { NpcId = "npc_2", DisplayName = "Mina", Job = NpcJobType.Shopkeeper, CurrentState = NpcActivityState.Socializing, CurrentLotId = "Loft" }
+            });
+
+            List<NpcChatSuggestion> suggestions = npcAi.BuildChatSuggestions(new Room { RoomName = "Loft", Theme = LocationTheme.Residential }, true);
+            string labels = string.Join(" ", suggestions.ConvertAll(x => x.Label));
+
+            StringAssert.Contains("Plan Something Real", labels);
+            StringAssert.Contains("Talk Money Pressure", labels);
+            StringAssert.Contains("Push the Side Hustle", labels);
 
             Object.DestroyImmediate(root);
         }

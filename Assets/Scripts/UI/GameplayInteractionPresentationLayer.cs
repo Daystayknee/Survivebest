@@ -85,6 +85,7 @@ namespace Survivebest.UI
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private LifestyleBehaviorSystem lifestyleBehaviorSystem;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
         [SerializeField] private GameEventHub gameEventHub;
@@ -241,8 +242,10 @@ namespace Survivebest.UI
                     packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel", "skin_care_reset"));
                     packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv", "plan_outfit"));
                     packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote", "stream_setup", "dating_app", "pay_bills"));
+                    packs.Add(BuildPack("entryway", "Entryway", "check_delivery", "grab_keys", "leave_for_date", "prep_overnight_bag"));
                     packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing", "doomscroll", "livestream"));
                     packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect", "therapy_journal"));
+                    packs.Add(BuildPack("balcony", "Balcony", "voice_note_flirt", "sunset_photo_dump", "late_night_debrief", "coffee_scroll"));
                     break;
                 case LocationTheme.Hospital:
                     packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests", "therapy_consult", "refill_prescription"));
@@ -291,6 +294,17 @@ namespace Survivebest.UI
             suggestions.Add($"Relationship beat: {LifeActivityCatalog.PickDatingActivity()}");
             suggestions.Add($"Reset option: {LifeActivityCatalog.PickSelfCareActivity()}");
             suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
+            suggestions.Add($"Phone/social beat: {LifeActivityCatalog.PickSocialFeedActivity()}");
+            suggestions.Add($"Home glow-up: {LifeActivityCatalog.PickHomeUpgradeProject()}");
+
+            if (lifestyleBehaviorSystem != null)
+            {
+                List<string> lifeHooks = lifestyleBehaviorSystem.BuildLifestyleHooks(4);
+                for (int i = 0; i < lifeHooks.Count; i++)
+                {
+                    suggestions.Add(lifeHooks[i]);
+                }
+            }
 
             if (personalityDecisionSystem != null)
             {

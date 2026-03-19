@@ -7,6 +7,7 @@ using Survivebest.Location;
 using Survivebest.Quest;
 using Survivebest.World;
 using Survivebest.NPC;
+using Survivebest.Core;
 
 namespace Survivebest.Dialogue
 {
@@ -17,6 +18,7 @@ namespace Survivebest.Dialogue
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
+        [SerializeField] private LifestyleBehaviorSystem lifestyleBehaviorSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text narrativeText;
         [SerializeField, Min(1)] private int maxRecentPrompts = 30;
@@ -123,8 +125,26 @@ namespace Survivebest.Dialogue
                 builder.Append(replayAi);
             }
 
+            string lifestyleAi = lifestyleBehaviorSystem != null ? lifestyleBehaviorSystem.BuildLifestyleDashboard() : null;
+            if (!string.IsNullOrWhiteSpace(lifestyleAi))
+            {
+                builder.Append('\n');
+                builder.Append(lifestyleAi);
+            }
+
             builder.Append('\n');
-            builder.Append($"Modern hooks: {Core.LifeActivityCatalog.PickDatingActivity()} • {Core.LifeActivityCatalog.PickCreatorEconomyActivity()} • {Core.LifeActivityCatalog.PickAdultErrand()}");
+            builder.Append($"Modern hooks: {LifeActivityCatalog.PickDatingActivity()} • {LifeActivityCatalog.PickCreatorEconomyActivity()} • {LifeActivityCatalog.PickAdultErrand()} • {LifeActivityCatalog.PickSocialFeedActivity()} • {LifeActivityCatalog.PickHomeUpgradeProject()}");
+
+            if (lifestyleBehaviorSystem != null)
+            {
+                var hooks = lifestyleBehaviorSystem.BuildLifestyleHooks(3);
+                if (hooks.Count > 0)
+                {
+                    builder.Append('\n');
+                    builder.Append("Lifestyle hooks: ");
+                    builder.Append(string.Join(" • ", hooks));
+                }
+            }
 
             return builder.ToString();
         }

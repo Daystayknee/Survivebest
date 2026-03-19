@@ -17,6 +17,9 @@ namespace Survivebest.Core
         private static readonly string[] SelfCareActivities = { "Therapy journaling", "Guided meditation", "Skincare reset", "Gym recovery session", "Deep-clean apartment sprint", "Meal prep block", "Digital detox hour", "Boundaries check-in" };
         private static readonly string[] AdultErrands = { "Pay rent", "Split utility bill", "Book a doctor visit", "Call your parent back", "Refill prescriptions", "Handle taxes", "Negotiate a raise", "Clean out the fridge" };
         private static readonly string[] GigWorkActivities = { "Rideshare shift", "Food delivery run", "Freelance edit sprint", "Tattoo flash booking", "Weekend market booth", "Remote client call", "Side-hustle reselling", "Night security shift" };
+        private static readonly string[] SocialFeedActivities = { "Post a thirst-trap selfie", "Reply to a situationship story", "Plan brunch in the group chat", "Soft-launch a relationship", "Curate a private close-friends post", "Voice-note your best friend", "Update your dating profile", "Send a late-night meme check-in" };
+        private static readonly string[] HomeUpgradeProjects = { "Apartment glow-up corner", "Gallery wall refresh", "LED mood-light setup", "Closet reset", "Bathroom shelf styling", "Cozy balcony makeover", "Desk cable-management overhaul", "Kitchen organization sprint" };
+        private static readonly string[] AmbitionFocuses = { "Emergency fund grind", "Soft life reset", "Fitness comeback arc", "Creative breakthrough", "Promotion chase", "Dating confidence era", "Healing season", "Move-out plan" };
 
         public static string PickTvGenre() => Pick(TvGenres, "General show");
         public static string PickMovieGenre() => Pick(MovieGenres, "General movie");
@@ -31,6 +34,9 @@ namespace Survivebest.Core
         public static string PickSelfCareActivity() => Pick(SelfCareActivities, "Self-care");
         public static string PickAdultErrand() => Pick(AdultErrands, "Adult errand");
         public static string PickGigWorkActivity() => Pick(GigWorkActivities, "Gig shift");
+        public static string PickSocialFeedActivity() => Pick(SocialFeedActivities, "Social check-in");
+        public static string PickHomeUpgradeProject() => Pick(HomeUpgradeProjects, "Home refresh");
+        public static string PickAmbitionFocus() => Pick(AmbitionFocuses, "Personal growth");
 
         private static string Pick(string[] values, string fallback)
         {
