@@ -119,6 +119,7 @@ namespace Survivebest.World
                 Hormones = RandomHormoneProfile(),
                 MicroDetails = RandomMicroDetails(),
                 Reproduction = RandomReproductionProfile(),
+                Blood = RandomBloodProfile(),
                 Epigenetics = RandomEpigenetics(),
                 Mutations = RandomMutationProfile(),
                 ChromosomePairs = BuildRandomGenome()
@@ -145,6 +146,7 @@ namespace Survivebest.World
                 Hormones = InheritHormones(a.Hormones, b.Hormones, mutationChance),
                 MicroDetails = InheritMicroDetails(a.MicroDetails, b.MicroDetails, mutationChance),
                 Reproduction = InheritReproduction(a.Reproduction, b.Reproduction, mutationChance),
+                Blood = InheritBloodProfile(a.Blood, b.Blood),
                 Epigenetics = InheritEpigenetics(a.Epigenetics, b.Epigenetics, mutationChance),
                 Mutations = InheritMutationProfile(a.Mutations, b.Mutations, mutationChance),
                 ChromosomePairs = CrossoverGenome(a, b, mutationChance)
@@ -473,6 +475,17 @@ namespace Survivebest.World
             };
         }
 
+        private static BloodGeneticsProfile RandomBloodProfile()
+        {
+            return new BloodGeneticsProfile
+            {
+                ParentAlleleA = RandomAboAllele(),
+                ParentAlleleB = RandomAboAllele(),
+                RhParentAlleleA = RandomRhAllele(),
+                RhParentAlleleB = RandomRhAllele()
+            };
+        }
+
         private static HormoneRegulationProfile InheritHormones(HormoneRegulationProfile a, HormoneRegulationProfile b, float mutationChance)
         {
             return new HormoneRegulationProfile
@@ -506,6 +519,19 @@ namespace Survivebest.World
                 MeioticStability = Blend(a.MeioticStability, b.MeioticStability, mutationChance),
                 RecombinationRate = Blend(a.RecombinationRate, b.RecombinationRate, mutationChance * 0.5f),
                 RareTraitResurfacing = Blend(a.RareTraitResurfacing, b.RareTraitResurfacing, mutationChance * 0.5f)
+            };
+        }
+
+        private static BloodGeneticsProfile InheritBloodProfile(BloodGeneticsProfile a, BloodGeneticsProfile b)
+        {
+            a ??= new BloodGeneticsProfile();
+            b ??= new BloodGeneticsProfile();
+            return new BloodGeneticsProfile
+            {
+                ParentAlleleA = Random.value < 0.5f ? a.ParentAlleleA : a.ParentAlleleB,
+                ParentAlleleB = Random.value < 0.5f ? b.ParentAlleleA : b.ParentAlleleB,
+                RhParentAlleleA = Random.value < 0.5f ? a.RhParentAlleleA : a.RhParentAlleleB,
+                RhParentAlleleB = Random.value < 0.5f ? b.RhParentAlleleA : b.RhParentAlleleB
             };
         }
 
@@ -580,6 +606,19 @@ namespace Survivebest.World
             }
 
             return allele;
+        }
+
+        private static AboAllele RandomAboAllele()
+        {
+            float roll = Random.value;
+            if (roll < 0.44f) return AboAllele.O;
+            if (roll < 0.74f) return AboAllele.A;
+            return AboAllele.B;
+        }
+
+        private static RhAllele RandomRhAllele()
+        {
+            return Random.value < 0.15f ? RhAllele.Negative : RhAllele.Positive;
         }
 
         private static void AppendInheritedMutations(List<MutationFlag> target, List<MutationFlag> source, float mutationChance, MutationOrigin origin)

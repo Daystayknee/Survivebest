@@ -27,6 +27,7 @@ This file is a comprehensive implementation inventory for the current codebase.
 - Birthday celebrations now publish sensory event feed entries and world-time now includes richer fixed + seasonal holidays.
 - Added `WorldEventDirector` for recurring ambient events (street performances, cookouts, skywatch nights) with see/hear/feel narrative output.
 - Household creator now has expanded tabs, multi-asset preview rotation controls, character cycling, and an in-flow genetics consistency validator.
+- Added `2D_PAPERDOLL_GENETICS_PIPELINE.md` to define the intended DNA -> resolver -> layered portrait/paper-doll pipeline, including family resemblance, live-portrait expressions, body silhouette composition, and psychology-visible presentation goals.
 
 ## 1) Implemented Runtime Systems (by script)
 
