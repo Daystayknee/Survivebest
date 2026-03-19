@@ -3,6 +3,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Emotion;
 using Survivebest.Needs;
+using Survivebest.NPC;
 using Survivebest.World;
 
 namespace Survivebest.Tests.EditMode
@@ -77,6 +78,28 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual("resting_composed", state.RestingExpressionKey);
             Assert.AreEqual("ui_feedback_confidence_pulse", state.UiCueKey);
             Assert.AreEqual(EyeExpressionSet.Sharp, state.EyeExpressionSet);
+        }
+
+        [Test]
+        public void ResolveNpcState_SickRestingNpc_PrefersSickReadableOutputs()
+        {
+            PhenotypeProfile phenotype = PhenotypeResolver.Resolve(new GeneticProfile(), LifeStage.Adult, 0.1f);
+            NpcProfile npc = new()
+            {
+                NpcId = "npc_1",
+                DisplayName = "Background NPC",
+                Health = 32f,
+                Stress = 58f,
+                Reputation = -10,
+                CurrentState = NpcActivityState.SickRest
+            };
+
+            AvatarPresentationState state = AvatarPresentationStateResolver.ResolveNpcState(phenotype, npc);
+
+            Assert.AreEqual("posture_sick", state.PosturePresetKey);
+            Assert.AreEqual("health_overlay_sick", state.HealthOverlayKey);
+            Assert.AreEqual("state_overlay_sick", state.StateOverlayKey);
+            Assert.AreEqual("ui_feedback_health_alert", state.UiCueKey);
         }
     }
 }

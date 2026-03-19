@@ -4,6 +4,8 @@
 
 The Presentation State Resolver is the bridge between hidden simulation and visible portrait/body state.
 It consumes phenotype tendencies, temporary conditions, and current context to decide what the player should see.
+The same rules should work for both the actively controlled household member and background NPCs that still carry genetics,
+health, and behavioral context.
 
 ## Inputs
 

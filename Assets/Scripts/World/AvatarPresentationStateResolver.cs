@@ -1,4 +1,5 @@
 using UnityEngine;
+using Survivebest.NPC;
 
 namespace Survivebest.World
 {
@@ -111,6 +112,55 @@ namespace Survivebest.World
             }
 
             return state;
+        }
+
+        public static AvatarPresentationState ResolveNpcState(PhenotypeProfile phenotype, NpcProfile npc)
+        {
+            if (npc == null)
+            {
+                return ResolveDynamicState(phenotype, new AvatarPresentationInput());
+            }
+
+            float illnessPressure = Mathf.Clamp01(1f - (npc.Health / 100f)) * 100f;
+            float confidence = Mathf.Clamp(npc.Reputation + 100f, 0f, 200f) * 0.5f;
+            float socialPressure = npc.CurrentState == NpcActivityState.Socializing ? npc.Stress * 0.75f : npc.Stress * 0.35f;
+            float energy = npc.CurrentState switch
+            {
+                NpcActivityState.Sleeping => 90f,
+                NpcActivityState.SickRest => 25f,
+                NpcActivityState.InjuredRest => 20f,
+                NpcActivityState.Working => 55f,
+                _ => 65f
+            };
+
+            float grooming = npc.CurrentState switch
+            {
+                NpcActivityState.Sleeping => 40f,
+                NpcActivityState.SickRest => 30f,
+                NpcActivityState.InjuredRest => 35f,
+                _ => 70f
+            };
+
+            float affection = npc.Reputation >= 0 ? Mathf.Clamp(npc.Reputation, 0f, 100f) : 15f;
+            float anger = npc.Reputation < 0 ? Mathf.Clamp(-npc.Reputation, 0f, 100f) * 0.45f : 10f;
+            float urgency = npc.CurrentState == NpcActivityState.SickRest || npc.CurrentState == NpcActivityState.InjuredRest
+                ? Mathf.Max(npc.Stress, illnessPressure)
+                : npc.Stress * 0.6f;
+
+            return ResolveDynamicState(
+                phenotype,
+                new AvatarPresentationInput
+                {
+                    Stress = npc.Stress,
+                    Anger = anger,
+                    Affection = affection,
+                    Energy = energy,
+                    IllnessPressure = illnessPressure,
+                    Confidence = confidence,
+                    SocialPressure = socialPressure,
+                    Grooming = grooming,
+                    SafetyUrgency = urgency
+                });
         }
 
         private static void ApplyResolvedState(PhenotypeProfile phenotype, AvatarPresentationState state)
