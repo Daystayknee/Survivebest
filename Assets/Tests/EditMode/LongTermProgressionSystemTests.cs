@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
 using Survivebest.Core;
+using Survivebest.Events;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -13,6 +14,8 @@ namespace Survivebest.Tests.EditMode
         {
             GameObject go = new GameObject("ProgressionTest");
             LongTermProgressionSystem system = go.AddComponent<LongTermProgressionSystem>();
+            GameObject hubObject = new GameObject("ProgressionHub");
+            GameEventHub hub = hubObject.AddComponent<GameEventHub>();
 
             List<AspirationGoal> goals = new List<AspirationGoal>
             {
@@ -26,14 +29,27 @@ namespace Survivebest.Tests.EditMode
 
             typeof(LongTermProgressionSystem).GetField("goals", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(system, goals);
             typeof(LongTermProgressionSystem).GetField("milestones", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(system, milestones);
+            typeof(LongTermProgressionSystem).GetField("gameEventHub", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(system, hub);
+
+            SimulationEvent published = null;
+            hub.OnEventPublished += evt =>
+            {
+                if (evt.Type == SimulationEventType.GoalCompleted)
+                {
+                    published = evt;
+                }
+            };
 
             system.ProgressGoal("goal_1", 1);
 
             Assert.IsTrue(goals[0].Completed);
             Assert.IsTrue(milestones[0].Unlocked);
             Assert.IsTrue(system.Legacy.UnlockedPerks.Contains("perk_start"));
+            Assert.NotNull(published);
+            Assert.AreEqual("goal_1", published.ChangeKey);
 
             Object.DestroyImmediate(go);
+            Object.DestroyImmediate(hubObject);
         }
     }
 }

@@ -104,6 +104,30 @@ namespace Survivebest.UI
                     cue.VfxKey = "vfx_sparkle";
                     cue.UiPulseKey = "inventory_gain";
                     break;
+                case SimulationEventType.SkillLevelUp:
+                    cue.AnimationState = "CelebrateLevelUp";
+                    cue.PostureState = "Triumphant";
+                    cue.FacialState = "Proud";
+                    cue.SfxKey = "level_up_fanfare";
+                    cue.VfxKey = "vfx_level_ring";
+                    cue.UiPulseKey = "skill_levelup";
+                    break;
+                case SimulationEventType.GoalCompleted:
+                    cue.AnimationState = "CelebrateGoal";
+                    cue.PostureState = "Victory";
+                    cue.FacialState = "Inspired";
+                    cue.SfxKey = "goal_complete_sting";
+                    cue.VfxKey = "vfx_goal_burst";
+                    cue.UiPulseKey = "goal_complete";
+                    break;
+                case SimulationEventType.AchievementUnlocked:
+                    cue.AnimationState = "CelebrateAchievement";
+                    cue.PostureState = "Showcase";
+                    cue.FacialState = "Proud";
+                    cue.SfxKey = "achievement_fanfare";
+                    cue.VfxKey = "vfx_achievement_stars";
+                    cue.UiPulseKey = "achievement_unlock";
+                    break;
                 case SimulationEventType.CrimeCommitted:
                 case SimulationEventType.JusticeOutcomeApplied:
                     cue.AnimationState = "Alert";

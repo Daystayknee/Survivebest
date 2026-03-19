@@ -30,7 +30,10 @@ namespace Survivebest.Appearance
         LightBrown,
         Honey,
         Teal,
-        Violet
+        Violet,
+        IceBlue,
+        OliveGreen,
+        SteelGray
     }
 
     public enum SkinToneType
@@ -56,7 +59,11 @@ namespace Survivebest.Appearance
         Acne,
         Rosacea,
         Vitiligo,
-        Hyperpigmentation
+        Hyperpigmentation,
+        Moles,
+        UnderEyeDarkness,
+        Wrinkles,
+        AcneScarring
     }
 
     [Serializable]
@@ -654,11 +661,20 @@ namespace Survivebest.Appearance
 
             eyesRenderer.color = eyeColor switch
             {
+                EyeColorType.DarkBrown => new Color(0.18f, 0.1f, 0.06f),
                 EyeColorType.Brown => new Color(0.35f, 0.2f, 0.1f),
+                EyeColorType.LightBrown => new Color(0.52f, 0.34f, 0.18f),
                 EyeColorType.Hazel => new Color(0.45f, 0.35f, 0.15f),
+                EyeColorType.Honey => new Color(0.62f, 0.48f, 0.14f),
                 EyeColorType.Green => new Color(0.2f, 0.45f, 0.2f),
+                EyeColorType.OliveGreen => new Color(0.34f, 0.42f, 0.18f),
                 EyeColorType.Blue => new Color(0.2f, 0.45f, 0.8f),
+                EyeColorType.IceBlue => new Color(0.66f, 0.84f, 0.95f),
                 EyeColorType.Gray => new Color(0.6f, 0.65f, 0.7f),
+                EyeColorType.SteelGray => new Color(0.46f, 0.52f, 0.6f),
+                EyeColorType.Amber => new Color(0.74f, 0.48f, 0.12f),
+                EyeColorType.Teal => new Color(0.1f, 0.5f, 0.52f),
+                EyeColorType.Violet => new Color(0.54f, 0.34f, 0.72f),
                 _ => new Color(0.7f, 0.45f, 0.1f)
             };
         }
@@ -672,12 +688,18 @@ namespace Survivebest.Appearance
 
             skinRenderer.color = skinTone switch
             {
+                SkinToneType.Alabaster => new Color(1f, 0.94f, 0.9f),
                 SkinToneType.Porcelain => new Color(1f, 0.9f, 0.85f),
                 SkinToneType.Fair => new Color(0.96f, 0.82f, 0.74f),
+                SkinToneType.Beige => new Color(0.92f, 0.77f, 0.66f),
                 SkinToneType.Light => new Color(0.89f, 0.72f, 0.61f),
                 SkinToneType.Olive => new Color(0.74f, 0.62f, 0.47f),
+                SkinToneType.Golden => new Color(0.78f, 0.6f, 0.4f),
                 SkinToneType.Tan => new Color(0.66f, 0.49f, 0.35f),
+                SkinToneType.Caramel => new Color(0.58f, 0.4f, 0.27f),
                 SkinToneType.Brown => new Color(0.5f, 0.34f, 0.23f),
+                SkinToneType.Deep => new Color(0.36f, 0.24f, 0.16f),
+                SkinToneType.Ebony => new Color(0.22f, 0.15f, 0.1f),
                 _ => new Color(0.36f, 0.24f, 0.16f)
             };
         }
@@ -698,6 +720,14 @@ namespace Survivebest.Appearance
                 else if (skinIssue == SkinIssueType.Hyperpigmentation)
                 {
                     skinRenderer.color *= new Color(0.9f, 0.85f, 0.85f);
+                }
+                else if (skinIssue == SkinIssueType.UnderEyeDarkness)
+                {
+                    skinRenderer.color *= new Color(0.92f, 0.9f, 0.96f);
+                }
+                else if (skinIssue == SkinIssueType.Wrinkles)
+                {
+                    skinRenderer.color *= new Color(0.94f, 0.92f, 0.9f);
                 }
             }
         }
