@@ -81,10 +81,12 @@ namespace Survivebest.UI
         [SerializeField] private ActionPopupController actionPopupController;
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private LifestyleBehaviorSystem lifestyleBehaviorSystem;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
         [SerializeField] private GameEventHub gameEventHub;
@@ -236,32 +238,50 @@ namespace Survivebest.UI
             switch (theme)
             {
                 case LocationTheme.Residential:
-                    packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry"));
-                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean"));
-                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel"));
-                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv"));
-                    packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote"));
-                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing"));
-                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect"));
+                    packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry", "cuddle", "hookup_talk"));
+                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean", "meal_prep"));
+                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel", "skin_care_reset"));
+                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv", "plan_outfit"));
+                    packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote", "stream_setup", "dating_app", "pay_bills"));
+                    packs.Add(BuildPack("entryway", "Entryway", "check_delivery", "grab_keys", "leave_for_date", "prep_overnight_bag"));
+                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing", "doomscroll", "livestream"));
+                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect", "therapy_journal"));
+                    packs.Add(BuildPack("balcony", "Balcony", "voice_note_flirt", "sunset_photo_dump", "late_night_debrief", "coffee_scroll"));
                     break;
                 case LocationTheme.Hospital:
-                    packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests"));
-                    packs.Add(BuildPack("recovery_bed", "Recovery Bed", "rest", "meditate", "call_family"));
+                    packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests", "therapy_consult", "refill_prescription"));
+                    packs.Add(BuildPack("recovery_bed", "Recovery Bed", "rest", "meditate", "call_family", "video_call_partner"));
                     break;
                 case LocationTheme.Workplace:
-                    packs.Add(BuildPack("workstation", "Workstation", "work_shift", "focus_task", "leave_early"));
-                    packs.Add(BuildPack("break_area", "Break Area", "take_break", "talk_coworker", "eat_snack"));
+                    packs.Add(BuildPack("workstation", "Workstation", "work_shift", "focus_task", "leave_early", "pitch_side_hustle", "edit_content"));
+                    packs.Add(BuildPack("break_area", "Break Area", "take_break", "talk_coworker", "eat_snack", "doomscroll", "check_texts"));
                     break;
                 case LocationTheme.Civic:
-                    packs.Add(BuildPack("public_notice", "Public Notice Board", "join_town_meeting", "check_jobs", "report_issue"));
-                    packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form"));
+                    packs.Add(BuildPack("public_notice", "Public Notice Board", "join_town_meeting", "check_jobs", "report_issue", "check_gig_board"));
+                    packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form", "renew_id", "housing_question"));
                     break;
                 default:
-                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel"));
+                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel", "nightlife_plan", "rideshare_shift"));
                     break;
             }
 
             return packs;
+        }
+
+        public List<string> BuildSectionTabsForCurrentLocation()
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            return gameplayVisionSystem != null
+                ? gameplayVisionSystem.BuildTabsForContext(null, room)
+                : new List<string>();
+        }
+
+        public string BuildScreenMoodSummary()
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            return gameplayVisionSystem != null
+                ? gameplayVisionSystem.BuildVisionStatement(null, room)
+                : "Presentation vision: every life domain should feel contextual and alive.";
         }
 
         public List<string> BuildContextActionSuggestions()
@@ -279,6 +299,29 @@ namespace Survivebest.UI
                 if (needs.Energy < 40f) suggestions.Add("Take a rest action soon");
                 if (needs.Hunger < 45f) suggestions.Add("Find food or cook a meal");
                 if (needs.Hygiene < 45f) suggestions.Add("Use hygiene hotspot (shower/sink)");
+            }
+
+            if (worldClock != null)
+            {
+                if (worldClock.Hour >= 20) suggestions.Add($"Tonight idea: {LifeActivityCatalog.PickNightlifeActivity()}");
+                if (worldClock.Hour >= 9 && worldClock.Hour <= 18) suggestions.Add($"Adult errand: {LifeActivityCatalog.PickAdultErrand()}");
+            }
+
+            suggestions.Add($"Modern life: {LifeActivityCatalog.PickCreatorEconomyActivity()}");
+            suggestions.Add($"Relationship beat: {LifeActivityCatalog.PickDatingActivity()}");
+            suggestions.Add($"Reset option: {LifeActivityCatalog.PickSelfCareActivity()}");
+            suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
+            suggestions.Add($"Phone/social beat: {LifeActivityCatalog.PickSocialFeedActivity()}");
+            suggestions.Add($"Home glow-up: {LifeActivityCatalog.PickHomeUpgradeProject()}");
+            suggestions.Add(BuildScreenMoodSummary());
+
+            if (lifestyleBehaviorSystem != null)
+            {
+                List<string> lifeHooks = lifestyleBehaviorSystem.BuildLifestyleHooks(4);
+                for (int i = 0; i < lifeHooks.Count; i++)
+                {
+                    suggestions.Add(lifeHooks[i]);
+                }
             }
 
             if (personalityDecisionSystem != null)
