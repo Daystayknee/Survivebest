@@ -76,6 +76,20 @@ namespace Survivebest.Food
         Hot
     }
 
+    public enum MealPurpose
+    {
+        Unspecified,
+        Everyday,
+        Breakfast,
+        Comfort,
+        FamilyMeal,
+        Takeout,
+        Healthy,
+        Dessert,
+        Beverage,
+        Gourmet
+    }
+
     [Serializable]
     public class FoodNutrition
     {
@@ -103,6 +117,7 @@ namespace Survivebest.Food
         [Min(0)] public int CookTimeMinutes = 8;
         public CuisineType CuisineType = CuisineType.Comfort;
         public ServingTemperature ServingTemperature = ServingTemperature.Warm;
+        public MealPurpose Purpose = MealPurpose.Unspecified;
         public List<string> TasteProfile = new();
         public List<string> Tags = new();
         public FoodNutrition Nutrition = new();
@@ -125,6 +140,7 @@ namespace Survivebest.Food
         public CuisineType CuisineType = CuisineType.Comfort;
         public CookingMethod CookingMethod = CookingMethod.Mix;
         public ServingTemperature ServingTemperature = ServingTemperature.Warm;
+        public MealPurpose Purpose = MealPurpose.Unspecified;
         public List<string> Tags = new();
         public FoodNutrition Nutrition = new();
         [Range(0f, 100f)] public float ComfortValue = 45f;
@@ -309,6 +325,7 @@ namespace Survivebest.Food
             float moodDelta,
             float vitalityDelta,
             float comfortValue,
+            MealPurpose purpose = MealPurpose.Unspecified,
             bool spicy = false,
             float spiceIntensity = 0f,
             List<string> tags = null,
@@ -335,6 +352,7 @@ namespace Survivebest.Food
                 CuisineType = cuisineType,
                 CookingMethod = cookingMethod,
                 ServingTemperature = servingTemperature,
+                Purpose = purpose != MealPurpose.Unspecified ? purpose : InferMealPurpose(category, tags),
                 Tags = tags ?? new List<string>(),
                 ComfortValue = comfortValue,
                 Nutrition = new FoodNutrition
@@ -372,7 +390,8 @@ namespace Survivebest.Food
             float hydration = 0f,
             float vitamins = 0f,
             float sugar = 0f,
-            float salt = 0f)
+            float salt = 0f,
+            MealPurpose purpose = MealPurpose.Unspecified)
         {
             return new FoodRecipeDefinition
             {
@@ -387,6 +406,7 @@ namespace Survivebest.Food
                 CookTimeMinutes = cookMinutes,
                 CuisineType = cuisineType,
                 ServingTemperature = servingTemperature,
+                Purpose = purpose != MealPurpose.Unspecified ? purpose : InferMealPurposeByTags(tags, cuisineType),
                 TasteProfile = tasteProfile,
                 Tags = tags,
                 Nutrition = new FoodNutrition
@@ -401,6 +421,79 @@ namespace Survivebest.Food
                     Salt = salt
                 }
             };
+        }
+
+        private static MealPurpose InferMealPurpose(FoodCategory category, List<string> tags)
+        {
+            if (tags != null)
+            {
+                MealPurpose fromTags = InferMealPurposeByTags(tags, CuisineType.Comfort);
+                if (fromTags != MealPurpose.Unspecified)
+                {
+                    return fromTags;
+                }
+            }
+
+            return category switch
+            {
+                FoodCategory.Breakfast => MealPurpose.Breakfast,
+                FoodCategory.Comfort => MealPurpose.Comfort,
+                FoodCategory.Healthy => MealPurpose.Healthy,
+                FoodCategory.StreetFood => MealPurpose.Takeout,
+                FoodCategory.Dessert => MealPurpose.Dessert,
+                FoodCategory.Drink => MealPurpose.Beverage,
+                FoodCategory.Gourmet => MealPurpose.Gourmet,
+                _ => MealPurpose.Everyday
+            };
+        }
+
+        private static MealPurpose InferMealPurposeByTags(List<string> tags, CuisineType cuisineType)
+        {
+            if (tags == null)
+            {
+                return cuisineType == CuisineType.Comfort ? MealPurpose.Comfort : MealPurpose.Unspecified;
+            }
+
+            if (tags.Exists(t => string.Equals(t, "breakfast", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MealPurpose.Breakfast;
+            }
+
+            if (tags.Exists(t => string.Equals(t, "takeout", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(t, "fast-food", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(t, "street-food", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MealPurpose.Takeout;
+            }
+
+            if (tags.Exists(t => string.Equals(t, "family", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(t, "family-meal", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MealPurpose.FamilyMeal;
+            }
+
+            if (tags.Exists(t => string.Equals(t, "comfort", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MealPurpose.Comfort;
+            }
+
+            if (tags.Exists(t => string.Equals(t, "healthy", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MealPurpose.Healthy;
+            }
+
+            if (tags.Exists(t => string.Equals(t, "sweet", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(t, "celebration", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MealPurpose.Dessert;
+            }
+
+            if (cuisineType == CuisineType.Comfort)
+            {
+                return MealPurpose.Comfort;
+            }
+
+            return MealPurpose.Everyday;
         }
     }
 }

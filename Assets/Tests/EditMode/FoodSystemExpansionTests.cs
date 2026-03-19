@@ -28,6 +28,29 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+        [Test]
+        public void IngredientCatalog_Awake_AssignsPurposeAndLifecycleState()
+        {
+            GameObject go = new GameObject("IngredientCatalogLifecycle");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            IngredientItem tomato = catalog.GetIngredient("Tomato");
+            IngredientItem rice = catalog.GetIngredient("Rice");
+            IngredientItem yogurt = catalog.GetIngredient("Yogurt");
+
+            Assert.AreEqual(IngredientPurpose.SauceBase, tomato.Purpose);
+            Assert.AreEqual(IngredientLifecycleState.Harvested, tomato.LifecycleState);
+            Assert.AreEqual(IngredientPurpose.StapleCarb, rice.Purpose);
+            Assert.AreEqual(IngredientLifecycleState.ShelfStable, rice.LifecycleState);
+            Assert.AreEqual(IngredientPurpose.DairyBase, yogurt.Purpose);
+            Assert.AreEqual(IngredientLifecycleState.Cultured, yogurt.LifecycleState);
+
+            Object.DestroyImmediate(go);
+        }
+
 
         [Test]
         public void IngredientCatalog_Awake_InjectsSeasoningAndLiquidEssentials()
@@ -87,6 +110,21 @@ namespace Survivebest.Tests.EditMode
                 Assert.IsNotNull(database.GetFood(mealName), $"Missing food entry: {mealName}");
                 Assert.IsNotNull(database.GetRecipe(mealName), $"Missing recipe definition: {mealName}");
             }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_AssignsMealPurpose_ForEverydayAndTakeoutMeals()
+        {
+            GameObject go = new GameObject("FoodPurposeDb");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            Assert.AreEqual(MealPurpose.Everyday, database.GetFood("Buttered Noodles").Purpose);
+            Assert.AreEqual(MealPurpose.FamilyMeal, database.GetFood("Chicken Noodle Soup").Purpose);
+            Assert.AreEqual(MealPurpose.Breakfast, database.GetFood("Breakfast Sandwich").Purpose);
+            Assert.AreEqual(MealPurpose.Takeout, database.GetFood("Burger and Fries").Purpose);
+            Assert.AreEqual(MealPurpose.Takeout, database.GetRecipe("Sushi Roll").Purpose);
 
             Object.DestroyImmediate(go);
         }

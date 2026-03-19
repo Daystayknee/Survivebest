@@ -42,6 +42,30 @@ namespace Survivebest.Catalog
         Beverages
     }
 
+    public enum IngredientLifecycleState
+    {
+        Unspecified,
+        Harvested,
+        Processed,
+        Cultured,
+        Preserved,
+        ShelfStable
+    }
+
+    public enum IngredientPurpose
+    {
+        Unspecified,
+        Protein,
+        StapleCarb,
+        Aromatic,
+        Seasoning,
+        FreshProduce,
+        SauceBase,
+        DairyBase,
+        Sweetener,
+        LiquidBase
+    }
+
     [Serializable]
     public class IngredientItem
     {
@@ -49,6 +73,8 @@ namespace Survivebest.Catalog
         public string Name;
         public IngredientGroup Group;
         public IngredientCategory Category;
+        public IngredientLifecycleState LifecycleState;
+        public IngredientPurpose Purpose;
         public List<string> Tags = new();
         public bool IsPerishable = true;
         [Min(1f)] public float SpoilTimeHours = 72f;
@@ -161,6 +187,16 @@ namespace Survivebest.Catalog
                 {
                     item.Tags = BuildDefaultTags(item.Group);
                 }
+
+                if (item.Purpose == IngredientPurpose.Unspecified)
+                {
+                    item.Purpose = InferPurpose(item);
+                }
+
+                if (item.LifecycleState == IngredientLifecycleState.Unspecified)
+                {
+                    item.LifecycleState = InferLifecycleState(item);
+                }
             }
 
             EnsureRealismEssentials();
@@ -238,6 +274,8 @@ namespace Survivebest.Catalog
             IngredientGroup group,
             IngredientCategory category,
             List<string> tags,
+            IngredientPurpose purpose = IngredientPurpose.Unspecified,
+            IngredientLifecycleState lifecycleState = IngredientLifecycleState.Unspecified,
             bool isPerishable = true,
             float spoilHours = 72f,
             float calories = 40f,
@@ -252,6 +290,8 @@ namespace Survivebest.Catalog
                 Name = name,
                 Group = group,
                 Category = category,
+                Purpose = purpose,
+                LifecycleState = lifecycleState,
                 Tags = tags,
                 IsPerishable = isPerishable,
                 SpoilTimeHours = spoilHours,
@@ -261,6 +301,114 @@ namespace Survivebest.Catalog
                 Carbs = carbs,
                 Hydration = vitamins ? Mathf.Max(hydration, 5f) : hydration
             };
+        }
+
+        private static IngredientPurpose InferPurpose(IngredientItem item)
+        {
+            if (item == null)
+            {
+                return IngredientPurpose.Unspecified;
+            }
+
+            if (HasAnyTag(item, "seasoning", "spice", "herb"))
+            {
+                return IngredientPurpose.Seasoning;
+            }
+
+            if (HasAnyTag(item, "sauce-base", "acidic"))
+            {
+                return IngredientPurpose.SauceBase;
+            }
+
+            if (HasAnyTag(item, "protein", "binder"))
+            {
+                return IngredientPurpose.Protein;
+            }
+
+            if (item.Group == IngredientGroup.Grain || item.Group == IngredientGroup.Legume || HasAnyTag(item, "staple", "carb"))
+            {
+                return IngredientPurpose.StapleCarb;
+            }
+
+            if (item.Group == IngredientGroup.Dairy)
+            {
+                return IngredientPurpose.DairyBase;
+            }
+
+            if (item.Category == IngredientCategory.Liquids || HasAnyTag(item, "liquid", "broth"))
+            {
+                return IngredientPurpose.LiquidBase;
+            }
+
+            if (item.Category == IngredientCategory.Sugars || HasAnyTag(item, "sweet", "baking"))
+            {
+                return IngredientPurpose.Sweetener;
+            }
+
+            if (HasAnyTag(item, "aromatic", "base"))
+            {
+                return IngredientPurpose.Aromatic;
+            }
+
+            if (item.Group == IngredientGroup.Vegetable || item.Group == IngredientGroup.Fruit)
+            {
+                return IngredientPurpose.FreshProduce;
+            }
+
+            return IngredientPurpose.Unspecified;
+        }
+
+        private static IngredientLifecycleState InferLifecycleState(IngredientItem item)
+        {
+            if (item == null)
+            {
+                return IngredientLifecycleState.Unspecified;
+            }
+
+            if (item.Category == IngredientCategory.Dairy && HasAnyTag(item, "cultured"))
+            {
+                return IngredientLifecycleState.Cultured;
+            }
+
+            if (item.Category == IngredientCategory.Dairy || HasAnyTag(item, "smoky", "baked", "oil"))
+            {
+                return IngredientLifecycleState.Processed;
+            }
+
+            if (!item.IsPerishable || item.SpoilTimeHours >= 1000f)
+            {
+                return IngredientLifecycleState.ShelfStable;
+            }
+
+            if (item.Category == IngredientCategory.Condiments || item.Category == IngredientCategory.Spices || HasAnyTag(item, "preserve"))
+            {
+                return IngredientLifecycleState.Preserved;
+            }
+
+            if (item.Group == IngredientGroup.Vegetable || item.Group == IngredientGroup.Fruit)
+            {
+                return IngredientLifecycleState.Harvested;
+            }
+
+            return IngredientLifecycleState.Processed;
+        }
+
+        private static bool HasAnyTag(IngredientItem item, params string[] tags)
+        {
+            if (item == null || item.Tags == null || tags == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (item.Tags.Exists(t => string.Equals(t, tags[i], StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static List<string> BuildDefaultTags(IngredientGroup group)

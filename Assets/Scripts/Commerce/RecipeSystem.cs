@@ -510,6 +510,7 @@ namespace Survivebest.Commerce
                 CookingMethod = style is "Soup" or "Stew" ? CookingMethod.Boil : style is "Grill" ? CookingMethod.Grill : style is "Bake" or "Casserole" or "Roast" ? CookingMethod.Bake : CookingMethod.Fry,
                 CuisineType = cuisineType,
                 ServingTemperature = servingTemperature,
+                Purpose = style is "Wrap" ? MealPurpose.Takeout : hearty ? MealPurpose.FamilyMeal : MealPurpose.Everyday,
                 Tags = new List<string> { style.ToLowerInvariant().Replace(" ", "-"), legume ? "plant-forward" : "protein" },
                 Nutrition = new FoodNutrition
                 {
@@ -564,6 +565,7 @@ namespace Survivebest.Commerce
                 CuisineType = recipe.OutputFood.CuisineType,
                 CookingMethod = recipe.OutputFood.CookingMethod,
                 ServingTemperature = recipe.OutputFood.ServingTemperature,
+                Purpose = recipe.OutputFood.Purpose,
                 Tags = recipe.OutputFood.Tags != null ? new List<string>(recipe.OutputFood.Tags) : new List<string>(),
                 Nutrition = recipe.OutputFood.Nutrition,
                 ComfortValue = recipe.OutputFood.ComfortValue
@@ -639,6 +641,7 @@ namespace Survivebest.Commerce
                 CookingMethod = CookingMethod.Mix,
                 CuisineType = CuisineType.Comfort,
                 ServingTemperature = ServingTemperature.Warm,
+                Purpose = MealPurpose.Everyday,
                 Tags = spicy ? new List<string> { "experimental", "spicy", "discovered" } : new List<string> { "experimental", "savory", "discovered" },
                 Nutrition = new FoodNutrition { Calories = 460f, Protein = 18f, Fat = 14f, Carbs = 58f },
                 ComfortValue = 52f
@@ -706,6 +709,7 @@ namespace Survivebest.Commerce
                 CuisineType = definition.CuisineType,
                 CookingMethod = definition.CookingMethod,
                 ServingTemperature = definition.ServingTemperature,
+                Purpose = definition.Purpose,
                 Tags = definition.Tags != null ? new List<string>(definition.Tags) : new List<string>(),
                 Nutrition = definition.Nutrition,
                 ComfortValue = Mathf.Clamp(35f + definition.Nutrition.Fat * 0.9f + definition.Nutrition.Carbs * 0.2f, 20f, 90f)
