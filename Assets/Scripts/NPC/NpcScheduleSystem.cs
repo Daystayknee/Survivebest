@@ -36,6 +36,25 @@ namespace Survivebest.NPC
         InjuredRest
     }
 
+    public enum NpcMemoryKind
+    {
+        General,
+        FirstImpression,
+        Favor,
+        Grudge,
+        Rumor,
+        Secret,
+        Legacy,
+        Trauma
+    }
+
+    public enum NpcKnowledgeSensitivity
+    {
+        Public,
+        Private,
+        Secret
+    }
+
     [Serializable]
     public class NpcScheduleBlock
     {
@@ -49,7 +68,17 @@ namespace Survivebest.NPC
     {
         public string SubjectId;
         public string Topic;
+        public string SourceId;
+        public NpcMemoryKind Kind;
+        public NpcKnowledgeSensitivity Sensitivity;
         [Range(-100, 100)] public int Sentiment;
+        [Range(0f, 1f)] public float Importance = 0.35f;
+        [Range(0f, 1f)] public float Confidence = 1f;
+        public bool IsRumor;
+        public bool IsSecret;
+        public bool IsFirstImpression;
+        public bool IsLegacyThread;
+        public bool IsGrudge;
         public int LastSeenHour;
     }
 
@@ -133,18 +162,36 @@ namespace Survivebest.NPC
 
         public void RememberInteraction(string npcId, string subjectId, string topic, int sentiment)
         {
+            RememberInteraction(npcId, subjectId, topic, sentiment, NpcMemoryKind.General);
+        }
+
+        public void RememberInteraction(string npcId, string subjectId, string topic, int sentiment, NpcMemoryKind kind, float importance = 0.45f, float confidence = 1f, string sourceId = null, NpcKnowledgeSensitivity sensitivity = NpcKnowledgeSensitivity.Public)
+        {
             NpcProfile npc = npcProfiles.Find(x => x != null && x.NpcId == npcId);
             if (npc == null)
             {
                 return;
             }
 
-            NpcMemoryEntry existing = npc.Memory.Find(x => x != null && x.SubjectId == subjectId && x.Topic == topic);
+            NpcMemoryEntry existing = npc.Memory.Find(x => x != null &&
+                string.Equals(x.SubjectId, subjectId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(x.Topic, topic, StringComparison.OrdinalIgnoreCase) &&
+                x.Kind == kind);
             int now = GetCurrentTotalHours();
             if (existing != null)
             {
                 existing.Sentiment = Mathf.Clamp(existing.Sentiment + sentiment, -100, 100);
                 existing.LastSeenHour = now;
+                existing.Importance = Mathf.Clamp01(Mathf.Max(existing.Importance, importance));
+                existing.Confidence = Mathf.Clamp01((existing.Confidence + confidence) * 0.5f);
+                existing.SourceId = string.IsNullOrWhiteSpace(sourceId) ? existing.SourceId : sourceId;
+                existing.Sensitivity = sensitivity;
+                existing.IsRumor |= kind == NpcMemoryKind.Rumor;
+                existing.IsSecret |= kind == NpcMemoryKind.Secret;
+                existing.IsFirstImpression |= kind == NpcMemoryKind.FirstImpression;
+                existing.IsLegacyThread |= kind == NpcMemoryKind.Legacy;
+                existing.IsGrudge |= kind == NpcMemoryKind.Grudge || existing.Sentiment <= -40;
+                TrimNpcMemory(npc);
                 return;
             }
 
@@ -152,15 +199,85 @@ namespace Survivebest.NPC
             {
                 SubjectId = subjectId,
                 Topic = topic,
+                SourceId = sourceId,
+                Kind = kind,
+                Sensitivity = sensitivity,
                 Sentiment = Mathf.Clamp(sentiment, -100, 100),
+                Importance = Mathf.Clamp01(importance),
+                Confidence = Mathf.Clamp01(confidence),
+                IsRumor = kind == NpcMemoryKind.Rumor,
+                IsSecret = kind == NpcMemoryKind.Secret,
+                IsFirstImpression = kind == NpcMemoryKind.FirstImpression,
+                IsLegacyThread = kind == NpcMemoryKind.Legacy,
+                IsGrudge = kind == NpcMemoryKind.Grudge || sentiment <= -40,
                 LastSeenHour = now
             });
+
+            TrimNpcMemory(npc);
+        }
+
+        public void RememberFirstImpression(string npcId, string subjectId, string topic, int sentiment, float importance = 0.75f)
+        {
+            RememberInteraction(npcId, subjectId, topic, sentiment, NpcMemoryKind.FirstImpression, importance, 1f, subjectId, NpcKnowledgeSensitivity.Private);
+        }
+
+        public void RememberGrudge(string npcId, string subjectId, string topic, int sentiment = -55, float importance = 0.9f)
+        {
+            RememberInteraction(npcId, subjectId, topic, Mathf.Min(sentiment, -10), NpcMemoryKind.Grudge, importance, 0.95f, subjectId, NpcKnowledgeSensitivity.Private);
+        }
+
+        public void RememberRumor(string npcId, string subjectId, string topic, int sentiment, float spreadConfidence = 0.45f, float importance = 0.55f, string sourceId = "Town")
+        {
+            RememberInteraction(npcId, subjectId, topic, sentiment, NpcMemoryKind.Rumor, importance, spreadConfidence, sourceId, NpcKnowledgeSensitivity.Public);
+        }
+
+        public void RememberSecret(string npcId, string subjectId, string topic, int sentiment, float importance = 0.85f, string sourceId = null)
+        {
+            RememberInteraction(npcId, subjectId, topic, sentiment, NpcMemoryKind.Secret, importance, 0.7f, sourceId, NpcKnowledgeSensitivity.Secret);
+        }
+
+        public void RememberLegacy(string npcId, string subjectId, string topic, int sentiment, float importance = 0.8f)
+        {
+            RememberInteraction(npcId, subjectId, topic, sentiment, NpcMemoryKind.Legacy, importance, 0.9f, subjectId, NpcKnowledgeSensitivity.Public);
         }
 
 
         public NpcProfile GetNpcProfile(string npcId)
         {
             return npcProfiles.Find(x => x != null && string.Equals(x.NpcId, npcId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public NpcMemoryEntry GetStrongestMemory(string npcId, Predicate<NpcMemoryEntry> predicate = null)
+        {
+            NpcProfile npc = GetNpcProfile(npcId);
+            if (npc == null || npc.Memory == null)
+            {
+                return null;
+            }
+
+            NpcMemoryEntry best = null;
+            float bestScore = float.NegativeInfinity;
+            for (int i = 0; i < npc.Memory.Count; i++)
+            {
+                NpcMemoryEntry memory = npc.Memory[i];
+                if (memory == null || (predicate != null && !predicate(memory)))
+                {
+                    continue;
+                }
+
+                float score = memory.Importance * 2.5f + Mathf.Abs(memory.Sentiment) / 100f + memory.Confidence;
+                if (memory.IsFirstImpression) score += 0.35f;
+                if (memory.IsGrudge) score += 0.6f;
+                if (memory.IsSecret) score += 0.55f;
+                if (memory.IsLegacyThread) score += 0.45f;
+                if (score > bestScore)
+                {
+                    best = memory;
+                    bestScore = score;
+                }
+            }
+
+            return best;
         }
 
         public bool ForceNpcState(string npcId, NpcActivityState state, string reason = "Autonomy override")
@@ -286,7 +403,7 @@ namespace Survivebest.NPC
 
             if (npc.Stress > 85f)
             {
-                RememberInteraction(npc.NpcId, "Town", "RumorSpread", -4);
+                RememberRumor(npc.NpcId, "Town", "RumorSpread", -4, 0.45f, 0.5f);
             }
 
             TryResolveCrowdedConflict(npc, hour);
@@ -309,7 +426,7 @@ namespace Survivebest.NPC
                 return;
             }
 
-            RememberInteraction(npc.NpcId, "Town", "BarFight", -12);
+            RememberGrudge(npc.NpcId, "Town", "BarFight", -12, 0.65f);
             relationshipMemorySystem?.RecordEvent(npc.NpcId, "Town", "bar fight in crowded venue", -12, true, npc.CurrentLotId);
 
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
@@ -550,6 +667,41 @@ namespace Survivebest.NPC
             }
 
             return schedule;
+        }
+
+        private static void TrimNpcMemory(NpcProfile npc)
+        {
+            if (npc?.Memory == null || npc.Memory.Count <= 24)
+            {
+                return;
+            }
+
+            npc.Memory.Sort((a, b) =>
+            {
+                float aScore = ComputeMemoryRetentionScore(a);
+                float bScore = ComputeMemoryRetentionScore(b);
+                return bScore.CompareTo(aScore);
+            });
+
+            if (npc.Memory.Count > 24)
+            {
+                npc.Memory.RemoveRange(24, npc.Memory.Count - 24);
+            }
+        }
+
+        private static float ComputeMemoryRetentionScore(NpcMemoryEntry memory)
+        {
+            if (memory == null)
+            {
+                return float.NegativeInfinity;
+            }
+
+            float score = memory.Importance * 2f + Mathf.Abs(memory.Sentiment) / 100f + memory.Confidence;
+            if (memory.IsFirstImpression) score += 0.45f;
+            if (memory.IsGrudge) score += 0.7f;
+            if (memory.IsSecret) score += 0.65f;
+            if (memory.IsLegacyThread) score += 0.55f;
+            return score;
         }
     }
 }
