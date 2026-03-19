@@ -6,11 +6,52 @@ using Survivebest.Core;
 using Survivebest.Dialogue;
 using Survivebest.Legacy;
 using Survivebest.Social;
+using Survivebest.NPC;
+using Survivebest.Location;
 
 namespace Survivebest.Tests.EditMode
 {
     public class DialogueAndLegacyGameplayTests
     {
+
+        [Test]
+        public void NpcLifeAIGuideSystem_BuildEndlessChatSuggestions_ProducesVariedProceduralOptions()
+        {
+            GameObject root = new GameObject("NpcReplay");
+            NpcLifeAIGuideSystem guide = root.AddComponent<NpcLifeAIGuideSystem>();
+            NpcScheduleSystem schedule = root.AddComponent<NpcScheduleSystem>();
+            typeof(NpcLifeAIGuideSystem).GetField("npcScheduleSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(guide, schedule);
+
+            var npcProfiles = new System.Collections.Generic.List<NpcProfile>
+            {
+                new NpcProfile
+                {
+                    NpcId = "npc_1",
+                    DisplayName = "Mara",
+                    Job = NpcJobType.Medic,
+                    CurrentState = NpcActivityState.Socializing,
+                    CurrentLotId = "Clinic",
+                    WorkLotId = "Clinic",
+                    Reputation = 20,
+                    Stress = 35f,
+                    Memory = new System.Collections.Generic.List<NpcMemoryEntry>
+                    {
+                        new NpcMemoryEntry { Topic = "the old bloodline feud", IsLegacyThread = true, Importance = 0.9f, Confidence = 0.8f, Sentiment = 10 }
+                    }
+                }
+            };
+            typeof(NpcScheduleSystem).GetField("npcProfiles", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(schedule, npcProfiles);
+
+            Room room = new Room { RoomName = "Clinic" };
+            var suggestions = guide.BuildEndlessChatSuggestions(room, true, 1234, 10);
+
+            Assert.GreaterOrEqual(suggestions.Count, 10);
+            Assert.IsTrue(suggestions.Any(s => !string.IsNullOrWhiteSpace(s.Category)));
+            Assert.IsTrue(guide.BuildReplayabilitySummary(room, 1234).Contains("procedural social angles"));
+
+            Object.DestroyImmediate(root);
+        }
+
         [Test]
         public void DialogueSystem_BuildReplyOptions_IncludesLegacyAndVampireChoices()
         {
