@@ -95,6 +95,7 @@ namespace Survivebest.Catalog
             CreateIngredient("Bell pepper", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "sweet", "fresh", "colorful" }, calories: 31f, carbs: 6f, vitamins: true, spoilHours: 120f),
             CreateIngredient("Jalapeño", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "spicy", "fresh", "pepper" }, calories: 29f, carbs: 7f, spoilHours: 120f),
             CreateIngredient("Tomato", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "acidic", "savory", "sauce-base" }, calories: 18f, carbs: 4f, spoilHours: 96f),
+            CreateIngredient("Cucumber", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "fresh", "cooling", "crisp" }, calories: 15f, carbs: 4f, hydration: 95f, spoilHours: 96f),
             CreateIngredient("Mushroom", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "umami", "earthy", "savory" }, calories: 22f, protein: 3f, carbs: 3f, spoilHours: 96f),
             CreateIngredient("Celery", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "fresh", "crunchy", "aromatic" }, calories: 16f, carbs: 3f, hydration: 95f, spoilHours: 120f),
             CreateIngredient("Bok choy", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "leafy", "asian", "fresh" }, calories: 13f, protein: 2f, carbs: 2f, spoilHours: 96f),
