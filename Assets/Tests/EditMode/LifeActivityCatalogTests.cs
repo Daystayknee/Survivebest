@@ -12,5 +12,13 @@ namespace Survivebest.Tests.EditMode
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(style));
         }
+
+        [Test]
+        public void ModernAdultPickers_ReturnNonEmptyValues()
+        {
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialFeedActivity()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHomeUpgradeProject()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickAmbitionFocus()));
+        }
     }
 }

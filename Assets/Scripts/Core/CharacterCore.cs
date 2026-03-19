@@ -20,6 +20,12 @@ namespace Survivebest.Core
         Elder
     }
 
+    public enum CharacterSpecies
+    {
+        Human,
+        Vampire
+    }
+
     public enum CharacterTalent
     {
         None,
@@ -142,6 +148,7 @@ namespace Survivebest.Core
         [SerializeField] private LifeStage lifeStage = LifeStage.YoungAdult;
         [SerializeField] private bool isPlayerControlled;
         [SerializeField] private bool isDead;
+        [SerializeField] private CharacterSpecies species = CharacterSpecies.Human;
         [SerializeField] private List<CharacterTalent> talents = new();
         [SerializeField] private GameEventHub gameEventHub;
 
@@ -170,6 +177,9 @@ namespace Survivebest.Core
         public LifeStage CurrentLifeStage => lifeStage;
         public bool IsPlayerControlled => isPlayerControlled;
         public bool IsDead => isDead;
+        public CharacterSpecies Species => species;
+        public bool IsHuman => species == CharacterSpecies.Human;
+        public bool IsVampire => species == CharacterSpecies.Vampire;
         public IReadOnlyList<CharacterTalent> Talents => talents;
         public int BirthYear => birthYear;
         public int BirthMonth => birthMonth;
@@ -185,11 +195,12 @@ namespace Survivebest.Core
         public float MasculineExpression => masculineExpression;
         public float AndrogynyExpression => androgynyExpression;
 
-        public void Initialize(string id, string name, LifeStage stage)
+        public void Initialize(string id, string name, LifeStage stage, CharacterSpecies newSpecies = CharacterSpecies.Human)
         {
             characterId = id;
             displayName = name;
             lifeStage = stage;
+            species = newSpecies;
         }
 
         public void SetBirthDate(int year, int month, int day)
@@ -213,6 +224,43 @@ namespace Survivebest.Core
         {
             lifeStage = stage;
         }
+
+        public void SetSpecies(CharacterSpecies value)
+        {
+            species = value;
+        }
+
+        public string GetSpeciesKey()
+        {
+            return species.ToString().ToLowerInvariant();
+        }
+
+        public float GetSpeciesAgingRateMultiplier()
+        {
+            return species switch
+            {
+                CharacterSpecies.Vampire when lifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler or LifeStage.Child or LifeStage.Preteen or LifeStage.Teen => 1f,
+                CharacterSpecies.Vampire when lifeStage == LifeStage.YoungAdult => 0.35f,
+                CharacterSpecies.Vampire => 0.08f,
+                _ => 1f
+            };
+        }
+
+        public bool CanFeedOnBlood() => species == CharacterSpecies.Vampire;
+
+        public bool CanCompelTargets() => species == CharacterSpecies.Vampire && lifeStage >= LifeStage.Teen;
+
+        public bool HasNightAdvantage() => species == CharacterSpecies.Vampire;
+
+        public string GetSpeciesTraitSummary()
+        {
+            return species switch
+            {
+                CharacterSpecies.Vampire => "Night-active, blood-feeding, sunlight-vulnerable, and slow-aging after maturity.",
+                _ => "Day-active human baseline with standard aging and illness rules."
+            };
+        }
+
 
         public void SetTalents(List<CharacterTalent> values)
         {
