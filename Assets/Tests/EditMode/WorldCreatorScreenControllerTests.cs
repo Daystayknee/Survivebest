@@ -5,6 +5,7 @@ using Survivebest.Core;
 using Survivebest.Society;
 using Survivebest.UI;
 using Survivebest.World;
+using Survivebest.Location;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -74,7 +75,7 @@ namespace Survivebest.Tests.EditMode
 
             controller.GenerateWorld();
 
-            Assert.GreaterOrEqual(generatedCount, 12);
+            Assert.GreaterOrEqual(generatedCount, 16);
             Assert.AreEqual("New Haven", worldCreatorManager.LastGeneratedSummary.WorldName);
 
             Object.DestroyImmediate(root);
@@ -101,7 +102,7 @@ namespace Survivebest.Tests.EditMode
             controller.Settings.IncludeWaterfront = true;
             controller.GenerateWorld();
 
-            Assert.GreaterOrEqual(worldCreatorManager.LastGeneratedSummary.TotalAreas, 18);
+            Assert.GreaterOrEqual(worldCreatorManager.LastGeneratedSummary.TotalAreas, 20);
             Assert.AreEqual("Iron Harbor", worldCreatorManager.LastGeneratedSummary.WorldName);
             Assert.AreEqual("temperate_coastal", worldCreatorManager.LastGeneratedSummary.RegionId);
             Assert.GreaterOrEqual(worldCreatorManager.LastGeneratedSummary.WorkplaceAreas, 4);
@@ -164,6 +165,45 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(preview.Contains("Transit: No"));
 
             Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void GenerateWorld_PopulatesTownSimulationWithPlacesToGo()
+        {
+            GameObject root = new GameObject("WorldCreatorTownLayout");
+            WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
+            WorldCreatorManager worldCreatorManager = root.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem townSimulationSystem = root.AddComponent<TownSimulationSystem>();
+
+            typeof(WorldCreatorScreenController)
+                .GetField("worldCreatorManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(controller, worldCreatorManager);
+            typeof(WorldCreatorManager)
+                .GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(worldCreatorManager, townSimulationSystem);
+
+            controller.GenerateWorld();
+
+            Assert.GreaterOrEqual(townSimulationSystem.Lots.Count, 16);
+            Assert.Greater(townSimulationSystem.RouteGraph.Count, 20);
+            Assert.IsTrue(ContainsLotNamed(townSimulationSystem.Lots, "Public Library"));
+            Assert.IsTrue(ContainsLotNamed(townSimulationSystem.Lots, "Community Park"));
+
+            Object.DestroyImmediate(root);
+        }
+
+        private static bool ContainsLotNamed(IReadOnlyList<LotDefinition> lots, string displayName)
+        {
+            for (int i = 0; i < lots.Count; i++)
+            {
+                LotDefinition lot = lots[i];
+                if (lot != null && lot.DisplayName == displayName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

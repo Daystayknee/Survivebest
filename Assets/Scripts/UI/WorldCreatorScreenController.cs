@@ -178,9 +178,12 @@ namespace Survivebest.UI
                 CreateTemplate("Home District", LocationTheme.Residential, lawStrict * 0.7f, violence * 0.7f, policeFunding, prisonReform, healthcare),
                 CreateTemplate(ResolveBiomeAreaName(), settings.BiomeTheme, lawStrict * 0.35f, violence * (settings.WildlifeAggressive ? 1f : 0.65f), policeFunding * 0.7f, prisonReform, healthcare * 0.75f),
                 CreateTemplate(ResolveCommerceAreaName(), LocationTheme.StoreInterior, lawStrict * 0.9f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.9f),
+                CreateTemplate("Corner Cafe", LocationTheme.StoreInterior, lawStrict * 0.82f, violence * 0.72f, policeFunding * 0.92f, prisonReform, healthcare * 0.9f),
                 CreateTemplate(ResolveWorkplaceAreaName(), LocationTheme.Workplace, lawStrict * 0.85f, violence * 0.85f, policeFunding, prisonReform * 0.9f, healthcare * 0.85f),
                 CreateTemplate("General Hospital", LocationTheme.Hospital, lawStrict, violence, policeFunding * 0.9f, prisonReform, Mathf.Max(healthcare, 0.7f)),
-                CreateTemplate("Civic Hall", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.95f, policeFunding, prisonReform, healthcare)
+                CreateTemplate("Civic Hall", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.95f, policeFunding, prisonReform, healthcare),
+                CreateTemplate("Public Library", LocationTheme.Civic, lawStrict * 0.88f, violence * 0.7f, policeFunding * 0.85f, prisonReform, healthcare),
+                CreateTemplate("Community Park", LocationTheme.Nature, lawStrict * 0.42f, violence * 0.48f, policeFunding * 0.7f, prisonReform, healthcare * 0.75f)
             };
         }
 
@@ -192,16 +195,19 @@ namespace Survivebest.UI
                 CreateTemplate(ResolveBiomeAreaName(), settings.BiomeTheme, lawStrict * 0.35f, violence * (settings.WildlifeAggressive ? 1f : 0.65f), policeFunding * 0.7f, prisonReform, healthcare * 0.75f),
                 CreateTemplate("Downtown Grocery", LocationTheme.StoreInterior, lawStrict * 0.9f, violence * 0.78f, policeFunding, prisonReform, healthcare * 0.9f),
                 CreateTemplate("City Diner", LocationTheme.StoreInterior, lawStrict * 0.82f, violence * 0.74f, policeFunding * 0.9f, prisonReform, healthcare * 0.9f),
+                CreateTemplate("Cinema Arcade", LocationTheme.StoreInterior, lawStrict * 0.8f, violence * 0.7f, policeFunding * 0.88f, prisonReform, healthcare * 0.86f),
                 CreateTemplate("Auto Garage", LocationTheme.Workplace, lawStrict * 0.75f, violence * 0.75f, policeFunding, prisonReform * 0.9f, healthcare * 0.82f),
                 CreateTemplate("Tech Office", LocationTheme.Workplace, lawStrict * 0.88f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.88f),
                 CreateTemplate("Warehouse Hub", LocationTheme.Workplace, lawStrict * 0.8f, violence * 0.82f, policeFunding, prisonReform * 0.85f, healthcare * 0.8f),
                 CreateTemplate("General Hospital", LocationTheme.Hospital, lawStrict, violence, policeFunding * 0.9f, prisonReform, Mathf.Max(healthcare, 0.7f)),
                 CreateTemplate("Elementary School", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.9f, policeFunding, prisonReform, healthcare),
                 CreateTemplate("Community College", LocationTheme.Civic, lawStrict * 0.92f, violence * 0.87f, policeFunding, prisonReform, healthcare),
+                CreateTemplate("Public Library", LocationTheme.Civic, lawStrict * 0.87f, violence * 0.72f, policeFunding * 0.82f, prisonReform, healthcare),
                 CreateTemplate("Police Precinct", LocationTheme.Civic, lawStrict, violence, Mathf.Max(policeFunding, 0.65f), prisonReform, healthcare * 0.85f),
                 CreateTemplate("Fire Station", LocationTheme.Civic, lawStrict * 0.97f, violence * 0.9f, policeFunding, prisonReform, healthcare),
                 CreateTemplate("Post Office", LocationTheme.Civic, lawStrict * 0.88f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.9f),
-                CreateTemplate("Construction Yard", settings.IncludeIndustrialZone ? LocationTheme.Workplace : LocationTheme.Civic, lawStrict * 0.7f, violence * 0.85f, policeFunding, prisonReform * 0.8f, healthcare * 0.8f)
+                CreateTemplate("Construction Yard", settings.IncludeIndustrialZone ? LocationTheme.Workplace : LocationTheme.Civic, lawStrict * 0.7f, violence * 0.85f, policeFunding, prisonReform * 0.8f, healthcare * 0.8f),
+                CreateTemplate("Community Park", LocationTheme.Nature, lawStrict * 0.4f, violence * 0.46f, policeFunding * 0.72f, prisonReform, healthcare * 0.72f)
             };
         }
 

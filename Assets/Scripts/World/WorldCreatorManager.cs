@@ -40,6 +40,7 @@ namespace Survivebest.World
     public class WorldCreatorManager : MonoBehaviour
     {
         [SerializeField] private LocationManager locationManager;
+        [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<WorldAreaTemplate> areaTemplates = new();
@@ -144,6 +145,7 @@ namespace Survivebest.World
 
             lawSystem?.SetAreaProfiles(profiles);
             locationManager?.SetRooms(rooms);
+            BuildTownLayout(templates);
 
             OnWorldGenerated?.Invoke(rooms.Count);
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
@@ -187,6 +189,155 @@ namespace Survivebest.World
             }
         }
 
+        private void BuildTownLayout(List<WorldAreaTemplate> templates)
+        {
+            if (townSimulationSystem == null || templates == null || templates.Count == 0)
+            {
+                return;
+            }
+
+            List<DistrictDefinition> districts = new();
+            List<LotDefinition> lots = new();
+            List<RouteEdge> routes = new();
+            Dictionary<string, string> districtByTheme = new();
+
+            for (int i = 0; i < templates.Count; i++)
+            {
+                WorldAreaTemplate template = templates[i];
+                if (template == null || string.IsNullOrWhiteSpace(template.AreaName))
+                {
+                    continue;
+                }
+
+                string districtId = GetOrCreateDistrictForTheme(template, districts, districtByTheme);
+                string lotId = BuildLotId(template.AreaName, i);
+                lots.Add(new LotDefinition
+                {
+                    LotId = lotId,
+                    DisplayName = template.AreaName,
+                    Zone = MapZone(template.Theme),
+                    DistrictId = districtId,
+                    IsPublicVenue = true,
+                    OpenHour = ResolveOpenHour(template.Theme),
+                    CloseHour = ResolveCloseHour(template.Theme),
+                    Safety = Mathf.Clamp01((template.TheftEnforcement + template.ViolenceEnforcement + template.PoliceFunding) / 3f),
+                    Wealth = Mathf.Clamp01((template.HealthcareCoverage + (1f - template.PrisonReform) + template.TheftEnforcement) / 3f),
+                    Capacity = ResolveCapacity(template.Theme),
+                    Tags = BuildTags(template)
+                });
+            }
+
+            for (int i = 0; i < lots.Count; i++)
+            {
+                for (int j = i + 1; j < lots.Count; j++)
+                {
+                    float travelCost = 0.8f + Mathf.Abs(i - j) * 0.18f;
+                    routes.Add(new RouteEdge
+                    {
+                        FromLotId = lots[i].LotId,
+                        ToLotId = lots[j].LotId,
+                        BaseTravelCost = travelCost,
+                        WeatherPenaltySensitivity = lots[j].Zone == ZoneType.Park ? 0.65f : 0.35f
+                    });
+                    routes.Add(new RouteEdge
+                    {
+                        FromLotId = lots[j].LotId,
+                        ToLotId = lots[i].LotId,
+                        BaseTravelCost = travelCost,
+                        WeatherPenaltySensitivity = lots[i].Zone == ZoneType.Park ? 0.65f : 0.35f
+                    });
+                }
+            }
+
+            townSimulationSystem.SetTownLayout(districts, lots, routes);
+        }
+
+        private static string GetOrCreateDistrictForTheme(WorldAreaTemplate template, List<DistrictDefinition> districts, Dictionary<string, string> districtByTheme)
+        {
+            string themeKey = template.Theme.ToString();
+            if (districtByTheme.TryGetValue(themeKey, out string existing))
+            {
+                return existing;
+            }
+
+            string districtId = $"district_{themeKey.ToLowerInvariant()}";
+            districtByTheme[themeKey] = districtId;
+            districts.Add(new DistrictDefinition
+            {
+                DistrictId = districtId,
+                DisplayName = $"{themeKey} District",
+                Safety = Mathf.Clamp01((template.TheftEnforcement + template.PoliceFunding) * 0.5f),
+                Wealth = Mathf.Clamp01((template.HealthcareCoverage + (1f - template.ViolenceEnforcement)) * 0.5f),
+                IdentityTag = themeKey.ToLowerInvariant()
+            });
+
+            return districtId;
+        }
+
+        private static string BuildLotId(string areaName, int index)
+        {
+            string normalized = areaName.Trim().ToLowerInvariant().Replace(" ", "_");
+            return $"lot_{index}_{normalized}";
+        }
+
+        private static ZoneType MapZone(LocationTheme theme)
+        {
+            return theme switch
+            {
+                LocationTheme.Residential => ZoneType.Residential,
+                LocationTheme.Nature => ZoneType.Park,
+                LocationTheme.StoreInterior => ZoneType.Commercial,
+                LocationTheme.Workplace => ZoneType.Industrial,
+                LocationTheme.Hospital => ZoneType.Medical,
+                _ => ZoneType.Civic
+            };
+        }
+
+        private static int ResolveOpenHour(LocationTheme theme)
+        {
+            return theme switch
+            {
+                LocationTheme.Nature => 5,
+                LocationTheme.Hospital => 0,
+                LocationTheme.Civic => 7,
+                _ => 8
+            };
+        }
+
+        private static int ResolveCloseHour(LocationTheme theme)
+        {
+            return theme switch
+            {
+                LocationTheme.Hospital => 23,
+                LocationTheme.Nature => 22,
+                LocationTheme.Civic => 21,
+                _ => 22
+            };
+        }
+
+        private static int ResolveCapacity(LocationTheme theme)
+        {
+            return theme switch
+            {
+                LocationTheme.Hospital => 90,
+                LocationTheme.Civic => 80,
+                LocationTheme.StoreInterior => 60,
+                LocationTheme.Workplace => 75,
+                LocationTheme.Nature => 120,
+                _ => 40
+            };
+        }
+
+        private static List<string> BuildTags(WorldAreaTemplate template)
+        {
+            List<string> tags = new() { template.Theme.ToString().ToLowerInvariant() };
+            if (template.HealthcareCoverage > 0.65f) tags.Add("well_serviced");
+            if (template.PoliceFunding > 0.7f) tags.Add("patrolled");
+            if (template.PrisonReform > 0.6f) tags.Add("restorative");
+            if (template.ViolenceEnforcement < 0.55f) tags.Add("relaxed");
+            return tags;
+        }
+
         private static List<WorldAreaTemplate> BuildSensibleDefaultAreas()
         {
             return new List<WorldAreaTemplate>
@@ -194,9 +345,12 @@ namespace Survivebest.World
                 new WorldAreaTemplate { AreaName = "Home District", Theme = LocationTheme.Residential, TheftEnforcement = 0.45f, ViolenceEnforcement = 0.7f, PoliceFunding = 0.52f, PrisonReform = 0.46f, HealthcareCoverage = 0.54f },
                 new WorldAreaTemplate { AreaName = "Forest Trail", Theme = LocationTheme.Nature, TheftEnforcement = 0.2f, ViolenceEnforcement = 0.35f, PoliceFunding = 0.32f, PrisonReform = 0.48f, HealthcareCoverage = 0.34f },
                 new WorldAreaTemplate { AreaName = "Downtown Market", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.65f, ViolenceEnforcement = 0.75f, PoliceFunding = 0.6f, PrisonReform = 0.42f, HealthcareCoverage = 0.5f },
+                new WorldAreaTemplate { AreaName = "Corner Cafe", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.6f, ViolenceEnforcement = 0.68f, PoliceFunding = 0.56f, PrisonReform = 0.44f, HealthcareCoverage = 0.48f },
                 new WorldAreaTemplate { AreaName = "Office Plaza", Theme = LocationTheme.Workplace, TheftEnforcement = 0.7f, ViolenceEnforcement = 0.85f, PoliceFunding = 0.62f, PrisonReform = 0.4f, HealthcareCoverage = 0.48f },
                 new WorldAreaTemplate { AreaName = "General Hospital", Theme = LocationTheme.Hospital, TheftEnforcement = 0.8f, ViolenceEnforcement = 0.95f, PoliceFunding = 0.58f, PrisonReform = 0.5f, HealthcareCoverage = 0.82f },
-                new WorldAreaTemplate { AreaName = "City Hall", Theme = LocationTheme.Civic, TheftEnforcement = 0.75f, ViolenceEnforcement = 0.85f, PoliceFunding = 0.64f, PrisonReform = 0.48f, HealthcareCoverage = 0.58f }
+                new WorldAreaTemplate { AreaName = "City Hall", Theme = LocationTheme.Civic, TheftEnforcement = 0.75f, ViolenceEnforcement = 0.85f, PoliceFunding = 0.64f, PrisonReform = 0.48f, HealthcareCoverage = 0.58f },
+                new WorldAreaTemplate { AreaName = "Public Library", Theme = LocationTheme.Civic, TheftEnforcement = 0.72f, ViolenceEnforcement = 0.7f, PoliceFunding = 0.55f, PrisonReform = 0.52f, HealthcareCoverage = 0.55f },
+                new WorldAreaTemplate { AreaName = "Community Park", Theme = LocationTheme.Nature, TheftEnforcement = 0.35f, ViolenceEnforcement = 0.4f, PoliceFunding = 0.4f, PrisonReform = 0.5f, HealthcareCoverage = 0.38f }
             };
         }
 
