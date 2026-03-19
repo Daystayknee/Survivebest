@@ -1,0 +1,7 @@
+System,Region,TraitOrState,VariantKey,TriggerSource,MorphRange,LifeStage,Layer,Palette,FileName,Notes,Status
+Face,Nose,NoseBridgeHeight,face_nose_roman_02,PhenotypeResolver,0.70-1.00,Adult,face_mid,base,face_nose_roman_02_adult_base_highbridge.png,High bridge Roman nose,Planned
+Face,Mouth,LipFullness,face_mouth_heartfull_03,PhenotypeResolver,0.60-0.80,Teen,face_lower,base,face_mouth_heartfull_03_teen_smile_base.png,Smile-capable heart-full lips,Planned
+Overlay,CheekLeft,Bruise,overlay_cheek_left_bruise_01,OverlayResolver,0.30-0.60,Adult,overlay_face,injury,overlay_cheek_left_bruise_01_adult_base.png,Medium bruise left cheek,Planned
+Hair,Scalp,HairTexture,hair_scalp_longwavy_04,PhenotypeResolver,0.60-0.80,Adult,hair_front,hair_palette_a,hair_scalp_longwavy_04_adult_base_centerpart.png,Long wavy front-set center part,Planned
+Body,Chest,ChestBustPresentation,body_chest_soft_02,PhenotypeResolver,0.40-0.60,Adult,body_mid,skin_base,body_chest_soft_02_adult_base.png,Moderate chest silhouette,Planned
+UI,Global,StressWarning,ui_feedback_stress_soft,PresentationStateResolver,0.55-0.75,All,ui_overlay,warning,ui_feedback_stress_soft.png,Soft stress warning pulse,Planned
