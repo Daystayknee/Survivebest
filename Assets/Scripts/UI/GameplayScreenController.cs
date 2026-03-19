@@ -45,6 +45,7 @@ namespace Survivebest.UI
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private NarrativePromptSystem narrativePromptSystem;
+        [SerializeField] private WorldGuideAISystem worldGuideAISystem;
 
         [Header("Map / Nav")]
         [SerializeField] private Text locationNavigatorText;
@@ -578,6 +579,11 @@ namespace Survivebest.UI
                 builder.AppendLine($"• {actions[i]}");
             }
 
+            if (worldGuideAISystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                builder.AppendLine($"AI: {worldGuideAISystem.BuildGuidanceForRoom(locationManager.CurrentRoom)}");
+            }
+
             return builder.ToString().TrimEnd();
         }
 
@@ -620,6 +626,11 @@ namespace Survivebest.UI
             else
             {
                 builder.AppendLine("• Waiting for world updates…");
+            }
+
+            if (worldGuideAISystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                builder.AppendLine($"• {worldGuideAISystem.BuildGuidanceForRoom(locationManager.CurrentRoom)}");
             }
 
             return builder.ToString().TrimEnd();

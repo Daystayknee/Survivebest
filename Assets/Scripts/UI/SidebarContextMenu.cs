@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Survivebest.Events;
 using Survivebest.Location;
 using Survivebest.Quest;
+using Survivebest.World;
 
 namespace Survivebest.UI
 {
@@ -20,6 +21,7 @@ namespace Survivebest.UI
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
+        [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text titleText;
         [SerializeField] private Text optionsText;
@@ -148,6 +150,11 @@ namespace Survivebest.UI
             {
                 bool open = townSimulationSystem.IsLotOpen(lot.LotId, DateTime.Now.Hour);
                 currentOptions.Add(new SidebarOption { Label = open ? "Read District Pulse" : "Wait / Replan", ActionKey = "review_local_pulse" });
+            }
+
+            if (worldGuideAISystem != null)
+            {
+                currentOptions.Add(new SidebarOption { Label = "Ask World AI", ActionKey = "ask_world_ai" });
             }
         }
 

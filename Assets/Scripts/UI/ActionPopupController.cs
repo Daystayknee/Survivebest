@@ -13,6 +13,7 @@ using Survivebest.Needs;
 using Survivebest.Status;
 using Survivebest.Minigames;
 using Survivebest.Quest;
+using Survivebest.World;
 
 namespace Survivebest.UI
 {
@@ -45,6 +46,7 @@ namespace Survivebest.UI
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private MinigameManager minigameManager;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
+        [SerializeField] private WorldGuideAISystem worldGuideAISystem;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -258,6 +260,10 @@ namespace Survivebest.UI
                     reason = ReviewLocalPulse();
                     magnitude = 1.5f;
                     break;
+                case "ask_world_ai":
+                    reason = AskWorldAi();
+                    magnitude = 1f;
+                    break;
                 case "animal_sight":
                     reason = ResolveAnimalSighting(active, out magnitude);
                     break;
@@ -334,6 +340,7 @@ namespace Survivebest.UI
                 "accept_local_opportunity" => "Local Opportunity",
                 "continue_local_opportunity" => "Continue Opportunity",
                 "review_local_pulse" => "District Pulse",
+                "ask_world_ai" => "World AI Guidance",
                 _ => "Action"
             };
         }
@@ -368,6 +375,7 @@ namespace Survivebest.UI
                 "accept_local_opportunity" => "Accept the best currently available opportunity tied to this location.",
                 "continue_local_opportunity" => "Advance an active local opportunity and cash in progress if possible.",
                 "review_local_pulse" => "Pause and read the district pulse before committing your next move.",
+                "ask_world_ai" => "Ask the world AI to synthesize local danger, opportunity, and routing advice.",
                 _ => "Confirm to execute this action."
             };
         }
@@ -404,6 +412,9 @@ namespace Survivebest.UI
                     break;
                 case "review_local_pulse":
                     builder.AppendLine(ReviewLocalPulse());
+                    break;
+                case "ask_world_ai":
+                    builder.AppendLine(AskWorldAi());
                     break;
                 case "fish":
                     builder.AppendLine("Fishing options:");
@@ -587,6 +598,12 @@ namespace Survivebest.UI
             return progressed
                 ? $"Advanced local opportunity: {opportunity.Definition.Title}."
                 : $"Could not advance {opportunity.Definition.Title}.";
+        }
+
+        private string AskWorldAi()
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            return worldGuideAISystem != null ? worldGuideAISystem.BuildGuidanceForRoom(room) : "World AI is offline.";
         }
 
         private string ReviewLocalPulse()
