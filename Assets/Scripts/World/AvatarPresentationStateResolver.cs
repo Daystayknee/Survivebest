@@ -163,7 +163,7 @@ namespace Survivebest.World
                 });
         }
 
-        private static void ApplyResolvedState(PhenotypeProfile phenotype, AvatarPresentationState state)
+        public static void ApplyResolvedState(PhenotypeProfile phenotype, AvatarPresentationState state)
         {
             if (phenotype?.AvatarLayers == null || state == null)
             {
