@@ -116,6 +116,16 @@ namespace Survivebest.Dialogue
                 builder.Append(npcAi);
             }
 
+            string replayAi = npcLifeAIGuideSystem != null ? npcLifeAIGuideSystem.BuildReplayabilitySummary(room, room.RoomName.GetHashCode()) : null;
+            if (!string.IsNullOrWhiteSpace(replayAi))
+            {
+                builder.Append('\n');
+                builder.Append(replayAi);
+            }
+
+            builder.Append('\n');
+            builder.Append($"Modern hooks: {Core.LifeActivityCatalog.PickDatingActivity()} • {Core.LifeActivityCatalog.PickCreatorEconomyActivity()} • {Core.LifeActivityCatalog.PickAdultErrand()}");
+
             return builder.ToString();
         }
 
