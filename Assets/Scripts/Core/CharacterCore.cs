@@ -235,6 +235,33 @@ namespace Survivebest.Core
             return species.ToString().ToLowerInvariant();
         }
 
+        public float GetSpeciesAgingRateMultiplier()
+        {
+            return species switch
+            {
+                CharacterSpecies.Vampire when lifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler or LifeStage.Child or LifeStage.Preteen or LifeStage.Teen => 1f,
+                CharacterSpecies.Vampire when lifeStage == LifeStage.YoungAdult => 0.35f,
+                CharacterSpecies.Vampire => 0.08f,
+                _ => 1f
+            };
+        }
+
+        public bool CanFeedOnBlood() => species == CharacterSpecies.Vampire;
+
+        public bool CanCompelTargets() => species == CharacterSpecies.Vampire && lifeStage >= LifeStage.Teen;
+
+        public bool HasNightAdvantage() => species == CharacterSpecies.Vampire;
+
+        public string GetSpeciesTraitSummary()
+        {
+            return species switch
+            {
+                CharacterSpecies.Vampire => "Night-active, blood-feeding, sunlight-vulnerable, and slow-aging after maturity.",
+                _ => "Day-active human baseline with standard aging and illness rules."
+            };
+        }
+
+
         public void SetTalents(List<CharacterTalent> values)
         {
             talents = values ?? new List<CharacterTalent>();

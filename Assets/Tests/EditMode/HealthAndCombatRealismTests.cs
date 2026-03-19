@@ -13,6 +13,40 @@ namespace Survivebest.Tests.EditMode
     {
 
         [Test]
+        public void CharacterCore_VampireTraits_ExposeNightAbilitiesAndSlowAging()
+        {
+            GameObject go = new GameObject("VampireTraits");
+            CharacterCore character = go.AddComponent<CharacterCore>();
+            character.Initialize("vampire", "Vee", LifeStage.Adult, CharacterSpecies.Vampire);
+
+            Assert.IsTrue(character.CanFeedOnBlood());
+            Assert.IsTrue(character.CanCompelTargets());
+            Assert.IsTrue(character.HasNightAdvantage());
+            Assert.Less(character.GetSpeciesAgingRateMultiplier(), 1f);
+            StringAssert.Contains("slow-aging", character.GetSpeciesTraitSummary());
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void LifeStageManager_VampireAgeUp_UsesFractionalAgingProgress()
+        {
+            GameObject go = new GameObject("VampireAging");
+            CharacterCore character = go.AddComponent<CharacterCore>();
+            character.Initialize("vampire", "Vee", LifeStage.Adult, CharacterSpecies.Vampire);
+            Survivebest.LifeStage.LifeStageManager manager = go.AddComponent<Survivebest.LifeStage.LifeStageManager>();
+            typeof(Survivebest.LifeStage.LifeStageManager).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(manager, character);
+
+            manager.AgeUp();
+
+            Assert.AreEqual(0, manager.AgeYears);
+            Assert.Greater(manager.BiologicalAgeYears, 0f);
+            Assert.Less(manager.BiologicalAgeYears, 1f);
+            Object.DestroyImmediate(go);
+        }
+
+
+        [Test]
         public void HealthSystem_VampireSunlightExposure_DealsHeavyDamage()
         {
             GameObject go = new GameObject("VampireHealth");
