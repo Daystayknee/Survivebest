@@ -61,7 +61,7 @@ namespace Survivebest.Health
         Sedative,
         Stimulant,
         PotassiumIodide,
-        ChemotherapySupport
+        CancerSupport
     }
 
     [Serializable]
@@ -175,14 +175,21 @@ namespace Survivebest.Health
                     MedicationType.Sedative => 2,
                     MedicationType.Stimulant => 2,
                     MedicationType.PotassiumIodide => 8,
-                    MedicationType.ChemotherapySupport => 6,
+                    MedicationType.CancerSupport => 6,
                     _ => 3
                 };
 
-                condition.RemainingHours = Mathf.Max(1, condition.RemainingHours - reliefHours);
-                condition.HourlyMoodDamage = Mathf.Max(0f, condition.HourlyMoodDamage - 0.35f);
-                condition.HourlyEnergyDamage = Mathf.Max(0f, condition.HourlyEnergyDamage - 0.25f);
-                condition.HourlyVitalityDamage = Mathf.Max(0f, condition.HourlyVitalityDamage - 0.15f);
+                if (!(condition.IsIllness && condition.IllnessType == IllnessType.Cancer))
+                {
+                    condition.RemainingHours = Mathf.Max(1, condition.RemainingHours - reliefHours);
+                }
+
+                float moodRelief = condition.IsIllness && condition.IllnessType == IllnessType.Cancer ? 0.2f : 0.35f;
+                float energyRelief = condition.IsIllness && condition.IllnessType == IllnessType.Cancer ? 0.15f : 0.25f;
+                float vitalityRelief = condition.IsIllness && condition.IllnessType == IllnessType.Cancer ? 0.08f : 0.15f;
+                condition.HourlyMoodDamage = Mathf.Max(0f, condition.HourlyMoodDamage - moodRelief);
+                condition.HourlyEnergyDamage = Mathf.Max(0f, condition.HourlyEnergyDamage - energyRelief);
+                condition.HourlyVitalityDamage = Mathf.Max(0f, condition.HourlyVitalityDamage - vitalityRelief);
                 needsSystem?.ModifyMood(0.8f);
                 healthSystem?.Heal(0.2f);
             }
@@ -356,7 +363,7 @@ namespace Survivebest.Health
                 IllnessType.Hypertension => ("Hypertension Spike", 48, 0.25f, 0.7f, 0.7f, 0.1f, 0f, 0.22f, false, MedicationType.Sedative),
                 IllnessType.DiabetesComplication => ("Diabetes Complication", 60, 0.38f, 1.3f, 0.9f, 0.15f, 0f, 0.3f, true, MedicationType.Stimulant),
                 IllnessType.RadiationSickness => ("Radiation Sickness", 168, 0.65f, 1.9f, 1.2f, 0.6f, 0f, 0.55f, true, MedicationType.PotassiumIodide),
-                IllnessType.Cancer => ("Cancer", 720, 0.45f, 1.5f, 1.2f, 0.2f, 0f, 0.6f, true, MedicationType.ChemotherapySupport),
+                IllnessType.Cancer => ("Cancer", 720, 0.45f, 1.5f, 1.2f, 0.2f, 0f, 0.6f, true, MedicationType.CancerSupport),
                 IllnessType.TeethingFever => ("Teething Fever", 10, 0.06f, 0.5f, 0.45f, 0.15f, 0f, 0.2f, false, MedicationType.Painkiller),
                 IllnessType.Colic => ("Colic", 8, 0.04f, 0.4f, 0.6f, 0.2f, 0f, 0.25f, false, MedicationType.AntiNausea),
                 IllnessType.DiaperRash => ("Diaper Rash", 14, 0.03f, 0.3f, 0.4f, 0.8f, 0f, 0.2f, false, MedicationType.Painkiller),
