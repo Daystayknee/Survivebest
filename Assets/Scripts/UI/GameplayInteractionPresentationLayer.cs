@@ -326,29 +326,6 @@ namespace Survivebest.UI
                 }
             }
 
-            if (worldClock != null)
-            {
-                if (worldClock.Hour >= 20) suggestions.Add($"Tonight idea: {LifeActivityCatalog.PickNightlifeActivity()}");
-                if (worldClock.Hour >= 9 && worldClock.Hour <= 18) suggestions.Add($"Adult errand: {LifeActivityCatalog.PickAdultErrand()}");
-            }
-
-            suggestions.Add($"Modern life: {LifeActivityCatalog.PickCreatorEconomyActivity()}");
-            suggestions.Add($"Relationship beat: {LifeActivityCatalog.PickDatingActivity()}");
-            suggestions.Add($"Reset option: {LifeActivityCatalog.PickSelfCareActivity()}");
-            suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
-            suggestions.Add($"Phone/social beat: {LifeActivityCatalog.PickSocialFeedActivity()}");
-            suggestions.Add($"Home glow-up: {LifeActivityCatalog.PickHomeUpgradeProject()}");
-            suggestions.Add(BuildScreenMoodSummary());
-
-            if (lifestyleBehaviorSystem != null)
-            {
-                List<string> lifeHooks = lifestyleBehaviorSystem.BuildLifestyleHooks(4);
-                for (int i = 0; i < lifeHooks.Count; i++)
-                {
-                    suggestions.Add(lifeHooks[i]);
-                }
-            }
-
             if (personalityDecisionSystem != null)
             {
                 int seed = BuildSuggestionSeed(active);

@@ -98,6 +98,63 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void LifestyleBehaviorSystem_RefreshDynamicGoals_RetargetsUnpinnedGoalsFromNeeds()
+        {
+            GameObject root = new GameObject("LifestyleDynamicGoals");
+            LifestyleBehaviorSystem lifestyle = root.AddComponent<LifestyleBehaviorSystem>();
+            Needs.NeedsSystem needs = root.AddComponent<Needs.NeedsSystem>();
+
+            typeof(LifestyleBehaviorSystem).GetField("needsSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(lifestyle, needs);
+
+            needs.ModifyEnergy(-80f);
+            needs.RestoreHunger(-70f);
+            needs.ModifyHygiene(-70f);
+
+            lifestyle.EnsureModernAdultGoals();
+            lifestyle.RefreshDynamicGoals();
+
+            var activeGoals = (List<PersonalGoal>)typeof(LifestyleBehaviorSystem)
+                .GetField("activeGoals", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.GetValue(lifestyle);
+
+            string combined = string.Join(" | ", activeGoals.ConvertAll(goal => goal.Description));
+
+            StringAssert.Contains("recovery block", combined);
+            StringAssert.Contains("food and hydration", combined);
+            StringAssert.Contains("hygiene and presentation", combined);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void LifestyleBehaviorSystem_RefreshDynamicGoals_RespectsPinnedGoals()
+        {
+            GameObject root = new GameObject("LifestylePinnedGoals");
+            LifestyleBehaviorSystem lifestyle = root.AddComponent<LifestyleBehaviorSystem>();
+            Needs.NeedsSystem needs = root.AddComponent<Needs.NeedsSystem>();
+
+            typeof(LifestyleBehaviorSystem).GetField("needsSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(lifestyle, needs);
+
+            lifestyle.EnsureModernAdultGoals();
+            var activeGoals = (List<PersonalGoal>)typeof(LifestyleBehaviorSystem)
+                .GetField("activeGoals", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.GetValue(lifestyle);
+
+            PersonalGoal pinnedGoal = activeGoals[0];
+            string originalDescription = pinnedGoal.Description;
+            lifestyle.PinGoal(pinnedGoal.GoalId, true);
+
+            needs.ModifyEnergy(-80f);
+            needs.RestoreHunger(-70f);
+            lifestyle.RefreshDynamicGoals();
+
+            Assert.AreEqual(originalDescription, pinnedGoal.Description);
+            Assert.IsTrue(pinnedGoal.IsPinned);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
         public void NpcLifeAIGuideSystem_BuildChatSuggestions_IncludesAdultModernTopics()
         {
             GameObject root = new GameObject("NpcGuide");
