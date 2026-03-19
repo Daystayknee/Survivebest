@@ -173,42 +173,140 @@ namespace Survivebest.UI
 
         private List<WorldAreaTemplate> BuildCustomTemplates(float lawStrict, float violence, float policeFunding, float prisonReform, float healthcare)
         {
-            return new List<WorldAreaTemplate>
-            {
-                CreateTemplate("Home District", LocationTheme.Residential, lawStrict * 0.7f, violence * 0.7f, policeFunding, prisonReform, healthcare),
-                CreateTemplate(ResolveBiomeAreaName(), settings.BiomeTheme, lawStrict * 0.35f, violence * (settings.WildlifeAggressive ? 1f : 0.65f), policeFunding * 0.7f, prisonReform, healthcare * 0.75f),
-                CreateTemplate(ResolveCommerceAreaName(), LocationTheme.StoreInterior, lawStrict * 0.9f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.9f),
-                CreateTemplate("Corner Cafe", LocationTheme.StoreInterior, lawStrict * 0.82f, violence * 0.72f, policeFunding * 0.92f, prisonReform, healthcare * 0.9f),
-                CreateTemplate(ResolveWorkplaceAreaName(), LocationTheme.Workplace, lawStrict * 0.85f, violence * 0.85f, policeFunding, prisonReform * 0.9f, healthcare * 0.85f),
-                CreateTemplate("General Hospital", LocationTheme.Hospital, lawStrict, violence, policeFunding * 0.9f, prisonReform, Mathf.Max(healthcare, 0.7f)),
-                CreateTemplate("Civic Hall", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.95f, policeFunding, prisonReform, healthcare),
-                CreateTemplate("Public Library", LocationTheme.Civic, lawStrict * 0.88f, violence * 0.7f, policeFunding * 0.85f, prisonReform, healthcare),
-                CreateTemplate("Community Park", LocationTheme.Nature, lawStrict * 0.42f, violence * 0.48f, policeFunding * 0.7f, prisonReform, healthcare * 0.75f)
-            };
+            List<WorldAreaTemplate> templates = new();
+            AddResidentialHomes(templates, useUsaNaming: false, lawStrict, violence, policeFunding, prisonReform, healthcare);
+            templates.Add(CreateTemplate(ResolveBiomeAreaName(), settings.BiomeTheme, lawStrict * 0.35f, violence * (settings.WildlifeAggressive ? 1f : 0.65f), policeFunding * 0.7f, prisonReform, healthcare * 0.75f));
+            templates.Add(CreateTemplate(ResolveCommerceAreaName(), LocationTheme.StoreInterior, lawStrict * 0.9f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.9f));
+            templates.Add(CreateTemplate("Corner Cafe", LocationTheme.StoreInterior, lawStrict * 0.82f, violence * 0.72f, policeFunding * 0.92f, prisonReform, healthcare * 0.9f));
+            templates.Add(CreateTemplate(ResolveWorkplaceAreaName(), LocationTheme.Workplace, lawStrict * 0.85f, violence * 0.85f, policeFunding, prisonReform * 0.9f, healthcare * 0.85f));
+            templates.Add(CreateTemplate("General Hospital", LocationTheme.Hospital, lawStrict, violence, policeFunding * 0.9f, prisonReform, Mathf.Max(healthcare, 0.7f)));
+            templates.Add(CreateTemplate("Civic Hall", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.95f, policeFunding, prisonReform, healthcare));
+            templates.Add(CreateTemplate("Public Library", LocationTheme.Civic, lawStrict * 0.88f, violence * 0.7f, policeFunding * 0.85f, prisonReform, healthcare));
+            templates.Add(CreateTemplate("Community Park", LocationTheme.Nature, lawStrict * 0.42f, violence * 0.48f, policeFunding * 0.7f, prisonReform, healthcare * 0.75f));
+            return templates;
         }
 
         private List<WorldAreaTemplate> BuildUsaCommonTemplates(float lawStrict, float violence, float policeFunding, float prisonReform, float healthcare)
         {
-            return new List<WorldAreaTemplate>
+            List<WorldAreaTemplate> templates = new();
+            AddResidentialHomes(templates, useUsaNaming: true, lawStrict, violence, policeFunding, prisonReform, healthcare);
+            templates.Add(CreateTemplate(ResolveBiomeAreaName(), settings.BiomeTheme, lawStrict * 0.35f, violence * (settings.WildlifeAggressive ? 1f : 0.65f), policeFunding * 0.7f, prisonReform, healthcare * 0.75f));
+            templates.Add(CreateTemplate("Downtown Grocery", LocationTheme.StoreInterior, lawStrict * 0.9f, violence * 0.78f, policeFunding, prisonReform, healthcare * 0.9f));
+            templates.Add(CreateTemplate("City Diner", LocationTheme.StoreInterior, lawStrict * 0.82f, violence * 0.74f, policeFunding * 0.9f, prisonReform, healthcare * 0.9f));
+            templates.Add(CreateTemplate("Cinema Arcade", LocationTheme.StoreInterior, lawStrict * 0.8f, violence * 0.7f, policeFunding * 0.88f, prisonReform, healthcare * 0.86f));
+            templates.Add(CreateTemplate("Auto Garage", LocationTheme.Workplace, lawStrict * 0.75f, violence * 0.75f, policeFunding, prisonReform * 0.9f, healthcare * 0.82f));
+            templates.Add(CreateTemplate("Tech Office", LocationTheme.Workplace, lawStrict * 0.88f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.88f));
+            templates.Add(CreateTemplate("Warehouse Hub", LocationTheme.Workplace, lawStrict * 0.8f, violence * 0.82f, policeFunding, prisonReform * 0.85f, healthcare * 0.8f));
+            templates.Add(CreateTemplate("General Hospital", LocationTheme.Hospital, lawStrict, violence, policeFunding * 0.9f, prisonReform, Mathf.Max(healthcare, 0.7f)));
+            templates.Add(CreateTemplate("Elementary School", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.9f, policeFunding, prisonReform, healthcare));
+            templates.Add(CreateTemplate("Community College", LocationTheme.Civic, lawStrict * 0.92f, violence * 0.87f, policeFunding, prisonReform, healthcare));
+            templates.Add(CreateTemplate("Public Library", LocationTheme.Civic, lawStrict * 0.87f, violence * 0.72f, policeFunding * 0.82f, prisonReform, healthcare));
+            templates.Add(CreateTemplate("Police Precinct", LocationTheme.Civic, lawStrict, violence, Mathf.Max(policeFunding, 0.65f), prisonReform, healthcare * 0.85f));
+            templates.Add(CreateTemplate("Fire Station", LocationTheme.Civic, lawStrict * 0.97f, violence * 0.9f, policeFunding, prisonReform, healthcare));
+            templates.Add(CreateTemplate("Post Office", LocationTheme.Civic, lawStrict * 0.88f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.9f));
+            templates.Add(CreateTemplate("Construction Yard", settings.IncludeIndustrialZone ? LocationTheme.Workplace : LocationTheme.Civic, lawStrict * 0.7f, violence * 0.85f, policeFunding, prisonReform * 0.8f, healthcare * 0.8f));
+            templates.Add(CreateTemplate("Community Park", LocationTheme.Nature, lawStrict * 0.4f, violence * 0.46f, policeFunding * 0.72f, prisonReform, healthcare * 0.72f));
+            return templates;
+        }
+
+        private void AddResidentialHomes(List<WorldAreaTemplate> templates, bool useUsaNaming, float lawStrict, float violence, float policeFunding, float prisonReform, float healthcare)
+        {
+            System.Random random = BuildWorldRandom(11);
+            int homeCount = settings.SettlementDensity switch
             {
-                CreateTemplate("Suburban Homes", LocationTheme.Residential, lawStrict * 0.65f, violence * 0.6f, policeFunding * 0.9f, prisonReform, healthcare),
-                CreateTemplate(ResolveBiomeAreaName(), settings.BiomeTheme, lawStrict * 0.35f, violence * (settings.WildlifeAggressive ? 1f : 0.65f), policeFunding * 0.7f, prisonReform, healthcare * 0.75f),
-                CreateTemplate("Downtown Grocery", LocationTheme.StoreInterior, lawStrict * 0.9f, violence * 0.78f, policeFunding, prisonReform, healthcare * 0.9f),
-                CreateTemplate("City Diner", LocationTheme.StoreInterior, lawStrict * 0.82f, violence * 0.74f, policeFunding * 0.9f, prisonReform, healthcare * 0.9f),
-                CreateTemplate("Cinema Arcade", LocationTheme.StoreInterior, lawStrict * 0.8f, violence * 0.7f, policeFunding * 0.88f, prisonReform, healthcare * 0.86f),
-                CreateTemplate("Auto Garage", LocationTheme.Workplace, lawStrict * 0.75f, violence * 0.75f, policeFunding, prisonReform * 0.9f, healthcare * 0.82f),
-                CreateTemplate("Tech Office", LocationTheme.Workplace, lawStrict * 0.88f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.88f),
-                CreateTemplate("Warehouse Hub", LocationTheme.Workplace, lawStrict * 0.8f, violence * 0.82f, policeFunding, prisonReform * 0.85f, healthcare * 0.8f),
-                CreateTemplate("General Hospital", LocationTheme.Hospital, lawStrict, violence, policeFunding * 0.9f, prisonReform, Mathf.Max(healthcare, 0.7f)),
-                CreateTemplate("Elementary School", LocationTheme.Civic, lawStrict * 0.95f, violence * 0.9f, policeFunding, prisonReform, healthcare),
-                CreateTemplate("Community College", LocationTheme.Civic, lawStrict * 0.92f, violence * 0.87f, policeFunding, prisonReform, healthcare),
-                CreateTemplate("Public Library", LocationTheme.Civic, lawStrict * 0.87f, violence * 0.72f, policeFunding * 0.82f, prisonReform, healthcare),
-                CreateTemplate("Police Precinct", LocationTheme.Civic, lawStrict, violence, Mathf.Max(policeFunding, 0.65f), prisonReform, healthcare * 0.85f),
-                CreateTemplate("Fire Station", LocationTheme.Civic, lawStrict * 0.97f, violence * 0.9f, policeFunding, prisonReform, healthcare),
-                CreateTemplate("Post Office", LocationTheme.Civic, lawStrict * 0.88f, violence * 0.8f, policeFunding, prisonReform, healthcare * 0.9f),
-                CreateTemplate("Construction Yard", settings.IncludeIndustrialZone ? LocationTheme.Workplace : LocationTheme.Civic, lawStrict * 0.7f, violence * 0.85f, policeFunding, prisonReform * 0.8f, healthcare * 0.8f),
-                CreateTemplate("Community Park", LocationTheme.Nature, lawStrict * 0.4f, violence * 0.46f, policeFunding * 0.72f, prisonReform, healthcare * 0.72f)
+                SettlementDensity.Hamlet => 2,
+                SettlementDensity.Town => 3,
+                _ => 4
             };
+
+            List<string> homeNames = BuildResidentialNamePool(useUsaNaming);
+            for (int i = 0; i < homeCount; i++)
+            {
+                string homeName = DrawUniqueName(homeNames, templates, random, i == 0 ? ResolvePrimaryHomeAreaName(useUsaNaming) : null);
+                float safetyBias = 0.82f - i * 0.04f;
+                templates.Add(CreateTemplate(homeName, LocationTheme.Residential, lawStrict * safetyBias, violence * 0.58f, policeFunding * 0.92f, prisonReform, healthcare));
+            }
+        }
+
+        private List<string> BuildResidentialNamePool(bool useUsaNaming)
+        {
+            List<string> names = new();
+            if (useUsaNaming)
+            {
+                names.AddRange(new[] { "Suburban Homes", "Starter Ranch Homes", "Cul-de-Sac Bungalows", "Maple Townhouses", "Garden Apartments", "Creekside Duplexes", "Brick Row Homes", "Hillview Condos" });
+            }
+            else
+            {
+                names.AddRange(new[] { "Home District", "Settler Cottages", "Lantern Residences", "Stonekeep Flats", "Forest Edge Cabins", "Skyline Lofts", "River Quarter Homes", "Harborview Apartments" });
+            }
+
+            switch (settings.StartingOrigin)
+            {
+                case StartingOrigin.LoneSurvivor:
+                    names.Add(settings.BiomeTheme == LocationTheme.Nature ? "Lookout Cabin" : "Solo Studio Loft");
+                    break;
+                case StartingOrigin.Settler:
+                    names.Add(settings.EconomyFocus == EconomyFocus.Rural ? "Homestead Row" : "Founders Homes");
+                    break;
+                case StartingOrigin.Noble:
+                    names.Add(settings.IncludeWaterfront ? "Waterfront Manor" : "Heirloom Estate");
+                    break;
+                case StartingOrigin.Explorer:
+                    names.Add(settings.BiomeTheme == LocationTheme.Nature ? "Trailhead Cabins" : "Wayfarer Flats");
+                    break;
+            }
+
+            if (settings.EconomyFocus == EconomyFocus.Industrial) names.Add("Railworker Homes");
+            if (settings.EconomyFocus == EconomyFocus.Tourism) names.Add("Guesthouse Row");
+            if (settings.EconomyFocus == EconomyFocus.Rural) names.Add("Farmstead Homes");
+            if (settings.GovernmentStyle == GovernmentStyle.WelfareFocused) names.Add("Co-op Housing");
+            if (settings.GovernmentStyle == GovernmentStyle.SecurityFocused) names.Add("Patrol View Homes");
+            if (settings.IncludeWaterfront) names.Add("Mariner Residences");
+            return names;
+        }
+
+        private string ResolvePrimaryHomeAreaName(bool useUsaNaming)
+        {
+            return settings.StartingOrigin switch
+            {
+                StartingOrigin.LoneSurvivor => settings.BiomeTheme == LocationTheme.Nature ? "Lookout Cabin" : "Solo Studio Loft",
+                StartingOrigin.Settler => useUsaNaming ? "Founders Homes" : "Settler Cottages",
+                StartingOrigin.Noble => settings.IncludeWaterfront ? "Waterfront Manor" : "Heirloom Estate",
+                StartingOrigin.Explorer => settings.BiomeTheme == LocationTheme.Nature ? "Trailhead Cabins" : "Wayfarer Flats",
+                _ => useUsaNaming ? "Suburban Homes" : "Home District"
+            };
+        }
+
+        private string DrawUniqueName(List<string> pool, List<WorldAreaTemplate> existingTemplates, System.Random random, string preferredName)
+        {
+            if (!string.IsNullOrWhiteSpace(preferredName) && !ContainsExactArea(existingTemplates, preferredName))
+            {
+                return preferredName;
+            }
+
+            for (int attempt = 0; attempt < pool.Count; attempt++)
+            {
+                string candidate = pool[random.Next(pool.Count)];
+                if (!ContainsExactArea(existingTemplates, candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return $"Residence {existingTemplates.Count + 1}";
+        }
+
+        private System.Random BuildWorldRandom(int salt)
+        {
+            int seed = settings.MasterSeed;
+            seed = seed * 31 + (int)settings.SettlementDensity * 17;
+            seed = seed * 31 + (int)settings.EconomyFocus * 23;
+            seed = seed * 31 + (int)settings.GovernmentStyle * 29;
+            seed = seed * 31 + (int)settings.StartingOrigin * 13;
+            seed = seed * 31 + (settings.IncludeWaterfront ? 1 : 0);
+            seed = seed * 31 + (settings.IncludeTransitHub ? 1 : 0);
+            seed = seed * 31 + salt;
+            return new System.Random(seed);
         }
 
         private void AddDensityDrivenDistricts(List<WorldAreaTemplate> templates, float lawStrict, float violence, float policeFunding, float prisonReform, float healthcare)
@@ -299,6 +397,20 @@ namespace Survivebest.UI
             {
                 WorldAreaTemplate template = templates[i];
                 if (template != null && template.AreaName.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsExactArea(List<WorldAreaTemplate> templates, string areaName)
+        {
+            for (int i = 0; i < templates.Count; i++)
+            {
+                WorldAreaTemplate template = templates[i];
+                if (template != null && string.Equals(template.AreaName, areaName, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

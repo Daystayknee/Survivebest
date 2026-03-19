@@ -201,6 +201,8 @@ namespace Survivebest.World
             List<RouteEdge> routes = new();
             Dictionary<string, string> districtByIdentity = new();
             List<string> anchorLotIds = new();
+            List<string> homeLotIds = new();
+            System.Random layoutRandom = BuildLayoutRandom();
             string transitHubLotId = null;
 
             for (int i = 0; i < templates.Count; i++)
@@ -240,17 +242,22 @@ namespace Survivebest.World
                     anchorLotIds.Add(lotId);
                 }
 
+                if (zone == ZoneType.Residential)
+                {
+                    homeLotIds.Add(lotId);
+                }
+
                 if (tags.Contains("transit"))
                 {
                     transitHubLotId = lotId;
                 }
             }
 
-            BuildRoutes(lots, routes, anchorLotIds, transitHubLotId);
+            BuildRoutes(lots, routes, anchorLotIds, homeLotIds, transitHubLotId, layoutRandom);
             townSimulationSystem.SetTownLayout(districts, lots, routes);
         }
 
-        private static void BuildRoutes(List<LotDefinition> lots, List<RouteEdge> routes, List<string> anchorLotIds, string transitHubLotId)
+        private static void BuildRoutes(List<LotDefinition> lots, List<RouteEdge> routes, List<string> anchorLotIds, List<string> homeLotIds, string transitHubLotId, System.Random layoutRandom)
         {
             HashSet<string> routeKeys = new(StringComparer.OrdinalIgnoreCase);
             Dictionary<string, List<LotDefinition>> lotsByDistrict = new(StringComparer.OrdinalIgnoreCase);
@@ -274,9 +281,11 @@ namespace Survivebest.World
 
             foreach (List<LotDefinition> districtLots in lotsByDistrict.Values)
             {
+                ShuffleLots(districtLots, layoutRandom);
                 for (int i = 0; i < districtLots.Count - 1; i++)
                 {
-                    AddBidirectionalRoute(routes, routeKeys, districtLots[i], districtLots[i + 1], 0.75f + i * 0.12f);
+                    float districtCost = 0.72f + i * 0.12f + (float)layoutRandom.NextDouble() * 0.09f;
+                    AddBidirectionalRoute(routes, routeKeys, districtLots[i], districtLots[i + 1], districtCost);
                 }
             }
 
@@ -284,7 +293,14 @@ namespace Survivebest.World
             {
                 LotDefinition previous = lots.Find(x => x != null && x.LotId == anchorLotIds[i - 1]);
                 LotDefinition current = lots.Find(x => x != null && x.LotId == anchorLotIds[i]);
-                AddBidirectionalRoute(routes, routeKeys, previous, current, 0.95f + i * 0.15f);
+                AddBidirectionalRoute(routes, routeKeys, previous, current, 0.9f + i * 0.14f + (float)layoutRandom.NextDouble() * 0.08f);
+            }
+
+            for (int i = 0; i < homeLotIds.Count; i++)
+            {
+                LotDefinition home = lots.Find(x => x != null && x.LotId == homeLotIds[i]);
+                LotDefinition nearestAnchor = FindBestAnchorForLot(home, lots, anchorLotIds);
+                AddBidirectionalRoute(routes, routeKeys, home, nearestAnchor, 0.62f + i * 0.05f + (float)layoutRandom.NextDouble() * 0.07f);
             }
 
             if (!string.IsNullOrWhiteSpace(transitHubLotId))
@@ -314,7 +330,37 @@ namespace Survivebest.World
                 }
 
                 LotDefinition nearbyAnchor = FindBestAnchorForLot(lot, lots, anchorLotIds);
-                AddBidirectionalRoute(routes, routeKeys, lot, nearbyAnchor, 0.72f + i * 0.04f);
+                AddBidirectionalRoute(routes, routeKeys, lot, nearbyAnchor, 0.72f + i * 0.04f + (float)layoutRandom.NextDouble() * 0.08f);
+            }
+
+            AddRandomCrossDistrictLinks(lots, routes, routeKeys, layoutRandom);
+        }
+
+        private static void AddRandomCrossDistrictLinks(List<LotDefinition> lots, List<RouteEdge> routes, HashSet<string> routeKeys, System.Random layoutRandom)
+        {
+            int randomLinks = Mathf.Clamp(lots.Count / 5, 2, 6);
+            for (int i = 0; i < randomLinks; i++)
+            {
+                LotDefinition from = lots[layoutRandom.Next(lots.Count)];
+                LotDefinition to = lots[layoutRandom.Next(lots.Count)];
+                if (from == null || to == null || string.Equals(from.DistrictId, to.DistrictId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                float cost = 0.88f + Mathf.Abs(i - randomLinks * 0.5f) * 0.1f + (float)layoutRandom.NextDouble() * 0.12f;
+                AddBidirectionalRoute(routes, routeKeys, from, to, cost);
+            }
+        }
+
+        private static void ShuffleLots(List<LotDefinition> lots, System.Random layoutRandom)
+        {
+            for (int i = lots.Count - 1; i > 0; i--)
+            {
+                int swapIndex = layoutRandom.Next(i + 1);
+                LotDefinition temp = lots[i];
+                lots[i] = lots[swapIndex];
+                lots[swapIndex] = temp;
             }
         }
 
@@ -447,6 +493,16 @@ namespace Survivebest.World
             return $"lot_{index}_{normalized}";
         }
 
+        private System.Random BuildLayoutRandom()
+        {
+            int seed = lastGeneratedSummary.MasterSeed;
+            seed = seed * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(lastGeneratedSummary.RegionId ?? string.Empty);
+            seed = seed * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(lastGeneratedSummary.SettlementDensity ?? string.Empty);
+            seed = seed * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(lastGeneratedSummary.EconomyFocus ?? string.Empty);
+            seed = seed * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(lastGeneratedSummary.GovernmentStyle ?? string.Empty);
+            return new System.Random(seed);
+        }
+
         private static ZoneType MapZone(WorldAreaTemplate template)
         {
             string areaName = template.AreaName.Trim().ToLowerInvariant();
@@ -519,6 +575,7 @@ namespace Survivebest.World
         {
             string areaName = template.AreaName.Trim().ToLowerInvariant();
             List<string> tags = new() { template.Theme.ToString().ToLowerInvariant(), districtIdentity, zone.ToString().ToLowerInvariant() };
+            AppendHomeTags(tags, areaName);
             if (template.HealthcareCoverage > 0.65f) tags.Add("well_serviced");
             if (template.PoliceFunding > 0.7f) tags.Add("patrolled");
             if (template.PrisonReform > 0.6f) tags.Add("restorative");
@@ -529,6 +586,14 @@ namespace Survivebest.World
             if (areaName.Contains("waterfront") || areaName.Contains("pier") || areaName.Contains("boardwalk")) tags.Add("waterfront");
             if (areaName.Contains("library") || areaName.Contains("hall") || areaName.Contains("plaza") || areaName.Contains("square") || areaName.Contains("amphitheater")) tags.Add("landmark");
             return tags;
+        }
+
+        private static void AppendHomeTags(List<string> tags, string areaName)
+        {
+            if (areaName.Contains("cabin") || areaName.Contains("farmstead") || areaName.Contains("homestead")) tags.Add("rural_home");
+            if (areaName.Contains("manor") || areaName.Contains("estate")) tags.Add("luxury_home");
+            if (areaName.Contains("apartments") || areaName.Contains("flats") || areaName.Contains("condos") || areaName.Contains("loft")) tags.Add("urban_home");
+            if (areaName.Contains("starter") || areaName.Contains("bungalow") || areaName.Contains("cottages")) tags.Add("starter_home");
         }
 
         private static bool IsAnchorLocation(WorldAreaTemplate template, ZoneType zone)

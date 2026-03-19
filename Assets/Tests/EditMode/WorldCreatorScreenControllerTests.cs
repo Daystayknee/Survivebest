@@ -194,6 +194,50 @@ namespace Survivebest.Tests.EditMode
 
 
         [Test]
+        public void GenerateWorld_WorldChoicesCreateDifferentHomesToLiveIn()
+        {
+            GameObject root = new GameObject("WorldCreatorHomes");
+            WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
+            WorldCreatorManager worldCreatorManager = root.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem townSimulationSystem = root.AddComponent<TownSimulationSystem>();
+
+            typeof(WorldCreatorScreenController)
+                .GetField("worldCreatorManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(controller, worldCreatorManager);
+            typeof(WorldCreatorManager)
+                .GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(worldCreatorManager, townSimulationSystem);
+
+            controller.Settings.MasterSeed = 8080;
+            controller.Settings.UseUsaCommonPlaces = false;
+            controller.Settings.StartingOrigin = StartingOrigin.Noble;
+            controller.Settings.IncludeWaterfront = true;
+            controller.Settings.SettlementDensity = SettlementDensity.City;
+            controller.GenerateWorld();
+
+            Assert.IsTrue(ContainsLotNamed(townSimulationSystem.Lots, "Waterfront Manor"));
+            Assert.IsTrue(ContainsTagOnLot(townSimulationSystem.Lots, "Waterfront Manor", "luxury_home"));
+            Assert.GreaterOrEqual(CountLotsByZone(townSimulationSystem.Lots, ZoneType.Residential), 4);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void GenerateWorld_MasterSeedChangesRouteLayoutDeterministically()
+        {
+            (TownSimulationSystem firstTown, GameObject firstRoot) = GenerateTownLayout(1201, StartingOrigin.Settler, EconomyFocus.Service, SettlementDensity.City, includeTransitHub: true, includeWaterfront: false, useUsaCommonPlaces: true);
+            (TownSimulationSystem secondTown, GameObject secondRoot) = GenerateTownLayout(1202, StartingOrigin.Settler, EconomyFocus.Service, SettlementDensity.City, includeTransitHub: true, includeWaterfront: false, useUsaCommonPlaces: true);
+
+            string firstSignature = BuildRouteSignature(firstTown.RouteGraph);
+            string secondSignature = BuildRouteSignature(secondTown.RouteGraph);
+            Assert.AreNotEqual(firstSignature, secondSignature);
+            Assert.AreNotEqual(BuildResidentialSignature(firstTown.Lots), BuildResidentialSignature(secondTown.Lots));
+
+            Object.DestroyImmediate(firstRoot);
+            Object.DestroyImmediate(secondRoot);
+        }
+
+        [Test]
         public void GenerateWorld_TourismSettingsCreateNightlifeLandmarksAndTransitLinks()
         {
             GameObject root = new GameObject("WorldCreatorInterestingTownLayout");
@@ -227,6 +271,78 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(float.IsPositiveInfinity(townSimulationSystem.GetRouteCost(transitLot.LotId, entertainmentLot.LotId)));
 
             Object.DestroyImmediate(root);
+        }
+
+        private static (TownSimulationSystem town, GameObject root) GenerateTownLayout(int masterSeed, StartingOrigin origin, EconomyFocus economyFocus, SettlementDensity density, bool includeTransitHub, bool includeWaterfront, bool useUsaCommonPlaces)
+        {
+            GameObject root = new GameObject($"WorldCreatorSeed_{masterSeed}");
+            WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
+            WorldCreatorManager worldCreatorManager = root.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem townSimulationSystem = root.AddComponent<TownSimulationSystem>();
+
+            typeof(WorldCreatorScreenController)
+                .GetField("worldCreatorManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(controller, worldCreatorManager);
+            typeof(WorldCreatorManager)
+                .GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(worldCreatorManager, townSimulationSystem);
+
+            controller.Settings.MasterSeed = masterSeed;
+            controller.Settings.StartingOrigin = origin;
+            controller.Settings.EconomyFocus = economyFocus;
+            controller.Settings.SettlementDensity = density;
+            controller.Settings.IncludeTransitHub = includeTransitHub;
+            controller.Settings.IncludeWaterfront = includeWaterfront;
+            controller.Settings.UseUsaCommonPlaces = useUsaCommonPlaces;
+            controller.GenerateWorld();
+            return (townSimulationSystem, root);
+        }
+
+        private static string BuildRouteSignature(IReadOnlyList<RouteEdge> routes)
+        {
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            for (int i = 0; i < routes.Count; i++)
+            {
+                RouteEdge route = routes[i];
+                builder.Append(route.FromLotId).Append('>').Append(route.ToLotId).Append('|');
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildResidentialSignature(IReadOnlyList<LotDefinition> lots)
+        {
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            for (int i = 0; i < lots.Count; i++)
+            {
+                LotDefinition lot = lots[i];
+                if (lot != null && lot.Zone == ZoneType.Residential)
+                {
+                    builder.Append(lot.DisplayName).Append('|');
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        private static int CountLotsByZone(IReadOnlyList<LotDefinition> lots, ZoneType zone)
+        {
+            int count = 0;
+            for (int i = 0; i < lots.Count; i++)
+            {
+                if (lots[i] != null && lots[i].Zone == zone)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool ContainsTagOnLot(IReadOnlyList<LotDefinition> lots, string displayName, string tag)
+        {
+            LotDefinition lot = FindLotNamed(lots, displayName);
+            return lot != null && lot.Tags != null && lot.Tags.Contains(tag);
         }
 
         private static bool ContainsLotNamed(IReadOnlyList<LotDefinition> lots, string displayName)
