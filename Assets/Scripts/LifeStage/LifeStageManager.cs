@@ -22,10 +22,12 @@ namespace Survivebest.LifeStage
         [SerializeField, Min(1)] private int adultAge = 25;
         [SerializeField, Min(1)] private int olderAdultAge = 55;
         [SerializeField, Min(1)] private int elderAge = 70;
+        [SerializeField, Min(0f)] private float biologicalAgeProgress;
 
         public event Action<CharacterCore, int, Core.LifeStage> OnLifeStageChanged;
 
         public int AgeYears { get; private set; }
+        public float BiologicalAgeYears => biologicalAgeProgress;
 
         private void OnEnable()
         {
@@ -49,7 +51,12 @@ namespace Survivebest.LifeStage
 
         public void AgeUp()
         {
-            AgeYears++;
+            float increment = owner != null ? owner.GetSpeciesAgingRateMultiplier() : 1f;
+            biologicalAgeProgress = Mathf.Max(biologicalAgeProgress, AgeYears);
+            biologicalAgeProgress += increment;
+
+            int priorAge = AgeYears;
+            AgeYears = Mathf.FloorToInt(biologicalAgeProgress + 0.0001f);
             Core.LifeStage next = DetermineLifeStage(AgeYears);
 
             if (owner != null && next != owner.CurrentLifeStage)
@@ -58,9 +65,13 @@ namespace Survivebest.LifeStage
                 bodyCompositionSystem?.RecalculateForLifeStage(next);
                 OnLifeStageChanged?.Invoke(owner, AgeYears, next);
             }
-            else if (owner != null && next == owner.CurrentLifeStage)
+            else if (owner != null)
             {
                 bodyCompositionSystem?.RecalculateForLifeStage(next);
+                if (AgeYears != priorAge)
+                {
+                    OnLifeStageChanged?.Invoke(owner, AgeYears, next);
+                }
             }
         }
 
@@ -77,9 +88,13 @@ namespace Survivebest.LifeStage
                 return;
             }
 
-            if (owner.CurrentLifeStage == Core.LifeStage.Elder)
+            if (owner.IsHuman && owner.CurrentLifeStage == Core.LifeStage.Elder)
             {
                 healthSystem.Damage(2f);
+            }
+            else if (owner.IsVampire && worldClock != null && worldClock.Hour >= 20)
+            {
+                healthSystem.ApplyRestorativeDarkness(1f);
             }
         }
 
