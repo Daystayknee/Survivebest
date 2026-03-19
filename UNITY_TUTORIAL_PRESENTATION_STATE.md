@@ -1,6 +1,7 @@
 # Unity Tutorial - Using the Presentation State System
 
 This tutorial walks through the actual Unity workflow for the new presentation-state / asset-matrix system.
+It is intentionally detailed and assumes you want a hand-held setup path instead of high-level notes.
 
 Use this when you want to:
 - hook up a household/player character
@@ -48,6 +49,14 @@ It can:
 5. Name the asset:
    - `MasterAssetMatrix`
 
+### What you should see in the Inspector
+After creating it, click the asset and confirm you can see:
+- an `Entries` list
+
+If you do **not** see `Entries`, the asset was likely not created from the correct menu path.
+Delete it and recreate it from:
+- **Create -> Survivebest -> Art -> Master Asset Matrix**
+
 ### Recommended location
 - `Assets/Data/Art/MasterAssetMatrix.asset`
 
@@ -59,6 +68,20 @@ Start with only a few rows:
 - one overlay row
 
 That gives you a small debugable matrix before scaling up.
+
+### Example starter row values
+If you want a very literal first setup, add an `Entries` element with values like:
+- **System** = `Face`
+- **Region** = `Nose`
+- **TraitOrState** = `NoseBridgeHeight`
+- **VariantKey** = `face_nose_roman_02`
+- **TriggerSource** = `PhenotypeResolver`
+- **MorphRange** = `0.70` to `0.90`
+- **LifeStage** = `Adult`
+- **Layer** = `face_mid`
+- **Palette** = `base`
+- **FileName** = `face_nose_roman_02_adult_base_highbridge.png`
+- **Enabled** = checked
 
 ---
 
@@ -76,6 +99,23 @@ The GameObject should already have:
    - `Unity Presentation State Hookup`
 4. Add it.
 
+### Recommended object structure
+For the first working version, keep it simple and put these on the **same GameObject**:
+- `CharacterCore`
+- `GeneticsSystem`
+- `UnityPresentationStateHookup`
+
+Example hierarchy:
+
+```text
+HouseholdCharacter_Root
+├─ CharacterCore
+├─ GeneticsSystem
+├─ UnityPresentationStateHookup
+├─ AppearanceManager
+└─ CharacterPortraitRenderer
+```
+
 ### Inspector setup
 Set these fields:
 - **Genetics System** -> drag the same object’s `GeneticsSystem`
@@ -83,11 +123,26 @@ Set these fields:
 - **Use Npc Profile** -> leave **off**
 - **Resolve On Enable** -> usually **on**
 
+### Exact first-time values I recommend
+- **Resolve On Enable** = `true`
+- **Auto Refresh** = `false` for the first test
+- **Refresh Interval** = leave default until you confirm manual refresh works
+
 ### What happens
 In this mode, the component uses:
 - `GeneticsSystem.ApplyDynamicPresentationState()`
 
 That means the active presentation state is resolved from the character’s current phenotype, needs, emotion, and illness read.
+
+### How to confirm it is actually working
+After entering Play Mode or using the context menu:
+- inspect the `GeneticsSystem` phenotype data
+- confirm keys like these are changing/populated:
+  - `ExpressionPresetKey`
+  - `PosturePresetKey`
+  - `IdleBehaviorKey`
+  - `HealthOverlayKey`
+  - `StateOverlayKey`
 
 ---
 
@@ -110,6 +165,25 @@ On `UnityPresentationStateHookup`:
 - **Use Npc Profile** -> **on**
 - **Npc Schedule System** -> drag the scene’s `NpcScheduleSystem`
 - **Npc Id** -> enter the matching id from the `NpcProfile`
+
+### Important: how `Npc Id` must match
+The `Npc Id` must exactly match the `NpcProfile.NpcId` value in `NpcScheduleSystem`.
+
+If the profile says:
+- `npc_farmer_01`
+
+Then the hookup field must also be:
+- `npc_farmer_01`
+
+If it says:
+- `Farmer01`
+
+Then do **not** use:
+- `farmer01`
+- `npc_farmer_01`
+- `Farmer_01`
+
+It must be exact.
 
 ### What happens
 In NPC mode the hookup:
@@ -134,6 +208,12 @@ Use this when:
 - tweaking NPC ids
 - testing an asset matrix row
 - validating a prefab before entering Play Mode
+
+### Exact click path
+1. Select the GameObject with `UnityPresentationStateHookup`
+2. In the component header, click the three-dot or context menu area
+3. Click:
+   - **Resolve Presentation State Now**
 
 ---
 
@@ -165,6 +245,17 @@ You can use:
 
 This returns the best matching matrix row for the current character life stage.
 
+### Example script usage
+If another component wants to ask the matrix what art row to use:
+
+```csharp
+AssetMatrixEntry noseEntry = hookup.ResolveAssetEntry("NoseBridgeHeight", 0.78f);
+if (noseEntry != null)
+{
+    Debug.Log(noseEntry.FileName);
+}
+```
+
 ---
 
 ## Part 8 - Recommended first test setup
@@ -179,6 +270,21 @@ Create one debug character and verify the full path before scaling up.
 5. Assign the matrix
 6. Use **Resolve Presentation State Now**
 7. Inspect the phenotype/avatar layer keys
+
+### Minimum viable scene setup
+If you want the absolute simplest possible test scene:
+
+```text
+Scene
+├─ Systems
+│  └─ GameEventHub
+└─ Character_Test
+   ├─ CharacterCore
+   ├─ GeneticsSystem
+   ├─ UnityPresentationStateHookup
+   ├─ AppearanceManager
+   └─ CharacterPortraitRenderer
+```
 
 ### Good first rows
 - `NoseBridgeHeight`
@@ -196,6 +302,8 @@ Check:
 - `GeneticsSystem` is assigned
 - the object actually has a populated phenotype
 - `Resolve On Enable` or manual resolve is being used
+- the character has already had genetics/phenotype applied
+- you are checking the correct object in the Inspector
 
 ### NPC mode does nothing
 Check:
@@ -209,6 +317,12 @@ Check:
 - the `TraitOrState` spelling matches the matrix entry
 - the `MorphRange` contains the value
 - the row’s life stage matches the character’s phenotype life stage
+
+### The hookup exists but I still see no art changes
+That usually means one of these:
+- the matrix row resolves, but no renderer is using that key yet
+- the phenotype key changes, but your portrait/body art asset is not assigned in Unity
+- the character has the resolver, but not the corresponding portrait/paper-doll art hookup
 
 ---
 
@@ -227,6 +341,11 @@ Check:
 ### Creator/debug scenes
 - add the hookup to preview characters to force refresh while authoring art
 
+### Best folder locations
+- matrix asset: `Assets/Data/Art/`
+- character prefabs: `Assets/Prefabs/Characters/`
+- debug prefab variants: `Assets/Prefabs/Debug/`
+
 ---
 
 ## Part 11 - Best practice
@@ -244,3 +363,9 @@ Then validate:
 - NPC mode resolves correctly
 
 Once that is stable, scale up to the full production matrix.
+
+## Part 12 - What to read next
+
+After this tutorial, the next useful docs are:
+- `UNITY_HOOKUP_PRESENTATION_STATE.md` for the short version
+- `UNITY_HOOKUP_RPG_REWARDS.md` if you also want level-up / goal-complete / achievement popups
