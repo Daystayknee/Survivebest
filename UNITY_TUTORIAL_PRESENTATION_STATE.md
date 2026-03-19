@@ -83,6 +83,43 @@ If you want a very literal first setup, add an `Entries` element with values lik
 - **FileName** = `face_nose_roman_02_adult_base_highbridge.png`
 - **Enabled** = checked
 
+### Add three more rows before your first test
+For a more realistic smoke test, add at least these additional rows:
+
+1. a mouth row such as:
+   - **TraitOrState** = `LipFullness`
+   - **MorphRange** = `0.55` to `0.80`
+   - **VariantKey** = `face_lips_full_01`
+2. a body row such as:
+   - **TraitOrState** = `BodyMass`
+   - **MorphRange** = `0.40` to `0.70`
+   - **VariantKey** = `body_medium_01`
+3. an overlay row such as:
+   - **TraitOrState** = `BruiseSeverity`
+   - **MorphRange** = `0.20` to `0.60`
+   - **VariantKey** = `overlay_bruise_light_01`
+
+That gives you enough variety to verify:
+- one facial trait
+- one body trait
+- one state/overlay lookup
+
+### How matching works
+The matrix lookup matches against:
+- `TraitOrState`
+- `MorphRange`
+- `LifeStage`
+- `Enabled`
+
+If two rows both match, the system chooses the **narrower morph range**.
+That means a more specific row can override a broader fallback row.
+
+Example:
+- Row A: `0.00` to `1.00`
+- Row B: `0.70` to `0.90`
+
+For a value of `0.78`, Row B should win because it is more specific.
+
 ---
 
 ## Part 3 - Hook up a household / player character
@@ -133,6 +170,16 @@ In this mode, the component uses:
 - `GeneticsSystem.ApplyDynamicPresentationState()`
 
 That means the active presentation state is resolved from the character’s current phenotype, needs, emotion, and illness read.
+
+### Good first smoke-test setup
+Before trying a complex prefab, use one object in a blank scene with:
+- `CharacterCore`
+- `GeneticsSystem`
+- `UnityPresentationStateHookup`
+- your assigned `MasterAssetMatrix`
+
+Avoid testing through a deep prefab chain first.
+Start with the most direct setup possible, confirm it works, then move the component onto production prefabs.
 
 ### How to confirm it is actually working
 After entering Play Mode or using the context menu:
@@ -194,6 +241,16 @@ In NPC mode the hookup:
 
 This is the important part if your NPCs are not active player characters but still need genetics/presentation logic.
 
+### First NPC test I recommend
+Create one scene-only NPC object with:
+- a valid `GeneticsSystem`
+- a `UnityPresentationStateHookup`
+- **Use Npc Profile** enabled
+- the scene `NpcScheduleSystem`
+- one known-good `Npc Id`
+
+Then trigger **Resolve Presentation State Now** and confirm the phenotype keys update before you try multiple background NPCs at once.
+
 ---
 
 ## Part 5 - Force a refresh in the editor
@@ -230,6 +287,14 @@ If you want the component to keep updating while running:
 - **background NPCs**: longer interval
 - **stable prefabs**: leave off unless needed
 
+### Practical interval guidance
+Try these starting values:
+- `0.5` to `1.0` seconds for fast debug iteration
+- `2.0` to `5.0` seconds for background NPC monitoring
+- off for prefabs that only need one-shot setup
+
+If you see unnecessary churn, increase the interval before changing any code.
+
 ---
 
 ## Part 7 - Query the asset matrix in code
@@ -256,7 +321,96 @@ if (noseEntry != null)
 }
 ```
 
+### Another example for state overlays
+```csharp
+AssetMatrixEntry bruiseEntry = hookup.ResolveAssetEntry("BruiseSeverity", 0.45f);
+if (bruiseEntry != null)
+{
+    Debug.Log($"Overlay variant: {bruiseEntry.VariantKey}");
+}
+```
+
 ---
+
+## Part 8 - A complete first-time scene recipe
+
+If you want the shortest path to a working test scene, do this in order:
+
+1. Create a new debug scene
+2. Add one root object named `PresentationDebugCharacter`
+3. Add:
+   - `CharacterCore`
+   - `GeneticsSystem`
+   - `UnityPresentationStateHookup`
+4. Create `MasterAssetMatrix.asset`
+5. Add at least four rows:
+   - `NoseBridgeHeight`
+   - `LipFullness`
+   - `BodyMass`
+   - `BruiseSeverity`
+6. Assign the matrix to the hookup
+7. Leave **Use Npc Profile** off
+8. Enter Play Mode
+9. Use **Resolve Presentation State Now**
+10. Inspect the phenotype/presentation keys
+
+If that works, your matrix + hookup foundation is good.
+Only after that should you move into NPC mode, creator scenes, or portrait integration.
+
+---
+
+## Part 9 - What to verify in the Inspector
+
+### On `UnityPresentationStateHookup`
+Confirm:
+- `Genetics System` is not empty
+- `Master Asset Matrix` is not empty
+- `Resolve On Enable` matches your intended workflow
+- `Auto Refresh` is off unless you are actively testing repeated resolution
+
+### On the matrix asset
+Confirm each row has:
+- the correct `TraitOrState`
+- a valid `MorphRange`
+- a `LifeStage` that matches the tested character
+- `Enabled` checked
+
+### On NPC setups
+Confirm:
+- `Use Npc Profile` is enabled
+- `Npc Schedule System` is assigned
+- `Npc Id` exactly matches the schedule system profile id
+
+---
+
+## Part 10 - Troubleshooting
+
+### The context menu runs but nothing changes
+Check:
+- `GeneticsSystem` exists on the same GameObject or is assigned manually
+- `geneticsSystem.Phenotype` is not null
+- you are looking at the phenotype/presentation keys after the refresh
+
+### Asset rows are not resolving
+Check:
+- the `TraitOrState` string matches exactly
+- the tested value is inside `MorphRange`
+- `LifeStage` matches the active character
+- the row is enabled
+
+### NPC mode always looks the same
+Check:
+- the `NpcScheduleSystem` actually returns a profile for that id
+- the profile has different stress/health/activity values
+- you are not accidentally testing a household character with **Use Npc Profile** still off
+
+### Auto refresh feels broken
+Remember:
+- it only runs while the GameObject is active
+- it only repeats if **Auto Refresh** is enabled
+- it waits based on `Refresh Interval`
+
+If you need immediate confirmation, prefer the context menu first, then enable auto refresh after the manual path works.
 
 ## Part 8 - Recommended first test setup
 
