@@ -130,6 +130,43 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void FoodDatabase_AllFoods_HavePurposeAndResolvableRecipeIngredients()
+        {
+            GameObject root = new GameObject("FoodAuditRoot");
+            IngredientCatalog catalog = root.AddComponent<IngredientCatalog>();
+            FoodDatabase database = root.AddComponent<FoodDatabase>();
+
+            MethodInfo ingredientAwake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            ingredientAwake?.Invoke(catalog, null);
+
+            for (int i = 0; i < database.Foods.Count; i++)
+            {
+                FoodItem food = database.Foods[i];
+                Assert.IsNotNull(food, $"Food entry at index {i} is null");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(food.Name), $"Food entry at index {i} has no name");
+                Assert.AreNotEqual(MealPurpose.Unspecified, food.Purpose, $"Food entry has no meal purpose: {food.Name}");
+
+                FoodRecipeDefinition recipe = database.GetRecipe(food.Name);
+                if (recipe == null)
+                {
+                    continue;
+                }
+
+                Assert.AreNotEqual(MealPurpose.Unspecified, recipe.Purpose, $"Recipe has no meal purpose: {recipe.Name}");
+                Assert.IsNotNull(recipe.IngredientRequirements, $"Recipe has null ingredients: {recipe.Name}");
+                Assert.Greater(recipe.IngredientRequirements.Count, 0, $"Recipe has no ingredients: {recipe.Name}");
+
+                for (int j = 0; j < recipe.IngredientRequirements.Count; j++)
+                {
+                    string ingredientName = recipe.IngredientRequirements[j];
+                    Assert.IsNotNull(catalog.GetIngredient(ingredientName), $"Recipe ingredient missing from catalog: {recipe.Name} -> {ingredientName}");
+                }
+            }
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
         public void RecipeSystem_Awake_SeedsRequestedMealPackRecipes_FromFoodDatabase()
         {
             GameObject root = new GameObject("FoodRecipeSeedRoot");
