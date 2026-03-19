@@ -109,8 +109,8 @@ namespace Survivebest.Society
 
             if (lawSystem != null)
             {
-                lawSystem.VoteOnSubstanceLaw(electionAreaName, SubstanceType.Weed, !voteForReform);
-                lawSystem.VoteOnSubstanceLaw(electionAreaName, SubstanceType.HardDrug, true);
+                lawSystem.VoteOnSubstanceLaw(electionAreaName, SubstanceType.Cannabis, !voteForReform);
+                lawSystem.VoteOnSubstanceLaw(electionAreaName, SubstanceType.Opioid, true);
                 lawSystem.ApplyPolicyShift(
                     electionAreaName,
                     lastOutcome.PoliceBudgetDelta,

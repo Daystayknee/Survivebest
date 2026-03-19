@@ -236,28 +236,28 @@ namespace Survivebest.UI
             switch (theme)
             {
                 case LocationTheme.Residential:
-                    packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry"));
-                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean"));
-                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel"));
-                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv"));
-                    packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote"));
-                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing"));
-                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect"));
+                    packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry", "cuddle", "hookup_talk"));
+                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean", "meal_prep"));
+                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel", "skin_care_reset"));
+                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv", "plan_outfit"));
+                    packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote", "stream_setup", "dating_app", "pay_bills"));
+                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing", "doomscroll", "livestream"));
+                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect", "therapy_journal"));
                     break;
                 case LocationTheme.Hospital:
-                    packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests"));
-                    packs.Add(BuildPack("recovery_bed", "Recovery Bed", "rest", "meditate", "call_family"));
+                    packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests", "therapy_consult", "refill_prescription"));
+                    packs.Add(BuildPack("recovery_bed", "Recovery Bed", "rest", "meditate", "call_family", "video_call_partner"));
                     break;
                 case LocationTheme.Workplace:
-                    packs.Add(BuildPack("workstation", "Workstation", "work_shift", "focus_task", "leave_early"));
-                    packs.Add(BuildPack("break_area", "Break Area", "take_break", "talk_coworker", "eat_snack"));
+                    packs.Add(BuildPack("workstation", "Workstation", "work_shift", "focus_task", "leave_early", "pitch_side_hustle", "edit_content"));
+                    packs.Add(BuildPack("break_area", "Break Area", "take_break", "talk_coworker", "eat_snack", "doomscroll", "check_texts"));
                     break;
                 case LocationTheme.Civic:
-                    packs.Add(BuildPack("public_notice", "Public Notice Board", "join_town_meeting", "check_jobs", "report_issue"));
-                    packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form"));
+                    packs.Add(BuildPack("public_notice", "Public Notice Board", "join_town_meeting", "check_jobs", "report_issue", "check_gig_board"));
+                    packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form", "renew_id", "housing_question"));
                     break;
                 default:
-                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel"));
+                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel", "nightlife_plan", "rideshare_shift"));
                     break;
             }
 
@@ -280,6 +280,17 @@ namespace Survivebest.UI
                 if (needs.Hunger < 45f) suggestions.Add("Find food or cook a meal");
                 if (needs.Hygiene < 45f) suggestions.Add("Use hygiene hotspot (shower/sink)");
             }
+
+            if (worldClock != null)
+            {
+                if (worldClock.Hour >= 20) suggestions.Add($"Tonight idea: {LifeActivityCatalog.PickNightlifeActivity()}");
+                if (worldClock.Hour >= 9 && worldClock.Hour <= 18) suggestions.Add($"Adult errand: {LifeActivityCatalog.PickAdultErrand()}");
+            }
+
+            suggestions.Add($"Modern life: {LifeActivityCatalog.PickCreatorEconomyActivity()}");
+            suggestions.Add($"Relationship beat: {LifeActivityCatalog.PickDatingActivity()}");
+            suggestions.Add($"Reset option: {LifeActivityCatalog.PickSelfCareActivity()}");
+            suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
 
             if (personalityDecisionSystem != null)
             {
