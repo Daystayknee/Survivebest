@@ -43,7 +43,11 @@ namespace Survivebest.Core
         Heart,
         Diamond,
         Rectangle,
-        Triangle
+        Triangle,
+        LongOval,
+        SoftPear,
+        BroadOval,
+        NarrowAngular
     }
 
     public enum EyeShapeType
@@ -53,17 +57,27 @@ namespace Survivebest.Core
         Hooded,
         Monolid,
         Upturned,
-        Downturned
+        Downturned,
+        DeepSet,
+        Protruding,
+        CloseSet,
+        WideSet,
+        Doe,
+        CatEye
     }
 
     public enum BodyType
     {
+        Petite,
         Slim,
         Lean,
         Average,
+        Soft,
         Curvy,
         Athletic,
         Muscular,
+        Broad,
+        TallLean,
         PlusSize,
         Heavy
     }
@@ -85,7 +99,12 @@ namespace Survivebest.Core
         Broad,
         Roman,
         Snub,
-        Nubian
+        Nubian,
+        Hooked,
+        FlatBridge,
+        WideBridge,
+        LongNarrow,
+        Rounded
     }
 
     public enum LipShapeType
@@ -93,7 +112,11 @@ namespace Survivebest.Core
         Thin,
         Balanced,
         Full,
-        Heart
+        Heart,
+        CupidBow,
+        WideFull,
+        Downturned,
+        SoftRound
     }
 
     public enum ClothingStyleType
