@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Events;
 using Survivebest.Location;
+using Survivebest.Quest;
+using Survivebest.World;
+using Survivebest.NPC;
 
 namespace Survivebest.UI
 {
@@ -17,6 +20,10 @@ namespace Survivebest.UI
     public class SidebarContextMenu : MonoBehaviour
     {
         [SerializeField] private LocationManager locationManager;
+        [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
+        [SerializeField] private WorldGuideAISystem worldGuideAISystem;
+        [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text titleText;
         [SerializeField] private Text optionsText;
@@ -112,6 +119,7 @@ namespace Survivebest.UI
                     break;
             }
 
+            AddDynamicWorldOptions(room);
             RefreshText(room);
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
@@ -122,6 +130,65 @@ namespace Survivebest.UI
                 Reason = $"Generated {currentOptions.Count} sidebar options for {room.Theme}",
                 Magnitude = currentOptions.Count
             });
+        }
+
+        private void AddDynamicWorldOptions(Room room)
+        {
+            if (questOpportunitySystem != null)
+            {
+                if (questOpportunitySystem.GetAvailableOpportunitiesForLocation(room.RoomName).Count > 0)
+                {
+                    currentOptions.Add(new SidebarOption { Label = "Take Local Opportunity", ActionKey = "accept_local_opportunity" });
+                }
+
+                if (questOpportunitySystem.GetAcceptedOpportunitiesForLocation(room.RoomName).Count > 0)
+                {
+                    currentOptions.Add(new SidebarOption { Label = "Continue Opportunity", ActionKey = "continue_local_opportunity" });
+                }
+            }
+
+            LotDefinition lot = FindLotForRoom(room);
+            if (lot != null && townSimulationSystem != null)
+            {
+                bool open = townSimulationSystem.IsLotOpen(lot.LotId, DateTime.Now.Hour);
+                currentOptions.Add(new SidebarOption { Label = open ? "Read District Pulse" : "Wait / Replan", ActionKey = "review_local_pulse" });
+            }
+
+            if (worldGuideAISystem != null)
+            {
+                currentOptions.Add(new SidebarOption { Label = "Ask World AI", ActionKey = "ask_world_ai" });
+            }
+
+            if (npcLifeAIGuideSystem != null && npcLifeAIGuideSystem.BuildChatSuggestions(room, false).Count > 0)
+            {
+                currentOptions.Add(new SidebarOption { Label = "Talk to NPC", ActionKey = "npc_chat" });
+                currentOptions.Add(new SidebarOption { Label = "Text NPC", ActionKey = "npc_text" });
+            }
+        }
+
+        private LotDefinition FindLotForRoom(Room room)
+        {
+            if (room == null || townSimulationSystem == null || townSimulationSystem.Lots == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < townSimulationSystem.Lots.Count; i++)
+            {
+                LotDefinition lot = townSimulationSystem.Lots[i];
+                if (lot == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(lot.DisplayName, room.RoomName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(lot.LotId, room.RoomName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return lot;
+                }
+            }
+
+            return null;
         }
 
         private void RefreshText(Room room)
