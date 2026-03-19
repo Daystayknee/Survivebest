@@ -5,6 +5,7 @@ using Survivebest.Commerce;
 using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.Needs;
+using Survivebest.UI.ViewModels;
 using Survivebest.World;
 
 namespace Survivebest.UI
@@ -17,6 +18,7 @@ namespace Survivebest.UI
         [SerializeField] private OrderingSystem orderingSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
+        [SerializeField] private GameplayPresentationStateCoordinator gameplayPresentationStateCoordinator;
 
         [Header("Bars")]
         [SerializeField] private Slider hungerBar;
@@ -28,6 +30,7 @@ namespace Survivebest.UI
         [SerializeField] private Text clockText;
         [SerializeField] private Text feedText;
         [SerializeField] private Text lifeLoopSummaryText;
+        [SerializeField] private Text sectionMoodText;
         [SerializeField, Min(1)] private int maxFeedLines = 12;
 
         private readonly StringBuilder feedBuilder = new();
@@ -70,6 +73,15 @@ namespace Survivebest.UI
                     HandleSnapshotUpdated(gameplayLifeLoopOrchestrator.CurrentSnapshot);
                 }
             }
+
+            if (gameplayPresentationStateCoordinator != null)
+            {
+                gameplayPresentationStateCoordinator.OnPresentationStateChanged += HandlePresentationStateChanged;
+                if (gameplayPresentationStateCoordinator.CurrentState != null)
+                {
+                    HandlePresentationStateChanged(gameplayPresentationStateCoordinator.CurrentState);
+                }
+            }
         }
 
         private void OnDisable()
@@ -97,6 +109,11 @@ namespace Survivebest.UI
             if (gameplayLifeLoopOrchestrator != null)
             {
                 gameplayLifeLoopOrchestrator.OnSnapshotUpdated -= HandleSnapshotUpdated;
+            }
+
+            if (gameplayPresentationStateCoordinator != null)
+            {
+                gameplayPresentationStateCoordinator.OnPresentationStateChanged -= HandlePresentationStateChanged;
             }
 
             if (observedNeeds != null)
@@ -182,6 +199,16 @@ namespace Survivebest.UI
             }
 
             lifeLoopSummaryText.text = BuildHudLoopDigest(snapshot);
+        }
+
+        private void HandlePresentationStateChanged(PresentationSectionViewModel state)
+        {
+            if (sectionMoodText == null || state == null)
+            {
+                return;
+            }
+
+            sectionMoodText.text = $"{state.SectionLabel} • {state.ScreenMood}";
         }
 
         private void AppendFeed(string line)
