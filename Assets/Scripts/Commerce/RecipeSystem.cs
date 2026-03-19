@@ -28,10 +28,12 @@ namespace Survivebest.Commerce
         public CookingMethod CookingMethod = CookingMethod.Mix;
         public KitchenEquipment RequiredEquipment = KitchenEquipment.Stove;
         public CuisineType CuisineType = CuisineType.Comfort;
+        public ServingTemperature ServingTemperature = ServingTemperature.Warm;
         [Range(0f, 100f)] public float Difficulty = 20f;
         [Min(0)] public int PrepTimeMinutes = 5;
         [Min(0)] public int CookTimeMinutes = 8;
         public List<string> TasteProfile = new();
+        public List<string> Tags = new();
 
         [Header("Progression")]
         public bool StartsLocked;
@@ -65,6 +67,7 @@ namespace Survivebest.Commerce
 
         private void Awake()
         {
+            SeedRecipesFromFoodDatabase();
             EnsureRecipeDepth();
             RefreshRecipeUnlocks();
         }
@@ -367,6 +370,56 @@ namespace Survivebest.Commerce
             GenerateTemplateRecipes(existing);
         }
 
+        private void SeedRecipesFromFoodDatabase()
+        {
+            if (foodDatabase == null || foodDatabase.RecipeDefinitions == null)
+            {
+                return;
+            }
+
+            HashSet<string> existing = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                Recipe recipe = recipes[i];
+                if (recipe != null && !string.IsNullOrWhiteSpace(recipe.RecipeName))
+                {
+                    existing.Add(recipe.RecipeName);
+                }
+            }
+
+            for (int i = 0; i < foodDatabase.RecipeDefinitions.Count; i++)
+            {
+                FoodRecipeDefinition definition = foodDatabase.RecipeDefinitions[i];
+                if (definition == null || string.IsNullOrWhiteSpace(definition.Name) || existing.Contains(definition.Name))
+                {
+                    continue;
+                }
+
+                Recipe recipe = new Recipe
+                {
+                    RecipeName = definition.Name,
+                    Ingredients = BuildRecipeIngredients(definition.IngredientRequirements),
+                    OutputFood = BuildFoodFromDefinition(definition),
+                    CookingMethod = definition.CookingMethod,
+                    RequiredEquipment = definition.RequiredEquipment,
+                    CuisineType = definition.CuisineType,
+                    ServingTemperature = definition.ServingTemperature,
+                    Difficulty = definition.Difficulty,
+                    PrepTimeMinutes = definition.PrepTimeMinutes,
+                    CookTimeMinutes = definition.CookTimeMinutes,
+                    TasteProfile = definition.TasteProfile != null ? new List<string>(definition.TasteProfile) : new List<string>(),
+                    Tags = definition.Tags != null ? new List<string>(definition.Tags) : new List<string>(),
+                    StartsLocked = definition.Difficulty >= 40f,
+                    RequiredSkillName = definition.Difficulty >= 40f ? "Cooking" : null,
+                    RequiredSkillLevel = definition.Difficulty >= 40f ? Mathf.Round(definition.Difficulty * 0.5f) : 0f,
+                    IsUnlocked = definition.Difficulty < 40f
+                };
+
+                recipes.Add(recipe);
+                existing.Add(recipe.RecipeName);
+            }
+        }
+
         private void GenerateTemplateRecipes(HashSet<string> existing)
         {
             string[] proteins =
@@ -400,6 +453,11 @@ namespace Survivebest.Commerce
                     bool lockRecipe = style is "Roast" or "Casserole" or "Stir Fry";
                     float requiredSkill = lockRecipe ? 15f + ((p + v) % 5) * 5f : 0f;
 
+                    string[] tasteProfile = BuildTasteProfile(style, proteins[p], vegetables[v]);
+                    CuisineType cuisineType = InferCuisineType(style, starch, proteins[p], vegetables[v]);
+                    ServingTemperature servingTemperature = style is "Soup" or "Stew" ? ServingTemperature.Hot : ServingTemperature.Warm;
+                    bool spicy = Array.Exists(tasteProfile, x => string.Equals(x, "spicy", StringComparison.OrdinalIgnoreCase));
+
                     recipes.Add(new Recipe
                     {
                         RecipeName = recipeName,
@@ -410,14 +468,16 @@ namespace Survivebest.Commerce
                             new RecipeIngredient { IngredientName = starch, Quantity = 1 },
                             new RecipeIngredient { IngredientName = "Salt", Quantity = 1 }
                         },
-                        OutputFood = BuildGeneratedFood(recipeName, style, proteins[p]),
+                        OutputFood = BuildGeneratedFood(recipeName, style, proteins[p], cuisineType, servingTemperature, spicy),
                         CookingMethod = style is "Soup" or "Stew" ? CookingMethod.Boil : style is "Grill" ? CookingMethod.Grill : style is "Bake" or "Casserole" or "Roast" ? CookingMethod.Bake : CookingMethod.Fry,
                         RequiredEquipment = style is "Grill" ? KitchenEquipment.Grill : style is "Bake" or "Casserole" or "Roast" ? KitchenEquipment.Oven : KitchenEquipment.Stove,
-                        CuisineType = style is "Wrap" ? CuisineType.StreetFood : CuisineType.Comfort,
+                        CuisineType = cuisineType,
+                        ServingTemperature = servingTemperature,
                         Difficulty = lockRecipe ? 45f : 24f,
                         PrepTimeMinutes = 4,
                         CookTimeMinutes = style is "Stew" or "Roast" or "Casserole" ? 14 : 8,
-                        TasteProfile = new List<string> { style is "Stir Fry" or "Skillet" ? "spicy" : "savory", style is "Stew" or "Casserole" ? "comfort" : "balanced" },
+                        TasteProfile = new List<string>(tasteProfile),
+                        Tags = new List<string> { style.ToLowerInvariant().Replace(" ", "-"), starch.ToLowerInvariant(), cuisineType.ToString().ToLowerInvariant() },
                         StartsLocked = lockRecipe,
                         RequiredSkillName = lockRecipe ? "Cooking" : null,
                         RequiredSkillLevel = requiredSkill,
@@ -430,17 +490,16 @@ namespace Survivebest.Commerce
             }
         }
 
-        private static FoodItem BuildGeneratedFood(string recipeName, string style, string protein)
+        private static FoodItem BuildGeneratedFood(string recipeName, string style, string protein, CuisineType cuisineType, ServingTemperature servingTemperature, bool spicy)
         {
             bool hearty = style is "Stew" or "Bake" or "Roast" or "Casserole";
-            bool spicy = style is "Stir Fry" or "Skillet";
             bool seafood = protein is "Salmon" or "Tuna" or "Cod" or "Shrimp" or "Crab";
             bool legume = protein is "Lentils" or "Chickpeas" or "Black beans" or "Kidney beans" or "Edamame" or "Tofu";
 
             return new FoodItem
             {
                 Name = recipeName,
-                Category = hearty ? FoodCategory.HomeCooked : FoodCategory.Healthy,
+                Category = style is "Wrap" ? FoodCategory.StreetFood : hearty ? FoodCategory.HomeCooked : FoodCategory.Healthy,
                 HungerRestore = hearty ? 48f : 38f,
                 EnergyDelta = seafood ? 8f : (legume ? 7f : 5f),
                 MoodDelta = 4f,
@@ -449,7 +508,9 @@ namespace Survivebest.Commerce
                 IsSpicy = spicy,
                 SpiceIntensity = spicy ? 2f : 0f,
                 CookingMethod = style is "Soup" or "Stew" ? CookingMethod.Boil : style is "Grill" ? CookingMethod.Grill : style is "Bake" or "Casserole" or "Roast" ? CookingMethod.Bake : CookingMethod.Fry,
-                CuisineType = style is "Wrap" ? CuisineType.StreetFood : CuisineType.Comfort,
+                CuisineType = cuisineType,
+                ServingTemperature = servingTemperature,
+                Tags = new List<string> { style.ToLowerInvariant().Replace(" ", "-"), legume ? "plant-forward" : "protein" },
                 Nutrition = new FoodNutrition
                 {
                     Calories = hearty ? 540f : 410f,
@@ -457,7 +518,8 @@ namespace Survivebest.Commerce
                     Fat = hearty ? 19f : 12f,
                     Carbs = hearty ? 58f : 41f,
                     Vitamins = legume || seafood ? 11f : 7f
-                }
+                },
+                ComfortValue = hearty ? 68f : 48f
             };
         }
 
@@ -501,6 +563,8 @@ namespace Survivebest.Commerce
                 SpiceIntensity = recipe.OutputFood.SpiceIntensity,
                 CuisineType = recipe.OutputFood.CuisineType,
                 CookingMethod = recipe.OutputFood.CookingMethod,
+                ServingTemperature = recipe.OutputFood.ServingTemperature,
+                Tags = recipe.OutputFood.Tags != null ? new List<string>(recipe.OutputFood.Tags) : new List<string>(),
                 Nutrition = recipe.OutputFood.Nutrition,
                 ComfortValue = recipe.OutputFood.ComfortValue
             };
@@ -574,7 +638,10 @@ namespace Survivebest.Commerce
                 SpiceIntensity = spicy ? 2f : 0f,
                 CookingMethod = CookingMethod.Mix,
                 CuisineType = CuisineType.Comfort,
-                Nutrition = new FoodNutrition { Calories = 460f, Protein = 18f, Fat = 14f, Carbs = 58f }
+                ServingTemperature = ServingTemperature.Warm,
+                Tags = spicy ? new List<string> { "experimental", "spicy", "discovered" } : new List<string> { "experimental", "savory", "discovered" },
+                Nutrition = new FoodNutrition { Calories = 460f, Protein = 18f, Fat = 14f, Carbs = 58f },
+                ComfortValue = 52f
             };
 
             return new Recipe
@@ -585,16 +652,149 @@ namespace Survivebest.Commerce
                 CookingMethod = CookingMethod.Mix,
                 RequiredEquipment = KitchenEquipment.Stove,
                 CuisineType = CuisineType.Comfort,
+                ServingTemperature = ServingTemperature.Warm,
                 Difficulty = 35f,
                 PrepTimeMinutes = 6,
                 CookTimeMinutes = 8,
                 TasteProfile = spicy ? new List<string> { "spicy", "savory" } : new List<string> { "savory" },
+                Tags = output.Tags != null ? new List<string>(output.Tags) : new List<string>(),
                 StartsLocked = false,
                 IsUnlocked = true,
                 RequiredSkillName = "Cooking",
                 RequiredSkillLevel = 8f,
                 RequiredSkillNodeId = signature
             };
+        }
+
+        private static List<RecipeIngredient> BuildRecipeIngredients(List<string> ingredientNames)
+        {
+            List<RecipeIngredient> ingredients = new();
+            if (ingredientNames == null)
+            {
+                return ingredients;
+            }
+
+            for (int i = 0; i < ingredientNames.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(ingredientNames[i]))
+                {
+                    continue;
+                }
+
+                ingredients.Add(new RecipeIngredient { IngredientName = ingredientNames[i], Quantity = 1 });
+            }
+
+            return ingredients;
+        }
+
+        private static FoodItem BuildFoodFromDefinition(FoodRecipeDefinition definition)
+        {
+            bool spicy = definition.TasteProfile != null && definition.TasteProfile.Exists(t => string.Equals(t, "spicy", StringComparison.OrdinalIgnoreCase) || string.Equals(t, "spiced", StringComparison.OrdinalIgnoreCase));
+            FoodCategory category = InferFoodCategory(definition);
+
+            return new FoodItem
+            {
+                Name = definition.Name,
+                Category = category,
+                HungerRestore = Mathf.Clamp(18f + definition.Nutrition.Calories / 12f, 10f, 70f),
+                EnergyDelta = Mathf.Clamp(definition.Nutrition.Protein * 0.2f + definition.Nutrition.Carbs * 0.04f, -5f, 12f),
+                MoodDelta = Mathf.Clamp(definition.Difficulty < 30f ? 4f : 6f, -5f, 10f),
+                HygieneDelta = 0f,
+                VitalityDelta = Mathf.Clamp(definition.Nutrition.Vitamins * 0.3f + definition.Nutrition.Protein * 0.08f, -5f, 8f),
+                IsSpicy = spicy,
+                SpiceIntensity = spicy ? 2.5f : 0f,
+                CuisineType = definition.CuisineType,
+                CookingMethod = definition.CookingMethod,
+                ServingTemperature = definition.ServingTemperature,
+                Tags = definition.Tags != null ? new List<string>(definition.Tags) : new List<string>(),
+                Nutrition = definition.Nutrition,
+                ComfortValue = Mathf.Clamp(35f + definition.Nutrition.Fat * 0.9f + definition.Nutrition.Carbs * 0.2f, 20f, 90f)
+            };
+        }
+
+        private static FoodCategory InferFoodCategory(FoodRecipeDefinition definition)
+        {
+            if (definition == null)
+            {
+                return FoodCategory.HomeCooked;
+            }
+
+            if (definition.Tags != null)
+            {
+                if (definition.Tags.Exists(t => string.Equals(t, "breakfast", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return FoodCategory.Breakfast;
+                }
+
+                if (definition.Tags.Exists(t => string.Equals(t, "street-food", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return FoodCategory.StreetFood;
+                }
+
+                if (definition.Tags.Exists(t => string.Equals(t, "gourmet", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return FoodCategory.Gourmet;
+                }
+            }
+
+            return definition.Difficulty >= 40f ? FoodCategory.Gourmet : FoodCategory.HomeCooked;
+        }
+
+        private static string[] BuildTasteProfile(string style, string protein, string vegetable)
+        {
+            List<string> profile = new() { "savory" };
+
+            if (style is "Stir Fry" or "Skillet")
+            {
+                profile.Add("spicy");
+            }
+
+            if (style is "Stew" or "Casserole" or "Soup")
+            {
+                profile.Add("comfort");
+            }
+
+            if (protein is "Salmon" or "Tuna" or "Cod" or "Shrimp" or "Crab")
+            {
+                profile.Add("clean");
+            }
+
+            if (vegetable is "Tomato" or "Bell pepper")
+            {
+                profile.Add("bright");
+            }
+
+            if (profile.Count == 1)
+            {
+                profile.Add("balanced");
+            }
+
+            return profile.ToArray();
+        }
+
+        private static CuisineType InferCuisineType(string style, string starch, string protein, string vegetable)
+        {
+            if (style == "Wrap")
+            {
+                return CuisineType.StreetFood;
+            }
+
+            if (starch == "Pasta")
+            {
+                return CuisineType.Italian;
+            }
+
+            if (starch == "Noodles" || vegetable == "Bok choy")
+            {
+                return CuisineType.Chinese;
+            }
+
+            if (starch == "Rice" && (protein == "Tofu" || vegetable == "Bell pepper"))
+            {
+                return CuisineType.Indian;
+            }
+
+            return CuisineType.Comfort;
         }
 
         private void PublishCraftEvent(string recipeName, bool success, string reason)

@@ -19,6 +19,23 @@ namespace Survivebest.Core
         public float Magnitude;
     }
 
+    [Serializable]
+    public class LifeLoopExperienceSnapshot
+    {
+        public string CharacterId;
+        public string RecommendedAction;
+        public string PresenceLabel;
+        public string ConsequenceLabel;
+        public string ContinuityLabel;
+        public string IdentityLabel;
+        public string ImmersionLabel;
+        public string ReplayabilityLabel;
+        public string Summary;
+        [Range(0f, 1f)] public float Pressure;
+        [Range(0f, 1f)] public float SocialOpportunity;
+        [Range(0f, 1f)] public float Progress;
+    }
+
     /// <summary>
     /// Final bridge that keeps the core loop always moving:
     /// needs check -> decision -> world simulation -> interaction feedback -> reflection.
@@ -49,8 +66,10 @@ namespace Survivebest.Core
         private int fallbackAbsoluteHourCounter;
 
         public IReadOnlyList<LifeLoopStepRecord> RecentSteps => recentSteps;
+        public LifeLoopExperienceSnapshot CurrentSnapshot { get; private set; }
 
         public event Action<LifeLoopStepRecord> OnLifeLoopStep;
+        public event Action<LifeLoopExperienceSnapshot> OnSnapshotUpdated;
 
         private void OnEnable()
         {
@@ -131,6 +150,8 @@ namespace Survivebest.Core
                 RecordStep(active, "Sleep", "sleep", 1f);
             }
 
+            CurrentSnapshot = BuildSnapshot(active, decision, pressure, social, progress);
+            OnSnapshotUpdated?.Invoke(CurrentSnapshot);
             PublishLoopEvent(active, decision, pressure, social, progress, recoveryPriority);
         }
 
@@ -320,6 +341,77 @@ namespace Survivebest.Core
                 Reason = $"Loop tick completed (pressure {pressure:0.00}, social {social:0.00}, progress {progress:0.00}, recovery {recoveryPriority:0.00})",
                 Magnitude = progress - pressure
             });
+        }
+
+        private LifeLoopExperienceSnapshot BuildSnapshot(CharacterCore actor, AutonomousActionType decision, float pressure, float social, float progress)
+        {
+            List<string> suggestions = gameplayInteractionPresentationLayer != null
+                ? gameplayInteractionPresentationLayer.BuildContextActionSuggestions()
+                : null;
+
+            string recommendedAction = suggestions != null && suggestions.Count > 0
+                ? suggestions[0]
+                : $"Do the next meaningful thing: {decision}";
+
+            int recentCharacterSteps = CountRecentSteps(actor != null ? actor.CharacterId : null, 8);
+            string presence = pressure > 0.72f
+                ? "Body under pressure"
+                : social > 0.7f
+                    ? "Social world feels reachable"
+                    : "Steady enough to choose your pace";
+            string consequence = progress > 0.7f
+                ? "Choices are compounding into momentum"
+                : pressure > 0.68f
+                    ? "Neglect will snowball if you do nothing"
+                    : "You still have room to steer the day";
+            string continuity = recentCharacterSteps >= 4
+                ? $"Continuity strong: {recentCharacterSteps} loop beats have already stacked today"
+                : "Continuity light: the day still wants defining moments";
+            string identity = actor != null
+                ? $"{actor.DisplayName} is living as a {actor.CurrentLifeStage} with {decision} energy right now"
+                : "Identity is unresolved";
+            string immersion = gameplayInteractionPresentationLayer != null && gameplayInteractionPresentationLayer.CurrentWorldPanel != null
+                ? $"Room pulse: {gameplayInteractionPresentationLayer.CurrentWorldPanel.LocationName} / {gameplayInteractionPresentationLayer.CurrentWorldPanel.ContextState}"
+                : "Room pulse: focus on the current space and its opportunities";
+            string replayability = suggestions != null && suggestions.Count > 1
+                ? $"{Mathf.Min(8, suggestions.Count)} context actions are ready if you pivot"
+                : "One strong next action is currently standing out";
+
+            return new LifeLoopExperienceSnapshot
+            {
+                CharacterId = actor != null ? actor.CharacterId : null,
+                RecommendedAction = recommendedAction,
+                PresenceLabel = presence,
+                ConsequenceLabel = consequence,
+                ContinuityLabel = continuity,
+                IdentityLabel = identity,
+                ImmersionLabel = immersion,
+                ReplayabilityLabel = replayability,
+                Summary = $"{presence}. {consequence}. {recommendedAction}",
+                Pressure = pressure,
+                SocialOpportunity = social,
+                Progress = progress
+            };
+        }
+
+        private int CountRecentSteps(string characterId, int maxEntries)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || recentSteps == null || recentSteps.Count == 0)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = recentSteps.Count - 1; i >= 0 && count < maxEntries; i--)
+            {
+                LifeLoopStepRecord record = recentSteps[i];
+                if (record != null && string.Equals(record.CharacterId, characterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
     }
 }

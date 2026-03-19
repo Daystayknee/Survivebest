@@ -5,6 +5,7 @@ using UnityEngine;
 using Survivebest.Catalog;
 using Survivebest.Commerce;
 using Survivebest.Economy;
+using Survivebest.Food;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -61,6 +62,76 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(recipeSystem.Recipes.Count, 0);
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_ContainsRequestedMealPacks_AsFoodsAndRecipes()
+        {
+            GameObject go = new GameObject("FoodDatabase");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            string[] expectedFoods =
+            {
+                "Buttered Noodles", "Rice and Beans", "Fried Egg Toast", "Grilled Cheese", "Tuna Sandwich",
+                "Cereal Bowl", "Ramen with Egg", "Baked Potato", "Macaroni Bowl", "Tomato Sandwich",
+                "Chicken Noodle Soup", "Meatloaf", "Mashed Potatoes", "Chili", "Pot Roast",
+                "Chicken and Dumplings", "Lasagna", "Beef Stew", "Cornbread", "Casserole Bake",
+                "Pancakes", "Waffles", "Oatmeal", "Omelet", "Breakfast Sandwich", "Yogurt Bowl",
+                "Smoothie Bowl", "French Toast", "Burger and Fries", "Fried Chicken Basket",
+                "Pizza Slice", "Burrito Bowl", "Sushi Roll", "Pad Thai", "Curry Plate", "Hibachi Chicken"
+            };
+
+            for (int i = 0; i < expectedFoods.Length; i++)
+            {
+                string mealName = expectedFoods[i];
+                Assert.IsNotNull(database.GetFood(mealName), $"Missing food entry: {mealName}");
+                Assert.IsNotNull(database.GetRecipe(mealName), $"Missing recipe definition: {mealName}");
+            }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RecipeSystem_Awake_SeedsRequestedMealPackRecipes_FromFoodDatabase()
+        {
+            GameObject root = new GameObject("FoodRecipeSeedRoot");
+            FoodDatabase database = root.AddComponent<FoodDatabase>();
+            RecipeSystem recipeSystem = root.AddComponent<RecipeSystem>();
+
+            FieldInfo foodDatabaseField = typeof(RecipeSystem).GetField("foodDatabase", BindingFlags.NonPublic | BindingFlags.Instance);
+            foodDatabaseField?.SetValue(recipeSystem, database);
+
+            MethodInfo awake = typeof(RecipeSystem).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(recipeSystem, null);
+
+            string[] expectedSeededRecipes =
+            {
+                "Buttered Noodles",
+                "Chicken Noodle Soup",
+                "Breakfast Sandwich",
+                "Burger and Fries",
+                "Sushi Roll",
+                "Pad Thai"
+            };
+
+            for (int i = 0; i < expectedSeededRecipes.Length; i++)
+            {
+                string recipeName = expectedSeededRecipes[i];
+                Recipe recipe = null;
+                for (int j = 0; j < recipeSystem.Recipes.Count; j++)
+                {
+                    if (recipeSystem.Recipes[j] != null && recipeSystem.Recipes[j].RecipeName == recipeName)
+                    {
+                        recipe = recipeSystem.Recipes[j];
+                        break;
+                    }
+                }
+
+                Assert.IsNotNull(recipe, $"RecipeSystem did not seed recipe: {recipeName}");
+                Assert.IsNotNull(recipe.OutputFood, $"Seeded recipe missing output food: {recipeName}");
+            }
+
+            Object.DestroyImmediate(root);
         }
 
         [Test]

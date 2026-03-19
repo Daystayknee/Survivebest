@@ -13,17 +13,31 @@ using Survivebest.Social;
 
 namespace Survivebest.Crime
 {
-
+    public enum SubstanceRiskTier
+    {
+        Everyday,
+        Controlled,
+        Dangerous,
+        Extreme
+    }
 
     [Serializable]
     public class SubstanceProfile
     {
         public SubstanceType Substance;
+        public string DisplayName;
+        public string Category;
+        [TextArea] public string Summary;
         [Range(0f, 12f)] public float OnsetHours = 0.25f;
         [Min(1)] public int DurationHours = 3;
         [Range(0f, 1f)] public float ToleranceRate = 0.08f;
         [Range(0f, 1f)] public float AddictionRate = 0.1f;
         [Range(0f, 1f)] public float WithdrawalSeverity = 0.3f;
+        public SubstanceRiskTier RiskTier = SubstanceRiskTier.Controlled;
+        public string PrimaryBuff;
+        public string PrimaryDebuff;
+        public string CrashSummary;
+        public string RehabRecommendation;
     }
 
     [Serializable]
@@ -52,10 +66,22 @@ namespace Survivebest.Crime
         [Header("Substance Profiles")]
         [SerializeField] private List<SubstanceProfile> substanceProfiles = new()
         {
-            new SubstanceProfile { Substance = SubstanceType.Alcohol, OnsetHours = 0.1f, DurationHours = 3, ToleranceRate = 0.05f, AddictionRate = 0.06f, WithdrawalSeverity = 0.2f },
-            new SubstanceProfile { Substance = SubstanceType.Weed, OnsetHours = 0.2f, DurationHours = 4, ToleranceRate = 0.05f, AddictionRate = 0.05f, WithdrawalSeverity = 0.15f },
-            new SubstanceProfile { Substance = SubstanceType.PrescriptionDrug, OnsetHours = 0.1f, DurationHours = 2, ToleranceRate = 0.08f, AddictionRate = 0.08f, WithdrawalSeverity = 0.25f },
-            new SubstanceProfile { Substance = SubstanceType.HardDrug, OnsetHours = 0.05f, DurationHours = 6, ToleranceRate = 0.16f, AddictionRate = 0.2f, WithdrawalSeverity = 0.6f }
+            CreateProfile(SubstanceType.Caffeine, "Caffeine", "Stimulant", "Coffee, tea, energy drinks, and pills that sharpen focus fast.", 0.08f, 4, 0.02f, 0.02f, 0.08f, SubstanceRiskTier.Everyday, "Energy + focus", "Jitters + sleep debt", "Caffeine crash lowers mood and stamina.", "Hydration coaching or sleep clinic"),
+            CreateProfile(SubstanceType.Nicotine, "Nicotine", "Stimulant", "Cigarettes, vapes, and pouches that steady stress but build habit loops quickly.", 0.03f, 2, 0.08f, 0.12f, 0.35f, SubstanceRiskTier.Controlled, "Stress relief", "Cravings + lung strain", "Irritability and focus dips hit quickly.", "Outpatient cessation coaching"),
+            CreateProfile(SubstanceType.Alcohol, "Alcohol", "Depressant", "Beer, wine, and liquor that boost social courage while hurting coordination and hydration.", 0.1f, 4, 0.05f, 0.06f, 0.22f, SubstanceRiskTier.Controlled, "Mood + social ease", "Dehydration + poor judgment", "Hangover with stress and fatigue.", "Detox plus counseling for heavy dependence"),
+            CreateProfile(SubstanceType.Cannabis, "Cannabis", "Relaxant", "Smoked or edible cannabis that reduces stress, raises appetite, and softens focus.", 0.2f, 5, 0.05f, 0.05f, 0.16f, SubstanceRiskTier.Controlled, "Calm + appetite", "Brain fog + low drive", "Mood and energy dip after the high.", "Support groups or behavioral therapy"),
+            CreateProfile(SubstanceType.PrescriptionStimulant, "Prescription Stimulant", "Prescription", "ADHD-style stimulant misuse that amplifies wakefulness and confidence.", 0.08f, 6, 0.08f, 0.11f, 0.22f, SubstanceRiskTier.Dangerous, "Focus + drive", "Anxiety + appetite loss", "Restlessness and emotional crash.", "Medical taper with outpatient rehab"),
+            CreateProfile(SubstanceType.PrescriptionPainkiller, "Painkiller", "Prescription", "Misused opioid pain medication that numbs pain and emotions.", 0.1f, 6, 0.12f, 0.18f, 0.55f, SubstanceRiskTier.Dangerous, "Pain relief + comfort", "Sedation + overdose risk", "Sharp crash with aches and cravings.", "Medically supervised detox center"),
+            CreateProfile(SubstanceType.PrescriptionSedative, "Sedative", "Prescription", "Benzodiazepine-style misuse that wipes stress but harms memory and coordination.", 0.08f, 8, 0.11f, 0.16f, 0.5f, SubstanceRiskTier.Dangerous, "Calm + panic relief", "Memory gaps + lethargy", "Rebound anxiety and insomnia.", "Clinical detox and monitored taper"),
+            CreateProfile(SubstanceType.SleepAid, "Sleep Aid", "Depressant", "Overused sleep medicine that forces rest but can blur the next day.", 0.15f, 8, 0.05f, 0.05f, 0.18f, SubstanceRiskTier.Controlled, "Sleep boost", "Grogginess + dependency risk", "Morning sluggishness and low motivation.", "Primary-care sleep support"),
+            CreateProfile(SubstanceType.Psychedelic, "Psychedelic", "Hallucinogen", "LSD or psilocybin style trips that alter perception, emotion, and time sense.", 0.4f, 10, 0.02f, 0.03f, 0.1f, SubstanceRiskTier.Dangerous, "Wonder + insight", "Panic + disorientation", "Mental fatigue and lingering stress.", "Crisis counseling and observation"),
+            CreateProfile(SubstanceType.ClubDrug, "Club Drug", "Party Drug", "MDMA-style party use that spikes empathy, energy, and dehydration risk.", 0.2f, 6, 0.08f, 0.1f, 0.26f, SubstanceRiskTier.Dangerous, "Sociability + euphoria", "Heat + dehydration", "Serotonin crash with sadness.", "Outpatient addiction and mood care"),
+            CreateProfile(SubstanceType.Cocaine, "Cocaine", "Stimulant", "Short, intense stimulant bursts that feel powerful and end brutally fast.", 0.03f, 2, 0.14f, 0.2f, 0.45f, SubstanceRiskTier.Extreme, "Confidence + energy", "Paranoia + heart strain", "Harsh crash with deep cravings.", "Intensive outpatient or inpatient rehab"),
+            CreateProfile(SubstanceType.Methamphetamine, "Methamphetamine", "Stimulant", "Long-run stimulant surge that wrecks sleep, judgment, and physical health.", 0.05f, 12, 0.18f, 0.24f, 0.65f, SubstanceRiskTier.Extreme, "Extreme energy", "Psychosis + body damage", "Violent burnout and major withdrawal.", "Residential rehab with detox"),
+            CreateProfile(SubstanceType.Opioid, "Street Opioid", "Opioid", "Heroin/fentanyl-like opioid use with overwhelming dependency and overdose danger.", 0.05f, 8, 0.16f, 0.26f, 0.75f, SubstanceRiskTier.Extreme, "Euphoria + pain wipe", "Respiratory collapse", "Severe withdrawal and medical danger.", "Emergency detox and medication-assisted treatment"),
+            CreateProfile(SubstanceType.Dissociative, "Dissociative", "Hallucinogen", "Ketamine/PCP style detachment that severs pain and reality at a cost.", 0.08f, 5, 0.1f, 0.11f, 0.3f, SubstanceRiskTier.Dangerous, "Pain numbness + detachment", "Confusion + accidents", "Foggy rebound and emotional flatness.", "Dual-diagnosis rehab support"),
+            CreateProfile(SubstanceType.Inhalant, "Inhalant", "Toxicant", "Household chemical highs that hit quickly and damage brain and lungs.", 0.01f, 1, 0.12f, 0.14f, 0.4f, SubstanceRiskTier.Extreme, "Instant head rush", "Organ damage + blackouts", "Headache, confusion, and sickness.", "Youth crisis detox and family rehab"),
+            CreateProfile(SubstanceType.Steroid, "Anabolic Steroid", "Performance Drug", "Performance enhancers that trade strength gains for mood swings and health costs.", 12f, 72, 0.1f, 0.1f, 0.25f, SubstanceRiskTier.Dangerous, "Strength + confidence", "Aggression + hormone damage", "Mood instability and exhaustion when cycling off.", "Sports medicine and hormone recovery clinic")
         };
 
         [Header("Runtime Substance State")]
@@ -67,6 +93,7 @@ namespace Survivebest.Crime
         public event Action<SubstanceType> OnSubstanceEffectEnded;
 
         public IReadOnlyList<ActiveSubstanceEffect> ActiveEffects => activeEffects;
+        public IReadOnlyList<SubstanceProfile> SubstanceProfiles => substanceProfiles;
         public float DependencyLevel => dependencyLevel;
 
         public void ModifyDependency(float delta)
@@ -77,6 +104,25 @@ namespace Survivebest.Crime
         public void AdjustRiskPressure(float pressureDelta)
         {
             dependencyLevel = Mathf.Clamp01(dependencyLevel + (pressureDelta * 0.05f));
+        }
+
+        public SubstanceProfile GetSubstanceProfile(SubstanceType substanceType) => GetProfile(substanceType);
+
+        public IEnumerable<SubstanceProfile> GetProfilesForCategory(string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                yield break;
+            }
+
+            for (int i = 0; i < substanceProfiles.Count; i++)
+            {
+                SubstanceProfile profile = substanceProfiles[i];
+                if (profile != null && string.Equals(profile.Category, category, StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return profile;
+                }
+            }
         }
 
         private void OnEnable()
@@ -132,7 +178,9 @@ namespace Survivebest.Crime
                 }
             }
 
-            PublishSubstanceEvent("SubstanceUsed", $"Used {substanceType}", legalRisk, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
+            SubstanceProfile profile = GetProfile(substanceType);
+            string label = profile != null ? profile.DisplayName : substanceType.ToString();
+            PublishSubstanceEvent("SubstanceUsed", $"Used {label}", legalRisk, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
             OnSubstanceUsed?.Invoke(substanceType, illegal);
         }
 
@@ -145,6 +193,18 @@ namespace Survivebest.Crime
 
             switch (substanceType)
             {
+                case SubstanceType.Caffeine:
+                    needsSystem.ModifyEnergy(5f);
+                    needsSystem.ModifyMood(2f);
+                    needsSystem.ModifyMentalFatigue(-4f);
+                    emotionSystem?.ModifyStress(0.8f);
+                    break;
+                case SubstanceType.Nicotine:
+                    needsSystem.ModifyMood(3f);
+                    needsSystem.ModifyEnergy(1.5f);
+                    emotionSystem?.ModifyStress(-2f);
+                    healthSystem?.Damage(0.5f);
+                    break;
                 case SubstanceType.Alcohol:
                     needsSystem.ModifyMood(5f);
                     needsSystem.ModifyEnergy(-4f);
@@ -153,26 +213,87 @@ namespace Survivebest.Crime
                     emotionSystem?.ModifyStress(-2f);
                     statusEffectSystem?.ApplyStatusById("status_210", 4);
                     break;
-                case SubstanceType.Weed:
+                case SubstanceType.Cannabis:
                     needsSystem.ModifyMood(8f);
                     needsSystem.RestoreHunger(6f);
                     needsSystem.ModifyEnergy(-2f);
                     emotionSystem?.ModifyStress(-4f);
                     statusEffectSystem?.ApplyStatusById("status_060", 4);
                     break;
-                case SubstanceType.PrescriptionDrug:
-                    healthSystem?.Heal(4f);
-                    needsSystem.ModifyEnergy(-1f);
-                    emotionSystem?.ModifyStress(-3f);
-                    statusEffectSystem?.ApplyStatusById("status_080", 3);
+                case SubstanceType.PrescriptionStimulant:
+                    needsSystem.ModifyEnergy(6f);
+                    needsSystem.ModifyMood(3f);
+                    needsSystem.RestoreHunger(-4f);
+                    emotionSystem?.ModifyStress(1f);
                     break;
-                case SubstanceType.HardDrug:
+                case SubstanceType.PrescriptionPainkiller:
+                    healthSystem?.Heal(6f);
+                    needsSystem.ModifyMood(4f);
+                    needsSystem.ModifyEnergy(-2f);
+                    emotionSystem?.ModifyStress(-3f);
+                    break;
+                case SubstanceType.PrescriptionSedative:
+                    needsSystem.ModifyMood(3f);
+                    needsSystem.ModifyEnergy(-4f);
+                    emotionSystem?.ModifyStress(-5f);
+                    statusEffectSystem?.ApplyStatusById("status_080", 5);
+                    break;
+                case SubstanceType.SleepAid:
+                    needsSystem.ModifyEnergy(-5f);
+                    emotionSystem?.ModifyStress(-2f);
+                    statusEffectSystem?.ApplyStatusById("status_080", 6);
+                    break;
+                case SubstanceType.Psychedelic:
+                    needsSystem.ModifyMood(7f);
+                    needsSystem.ModifyEnergy(2f);
+                    emotionSystem?.ModifyStress(-1f);
+                    emotionSystem?.ModifyAnger(-2f);
+                    break;
+                case SubstanceType.ClubDrug:
                     needsSystem.ModifyMood(10f);
-                    needsSystem.ModifyEnergy(8f);
+                    needsSystem.ModifyEnergy(7f);
+                    needsSystem.RestoreHydration(-8f);
+                    emotionSystem?.ModifyStress(-3f);
+                    break;
+                case SubstanceType.Cocaine:
+                    needsSystem.ModifyMood(9f);
+                    needsSystem.ModifyEnergy(9f);
+                    needsSystem.RestoreHunger(-5f);
+                    healthSystem?.Damage(3f);
+                    emotionSystem?.ModifyStress(2f);
+                    break;
+                case SubstanceType.Methamphetamine:
+                    needsSystem.ModifyMood(11f);
+                    needsSystem.ModifyEnergy(12f);
                     needsSystem.RestoreHydration(-10f);
-                    healthSystem?.Damage(8f);
-                    emotionSystem?.ModifyAnger(4f);
-                    statusEffectSystem?.ApplyStatusById("status_220", 8);
+                    needsSystem.RestoreHunger(-8f);
+                    healthSystem?.Damage(6f);
+                    emotionSystem?.ModifyAnger(5f);
+                    break;
+                case SubstanceType.Opioid:
+                    needsSystem.ModifyMood(8f);
+                    needsSystem.ModifyEnergy(-6f);
+                    healthSystem?.Heal(4f);
+                    healthSystem?.Damage(2f);
+                    emotionSystem?.ModifyStress(-4f);
+                    break;
+                case SubstanceType.Dissociative:
+                    needsSystem.ModifyMood(4f);
+                    needsSystem.ModifyEnergy(-1f);
+                    emotionSystem?.ModifyStress(-2f);
+                    healthSystem?.Damage(2f);
+                    break;
+                case SubstanceType.Inhalant:
+                    needsSystem.ModifyMood(2f);
+                    needsSystem.ModifyEnergy(-2f);
+                    healthSystem?.Damage(7f);
+                    emotionSystem?.ModifyStress(3f);
+                    break;
+                case SubstanceType.Steroid:
+                    needsSystem.ModifyEnergy(4f);
+                    needsSystem.ModifyMood(2f);
+                    emotionSystem?.ModifyAnger(3f);
+                    healthSystem?.Damage(1f);
                     break;
             }
         }
@@ -181,7 +302,7 @@ namespace Survivebest.Crime
         {
             ActiveSubstanceEffect existing = activeEffects.Find(x => x.Substance == substanceType);
             SubstanceProfile profile = GetProfile(substanceType);
-            int duration = profile != null ? Mathf.Max(1, profile.DurationHours) : GetBaseDuration(substanceType);
+            int duration = profile != null ? Mathf.Max(1, profile.DurationHours) : 3;
 
             if (existing != null)
             {
@@ -203,10 +324,7 @@ namespace Survivebest.Crime
             SubstanceProfile substanceProfile = GetProfile(substanceType);
             float profileRate = substanceProfile != null ? substanceProfile.AddictionRate : 0.08f;
             float risk = (dependencyRiskPerUse + profileRate) * (balanceManager != null ? balanceManager.AddictionSeverityMultiplier : 1f);
-            if (substanceType == SubstanceType.HardDrug)
-            {
-                risk *= 1.8f;
-            }
+            risk *= GetRiskTierMultiplier(substanceProfile != null ? substanceProfile.RiskTier : SubstanceRiskTier.Controlled);
 
             if (owner != null)
             {
@@ -272,26 +390,74 @@ namespace Survivebest.Crime
             float intensity = Mathf.Clamp(effect.Intensity, 0.2f, 5f);
             switch (effect.Substance)
             {
+                case SubstanceType.Caffeine:
+                    needsSystem.ModifyEnergy(0.7f * intensity);
+                    needsSystem.ModifyMentalFatigue(-0.6f * intensity);
+                    break;
+                case SubstanceType.Nicotine:
+                    needsSystem.ModifyMood(0.35f * intensity);
+                    emotionSystem?.ModifyStress(-0.45f * intensity);
+                    break;
                 case SubstanceType.Alcohol:
                     needsSystem.ModifyEnergy(-0.8f * intensity);
                     needsSystem.RestoreHydration(-1.2f * intensity);
                     needsSystem.ModifyMood(0.7f * intensity);
                     break;
-                case SubstanceType.Weed:
+                case SubstanceType.Cannabis:
                     needsSystem.ModifyEnergy(-0.4f * intensity);
                     needsSystem.RestoreHunger(0.8f * intensity);
                     needsSystem.ModifyMood(0.9f * intensity);
                     break;
-                case SubstanceType.PrescriptionDrug:
-                    healthSystem?.Heal(0.5f * intensity);
-                    needsSystem.ModifyEnergy(-0.2f * intensity);
+                case SubstanceType.PrescriptionStimulant:
+                    needsSystem.ModifyEnergy(0.9f * intensity);
+                    needsSystem.RestoreHunger(-0.9f * intensity);
+                    emotionSystem?.ModifyStress(0.35f * intensity);
                     break;
-                case SubstanceType.HardDrug:
-                    needsSystem.ModifyEnergy(-1.5f * intensity);
-                    needsSystem.RestoreHydration(-1.8f * intensity);
-                    needsSystem.ModifyMood(-0.5f * intensity);
+                case SubstanceType.PrescriptionPainkiller:
+                    healthSystem?.Heal(0.6f * intensity);
+                    needsSystem.ModifyEnergy(-0.35f * intensity);
+                    break;
+                case SubstanceType.PrescriptionSedative:
+                case SubstanceType.SleepAid:
+                    needsSystem.ModifyEnergy(-0.7f * intensity);
+                    emotionSystem?.ModifyStress(-0.5f * intensity);
+                    break;
+                case SubstanceType.Psychedelic:
+                    needsSystem.ModifyMentalFatigue(0.5f * intensity);
+                    emotionSystem?.ModifyStress(UnityEngine.Random.value > 0.5f ? 0.6f * intensity : -0.6f * intensity);
+                    break;
+                case SubstanceType.ClubDrug:
+                    needsSystem.ModifyEnergy(0.8f * intensity);
+                    needsSystem.RestoreHydration(-1.3f * intensity);
+                    needsSystem.ModifyMood(1f * intensity);
+                    break;
+                case SubstanceType.Cocaine:
+                    needsSystem.ModifyEnergy(1f * intensity);
+                    needsSystem.ModifyMood(0.6f * intensity);
+                    healthSystem?.Damage(0.8f * intensity);
+                    break;
+                case SubstanceType.Methamphetamine:
+                    needsSystem.ModifyEnergy(0.6f * intensity);
+                    needsSystem.RestoreHydration(-1.6f * intensity);
                     healthSystem?.Damage(1.2f * intensity);
                     emotionSystem?.ModifyStress(1.1f * intensity);
+                    break;
+                case SubstanceType.Opioid:
+                    needsSystem.ModifyEnergy(-1f * intensity);
+                    needsSystem.ModifyMood(-0.2f * intensity);
+                    healthSystem?.Damage(0.8f * intensity);
+                    break;
+                case SubstanceType.Dissociative:
+                    needsSystem.ModifyEnergy(-0.45f * intensity);
+                    healthSystem?.Damage(0.5f * intensity);
+                    break;
+                case SubstanceType.Inhalant:
+                    needsSystem.ModifyEnergy(-1.2f * intensity);
+                    healthSystem?.Damage(1.5f * intensity);
+                    break;
+                case SubstanceType.Steroid:
+                    needsSystem.ModifyEnergy(0.4f * intensity);
+                    emotionSystem?.ModifyAnger(0.5f * intensity);
                     break;
             }
         }
@@ -308,24 +474,60 @@ namespace Survivebest.Crime
             float crashScale = Mathf.Lerp(0.6f, 1.8f + withdrawalSeverity, dependencyLevel);
             switch (substanceType)
             {
+                case SubstanceType.Caffeine:
+                    needsSystem.ModifyMood(-2f * crashScale);
+                    needsSystem.ModifyEnergy(-3f * crashScale);
+                    break;
+                case SubstanceType.Nicotine:
+                    needsSystem.ModifyMood(-3f * crashScale);
+                    emotionSystem?.ModifyStress(2f * crashScale);
+                    break;
                 case SubstanceType.Alcohol:
                     needsSystem.ModifyMood(-3f * crashScale);
                     needsSystem.ModifyEnergy(-2f * crashScale);
                     break;
-                case SubstanceType.Weed:
+                case SubstanceType.Cannabis:
                     needsSystem.ModifyMood(-2f * crashScale);
                     needsSystem.ModifyEnergy(-1f * crashScale);
                     break;
-                case SubstanceType.PrescriptionDrug:
-                    needsSystem.ModifyEnergy(-1f * crashScale);
+                case SubstanceType.PrescriptionStimulant:
+                case SubstanceType.Cocaine:
+                case SubstanceType.Methamphetamine:
+                    needsSystem.ModifyMood(-6f * crashScale);
+                    needsSystem.ModifyEnergy(-5f * crashScale);
+                    emotionSystem?.ModifyStress(4f * crashScale);
                     break;
-                case SubstanceType.HardDrug:
-                    needsSystem.ModifyMood(-8f * crashScale);
-                    needsSystem.ModifyEnergy(-6f * crashScale);
-                    needsSystem.RestoreHydration(-4f * crashScale);
+                case SubstanceType.PrescriptionPainkiller:
+                case SubstanceType.Opioid:
+                    needsSystem.ModifyMood(-7f * crashScale);
+                    needsSystem.ModifyEnergy(-5f * crashScale);
+                    needsSystem.RestoreHydration(-3f * crashScale);
                     healthSystem?.Damage(3f * crashScale);
-                    emotionSystem?.ModifyStress(6f * crashScale);
-                    statusEffectSystem?.ApplyStatusById("status_220", Mathf.RoundToInt(6f * crashScale));
+                    break;
+                case SubstanceType.PrescriptionSedative:
+                case SubstanceType.SleepAid:
+                    needsSystem.ModifyEnergy(-3f * crashScale);
+                    emotionSystem?.ModifyStress(3f * crashScale);
+                    break;
+                case SubstanceType.Psychedelic:
+                case SubstanceType.Dissociative:
+                    needsSystem.ModifyMood(-3f * crashScale);
+                    needsSystem.ModifyMentalFatigue(3f * crashScale);
+                    break;
+                case SubstanceType.ClubDrug:
+                    needsSystem.ModifyMood(-5f * crashScale);
+                    needsSystem.ModifyEnergy(-4f * crashScale);
+                    needsSystem.RestoreHydration(-4f * crashScale);
+                    break;
+                case SubstanceType.Inhalant:
+                    needsSystem.ModifyMood(-4f * crashScale);
+                    needsSystem.ModifyEnergy(-4f * crashScale);
+                    healthSystem?.Damage(4f * crashScale);
+                    break;
+                case SubstanceType.Steroid:
+                    needsSystem.ModifyMood(-3f * crashScale);
+                    needsSystem.ModifyEnergy(-2f * crashScale);
+                    emotionSystem?.ModifyAnger(2f * crashScale);
                     break;
             }
 
@@ -338,6 +540,19 @@ namespace Survivebest.Crime
             if (illegal)
             {
                 baseRisk += 0.28f;
+            }
+
+            SubstanceProfile profile = GetProfile(substanceType);
+            if (profile != null)
+            {
+                baseRisk += profile.RiskTier switch
+                {
+                    SubstanceRiskTier.Everyday => 0f,
+                    SubstanceRiskTier.Controlled => 0.04f,
+                    SubstanceRiskTier.Dangerous => 0.1f,
+                    SubstanceRiskTier.Extreme => 0.18f,
+                    _ => 0f
+                };
             }
 
             if (inPublic)
@@ -387,15 +602,36 @@ namespace Survivebest.Crime
             return substanceProfiles.Find(x => x != null && x.Substance == substanceType);
         }
 
-        private static int GetBaseDuration(SubstanceType substanceType)
+        private static float GetRiskTierMultiplier(SubstanceRiskTier riskTier)
         {
-            return substanceType switch
+            return riskTier switch
             {
-                SubstanceType.Alcohol => 3,
-                SubstanceType.Weed => 4,
-                SubstanceType.PrescriptionDrug => 2,
-                SubstanceType.HardDrug => 6,
-                _ => 3
+                SubstanceRiskTier.Everyday => 0.45f,
+                SubstanceRiskTier.Controlled => 0.85f,
+                SubstanceRiskTier.Dangerous => 1.15f,
+                SubstanceRiskTier.Extreme => 1.45f,
+                _ => 1f
+            };
+        }
+
+        private static SubstanceProfile CreateProfile(SubstanceType type, string displayName, string category, string summary, float onsetHours, int durationHours, float toleranceRate, float addictionRate, float withdrawalSeverity, SubstanceRiskTier riskTier, string primaryBuff, string primaryDebuff, string crashSummary, string rehabRecommendation)
+        {
+            return new SubstanceProfile
+            {
+                Substance = type,
+                DisplayName = displayName,
+                Category = category,
+                Summary = summary,
+                OnsetHours = onsetHours,
+                DurationHours = durationHours,
+                ToleranceRate = toleranceRate,
+                AddictionRate = addictionRate,
+                WithdrawalSeverity = withdrawalSeverity,
+                RiskTier = riskTier,
+                PrimaryBuff = primaryBuff,
+                PrimaryDebuff = primaryDebuff,
+                CrashSummary = crashSummary,
+                RehabRecommendation = rehabRecommendation
             };
         }
 
