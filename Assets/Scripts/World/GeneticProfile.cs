@@ -38,11 +38,43 @@ namespace Survivebest.World
         InheritedChain
     }
 
+    public enum AboAllele
+    {
+        O,
+        A,
+        B
+    }
+
+    public enum RhAllele
+    {
+        Negative,
+        Positive
+    }
+
+    public enum BloodType
+    {
+        ONegative,
+        OPositive,
+        ANegative,
+        APositive,
+        BNegative,
+        BPositive,
+        ABNegative,
+        ABPositive
+    }
+
     public enum CreatorGeneticsMode
     {
         RandomPopulation,
         DnaEdit,
-        VisualSculpt
+        VisualSculpt,
+        GeneticsPreview,
+        OffspringPreview,
+        FamilyBuilder,
+        CloneEdit,
+        AgePreview,
+        Makeover,
+        LifeEventUpdate
     }
 
     [Serializable]
@@ -212,6 +244,210 @@ namespace Survivebest.World
     }
 
     [Serializable]
+    public class FaceStructureGenomeProfile
+    {
+        [Range(0f, 1f)] public float HeadWidth = 0.5f;
+        [Range(0f, 1f)] public float HeadHeight = 0.5f;
+        [Range(0f, 1f)] public float FaceLength = 0.5f;
+        [Range(0f, 1f)] public float ForeheadHeight = 0.5f;
+        [Range(0f, 1f)] public float ForeheadSlope = 0.5f;
+        [Range(0f, 1f)] public float TempleWidth = 0.5f;
+        [Range(0f, 1f)] public float CheekFullness = 0.5f;
+        [Range(0f, 1f)] public float CheekboneProjection = 0.5f;
+        [Range(0f, 1f)] public float MidfaceLength = 0.5f;
+        [Range(0f, 1f)] public float JawWidth = 0.5f;
+        [Range(0f, 1f)] public float JawSharpness = 0.5f;
+        [Range(0f, 1f)] public float ChinWidth = 0.5f;
+        [Range(0f, 1f)] public float ChinLength = 0.5f;
+        [Range(0f, 1f)] public float ChinProjection = 0.5f;
+        [Range(0f, 1f)] public float EarSize = 0.5f;
+        [Range(0f, 1f)] public float EarProtrusion = 0.5f;
+    }
+
+    [Serializable]
+    public class EyeGenomeProfile
+    {
+        [Range(0f, 1f)] public float EyeSize = 0.5f;
+        [Range(0f, 1f)] public float EyeWidth = 0.5f;
+        [Range(0f, 1f)] public float EyeRoundness = 0.5f;
+        [Range(0f, 1f)] public float EyeDepth = 0.5f;
+        [Range(0f, 1f)] public float EyeSpacing = 0.5f;
+        [Range(0f, 1f)] public float EyeTilt = 0.5f;
+        [Range(0f, 1f)] public float UpperLidFullness = 0.5f;
+        [Range(0f, 1f)] public float LowerLidFullness = 0.5f;
+        [Range(0f, 1f)] public float LashDensity = 0.5f;
+        [Range(0f, 1f)] public float LashLengthTendency = 0.5f;
+        [Range(0f, 1f)] public float BrowRidgeStrength = 0.5f;
+        [Range(0f, 1f)] public float IrisSize = 0.5f;
+        [Range(0f, 1f)] public float ScleraVisibility = 0.5f;
+    }
+
+    [Serializable]
+    public class NoseGenomeProfile
+    {
+        [Range(0f, 1f)] public float BridgeHeight = 0.5f;
+        [Range(0f, 1f)] public float BridgeWidth = 0.5f;
+        [Range(0f, 1f)] public float NoseLength = 0.5f;
+        [Range(0f, 1f)] public float TipShape = 0.5f;
+        [Range(0f, 1f)] public float NostrilWidth = 0.5f;
+        [Range(0f, 1f)] public float NostrilFlare = 0.5f;
+        [Range(0f, 1f)] public float Projection = 0.5f;
+        [Range(0f, 1f)] public float Curve = 0.5f;
+        [Range(0f, 1f)] public float Softness = 0.5f;
+    }
+
+    [Serializable]
+    public class MouthGenomeProfile
+    {
+        [Range(0f, 1f)] public float UpperLipFullness = 0.5f;
+        [Range(0f, 1f)] public float LowerLipFullness = 0.5f;
+        [Range(0f, 1f)] public float CupidBowSharpness = 0.5f;
+        [Range(0f, 1f)] public float MouthWidth = 0.5f;
+        [Range(0f, 1f)] public float MouthCornerTilt = 0.5f;
+        [Range(0f, 1f)] public float PhiltrumDepth = 0.5f;
+        [Range(0f, 1f)] public float LipProjection = 0.5f;
+        [Range(0f, 1f)] public float LipAsymmetryTendency = 0.5f;
+        [Range(0f, 1f)] public float ToothSpacingTendency = 0.5f;
+        [Range(0f, 1f)] public float GumShowTendency = 0.5f;
+    }
+
+    [Serializable]
+    public class SkinGenomeProfile
+    {
+        [Range(0f, 1f)] public float MelaninRange = 0.5f;
+        [Range(0f, 1f)] public float Undertone = 0.5f;
+        [Range(0f, 1f)] public float BlushVisibility = 0.35f;
+        [Range(0f, 1f)] public float FreckleTendency = 0.2f;
+        [Range(0f, 1f)] public float MoleTendency = 0.2f;
+        [Range(0f, 1f)] public float AcneTendency = 0.25f;
+        [Range(0f, 1f)] public float ScarTendency = 0.25f;
+        [Range(0f, 1f)] public float StretchMarkTendency = 0.2f;
+        [Range(0f, 1f)] public float WrinkleTendency = 0.3f;
+        [Range(0f, 1f)] public float PoreVisibility = 0.3f;
+        [Range(0f, 1f)] public float SunSensitivity = 0.4f;
+        [Range(0f, 1f)] public float TanningTendency = 0.5f;
+    }
+
+    [Serializable]
+    public class HairGenomeProfile
+    {
+        [Range(0f, 1f)] public float Density = 0.6f;
+        [Range(0f, 1f)] public float StrandThickness = 0.5f;
+        [Range(0f, 1f)] public float CurlPattern = 0.4f;
+        [Range(0f, 1f)] public float WavePattern = 0.4f;
+        [Range(0f, 1f)] public float GrowthSpeed = 0.5f;
+        [Range(0f, 1f)] public float HairlineShape = 0.5f;
+        [Range(0f, 1f)] public float WidowsPeakTendency = 0.5f;
+        [Range(0f, 1f)] public float BabyHairDensity = 0.5f;
+        [Range(0f, 1f)] public float BodyHairLevel = 0.5f;
+        [Range(0f, 1f)] public float FacialHairTendency = 0.5f;
+        [Range(0f, 1f)] public float GrayingAge = 0.35f;
+        [Range(0f, 1f)] public float GrayingPattern = 0.4f;
+        [Range(0f, 1f)] public float BaldnessTendency = 0.2f;
+    }
+
+    [Serializable]
+    public class BodyGenomeProfile
+    {
+        [Range(0f, 1f)] public float HeightPotential = 0.5f;
+        [Range(0f, 1f)] public float FrameSize = 0.5f;
+        [Range(0f, 1f)] public float ShoulderWidth = 0.5f;
+        [Range(0f, 1f)] public float RibcageWidth = 0.5f;
+        [Range(0f, 1f)] public float ArmLength = 0.5f;
+        [Range(0f, 1f)] public float TorsoLength = 0.5f;
+        [Range(0f, 1f)] public float WaistTendency = 0.5f;
+        [Range(0f, 1f)] public float HipWidth = 0.5f;
+        [Range(0f, 1f)] public float ThighFullness = 0.5f;
+        [Range(0f, 1f)] public float CalfShape = 0.5f;
+        [Range(0f, 1f)] public float ButtFullness = 0.5f;
+        [Range(0f, 1f)] public float ChestSizeTendency = 0.5f;
+        [Range(0f, 1f)] public float MuscleResponse = 0.5f;
+        [Range(0f, 1f)] public float FatDistribution = 0.5f;
+        [Range(0f, 1f)] public float Metabolism = 0.5f;
+        [Range(0f, 1f)] public float PostureTendency = 0.5f;
+    }
+
+    [Serializable]
+    public class BiologyGenomeProfile
+    {
+        [Range(0f, 1f)] public float FertilityLevel = 0.5f;
+        [Range(0f, 1f)] public float MenopauseTimingTendency = 0.5f;
+        [Range(0f, 1f)] public float PubertyTiming = 0.5f;
+        [Range(0f, 1f)] public float AppetiteTendency = 0.5f;
+        [Range(0f, 1f)] public float SleepNeed = 0.5f;
+        [Range(0f, 1f)] public float DiseasePredisposition = 0.35f;
+        [Range(0f, 1f)] public float StressSensitivity = 0.5f;
+        [Range(0f, 1f)] public float PainSensitivity = 0.5f;
+        [Range(0f, 1f)] public float AddictionVulnerability = 0.25f;
+        [Range(0f, 1f)] public float HormoneSensitivity = 0.5f;
+        [Range(0f, 1f)] public float ImmuneResilience = 0.5f;
+        [Range(0f, 1f)] public float AgingSpeed = 0.5f;
+    }
+
+    [Serializable]
+    public class TemperamentGenomeProfile
+    {
+        [Range(0f, 1f)] public float BaselineSensitivity = 0.5f;
+        [Range(0f, 1f)] public float IrritabilityTendency = 0.5f;
+        [Range(0f, 1f)] public float NoveltySeeking = 0.5f;
+        [Range(0f, 1f)] public float SociabilityTendency = 0.5f;
+        [Range(0f, 1f)] public float ShynessTendency = 0.5f;
+        [Range(0f, 1f)] public float ImpulsivityTendency = 0.5f;
+        [Range(0f, 1f)] public float CautionTendency = 0.5f;
+        [Range(0f, 1f)] public float EmotionalIntensity = 0.5f;
+        [Range(0f, 1f)] public float ResilienceTendency = 0.5f;
+    }
+
+    [Serializable]
+    public class BloodGeneticsProfile
+    {
+        public AboAllele ParentAlleleA = AboAllele.O;
+        public AboAllele ParentAlleleB = AboAllele.O;
+        public RhAllele RhParentAlleleA = RhAllele.Positive;
+        public RhAllele RhParentAlleleB = RhAllele.Positive;
+
+        public BloodType ResolveBloodType()
+        {
+            bool hasA = ParentAlleleA == AboAllele.A || ParentAlleleB == AboAllele.A;
+            bool hasB = ParentAlleleA == AboAllele.B || ParentAlleleB == AboAllele.B;
+            bool rhPositive = RhParentAlleleA == RhAllele.Positive || RhParentAlleleB == RhAllele.Positive;
+
+            if (hasA && hasB)
+            {
+                return rhPositive ? BloodType.ABPositive : BloodType.ABNegative;
+            }
+
+            if (hasA)
+            {
+                return rhPositive ? BloodType.APositive : BloodType.ANegative;
+            }
+
+            if (hasB)
+            {
+                return rhPositive ? BloodType.BPositive : BloodType.BNegative;
+            }
+
+            return rhPositive ? BloodType.OPositive : BloodType.ONegative;
+        }
+
+        public string ToDisplayString()
+        {
+            return ResolveBloodType() switch
+            {
+                BloodType.ONegative => "O-",
+                BloodType.OPositive => "O+",
+                BloodType.ANegative => "A-",
+                BloodType.APositive => "A+",
+                BloodType.BNegative => "B-",
+                BloodType.BPositive => "B+",
+                BloodType.ABNegative => "AB-",
+                BloodType.ABPositive => "AB+",
+                _ => "O+"
+            };
+        }
+    }
+
+    [Serializable]
     public class GeneticProfile
     {
         [Header("Identity")]
@@ -297,6 +533,16 @@ namespace Survivebest.World
         public HormoneRegulationProfile Hormones = new();
         public MicroDetailGenomeProfile MicroDetails = new();
         public ReproductiveGenomeProfile Reproduction = new();
+        public FaceStructureGenomeProfile FaceStructure = new();
+        public EyeGenomeProfile EyeGenome = new();
+        public NoseGenomeProfile NoseGenome = new();
+        public MouthGenomeProfile MouthGenome = new();
+        public SkinGenomeProfile SkinGenome = new();
+        public HairGenomeProfile HairGenome = new();
+        public BodyGenomeProfile BodyGenome = new();
+        public BiologyGenomeProfile Biology = new();
+        public TemperamentGenomeProfile Temperament = new();
+        public BloodGeneticsProfile Blood = new();
 
         [Header("Environmental Layers")]
         public EpigeneticMarkerProfile Epigenetics = new();
@@ -423,6 +669,7 @@ namespace Survivebest.World
             Reproduction.MeioticStability = Mathf.Clamp01(Reproduction.MeioticStability);
             Reproduction.RecombinationRate = Mathf.Clamp01(Reproduction.RecombinationRate);
             Reproduction.RareTraitResurfacing = Mathf.Clamp01(Reproduction.RareTraitResurfacing);
+            ClampDetailedGenomeProfiles();
 
             for (int pairIndex = 0; pairIndex < ChromosomePairs.Count; pairIndex++)
             {
@@ -515,6 +762,7 @@ namespace Survivebest.World
             RecoveryTendency = EvaluateGene("recovery_tendency", 0.5f, env, 0.5f, Epigenetics.SocialSafetySignal * 0.08f);
             IllnessVulnerability = EvaluateGene("illness_vulnerability", 0.35f, env);
             AgingSpeed = EvaluateGene("aging_speed", 0.5f, env, 0.5f, Epigenetics.StressImprint * 0.1f - Hormones.AgingResilience * 0.06f);
+            RebuildDetailedGenomeProfiles(env);
 
             Psychology.BigFiveOpenness = EvaluateGene("psych_openness", Psychology.BigFiveOpenness, env);
             Psychology.BigFiveConscientiousness = EvaluateGene("psych_conscientiousness", Psychology.BigFiveConscientiousness, env);
@@ -609,6 +857,250 @@ namespace Survivebest.World
             }
 
             return null;
+        }
+
+        private void ClampDetailedGenomeProfiles()
+        {
+            FaceStructure.HeadWidth = Mathf.Clamp01(FaceStructure.HeadWidth);
+            FaceStructure.HeadHeight = Mathf.Clamp01(FaceStructure.HeadHeight);
+            FaceStructure.FaceLength = Mathf.Clamp01(FaceStructure.FaceLength);
+            FaceStructure.ForeheadHeight = Mathf.Clamp01(FaceStructure.ForeheadHeight);
+            FaceStructure.ForeheadSlope = Mathf.Clamp01(FaceStructure.ForeheadSlope);
+            FaceStructure.TempleWidth = Mathf.Clamp01(FaceStructure.TempleWidth);
+            FaceStructure.CheekFullness = Mathf.Clamp01(FaceStructure.CheekFullness);
+            FaceStructure.CheekboneProjection = Mathf.Clamp01(FaceStructure.CheekboneProjection);
+            FaceStructure.MidfaceLength = Mathf.Clamp01(FaceStructure.MidfaceLength);
+            FaceStructure.JawWidth = Mathf.Clamp01(FaceStructure.JawWidth);
+            FaceStructure.JawSharpness = Mathf.Clamp01(FaceStructure.JawSharpness);
+            FaceStructure.ChinWidth = Mathf.Clamp01(FaceStructure.ChinWidth);
+            FaceStructure.ChinLength = Mathf.Clamp01(FaceStructure.ChinLength);
+            FaceStructure.ChinProjection = Mathf.Clamp01(FaceStructure.ChinProjection);
+            FaceStructure.EarSize = Mathf.Clamp01(FaceStructure.EarSize);
+            FaceStructure.EarProtrusion = Mathf.Clamp01(FaceStructure.EarProtrusion);
+
+            EyeGenome.EyeSize = Mathf.Clamp01(EyeGenome.EyeSize);
+            EyeGenome.EyeWidth = Mathf.Clamp01(EyeGenome.EyeWidth);
+            EyeGenome.EyeRoundness = Mathf.Clamp01(EyeGenome.EyeRoundness);
+            EyeGenome.EyeDepth = Mathf.Clamp01(EyeGenome.EyeDepth);
+            EyeGenome.EyeSpacing = Mathf.Clamp01(EyeGenome.EyeSpacing);
+            EyeGenome.EyeTilt = Mathf.Clamp01(EyeGenome.EyeTilt);
+            EyeGenome.UpperLidFullness = Mathf.Clamp01(EyeGenome.UpperLidFullness);
+            EyeGenome.LowerLidFullness = Mathf.Clamp01(EyeGenome.LowerLidFullness);
+            EyeGenome.LashDensity = Mathf.Clamp01(EyeGenome.LashDensity);
+            EyeGenome.LashLengthTendency = Mathf.Clamp01(EyeGenome.LashLengthTendency);
+            EyeGenome.BrowRidgeStrength = Mathf.Clamp01(EyeGenome.BrowRidgeStrength);
+            EyeGenome.IrisSize = Mathf.Clamp01(EyeGenome.IrisSize);
+            EyeGenome.ScleraVisibility = Mathf.Clamp01(EyeGenome.ScleraVisibility);
+
+            NoseGenome.BridgeHeight = Mathf.Clamp01(NoseGenome.BridgeHeight);
+            NoseGenome.BridgeWidth = Mathf.Clamp01(NoseGenome.BridgeWidth);
+            NoseGenome.NoseLength = Mathf.Clamp01(NoseGenome.NoseLength);
+            NoseGenome.TipShape = Mathf.Clamp01(NoseGenome.TipShape);
+            NoseGenome.NostrilWidth = Mathf.Clamp01(NoseGenome.NostrilWidth);
+            NoseGenome.NostrilFlare = Mathf.Clamp01(NoseGenome.NostrilFlare);
+            NoseGenome.Projection = Mathf.Clamp01(NoseGenome.Projection);
+            NoseGenome.Curve = Mathf.Clamp01(NoseGenome.Curve);
+            NoseGenome.Softness = Mathf.Clamp01(NoseGenome.Softness);
+
+            MouthGenome.UpperLipFullness = Mathf.Clamp01(MouthGenome.UpperLipFullness);
+            MouthGenome.LowerLipFullness = Mathf.Clamp01(MouthGenome.LowerLipFullness);
+            MouthGenome.CupidBowSharpness = Mathf.Clamp01(MouthGenome.CupidBowSharpness);
+            MouthGenome.MouthWidth = Mathf.Clamp01(MouthGenome.MouthWidth);
+            MouthGenome.MouthCornerTilt = Mathf.Clamp01(MouthGenome.MouthCornerTilt);
+            MouthGenome.PhiltrumDepth = Mathf.Clamp01(MouthGenome.PhiltrumDepth);
+            MouthGenome.LipProjection = Mathf.Clamp01(MouthGenome.LipProjection);
+            MouthGenome.LipAsymmetryTendency = Mathf.Clamp01(MouthGenome.LipAsymmetryTendency);
+            MouthGenome.ToothSpacingTendency = Mathf.Clamp01(MouthGenome.ToothSpacingTendency);
+            MouthGenome.GumShowTendency = Mathf.Clamp01(MouthGenome.GumShowTendency);
+
+            SkinGenome.MelaninRange = Mathf.Clamp01(SkinGenome.MelaninRange);
+            SkinGenome.Undertone = Mathf.Clamp01(SkinGenome.Undertone);
+            SkinGenome.BlushVisibility = Mathf.Clamp01(SkinGenome.BlushVisibility);
+            SkinGenome.FreckleTendency = Mathf.Clamp01(SkinGenome.FreckleTendency);
+            SkinGenome.MoleTendency = Mathf.Clamp01(SkinGenome.MoleTendency);
+            SkinGenome.AcneTendency = Mathf.Clamp01(SkinGenome.AcneTendency);
+            SkinGenome.ScarTendency = Mathf.Clamp01(SkinGenome.ScarTendency);
+            SkinGenome.StretchMarkTendency = Mathf.Clamp01(SkinGenome.StretchMarkTendency);
+            SkinGenome.WrinkleTendency = Mathf.Clamp01(SkinGenome.WrinkleTendency);
+            SkinGenome.PoreVisibility = Mathf.Clamp01(SkinGenome.PoreVisibility);
+            SkinGenome.SunSensitivity = Mathf.Clamp01(SkinGenome.SunSensitivity);
+            SkinGenome.TanningTendency = Mathf.Clamp01(SkinGenome.TanningTendency);
+
+            HairGenome.Density = Mathf.Clamp01(HairGenome.Density);
+            HairGenome.StrandThickness = Mathf.Clamp01(HairGenome.StrandThickness);
+            HairGenome.CurlPattern = Mathf.Clamp01(HairGenome.CurlPattern);
+            HairGenome.WavePattern = Mathf.Clamp01(HairGenome.WavePattern);
+            HairGenome.GrowthSpeed = Mathf.Clamp01(HairGenome.GrowthSpeed);
+            HairGenome.HairlineShape = Mathf.Clamp01(HairGenome.HairlineShape);
+            HairGenome.WidowsPeakTendency = Mathf.Clamp01(HairGenome.WidowsPeakTendency);
+            HairGenome.BabyHairDensity = Mathf.Clamp01(HairGenome.BabyHairDensity);
+            HairGenome.BodyHairLevel = Mathf.Clamp01(HairGenome.BodyHairLevel);
+            HairGenome.FacialHairTendency = Mathf.Clamp01(HairGenome.FacialHairTendency);
+            HairGenome.GrayingAge = Mathf.Clamp01(HairGenome.GrayingAge);
+            HairGenome.GrayingPattern = Mathf.Clamp01(HairGenome.GrayingPattern);
+            HairGenome.BaldnessTendency = Mathf.Clamp01(HairGenome.BaldnessTendency);
+
+            BodyGenome.HeightPotential = Mathf.Clamp01(BodyGenome.HeightPotential);
+            BodyGenome.FrameSize = Mathf.Clamp01(BodyGenome.FrameSize);
+            BodyGenome.ShoulderWidth = Mathf.Clamp01(BodyGenome.ShoulderWidth);
+            BodyGenome.RibcageWidth = Mathf.Clamp01(BodyGenome.RibcageWidth);
+            BodyGenome.ArmLength = Mathf.Clamp01(BodyGenome.ArmLength);
+            BodyGenome.TorsoLength = Mathf.Clamp01(BodyGenome.TorsoLength);
+            BodyGenome.WaistTendency = Mathf.Clamp01(BodyGenome.WaistTendency);
+            BodyGenome.HipWidth = Mathf.Clamp01(BodyGenome.HipWidth);
+            BodyGenome.ThighFullness = Mathf.Clamp01(BodyGenome.ThighFullness);
+            BodyGenome.CalfShape = Mathf.Clamp01(BodyGenome.CalfShape);
+            BodyGenome.ButtFullness = Mathf.Clamp01(BodyGenome.ButtFullness);
+            BodyGenome.ChestSizeTendency = Mathf.Clamp01(BodyGenome.ChestSizeTendency);
+            BodyGenome.MuscleResponse = Mathf.Clamp01(BodyGenome.MuscleResponse);
+            BodyGenome.FatDistribution = Mathf.Clamp01(BodyGenome.FatDistribution);
+            BodyGenome.Metabolism = Mathf.Clamp01(BodyGenome.Metabolism);
+            BodyGenome.PostureTendency = Mathf.Clamp01(BodyGenome.PostureTendency);
+
+            Biology.FertilityLevel = Mathf.Clamp01(Biology.FertilityLevel);
+            Biology.MenopauseTimingTendency = Mathf.Clamp01(Biology.MenopauseTimingTendency);
+            Biology.PubertyTiming = Mathf.Clamp01(Biology.PubertyTiming);
+            Biology.AppetiteTendency = Mathf.Clamp01(Biology.AppetiteTendency);
+            Biology.SleepNeed = Mathf.Clamp01(Biology.SleepNeed);
+            Biology.DiseasePredisposition = Mathf.Clamp01(Biology.DiseasePredisposition);
+            Biology.StressSensitivity = Mathf.Clamp01(Biology.StressSensitivity);
+            Biology.PainSensitivity = Mathf.Clamp01(Biology.PainSensitivity);
+            Biology.AddictionVulnerability = Mathf.Clamp01(Biology.AddictionVulnerability);
+            Biology.HormoneSensitivity = Mathf.Clamp01(Biology.HormoneSensitivity);
+            Biology.ImmuneResilience = Mathf.Clamp01(Biology.ImmuneResilience);
+            Biology.AgingSpeed = Mathf.Clamp01(Biology.AgingSpeed);
+
+            Temperament.BaselineSensitivity = Mathf.Clamp01(Temperament.BaselineSensitivity);
+            Temperament.IrritabilityTendency = Mathf.Clamp01(Temperament.IrritabilityTendency);
+            Temperament.NoveltySeeking = Mathf.Clamp01(Temperament.NoveltySeeking);
+            Temperament.SociabilityTendency = Mathf.Clamp01(Temperament.SociabilityTendency);
+            Temperament.ShynessTendency = Mathf.Clamp01(Temperament.ShynessTendency);
+            Temperament.ImpulsivityTendency = Mathf.Clamp01(Temperament.ImpulsivityTendency);
+            Temperament.CautionTendency = Mathf.Clamp01(Temperament.CautionTendency);
+            Temperament.EmotionalIntensity = Mathf.Clamp01(Temperament.EmotionalIntensity);
+            Temperament.ResilienceTendency = Mathf.Clamp01(Temperament.ResilienceTendency);
+        }
+
+        private void RebuildDetailedGenomeProfiles(float env)
+        {
+            FaceStructure.HeadWidth = FaceWidth;
+            FaceStructure.HeadHeight = EvaluateGene("head_height", 0.5f, env, 0.5f, RegionProfile.HeightBias * 0.05f);
+            FaceStructure.FaceLength = EvaluateGene("face_length", 0.5f, env);
+            FaceStructure.ForeheadHeight = EvaluateGene("forehead_height", 0.5f, env);
+            FaceStructure.ForeheadSlope = EvaluateGene("forehead_slope", 0.5f, env);
+            FaceStructure.TempleWidth = EvaluateGene("temple_width", 0.5f, env);
+            FaceStructure.CheekFullness = CheekFullness;
+            FaceStructure.CheekboneProjection = EvaluateGene("cheekbone_projection", CheekFullness, env);
+            FaceStructure.MidfaceLength = EvaluateGene("midface_length", 0.5f, env);
+            FaceStructure.JawWidth = JawWidth;
+            FaceStructure.JawSharpness = Mathf.Clamp01(Mathf.Lerp(JawWidth, 1f - CheekFullness, 0.45f));
+            FaceStructure.ChinWidth = EvaluateGene("chin_width", ChinProminence, env);
+            FaceStructure.ChinLength = EvaluateGene("chin_length", ChinProminence, env);
+            FaceStructure.ChinProjection = ChinProminence;
+            FaceStructure.EarSize = EarSize;
+            FaceStructure.EarProtrusion = EvaluateGene("ear_protrusion", EarSize, env);
+
+            EyeGenome.EyeSize = EyeSize;
+            EyeGenome.EyeWidth = EvaluateGene("eye_width", EyeSize, env);
+            EyeGenome.EyeRoundness = EvaluateGene("eye_roundness", EyeSize, env);
+            EyeGenome.EyeDepth = EvaluateGene("eye_depth", 1f - EyeSize, env);
+            EyeGenome.EyeSpacing = EyeSpacing;
+            EyeGenome.EyeTilt = EvaluateGene("eye_tilt", 0.5f, env);
+            EyeGenome.UpperLidFullness = EvaluateGene("upper_lid_fullness", 0.5f, env);
+            EyeGenome.LowerLidFullness = EvaluateGene("lower_lid_fullness", 0.5f, env);
+            EyeGenome.LashDensity = EyelashDensity;
+            EyeGenome.LashLengthTendency = MicroDetails.LashLength;
+            EyeGenome.BrowRidgeStrength = BrowHeaviness;
+            EyeGenome.IrisSize = EvaluateGene("iris_size", 0.5f, env, 0.5f, MicroDetails.IrisRingDepth * 0.05f);
+            EyeGenome.ScleraVisibility = EvaluateGene("sclera_visibility", 0.5f, env);
+
+            NoseGenome.BridgeHeight = NoseBridgeHeight;
+            NoseGenome.BridgeWidth = EvaluateGene("nose_bridge_width", NostrilWidth, env);
+            NoseGenome.NoseLength = EvaluateGene("nose_length", 0.5f, env);
+            NoseGenome.TipShape = EvaluateGene("nose_tip_shape", 0.5f, env);
+            NoseGenome.NostrilWidth = NostrilWidth;
+            NoseGenome.NostrilFlare = EvaluateGene("nostril_flare", NostrilWidth, env);
+            NoseGenome.Projection = EvaluateGene("nasal_projection", NoseBridgeHeight, env);
+            NoseGenome.Curve = EvaluateGene("nose_curve", 0.5f, env);
+            NoseGenome.Softness = EvaluateGene("nose_softness", 0.5f, env);
+
+            MouthGenome.UpperLipFullness = EvaluateGene("upper_lip_fullness", LipFullness, env);
+            MouthGenome.LowerLipFullness = EvaluateGene("lower_lip_fullness", LipFullness, env);
+            MouthGenome.CupidBowSharpness = EvaluateGene("cupid_bow_sharpness", LipFullness, env);
+            MouthGenome.MouthWidth = EvaluateGene("mouth_width", 0.5f, env);
+            MouthGenome.MouthCornerTilt = EvaluateGene("mouth_corner_tilt", 0.5f, env);
+            MouthGenome.PhiltrumDepth = EvaluateGene("philtrum_depth", 0.5f, env);
+            MouthGenome.LipProjection = EvaluateGene("lip_projection", LipFullness, env);
+            MouthGenome.LipAsymmetryTendency = EvaluateGene("lip_asymmetry_tendency", 0.5f, env);
+            MouthGenome.ToothSpacingTendency = TeethSpacing;
+            MouthGenome.GumShowTendency = GumExposure;
+
+            SkinGenome.MelaninRange = MelaninRange;
+            SkinGenome.Undertone = UndertoneWarmth;
+            SkinGenome.BlushVisibility = BlushVisibility;
+            SkinGenome.FreckleTendency = FreckleTendency;
+            SkinGenome.MoleTendency = MoleTendency;
+            SkinGenome.AcneTendency = AcneTendency;
+            SkinGenome.ScarTendency = Mathf.Clamp01(StretchMarkChance * 0.4f + MicroDetails.AcneScarRisk * 0.35f + Epigenetics.ToxinExposure * 0.08f);
+            SkinGenome.StretchMarkTendency = StretchMarkChance;
+            SkinGenome.WrinkleTendency = Mathf.Clamp01(AgingSpeed * 0.7f + Epigenetics.StressImprint * 0.15f);
+            SkinGenome.PoreVisibility = EvaluateGene("pore_visibility", 0.3f, env);
+            SkinGenome.SunSensitivity = SunSensitivity;
+            SkinGenome.TanningTendency = Mathf.Clamp01((MelaninRange * 0.55f) + ((1f - SunSensitivity) * 0.45f));
+
+            HairGenome.Density = HairDensity;
+            HairGenome.StrandThickness = HairStrandThickness;
+            HairGenome.CurlPattern = HairCurl;
+            HairGenome.WavePattern = Mathf.Clamp01(Mathf.Lerp(HairCurl, 1f - HairCurl, 0.25f));
+            HairGenome.GrowthSpeed = EvaluateGene("hair_growth_speed", 0.5f, env);
+            HairGenome.HairlineShape = HairlineShape;
+            HairGenome.WidowsPeakTendency = EvaluateGene("widows_peak_tendency", HairlineShape, env);
+            HairGenome.BabyHairDensity = EvaluateGene("baby_hair_density", HairDensity, env);
+            HairGenome.BodyHairLevel = EvaluateGene("body_hair_level", 0.5f, env, 0.5f, Hormones.EstrogenAndrogenBalance * 0.06f);
+            HairGenome.FacialHairTendency = EvaluateGene("facial_hair_tendency", 0.5f, env, 0.5f, Hormones.EstrogenAndrogenBalance * 0.08f);
+            HairGenome.GrayingAge = 1f - GrayingTendency;
+            HairGenome.GrayingPattern = EvaluateGene("graying_pattern", GrayingTendency, env);
+            HairGenome.BaldnessTendency = BaldingTendency;
+
+            BodyGenome.HeightPotential = HeightPotential;
+            BodyGenome.FrameSize = FrameSize;
+            BodyGenome.ShoulderWidth = ShoulderWidth;
+            BodyGenome.RibcageWidth = EvaluateGene("ribcage_width", FrameSize, env);
+            BodyGenome.ArmLength = EvaluateGene("arm_length", LimbProportion, env);
+            BodyGenome.TorsoLength = EvaluateGene("torso_length", 0.5f, env);
+            BodyGenome.WaistTendency = 1f - WaistHipBias;
+            BodyGenome.HipWidth = WaistHipBias;
+            BodyGenome.ThighFullness = ThighFullness;
+            BodyGenome.CalfShape = CalfShape;
+            BodyGenome.ButtFullness = GluteFullness;
+            BodyGenome.ChestSizeTendency = ChestBustPotential;
+            BodyGenome.MuscleResponse = MusclePotential;
+            BodyGenome.FatDistribution = FatDistribution;
+            BodyGenome.Metabolism = MetabolismRate;
+            BodyGenome.PostureTendency = PostureBaseline;
+
+            Biology.FertilityLevel = Reproduction.FertilitySignal;
+            Biology.MenopauseTimingTendency = EvaluateGene("menopause_timing", 0.5f, env);
+            Biology.PubertyTiming = EvaluateGene("puberty_timing", 0.5f, env, 0.5f, Hormones.GrowthHormoneSensitivity * 0.06f);
+            Biology.AppetiteTendency = EvaluateGene("appetite_tendency", MetabolismRate, env);
+            Biology.SleepNeed = 1f - SleepQualityTendency;
+            Biology.DiseasePredisposition = IllnessVulnerability;
+            Biology.StressSensitivity = StressSensitivity;
+            Biology.PainSensitivity = EvaluateGene("pain_sensitivity", 0.5f, env);
+            Biology.AddictionVulnerability = AddictionVulnerability;
+            Biology.HormoneSensitivity = EvaluateGene("hormone_sensitivity", 0.5f, env, 0.5f, Hormones.EstrogenAndrogenBalance * 0.05f);
+            Biology.ImmuneResilience = 1f - IllnessVulnerability;
+            Biology.AgingSpeed = AgingSpeed;
+
+            Temperament.BaselineSensitivity = Mathf.Clamp01((Psychology.BigFiveNeuroticism + StressSensitivity) * 0.5f);
+            Temperament.IrritabilityTendency = Mathf.Clamp01((Psychology.BigFiveNeuroticism * 0.55f) + ((1f - Psychology.BigFiveAgreeableness) * 0.45f));
+            Temperament.NoveltySeeking = Mathf.Clamp01((Psychology.BigFiveOpenness * 0.6f) + (Psychology.RiskTolerance * 0.4f));
+            Temperament.SociabilityTendency = Psychology.BigFiveExtraversion;
+            Temperament.ShynessTendency = Mathf.Clamp01((1f - Psychology.BigFiveExtraversion) * 0.7f + Psychology.TraumaSensitivity * 0.2f);
+            Temperament.ImpulsivityTendency = Psychology.Impulsivity;
+            Temperament.CautionTendency = Mathf.Clamp01((1f - Psychology.RiskTolerance) * 0.7f + Psychology.BigFiveConscientiousness * 0.2f);
+            Temperament.EmotionalIntensity = Mathf.Clamp01((Psychology.BigFiveNeuroticism + Psychology.EmpathyDepth) * 0.5f);
+            Temperament.ResilienceTendency = Mathf.Clamp01((1f - Psychology.BigFiveNeuroticism) * 0.55f + RecoveryTendency * 0.45f);
         }
     }
 }
