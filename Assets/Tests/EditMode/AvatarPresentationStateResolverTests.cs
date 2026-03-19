@@ -20,6 +20,10 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual("skin_state_fatigue", phenotype.AvatarLayers.SkinAgeOverlayKey);
             Assert.AreEqual("wrinkle_stress_mid", phenotype.AvatarLayers.WrinkleOverlayKey);
             Assert.AreEqual(LayerPieceFamily.Sharp, phenotype.AvatarLayers.BrowExpressionFamily);
+            Assert.AreEqual("posture_tense", phenotype.AvatarLayers.PosturePresetKey);
+            Assert.AreEqual("idle_fidgety", phenotype.AvatarLayers.IdleBehaviorKey);
+            Assert.AreEqual("health_overlay_tense", phenotype.AvatarLayers.HealthOverlayKey);
+            Assert.AreEqual("resting_hard", phenotype.AvatarLayers.RestingExpressionKey);
         }
 
         [Test]
@@ -43,6 +47,8 @@ namespace Survivebest.Tests.EditMode
 
             Assert.IsTrue(genetics.Phenotype.AvatarLayers.ExpressionPresetKey.StartsWith("exp_"));
             Assert.AreEqual("exp_alert_frown", genetics.Phenotype.AvatarLayers.ExpressionPresetKey);
+            Assert.AreEqual("posture_tense", genetics.Phenotype.AvatarLayers.PosturePresetKey);
+            Assert.AreEqual("idle_fidgety", genetics.Phenotype.AvatarLayers.IdleBehaviorKey);
 
             Object.DestroyImmediate(go);
         }

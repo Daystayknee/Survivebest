@@ -1,7 +1,7 @@
 # Survivebest (2D Life Sim Survival RPG Foundation)
 
 Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.
-The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play.
+The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play. The current visual direction is explicitly a **2D paper-doll / live-portrait life sim**, with hidden simulation values resolving into layered sprites, tints, silhouette scales, expression presets, and family resemblance presentation.
 
 ## Engine / Requirements
 
@@ -217,6 +217,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - New status effect simulation layer with an auto-generated 220-effect library (positive + negative), hourly ticking, illness chance hooks, and event emission (`StatusEffectSystem`).
 - New modular genetics pipeline with genotype→phenotype resolution, trait-expression modes (dominant/blended/partial/latent), allele pairs, polygenic scoring, epigenetic pressure, mutation load, family resemblance reporting, life-stage remapping, and inherited health tendencies (`GeneticsSystem`, `InheritanceResolver`, `PhenotypeResolver`, `LifeStageMorphResolver`).
 - Added Unity-ready 2D avatar layer contracts (`AvatarLayerProfile`) for head/face/hair families and body-region scales (neck/chest/waist/hips/thighs/calves/hands/feet) to support future layered portrait/paper-doll rendering.
+- Added `2D_PAPERDOLL_GENETICS_PIPELINE.md` as the new source-of-truth design brief for DNA→trait→paper-doll-part resolution, live-portrait rig states, family resemblance rules, body silhouette composition, and psychology-driven portrait behavior.
 - `AppearanceManager` now includes context-menu tools to auto-bind portrait layers by child name and validate missing layer references for Unity setup speed.
 - Furniture store purchase flow with wallet spend + instant placement spawn + build-mode handoff (`FurnitureStoreController`).
 - Added `ExperiencePacingOrchestrator` as a cross-system cadence layer to monitor survival/social/progression/expression/risk pillars and inject dynamic beats (director spikes, emergency opportunities, social memory beats, progression minigame nudges) when play gets too quiet.

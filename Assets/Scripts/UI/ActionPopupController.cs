@@ -8,9 +8,11 @@ using Survivebest.Commerce;
 using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.Health;
+using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Status;
 using Survivebest.Minigames;
+using Survivebest.Quest;
 
 namespace Survivebest.UI
 {
@@ -36,11 +38,13 @@ namespace Survivebest.UI
     {
         [SerializeField] private SidebarContextMenu sidebarContextMenu;
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private LocationManager locationManager;
         [SerializeField] private GrocerySystem grocerySystem;
         [SerializeField] private OrderingSystem orderingSystem;
         [SerializeField] private RecipeSystem recipeSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private MinigameManager minigameManager;
+        [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -243,6 +247,17 @@ namespace Survivebest.UI
                     reason = PracticeSkill(active, "Survival skills", 5f);
                     magnitude = 5f;
                     break;
+                case "accept_local_opportunity":
+                    reason = AcceptLocalOpportunity(active);
+                    magnitude = 5f;
+                    break;
+                case "continue_local_opportunity":
+                    reason = ContinueLocalOpportunity(active, out magnitude);
+                    break;
+                case "review_local_pulse":
+                    reason = ReviewLocalPulse();
+                    magnitude = 1.5f;
+                    break;
                 case "animal_sight":
                     reason = ResolveAnimalSighting(active, out magnitude);
                     break;
@@ -316,6 +331,9 @@ namespace Survivebest.UI
                 "animal_sight" => currentSighting != null ? $"Animal Sighting: {currentSighting.SightingName}" : "Animal Sighting",
                 "practice_skill" => "Skill Practice",
                 "train_skill" => "Skill Training",
+                "accept_local_opportunity" => "Local Opportunity",
+                "continue_local_opportunity" => "Continue Opportunity",
+                "review_local_pulse" => "District Pulse",
                 _ => "Action"
             };
         }
@@ -347,6 +365,9 @@ namespace Survivebest.UI
                 "animal_sight" => BuildAnimalSightingDescription(),
                 "practice_skill" => "Spend time to gain XP in an applied skill.",
                 "train_skill" => "Focused training to gain bigger XP rewards.",
+                "accept_local_opportunity" => "Accept the best currently available opportunity tied to this location.",
+                "continue_local_opportunity" => "Advance an active local opportunity and cash in progress if possible.",
+                "review_local_pulse" => "Pause and read the district pulse before committing your next move.",
                 _ => "Confirm to execute this action."
             };
         }
@@ -376,6 +397,13 @@ namespace Survivebest.UI
                     break;
                 case "animal_sight":
                     AppendAnimalSightingPreview(builder);
+                    break;
+                case "accept_local_opportunity":
+                case "continue_local_opportunity":
+                    AppendOpportunityPreview(builder, actionKey);
+                    break;
+                case "review_local_pulse":
+                    builder.AppendLine(ReviewLocalPulse());
                     break;
                 case "fish":
                     builder.AppendLine("Fishing options:");
@@ -439,6 +467,24 @@ namespace Survivebest.UI
             return builder.ToString().TrimEnd();
         }
 
+        private void AppendOpportunityPreview(StringBuilder sb, string actionKey)
+        {
+            ActiveOpportunity opportunity = actionKey == "continue_local_opportunity"
+                ? GetFirstAcceptedOpportunityForCurrentLocation()
+                : GetFirstAvailableOpportunityForCurrentLocation();
+
+            if (opportunity == null || opportunity.Definition == null)
+            {
+                sb.AppendLine("• No matching local opportunity is available.");
+                return;
+            }
+
+            sb.AppendLine($"• {opportunity.Definition.Title}");
+            sb.AppendLine($"• Reward: ${opportunity.Definition.RewardFunds}");
+            sb.AppendLine($"• Deadline: {opportunity.DeadlineHour}h");
+            sb.AppendLine($"• Objectives: {opportunity.Definition.Objectives.Count}");
+        }
+
         private void AppendAnimalSightingPreview(StringBuilder sb)
         {
             if (currentSighting == null)
@@ -478,6 +524,91 @@ namespace Survivebest.UI
                         : $"{currentSighting.AnimalName} • {currentSighting.AnimalSpecies} (assign preview image)";
                 }
             }
+        }
+
+        private ActiveOpportunity GetFirstAvailableOpportunityForCurrentLocation()
+        {
+            string locationId = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : null;
+            if (questOpportunitySystem == null || string.IsNullOrWhiteSpace(locationId))
+            {
+                return null;
+            }
+
+            IReadOnlyList<ActiveOpportunity> opportunities = questOpportunitySystem.GetAvailableOpportunitiesForLocation(locationId);
+            return opportunities.Count > 0 ? opportunities[0] : null;
+        }
+
+        private ActiveOpportunity GetFirstAcceptedOpportunityForCurrentLocation()
+        {
+            string locationId = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : null;
+            if (questOpportunitySystem == null || string.IsNullOrWhiteSpace(locationId))
+            {
+                return null;
+            }
+
+            IReadOnlyList<ActiveOpportunity> opportunities = questOpportunitySystem.GetAcceptedOpportunitiesForLocation(locationId);
+            return opportunities.Count > 0 ? opportunities[0] : null;
+        }
+
+        private string AcceptLocalOpportunity(CharacterCore active)
+        {
+            ActiveOpportunity opportunity = GetFirstAvailableOpportunityForCurrentLocation();
+            if (opportunity == null || opportunity.Definition == null)
+            {
+                return "No local opportunities are available right now.";
+            }
+
+            bool accepted = questOpportunitySystem.AcceptOpportunity(opportunity.Definition.OpportunityId, active);
+            return accepted
+                ? $"Accepted local opportunity: {opportunity.Definition.Title}."
+                : "Could not accept the local opportunity.";
+        }
+
+        private string ContinueLocalOpportunity(CharacterCore active, out float magnitude)
+        {
+            magnitude = 2f;
+            ActiveOpportunity opportunity = GetFirstAcceptedOpportunityForCurrentLocation();
+            if (opportunity == null || opportunity.Definition == null)
+            {
+                magnitude = 0f;
+                return "No active local opportunity is ready to progress.";
+            }
+
+            if (opportunity.Definition.Objectives == null || opportunity.Definition.Objectives.Count == 0)
+            {
+                questOpportunitySystem.ResolveOpportunity(opportunity, true, "Location follow-through completed");
+                magnitude = opportunity.Definition.RewardFunds;
+                return $"Resolved {opportunity.Definition.Title}.";
+            }
+
+            OpportunityObjective objective = opportunity.Definition.Objectives[0];
+            bool progressed = questOpportunitySystem.ProgressObjective(opportunity.Definition.OpportunityId, objective.ObjectiveId, 1);
+            magnitude = progressed ? Mathf.Max(3f, opportunity.Definition.RewardFunds) : 0f;
+            return progressed
+                ? $"Advanced local opportunity: {opportunity.Definition.Title}."
+                : $"Could not advance {opportunity.Definition.Title}.";
+        }
+
+        private string ReviewLocalPulse()
+        {
+            if (locationManager == null || locationManager.CurrentRoom == null)
+            {
+                return "No local district pulse is available.";
+            }
+
+            ActiveOpportunity available = GetFirstAvailableOpportunityForCurrentLocation();
+            ActiveOpportunity accepted = GetFirstAcceptedOpportunityForCurrentLocation();
+            if (available != null && available.Definition != null)
+            {
+                return $"Pulse: {locationManager.CurrentRoom.RoomName} has an available lead — {available.Definition.Title}.";
+            }
+
+            if (accepted != null && accepted.Definition != null)
+            {
+                return $"Pulse: Stay on task in {locationManager.CurrentRoom.RoomName} — {accepted.Definition.Title} is active.";
+            }
+
+            return $"Pulse: {locationManager.CurrentRoom.RoomName} feels quiet right now. Push skills, needs, or scouting.";
         }
 
         private AnimalSightingEncounter PickSighting()
