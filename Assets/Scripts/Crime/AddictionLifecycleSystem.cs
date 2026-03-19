@@ -15,7 +15,8 @@ namespace Survivebest.Crime
         Experimental,
         Habit,
         Dependency,
-        Withdrawal
+        Withdrawal,
+        Recovery
     }
 
     public class AddictionLifecycleSystem : MonoBehaviour
@@ -31,6 +32,7 @@ namespace Survivebest.Crime
         [SerializeField, Range(0f, 1f)] private float tolerance;
         [SerializeField, Range(0f, 1f)] private float withdrawalLoad;
         [SerializeField, Min(0)] private int hoursSinceLastUse;
+        [SerializeField] private SubstanceType primarySubstance = SubstanceType.Caffeine;
 
         public event Action<AddictionStage> OnStageChanged;
         public event Action<float> OnWithdrawalUpdated;
@@ -39,6 +41,7 @@ namespace Survivebest.Crime
         public float Tolerance => tolerance;
         public float WithdrawalLoad => withdrawalLoad;
         public int HoursSinceLastUse => hoursSinceLastUse;
+        public SubstanceType PrimarySubstance => primarySubstance;
 
         private void OnEnable()
         {
@@ -86,9 +89,14 @@ namespace Survivebest.Crime
 
         private void HandleSubstanceUsed(SubstanceType type, bool illegal)
         {
+            primarySubstance = type;
             hoursSinceLastUse = 0;
-            tolerance = Mathf.Clamp01(tolerance + (type == SubstanceType.HardDrug ? 0.14f : 0.07f));
-            withdrawalLoad = Mathf.Max(0f, withdrawalLoad - 0.2f);
+            SubstanceProfile profile = substanceSystem != null ? substanceSystem.GetSubstanceProfile(type) : null;
+            float toleranceGain = profile != null ? profile.ToleranceRate : 0.07f;
+            float withdrawalRelief = profile != null ? Mathf.Lerp(0.08f, 0.28f, profile.WithdrawalSeverity) : 0.2f;
+
+            tolerance = Mathf.Clamp01(tolerance + toleranceGain);
+            withdrawalLoad = Mathf.Max(0f, withdrawalLoad - withdrawalRelief);
 
             if (illegal)
             {
@@ -104,11 +112,16 @@ namespace Survivebest.Crime
         {
             hoursSinceLastUse++;
             float dependency = substanceSystem != null ? substanceSystem.DependencyLevel : 0f;
-            tolerance = Mathf.Clamp01(tolerance + dependency * 0.005f - 0.002f);
+            SubstanceProfile profile = substanceSystem != null ? substanceSystem.GetSubstanceProfile(primarySubstance) : null;
+            float toleranceDecay = profile != null ? Mathf.Lerp(0.001f, 0.006f, 1f - profile.ToleranceRate) : 0.002f;
+            tolerance = Mathf.Clamp01(tolerance + dependency * 0.005f - toleranceDecay);
 
-            if (hoursSinceLastUse > 6 && dependency > 0.25f)
+            int withdrawalStartHours = profile != null ? Mathf.Max(2, Mathf.RoundToInt(profile.DurationHours * 0.75f)) : 6;
+            float withdrawalGain = profile != null ? 0.02f + (profile.WithdrawalSeverity * 0.03f) + (dependency * 0.02f) : 0.04f + dependency * 0.02f;
+
+            if (hoursSinceLastUse > withdrawalStartHours && dependency > 0.12f)
             {
-                withdrawalLoad = Mathf.Clamp01(withdrawalLoad + 0.04f + dependency * 0.02f);
+                withdrawalLoad = Mathf.Clamp01(withdrawalLoad + withdrawalGain);
                 ApplyWithdrawalSymptoms(withdrawalLoad);
             }
             else
@@ -153,6 +166,10 @@ namespace Survivebest.Crime
             if (withdrawalLoad >= 0.45f)
             {
                 next = AddictionStage.Withdrawal;
+            }
+            else if (dependency < 0.12f && tolerance < 0.2f && hoursSinceLastUse > 48)
+            {
+                next = AddictionStage.Recovery;
             }
 
             if (next == stage)

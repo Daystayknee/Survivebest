@@ -49,6 +49,7 @@ namespace Survivebest.UI
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
+        [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -309,12 +310,12 @@ namespace Survivebest.UI
 
             if (bodyText != null)
             {
-                bodyText.text = BuildDescription(actionKey);
+                bodyText.text = BuildVisionAwareDescription(actionKey);
             }
 
             if (optionsText != null)
             {
-                optionsText.text = BuildOptionsPreview(actionKey);
+                optionsText.text = BuildVisionAwareOptions(actionKey);
             }
 
             RefreshAnimalPreview();
@@ -392,6 +393,18 @@ namespace Survivebest.UI
                 "npc_text" => "Send a personality-aware text message to a nearby NPC contact.",
                 _ => "Confirm to execute this action."
             };
+        }
+
+        private string BuildVisionAwareDescription(string actionKey)
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            string core = BuildDescription(actionKey);
+            if (gameplayVisionSystem == null)
+            {
+                return core;
+            }
+
+            return $"{gameplayVisionSystem.BuildVisionStatement(actionKey, room)}\n\n{core}";
         }
 
         private string BuildAnimalSightingDescription()
@@ -493,6 +506,32 @@ namespace Survivebest.UI
                 default:
                     builder.AppendLine("Press Confirm to continue.");
                     break;
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private string BuildVisionAwareOptions(string actionKey)
+        {
+            string preview = BuildOptionsPreview(actionKey);
+            if (gameplayVisionSystem == null)
+            {
+                return preview;
+            }
+
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            List<string> tabs = gameplayVisionSystem.BuildTabsForContext(actionKey, room);
+            if (tabs.Count == 0)
+            {
+                return preview;
+            }
+
+            builder.Clear();
+            builder.AppendLine($"Section tabs: {string.Join(" • ", tabs)}");
+            if (!string.IsNullOrWhiteSpace(preview))
+            {
+                builder.AppendLine();
+                builder.Append(preview);
             }
 
             return builder.ToString().TrimEnd();

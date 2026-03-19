@@ -10,6 +10,16 @@ using Survivebest.Interaction;
 
 namespace Survivebest.Dialogue
 {
+    public enum DialogueReplyTone
+    {
+        Warm,
+        Curious,
+        Bold,
+        Defensive,
+        Legacy,
+        Supernatural
+    }
+
     public enum DialogueIntent
     {
         FriendlyChat,
@@ -22,6 +32,19 @@ namespace Survivebest.Dialogue
         Insult,
         Gossip,
         Comfort
+    }
+
+
+    [Serializable]
+    public class DialogueReplyOption
+    {
+        public string ReplyId;
+        public string Label;
+        public DialogueReplyTone Tone;
+        public DialogueIntent FollowupIntent;
+        public int RelationshipDelta;
+        public string MemoryTopic;
+        public string LegacyTag;
     }
 
     [Serializable]
@@ -85,6 +108,7 @@ namespace Survivebest.Dialogue
 
         public event Action<string, bool> OnDialogueResolved;
         public event Action<DialoguePresentationPayload> OnDialoguePresentationReady;
+        public event Action<CharacterCore, DialogueReplyOption, bool> OnDialogueReplyResolved;
 
         public IReadOnlyList<DialogueGeneratedLine> GeneratedLines => generatedLines;
 
@@ -166,6 +190,78 @@ namespace Survivebest.Dialogue
         {
             int delta = GetBaseDelta(intent);
             return PerformDialogue(target, intent, delta, context);
+        }
+
+
+        public List<DialogueReplyOption> BuildReplyOptions(CharacterCore target, DialogueIntent intent, DialogueContext context = null)
+        {
+            List<DialogueReplyOption> options = new();
+            if (target == null)
+            {
+                return options;
+            }
+
+            float relationship = socialSystem != null ? socialSystem.GetRelationshipValue(target.CharacterId) : 0f;
+            options.Add(new DialogueReplyOption
+            {
+                ReplyId = "reply_warm",
+                Label = relationship >= 0f ? "Answer with warmth" : "Offer peace",
+                Tone = DialogueReplyTone.Warm,
+                FollowupIntent = DialogueIntent.Comfort,
+                RelationshipDelta = 6,
+                MemoryTopic = "supportive reply",
+                LegacyTag = "kindness"
+            });
+            options.Add(new DialogueReplyOption
+            {
+                ReplyId = "reply_curious",
+                Label = "Ask about their life",
+                Tone = DialogueReplyTone.Curious,
+                FollowupIntent = DialogueIntent.FriendlyChat,
+                RelationshipDelta = 4,
+                MemoryTopic = "curious reply",
+                LegacyTag = "connection"
+            });
+            options.Add(new DialogueReplyOption
+            {
+                ReplyId = "reply_legacy",
+                Label = "Talk about legacy",
+                Tone = DialogueReplyTone.Legacy,
+                FollowupIntent = DialogueIntent.Compliment,
+                RelationshipDelta = 5,
+                MemoryTopic = "legacy reply",
+                LegacyTag = "legacy"
+            });
+
+            if (owner != null && owner.IsVampire)
+            {
+                options.Add(new DialogueReplyOption
+                {
+                    ReplyId = "reply_night",
+                    Label = "Lean into your nocturnal mystique",
+                    Tone = DialogueReplyTone.Supernatural,
+                    FollowupIntent = DialogueIntent.Flirt,
+                    RelationshipDelta = 3,
+                    MemoryTopic = "vampire aura",
+                    LegacyTag = "mystique"
+                });
+            }
+
+            return options;
+        }
+
+        public bool PerformDialogueReply(CharacterCore target, DialogueReplyOption option, DialogueContext context = null)
+        {
+            if (target == null || option == null)
+            {
+                return false;
+            }
+
+            bool success = PerformDialogue(target, option.FollowupIntent, option.RelationshipDelta, context);
+            int memoryImpact = success ? Mathf.Max(2, option.RelationshipDelta) : -Mathf.Max(2, Mathf.Abs(option.RelationshipDelta));
+            relationshipMemorySystem?.RecordEvent(owner != null ? owner.CharacterId : "unknown", target.CharacterId, option.MemoryTopic, memoryImpact, false, context != null ? context.SituationTag : null);
+            OnDialogueReplyResolved?.Invoke(target, option, success);
+            return success;
         }
 
 

@@ -25,6 +25,13 @@ namespace Survivebest.Health
         Bronchitis,
         Migraine,
         AllergyFlare,
+        Pneumonia,
+        CovidLikeVirus,
+        AsthmaAttack,
+        Hypertension,
+        DiabetesComplication,
+        RadiationSickness,
+        Cancer,
         TeethingFever,
         Colic,
         DiaperRash
@@ -43,11 +50,26 @@ namespace Survivebest.Health
         Scrape
     }
 
+    public enum MedicationType
+    {
+        Painkiller,
+        Antibiotic,
+        Antiviral,
+        Antihistamine,
+        Inhaler,
+        AntiNausea,
+        Sedative,
+        Stimulant,
+        PotassiumIodide,
+        CancerSupport
+    }
+
     [Serializable]
     public class MedicalCondition
     {
         public string Id;
         public bool IsIllness;
+        public string DisplayName;
         public IllnessType IllnessType;
         public InjuryType InjuryType;
         public ConditionSeverity Severity;
@@ -56,6 +78,10 @@ namespace Survivebest.Health
         public float HourlyEnergyDamage;
         public float HourlyMoodDamage;
         public float HourlyHygieneDamage;
+        [Range(0f, 1f)] public float Contagiousness;
+        [Range(0f, 1f)] public float PainLevel;
+        public bool RequiresBedRest;
+        public MedicationType RecommendedMedication;
     }
 
     public class MedicalConditionSystem : MonoBehaviour
@@ -67,11 +93,13 @@ namespace Survivebest.Health
         [SerializeField] private List<MedicalCondition> activeConditions = new();
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Range(0f, 1f)] private float severeComplicationChance = 0.08f;
+        [SerializeField, Min(0f)] private float radiationExposureMilliSieverts;
 
         public event Action<MedicalCondition> OnConditionAdded;
         public event Action<MedicalCondition> OnConditionExpired;
 
         public IReadOnlyList<MedicalCondition> ActiveConditions => activeConditions;
+        public float RadiationExposureMilliSieverts => radiationExposureMilliSieverts;
 
         private void OnEnable()
         {
@@ -91,7 +119,7 @@ namespace Survivebest.Health
 
         public bool AddIllness(IllnessType illnessType, ConditionSeverity severity)
         {
-            if (!IsIllnessAgeAppropriate(illnessType))
+            if (!IsIllnessAgeAppropriate(illnessType) || !IsIllnessSpeciesAppropriate(illnessType))
             {
                 return false;
             }
@@ -102,18 +130,7 @@ namespace Survivebest.Health
             }
 
             MedicalCondition condition = BuildIllness(illnessType, severity);
-            activeConditions.Add(condition);
-            OnConditionAdded?.Invoke(condition);
-            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
-            {
-                Type = SimulationEventType.IllnessStarted,
-                Severity = severity == ConditionSeverity.Severe ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
-                SystemName = nameof(MedicalConditionSystem),
-                SourceCharacterId = owner != null ? owner.CharacterId : null,
-                ChangeKey = illnessType.ToString(),
-                Reason = "Illness added",
-                Magnitude = condition.RemainingHours
-            });
+            AddCondition(condition);
             return true;
         }
 
@@ -130,18 +147,66 @@ namespace Survivebest.Health
             }
 
             MedicalCondition condition = BuildInjury(injuryType, severity);
-            activeConditions.Add(condition);
-            OnConditionAdded?.Invoke(condition);
-            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            AddCondition(condition);
+            return true;
+        }
+
+        public bool AdministerMedication(MedicationType medicationType)
+        {
+            bool helpedAnyCondition = false;
+
+            for (int i = 0; i < activeConditions.Count; i++)
             {
-                Type = SimulationEventType.InjuryStarted,
-                Severity = severity == ConditionSeverity.Severe ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
-                SystemName = nameof(MedicalConditionSystem),
-                SourceCharacterId = owner != null ? owner.CharacterId : null,
-                ChangeKey = injuryType.ToString(),
-                Reason = "Injury added",
-                Magnitude = condition.RemainingHours
-            });
+                MedicalCondition condition = activeConditions[i];
+                if (condition == null || !IsMedicationHelpful(condition, medicationType))
+                {
+                    continue;
+                }
+
+                helpedAnyCondition = true;
+                int reliefHours = medicationType switch
+                {
+                    MedicationType.Painkiller => 4,
+                    MedicationType.Antibiotic => 10,
+                    MedicationType.Antiviral => 6,
+                    MedicationType.Antihistamine => 5,
+                    MedicationType.Inhaler => 3,
+                    MedicationType.AntiNausea => 4,
+                    MedicationType.Sedative => 2,
+                    MedicationType.Stimulant => 2,
+                    MedicationType.PotassiumIodide => 8,
+                    MedicationType.CancerSupport => 6,
+                    _ => 3
+                };
+
+                if (!(condition.IsIllness && condition.IllnessType == IllnessType.Cancer))
+                {
+                    condition.RemainingHours = Mathf.Max(1, condition.RemainingHours - reliefHours);
+                }
+
+                float moodRelief = condition.IsIllness && condition.IllnessType == IllnessType.Cancer ? 0.2f : 0.35f;
+                float energyRelief = condition.IsIllness && condition.IllnessType == IllnessType.Cancer ? 0.15f : 0.25f;
+                float vitalityRelief = condition.IsIllness && condition.IllnessType == IllnessType.Cancer ? 0.08f : 0.15f;
+                condition.HourlyMoodDamage = Mathf.Max(0f, condition.HourlyMoodDamage - moodRelief);
+                condition.HourlyEnergyDamage = Mathf.Max(0f, condition.HourlyEnergyDamage - energyRelief);
+                condition.HourlyVitalityDamage = Mathf.Max(0f, condition.HourlyVitalityDamage - vitalityRelief);
+                needsSystem?.ModifyMood(0.8f);
+                healthSystem?.Heal(0.2f);
+            }
+
+            if (medicationType == MedicationType.PotassiumIodide && radiationExposureMilliSieverts > 0f)
+            {
+                helpedAnyCondition = true;
+                radiationExposureMilliSieverts = Mathf.Max(0f, radiationExposureMilliSieverts - 35f);
+            }
+
+            if (!helpedAnyCondition)
+            {
+                needsSystem?.ModifyMood(0.2f);
+                return false;
+            }
+
+            PublishConditionEvent(null, $"Medication:{medicationType}", 1f, SimulationEventSeverity.Info);
             return true;
         }
 
@@ -176,8 +241,39 @@ namespace Survivebest.Health
             }
         }
 
+        public void ApplyRadiationExposure(float milliSieverts)
+        {
+            float exposure = Mathf.Max(0f, milliSieverts);
+            if (exposure <= 0f)
+            {
+                return;
+            }
+
+            radiationExposureMilliSieverts += exposure;
+            healthSystem?.Damage(exposure * 0.01f);
+            needsSystem?.ModifyEnergy(-exposure * 0.015f);
+            needsSystem?.ModifyMood(-exposure * 0.01f);
+
+            if (radiationExposureMilliSieverts >= 120f)
+            {
+                AddIllness(IllnessType.RadiationSickness, radiationExposureMilliSieverts >= 600f ? ConditionSeverity.Severe : ConditionSeverity.Moderate);
+            }
+
+            if (radiationExposureMilliSieverts >= 1400f && UnityEngine.Random.value <= 0.3f)
+            {
+                AddIllness(IllnessType.Cancer, ConditionSeverity.Severe);
+            }
+
+            PublishConditionEvent(null, "RadiationExposure", radiationExposureMilliSieverts, radiationExposureMilliSieverts >= 600f ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning);
+        }
+
         private void HandleHourPassed(int hour)
         {
+            if (radiationExposureMilliSieverts > 0f)
+            {
+                radiationExposureMilliSieverts = Mathf.Max(0f, radiationExposureMilliSieverts - 0.35f);
+            }
+
             for (int i = activeConditions.Count - 1; i >= 0; i--)
             {
                 MedicalCondition condition = activeConditions[i];
@@ -195,6 +291,11 @@ namespace Survivebest.Health
 
         private void ApplyConditionEffects(MedicalCondition condition)
         {
+            if (condition == null)
+            {
+                return;
+            }
+
             if (healthSystem != null && condition.HourlyVitalityDamage > 0f)
             {
                 healthSystem.Damage(condition.HourlyVitalityDamage);
@@ -217,6 +318,16 @@ namespace Survivebest.Health
                     needsSystem.ModifyHygiene(-condition.HourlyHygieneDamage);
                 }
 
+                if (condition.PainLevel > 0f)
+                {
+                    needsSystem.ModifyMood(-condition.PainLevel * 0.5f);
+                }
+
+                if (condition.RequiresBedRest)
+                {
+                    needsSystem.ModifyEnergy(-0.3f);
+                }
+
                 if (condition.Severity == ConditionSeverity.Severe)
                 {
                     needsSystem.RestoreHydration(-0.35f);
@@ -236,34 +347,81 @@ namespace Survivebest.Health
         private MedicalCondition BuildIllness(IllnessType type, ConditionSeverity severity)
         {
             float mult = SeverityMultiplier(severity);
+            (string label, int baseHours, float vitality, float energy, float mood, float hygiene, float contagious, float pain, bool bedRest, MedicationType med) = type switch
+            {
+                IllnessType.CommonCold => ("Common Cold", 36, 0.12f, 0.8f, 0.45f, 0.2f, 0.45f, 0.15f, false, MedicationType.Antiviral),
+                IllnessType.Flu => ("Flu", 72, 0.35f, 1.4f, 1.0f, 0.4f, 0.65f, 0.3f, true, MedicationType.Antiviral),
+                IllnessType.StomachBug => ("Stomach Bug", 30, 0.2f, 1.0f, 0.8f, 0.7f, 0.5f, 0.25f, true, MedicationType.AntiNausea),
+                IllnessType.FoodPoisoning => ("Food Poisoning", 24, 0.3f, 1.3f, 0.9f, 0.9f, 0.15f, 0.35f, true, MedicationType.AntiNausea),
+                IllnessType.EarInfection => ("Ear Infection", 48, 0.18f, 0.9f, 0.75f, 0.2f, 0.1f, 0.5f, false, MedicationType.Antibiotic),
+                IllnessType.Bronchitis => ("Bronchitis", 84, 0.28f, 1.1f, 0.8f, 0.25f, 0.35f, 0.35f, true, MedicationType.Antibiotic),
+                IllnessType.Migraine => ("Migraine", 16, 0.08f, 1.6f, 1.2f, 0.1f, 0f, 0.7f, true, MedicationType.Painkiller),
+                IllnessType.AllergyFlare => ("Allergy Flare", 18, 0.05f, 0.6f, 0.5f, 0.15f, 0f, 0.18f, false, MedicationType.Antihistamine),
+                IllnessType.Pneumonia => ("Pneumonia", 120, 0.5f, 1.8f, 1.0f, 0.3f, 0.25f, 0.45f, true, MedicationType.Antibiotic),
+                IllnessType.CovidLikeVirus => ("Covid-like Virus", 96, 0.32f, 1.4f, 0.95f, 0.25f, 0.7f, 0.28f, true, MedicationType.Antiviral),
+                IllnessType.AsthmaAttack => ("Asthma Attack", 10, 0.42f, 1.5f, 1.1f, 0.05f, 0f, 0.5f, true, MedicationType.Inhaler),
+                IllnessType.Hypertension => ("Hypertension Spike", 48, 0.25f, 0.7f, 0.7f, 0.1f, 0f, 0.22f, false, MedicationType.Sedative),
+                IllnessType.DiabetesComplication => ("Diabetes Complication", 60, 0.38f, 1.3f, 0.9f, 0.15f, 0f, 0.3f, true, MedicationType.Stimulant),
+                IllnessType.RadiationSickness => ("Radiation Sickness", 168, 0.65f, 1.9f, 1.2f, 0.6f, 0f, 0.55f, true, MedicationType.PotassiumIodide),
+                IllnessType.Cancer => ("Cancer", 720, 0.45f, 1.5f, 1.2f, 0.2f, 0f, 0.6f, true, MedicationType.CancerSupport),
+                IllnessType.TeethingFever => ("Teething Fever", 10, 0.06f, 0.5f, 0.45f, 0.15f, 0f, 0.2f, false, MedicationType.Painkiller),
+                IllnessType.Colic => ("Colic", 8, 0.04f, 0.4f, 0.6f, 0.2f, 0f, 0.25f, false, MedicationType.AntiNausea),
+                IllnessType.DiaperRash => ("Diaper Rash", 14, 0.03f, 0.3f, 0.4f, 0.8f, 0f, 0.2f, false, MedicationType.Painkiller),
+                _ => (type.ToString(), 24, 0.2f, 0.8f, 0.5f, 0.2f, 0f, 0.2f, false, MedicationType.Painkiller)
+            };
+
             return new MedicalCondition
             {
                 Id = Guid.NewGuid().ToString("N"),
+                DisplayName = label,
                 IsIllness = true,
                 IllnessType = type,
                 Severity = severity,
-                RemainingHours = Mathf.RoundToInt(12f * mult),
-                HourlyVitalityDamage = 0.4f * mult,
-                HourlyEnergyDamage = 1.3f * mult,
-                HourlyMoodDamage = 1.1f * mult,
-                HourlyHygieneDamage = 0.5f * mult
+                RemainingHours = Mathf.RoundToInt(baseHours * mult),
+                HourlyVitalityDamage = vitality * mult,
+                HourlyEnergyDamage = energy * mult,
+                HourlyMoodDamage = mood * mult,
+                HourlyHygieneDamage = hygiene * mult,
+                Contagiousness = contagious,
+                PainLevel = pain * mult,
+                RequiresBedRest = bedRest,
+                RecommendedMedication = med
             };
         }
 
         private MedicalCondition BuildInjury(InjuryType type, ConditionSeverity severity)
         {
             float mult = SeverityMultiplier(severity);
+            (string label, int baseHours, float vitality, float energy, float mood, float hygiene, float pain, MedicationType med) = type switch
+            {
+                InjuryType.Bruise => ("Bruise", 18, 0.08f, 0.45f, 0.3f, 0.05f, 0.18f, MedicationType.Painkiller),
+                InjuryType.Cut => ("Cut", 24, 0.14f, 0.55f, 0.35f, 0.15f, 0.22f, MedicationType.Antibiotic),
+                InjuryType.Sprain => ("Sprain", 36, 0.1f, 0.7f, 0.4f, 0.05f, 0.3f, MedicationType.Painkiller),
+                InjuryType.Burn => ("Burn", 48, 0.22f, 0.85f, 0.55f, 0.12f, 0.42f, MedicationType.Painkiller),
+                InjuryType.Fracture => ("Fracture", 168, 0.35f, 1.2f, 0.8f, 0.08f, 0.6f, MedicationType.Painkiller),
+                InjuryType.Concussion => ("Concussion", 72, 0.2f, 1.4f, 0.9f, 0.05f, 0.5f, MedicationType.Sedative),
+                InjuryType.Strain => ("Muscle Strain", 30, 0.08f, 0.6f, 0.3f, 0.05f, 0.24f, MedicationType.Painkiller),
+                InjuryType.Bite => ("Bite", 28, 0.12f, 0.55f, 0.45f, 0.1f, 0.25f, MedicationType.Antibiotic),
+                InjuryType.Scrape => ("Scrape", 12, 0.04f, 0.3f, 0.2f, 0.1f, 0.12f, MedicationType.Painkiller),
+                _ => (type.ToString(), 18, 0.08f, 0.45f, 0.25f, 0.05f, 0.2f, MedicationType.Painkiller)
+            };
+
             return new MedicalCondition
             {
                 Id = Guid.NewGuid().ToString("N"),
+                DisplayName = label,
                 IsIllness = false,
                 InjuryType = type,
                 Severity = severity,
-                RemainingHours = Mathf.RoundToInt(18f * mult),
-                HourlyVitalityDamage = 0.6f * mult,
-                HourlyEnergyDamage = 1.0f * mult,
-                HourlyMoodDamage = 1.4f * mult,
-                HourlyHygieneDamage = 0.2f * mult
+                RemainingHours = Mathf.RoundToInt(baseHours * mult),
+                HourlyVitalityDamage = vitality * mult,
+                HourlyEnergyDamage = energy * mult,
+                HourlyMoodDamage = mood * mult,
+                HourlyHygieneDamage = hygiene * mult,
+                Contagiousness = 0f,
+                PainLevel = pain * mult,
+                RequiresBedRest = type is InjuryType.Fracture or InjuryType.Concussion,
+                RecommendedMedication = med
             };
         }
 
@@ -273,9 +431,35 @@ namespace Survivebest.Health
             return stage switch
             {
                 LifeStage.Baby or LifeStage.Infant => illness is IllnessType.TeethingFever or IllnessType.Colic or IllnessType.DiaperRash or IllnessType.CommonCold,
-                LifeStage.Toddler or LifeStage.Child => illness is not IllnessType.Migraine,
+                LifeStage.Toddler or LifeStage.Child => illness is not IllnessType.Migraine and not IllnessType.Hypertension and not IllnessType.Cancer,
                 _ => true
             };
+        }
+
+
+        private bool IsIllnessSpeciesAppropriate(IllnessType illness)
+        {
+            if (owner == null || owner.IsHuman)
+            {
+                return true;
+            }
+
+            if (owner.IsVampire)
+            {
+                return illness switch
+                {
+                    IllnessType.CommonCold or
+                    IllnessType.Flu or
+                    IllnessType.StomachBug or
+                    IllnessType.FoodPoisoning or
+                    IllnessType.EarInfection or
+                    IllnessType.Bronchitis or
+                    IllnessType.CovidLikeVirus => false,
+                    _ => true
+                };
+            }
+
+            return true;
         }
 
         private bool IsInjuryAgeAppropriate(InjuryType injury)
@@ -294,7 +478,7 @@ namespace Survivebest.Health
             for (int i = 0; i < 20; i++)
             {
                 IllnessType candidate = candidates[UnityEngine.Random.Range(0, candidates.Length)];
-                if (IsIllnessAgeAppropriate(candidate))
+                if (IsIllnessAgeAppropriate(candidate) && candidate is not IllnessType.Cancer and not IllnessType.RadiationSickness)
                 {
                     return candidate;
                 }
@@ -336,6 +520,41 @@ namespace Survivebest.Health
             };
         }
 
+        private static bool IsMedicationHelpful(MedicalCondition condition, MedicationType medicationType)
+        {
+            if (condition == null)
+            {
+                return false;
+            }
+
+            return condition.RecommendedMedication == medicationType ||
+                   (medicationType == MedicationType.Painkiller && !condition.IsIllness && condition.PainLevel > 0.15f) ||
+                   (medicationType == MedicationType.Antibiotic && condition.IsIllness && (condition.IllnessType is IllnessType.EarInfection or IllnessType.Bronchitis or IllnessType.Pneumonia)) ||
+                   (medicationType == MedicationType.Antiviral && condition.IsIllness && (condition.IllnessType is IllnessType.CommonCold or IllnessType.Flu or IllnessType.CovidLikeVirus)) ||
+                   (medicationType == MedicationType.AntiNausea && condition.IsIllness && (condition.IllnessType is IllnessType.StomachBug or IllnessType.FoodPoisoning or IllnessType.Colic));
+        }
+
+        private void AddCondition(MedicalCondition condition)
+        {
+            if (condition == null)
+            {
+                return;
+            }
+
+            activeConditions.Add(condition);
+            OnConditionAdded?.Invoke(condition);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = condition.IsIllness ? SimulationEventType.IllnessStarted : SimulationEventType.InjuryStarted,
+                Severity = condition.Severity == ConditionSeverity.Severe ? SimulationEventSeverity.Critical : SimulationEventSeverity.Warning,
+                SystemName = nameof(MedicalConditionSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = condition.IsIllness ? condition.IllnessType.ToString() : condition.InjuryType.ToString(),
+                Reason = condition.IsIllness ? "Illness added" : "Injury added",
+                Magnitude = condition.RemainingHours
+            });
+        }
+
         private bool HasCondition(Func<MedicalCondition, bool> predicate)
         {
             if (predicate == null)
@@ -364,7 +583,7 @@ namespace Survivebest.Health
                 SystemName = nameof(MedicalConditionSystem),
                 SourceCharacterId = owner != null ? owner.CharacterId : null,
                 ChangeKey = changeKey,
-                Reason = condition != null ? (condition.IsIllness ? condition.IllnessType.ToString() : condition.InjuryType.ToString()) : "Condition",
+                Reason = condition != null ? (condition.IsIllness ? condition.DisplayName : condition.DisplayName) : "Condition",
                 Magnitude = magnitude
             });
         }
