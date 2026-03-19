@@ -32,6 +32,19 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void Resolve_IsDeterministicForGenomeDrivenSkinOverlays()
+        {
+            GeneticProfile genes = InheritanceResolver.BuildFounder(54321, BodySchema.Androgynous);
+            genes.VitiligoChance = 1f;
+            genes.SynchronizeDetailedGenomeFromScalarCache();
+
+            PhenotypeProfile first = PhenotypeResolver.Resolve(genes, LifeStage.Adult, 0.2f);
+            PhenotypeProfile second = PhenotypeResolver.Resolve(genes, LifeStage.Adult, 0.2f);
+
+            Assert.AreEqual(first.Skin.Overlays.Vitiligo, second.Skin.Overlays.Vitiligo);
+        }
+
+        [Test]
         public void LifeStageMorphResolver_MapsInfantAndToddlerArtModes()
         {
             PhenotypeProfile baby = PhenotypeResolver.Resolve(new GeneticProfile(), LifeStage.Baby, 0.1f);

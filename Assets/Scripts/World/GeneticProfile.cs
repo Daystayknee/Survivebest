@@ -699,6 +699,13 @@ namespace Survivebest.World
             }
         }
 
+        public void SynchronizeDetailedGenomeFromScalarCache(float environmentalPressure = 0f)
+        {
+            float env = Mathf.Clamp01(environmentalPressure);
+            RebuildDetailedGenomeProfiles(env);
+            ClampDetailedGenomeProfiles();
+        }
+
         public void RebuildDerivedTraitsFromGenome(float environmentalPressure = 0f)
         {
             float env = Mathf.Clamp01(environmentalPressure);

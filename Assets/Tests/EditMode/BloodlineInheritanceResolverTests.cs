@@ -37,6 +37,29 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void BuildChildPreview_FavorsParentA_PreservesResemblanceForGenomeBackedProfiles()
+        {
+            GeneticProfile parentA = InheritanceResolver.BuildFounder(111, BodySchema.Feminine);
+            GeneticProfile parentB = InheritanceResolver.BuildFounder(222, BodySchema.Masculine);
+
+            parentA.EyeSize = 0.92f;
+            parentA.EyeSpacing = 0.88f;
+            parentA.BrowHeaviness = 0.86f;
+            parentA.SynchronizeDetailedGenomeFromScalarCache();
+
+            parentB.EyeSize = 0.18f;
+            parentB.EyeSpacing = 0.22f;
+            parentB.BrowHeaviness = 0.2f;
+            parentB.SynchronizeDetailedGenomeFromScalarCache();
+
+            OffspringPreviewEntry child = BloodlineInheritanceResolver.BuildChildPreview(parentA, parentB, 5678, FamilyResemblanceMode.FavorsParentA);
+
+            Assert.Greater(child.GeneticProfile.EyeSize, 0.7f);
+            Assert.Greater(child.GeneticProfile.EyeGenome.EyeSize, 0.7f);
+            Assert.AreEqual(child.GeneticProfile.EyeSize, child.GeneticProfile.EyeGenome.EyeSize, 0.0001f);
+        }
+
+        [Test]
         public void BuildPreviewSet_ReturnsMultipleDistinctResemblanceModes()
         {
             GeneticProfile parentA = InheritanceResolver.BuildFounder(101, BodySchema.Feminine);

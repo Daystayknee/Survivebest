@@ -97,8 +97,8 @@ namespace Survivebest.World
 
             child.Seed = seed;
             ApplyResemblanceMode(child, a, b, mode, seed);
-            child.RebuildDerivedTraitsFromGenome(child.Epigenetics.StressImprint);
             child.ClampToNormalizedRange();
+            child.SynchronizeDetailedGenomeFromScalarCache(child.Epigenetics.StressImprint);
 
             OffspringPreviewEntry entry = new OffspringPreviewEntry
             {

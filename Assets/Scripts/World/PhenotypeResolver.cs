@@ -92,12 +92,14 @@ namespace Survivebest.World
         private static SkinProfile ResolveSkin(GeneticProfile genes, float environmentPressure)
         {
             float env = Mathf.Clamp01(environmentPressure);
+            float vitiligoRoll = SampleDeterministic01(genes.Seed, 0x51F15EED);
+            float vitiligoSeverity = SampleDeterministic01(genes.Seed, 0x51F15EEE);
             ConditionOverlayProfile overlays = new ConditionOverlayProfile
             {
                 Freckles = genes.FreckleTendency,
                 BeautyMarks = Mathf.Clamp01(genes.MoleTendency * 0.6f),
                 Moles = genes.MoleTendency,
-                Vitiligo = Random.value <= genes.VitiligoChance ? Mathf.Lerp(0.2f, 0.9f, Random.value) : 0f,
+                Vitiligo = vitiligoRoll <= genes.VitiligoChance ? Mathf.Lerp(0.2f, 0.9f, vitiligoSeverity) : 0f,
                 Acne = Mathf.Clamp01(genes.AcneTendency * 0.5f + genes.SkinSensitivity * 0.2f + env * 0.25f + (1f - genes.Hormones.CortisolRegulation) * 0.08f),
                 Scars = Mathf.Clamp01(env * 0.3f + genes.StretchMarkChance * 0.15f + genes.MicroDetails.AcneScarRisk * 0.08f),
                 Wrinkles = Mathf.Clamp01(genes.AgingSpeed * 0.18f + genes.Epigenetics.StressImprint * 0.08f),
@@ -146,6 +148,18 @@ namespace Survivebest.World
                 Oiliness = Mathf.Clamp01(genes.Hormones.CortisolRegulation * -0.15f + genes.HairDensity * 0.12f + 0.25f),
                 Tangling = Mathf.Clamp01(genes.HairCurl * 0.35f + (1f - genes.HairStrandThickness) * 0.15f)
             };
+        }
+
+        private static float SampleDeterministic01(int seed, int salt)
+        {
+            uint state = (uint)(seed == 0 ? 0xA341316Cu : seed);
+            state ^= (uint)salt;
+            state ^= state >> 16;
+            state *= 0x7FEB352Du;
+            state ^= state >> 15;
+            state *= 0x846CA68Bu;
+            state ^= state >> 16;
+            return (state & 0x00FFFFFFu) / 16777215f;
         }
 
         private static HealthPredispositionProfile ResolveHealth(GeneticProfile genes)
