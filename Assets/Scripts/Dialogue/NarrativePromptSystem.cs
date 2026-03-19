@@ -6,6 +6,7 @@ using Survivebest.Events;
 using Survivebest.Location;
 using Survivebest.Quest;
 using Survivebest.World;
+using Survivebest.NPC;
 
 namespace Survivebest.Dialogue
 {
@@ -15,6 +16,7 @@ namespace Survivebest.Dialogue
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
+        [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text narrativeText;
         [SerializeField, Min(1)] private int maxRecentPrompts = 30;
@@ -105,6 +107,13 @@ namespace Survivebest.Dialogue
             {
                 builder.Append('\n');
                 builder.Append(worldAi);
+            }
+
+            string npcAi = npcLifeAIGuideSystem != null ? npcLifeAIGuideSystem.BuildGuidance(room) : null;
+            if (!string.IsNullOrWhiteSpace(npcAi))
+            {
+                builder.Append('\n');
+                builder.Append(npcAi);
             }
 
             return builder.ToString();

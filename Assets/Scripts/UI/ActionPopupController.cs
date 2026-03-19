@@ -14,6 +14,7 @@ using Survivebest.Status;
 using Survivebest.Minigames;
 using Survivebest.Quest;
 using Survivebest.World;
+using Survivebest.NPC;
 
 namespace Survivebest.UI
 {
@@ -47,6 +48,7 @@ namespace Survivebest.UI
         [SerializeField] private MinigameManager minigameManager;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
+        [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -264,6 +266,14 @@ namespace Survivebest.UI
                     reason = AskWorldAi();
                     magnitude = 1f;
                     break;
+                case "npc_chat":
+                    reason = ResolveNpcInteraction(false);
+                    magnitude = 1.5f;
+                    break;
+                case "npc_text":
+                    reason = ResolveNpcInteraction(true);
+                    magnitude = 1.2f;
+                    break;
                 case "animal_sight":
                     reason = ResolveAnimalSighting(active, out magnitude);
                     break;
@@ -341,6 +351,8 @@ namespace Survivebest.UI
                 "continue_local_opportunity" => "Continue Opportunity",
                 "review_local_pulse" => "District Pulse",
                 "ask_world_ai" => "World AI Guidance",
+                "npc_chat" => "NPC Conversation",
+                "npc_text" => "NPC Text Message",
                 _ => "Action"
             };
         }
@@ -376,6 +388,8 @@ namespace Survivebest.UI
                 "continue_local_opportunity" => "Advance an active local opportunity and cash in progress if possible.",
                 "review_local_pulse" => "Pause and read the district pulse before committing your next move.",
                 "ask_world_ai" => "Ask the world AI to synthesize local danger, opportunity, and routing advice.",
+                "npc_chat" => "Talk to a nearby NPC using personality-aware conversation guidance.",
+                "npc_text" => "Send a personality-aware text message to a nearby NPC contact.",
                 _ => "Confirm to execute this action."
             };
         }
@@ -415,6 +429,12 @@ namespace Survivebest.UI
                     break;
                 case "ask_world_ai":
                     builder.AppendLine(AskWorldAi());
+                    break;
+                case "npc_chat":
+                    AppendNpcConversationPreview(builder, false);
+                    break;
+                case "npc_text":
+                    AppendNpcConversationPreview(builder, true);
                     break;
                 case "fish":
                     builder.AppendLine("Fishing options:");
@@ -604,6 +624,34 @@ namespace Survivebest.UI
         {
             Room room = locationManager != null ? locationManager.CurrentRoom : null;
             return worldGuideAISystem != null ? worldGuideAISystem.BuildGuidanceForRoom(room) : "World AI is offline.";
+        }
+
+        private string ResolveNpcInteraction(bool isTextMessage)
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            return npcLifeAIGuideSystem != null ? npcLifeAIGuideSystem.BuildInteractionSummary(room, isTextMessage) : "NPC AI is offline.";
+        }
+
+        private void AppendNpcConversationPreview(StringBuilder sb, bool isTextMessage)
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            if (npcLifeAIGuideSystem == null)
+            {
+                sb.AppendLine("• NPC AI is offline.");
+                return;
+            }
+
+            List<NpcChatSuggestion> suggestions = npcLifeAIGuideSystem.BuildChatSuggestions(room, isTextMessage);
+            if (suggestions.Count == 0)
+            {
+                sb.AppendLine(isTextMessage ? "• No one is available to text here." : "• No conversational target is available here.");
+                return;
+            }
+
+            for (int i = 0; i < suggestions.Count; i++)
+            {
+                sb.AppendLine($"• {suggestions[i].Label}: {suggestions[i].PreviewText}");
+            }
         }
 
         private string ReviewLocalPulse()

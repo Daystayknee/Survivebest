@@ -6,6 +6,7 @@ using Survivebest.Events;
 using Survivebest.Location;
 using Survivebest.Quest;
 using Survivebest.World;
+using Survivebest.NPC;
 
 namespace Survivebest.UI
 {
@@ -22,6 +23,7 @@ namespace Survivebest.UI
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
+        [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text titleText;
         [SerializeField] private Text optionsText;
@@ -155,6 +157,12 @@ namespace Survivebest.UI
             if (worldGuideAISystem != null)
             {
                 currentOptions.Add(new SidebarOption { Label = "Ask World AI", ActionKey = "ask_world_ai" });
+            }
+
+            if (npcLifeAIGuideSystem != null && npcLifeAIGuideSystem.BuildChatSuggestions(room, false).Count > 0)
+            {
+                currentOptions.Add(new SidebarOption { Label = "Talk to NPC", ActionKey = "npc_chat" });
+                currentOptions.Add(new SidebarOption { Label = "Text NPC", ActionKey = "npc_text" });
             }
         }
 
