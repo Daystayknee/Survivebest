@@ -10,6 +10,8 @@ using Survivebest.Needs;
 using Survivebest.Society;
 using Survivebest.Crime;
 using Survivebest.World;
+using Survivebest.Quest;
+using Survivebest.Dialogue;
 
 namespace Survivebest.UI
 {
@@ -39,6 +41,11 @@ namespace Survivebest.UI
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private DaySliceManager daySliceManager;
+        [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
+        [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private NarrativePromptSystem narrativePromptSystem;
+        [SerializeField] private WorldGuideAISystem worldGuideAISystem;
 
         [Header("Map / Nav")]
         [SerializeField] private Text locationNavigatorText;
@@ -544,6 +551,20 @@ namespace Survivebest.UI
                 actions.Add("Continue active rehabilitation program");
             }
 
+            if (questOpportunitySystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                int localAvailable = questOpportunitySystem.GetAvailableOpportunitiesForLocation(locationManager.CurrentRoom.RoomName).Count;
+                int localAccepted = questOpportunitySystem.GetAcceptedOpportunitiesForLocation(locationManager.CurrentRoom.RoomName).Count;
+                if (localAvailable > 0) actions.Add($"Take {localAvailable} local opportunity lead(s)");
+                if (localAccepted > 0) actions.Add($"Advance {localAccepted} active opportunity objective(s)");
+            }
+
+            if (townSimulationSystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                float localDanger = FindLocalDanger();
+                if (localDanger > 0.55f) actions.Add("Choose a safer lot or travel in daylight");
+            }
+
             actions.Add("Open map and click a district to travel");
 
             if (actions.Count == 0)
@@ -556,6 +577,11 @@ namespace Survivebest.UI
             for (int i = 0; i < Mathf.Min(4, actions.Count); i++)
             {
                 builder.AppendLine($"• {actions[i]}");
+            }
+
+            if (worldGuideAISystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                builder.AppendLine($"AI: {worldGuideAISystem.BuildGuidanceForRoom(locationManager.CurrentRoom)}");
             }
 
             return builder.ToString().TrimEnd();
@@ -575,6 +601,23 @@ namespace Survivebest.UI
                 }
             }
 
+            if (daySliceManager != null)
+            {
+                builder.AppendLine($"• Day stage: {daySliceManager.CurrentStage}");
+            }
+
+            if (narrativePromptSystem != null && !string.IsNullOrWhiteSpace(narrativePromptSystem.LatestPrompt))
+            {
+                builder.AppendLine($"• Scene beat: {narrativePromptSystem.LatestPrompt.Split('\n')[0]}");
+            }
+
+            if (questOpportunitySystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                int localAvailable = questOpportunitySystem.GetAvailableOpportunitiesForLocation(locationManager.CurrentRoom.RoomName).Count;
+                int localAccepted = questOpportunitySystem.GetAcceptedOpportunitiesForLocation(locationManager.CurrentRoom.RoomName).Count;
+                builder.AppendLine($"• Opportunities here: {localAvailable} available / {localAccepted} active");
+            }
+
             if (lastEvent != null)
             {
                 string reason = string.IsNullOrWhiteSpace(lastEvent.Reason) ? "update" : lastEvent.Reason;
@@ -583,6 +626,11 @@ namespace Survivebest.UI
             else
             {
                 builder.AppendLine("• Waiting for world updates…");
+            }
+
+            if (worldGuideAISystem != null && locationManager != null && locationManager.CurrentRoom != null)
+            {
+                builder.AppendLine($"• {worldGuideAISystem.BuildGuidanceForRoom(locationManager.CurrentRoom)}");
             }
 
             return builder.ToString().TrimEnd();
@@ -715,6 +763,32 @@ namespace Survivebest.UI
             }
 
             return "Low";
+        }
+
+        private float FindLocalDanger()
+        {
+            if (townSimulationSystem == null || locationManager == null || locationManager.CurrentRoom == null)
+            {
+                return 0f;
+            }
+
+            IReadOnlyList<LotDefinition> lots = townSimulationSystem.Lots;
+            for (int i = 0; i < lots.Count; i++)
+            {
+                LotDefinition lot = lots[i];
+                if (lot == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(lot.DisplayName, locationManager.CurrentRoom.RoomName, System.StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(lot.LotId, locationManager.CurrentRoom.RoomName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return townSimulationSystem.GetLocalDanger(lot.LotId);
+                }
+            }
+
+            return 0f;
         }
 
         private static void TryAddPressure(List<string> pressures, string label, float value)

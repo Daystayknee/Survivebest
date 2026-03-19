@@ -29,6 +29,20 @@ namespace Survivebest.World
             layers.BrowExpressionFamily = ResolveBrowFamily(s, a, love);
             layers.WrinkleOverlayKey = ResolveWrinkleOverlay(layers.WrinkleOverlayKey, s, ill);
             layers.SkinAgeOverlayKey = ResolveSkinOverlay(layers.SkinAgeOverlayKey, s, ill);
+            layers.HealthOverlayKey = ResolveHealthOverlay(s, e, ill);
+            layers.StateOverlayKey = ResolveStateOverlay(s, love, ill);
+            layers.PosturePresetKey = ResolvePosture(s, a, e, ill);
+            layers.IdleBehaviorKey = ResolveIdleBehavior(s, a, e);
+            layers.RestingExpressionKey = ResolveRestingExpression(s, a, love, e);
+
+            if (phenotype.Behavior != null)
+            {
+                phenotype.Behavior.PosturePresetKey = layers.PosturePresetKey;
+                phenotype.Behavior.IdleBehaviorKey = layers.IdleBehaviorKey;
+                phenotype.Behavior.RestingExpressionKey = layers.RestingExpressionKey;
+                phenotype.Behavior.TirednessVisibility = Mathf.Max(phenotype.Behavior.TirednessVisibility, 1f - e);
+                phenotype.Behavior.Fidgeting = Mathf.Max(phenotype.Behavior.Fidgeting, s * 0.75f);
+            }
         }
 
         private static string ResolveExpressionPreset(float stress, float anger, float affection, float energy)
@@ -119,6 +133,106 @@ namespace Survivebest.World
             }
 
             return string.IsNullOrWhiteSpace(existing) ? "skin_age_adult_base" : existing;
+        }
+
+        private static string ResolveHealthOverlay(float stress, float energy, float illness)
+        {
+            if (illness > 0.72f)
+            {
+                return "health_overlay_sick";
+            }
+
+            if (energy < 0.25f)
+            {
+                return "health_overlay_exhausted";
+            }
+
+            if (stress > 0.68f)
+            {
+                return "health_overlay_tense";
+            }
+
+            return "health_overlay_clear";
+        }
+
+        private static string ResolveStateOverlay(float stress, float affection, float illness)
+        {
+            if (illness > 0.72f)
+            {
+                return "state_overlay_sick";
+            }
+
+            if (stress > 0.7f)
+            {
+                return "state_overlay_stress";
+            }
+
+            if (affection > 0.7f)
+            {
+                return "state_overlay_soft";
+            }
+
+            return "state_overlay_none";
+        }
+
+        private static string ResolvePosture(float stress, float anger, float energy, float illness)
+        {
+            if (illness > 0.72f)
+            {
+                return "posture_sick";
+            }
+
+            if (anger > 0.72f || stress > 0.8f)
+            {
+                return "posture_tense";
+            }
+
+            if (energy < 0.25f)
+            {
+                return "posture_tired";
+            }
+
+            return "posture_neutral";
+        }
+
+        private static string ResolveIdleBehavior(float stress, float anger, float energy)
+        {
+            if (stress > 0.7f)
+            {
+                return "idle_fidgety";
+            }
+
+            if (anger > 0.72f)
+            {
+                return "idle_sharp";
+            }
+
+            if (energy < 0.25f)
+            {
+                return "idle_slow";
+            }
+
+            return "idle_balanced";
+        }
+
+        private static string ResolveRestingExpression(float stress, float anger, float affection, float energy)
+        {
+            if (anger > 0.72f)
+            {
+                return "resting_hard";
+            }
+
+            if (stress > 0.72f)
+            {
+                return "resting_wary";
+            }
+
+            if (affection > 0.7f && energy > 0.35f)
+            {
+                return "resting_soft";
+            }
+
+            return "resting_neutral";
         }
     }
 }
