@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Appearance;
@@ -107,6 +108,37 @@ namespace Survivebest.UI
             }
 
             RefreshPortrait();
+        }
+
+        public long EstimateUniquePortraitCombinationCount()
+        {
+            int faceVariants = CountMappedOrEnumVariants(faceSprites, entry => entry != null ? entry.FaceShape.ToString() : null, Enum.GetValues(typeof(FaceShapeType)).Length);
+            int eyeVariants = CountMappedOrEnumVariants(eyeSprites, entry => entry != null ? entry.EyeShape.ToString() : null, Enum.GetValues(typeof(EyeShapeType)).Length);
+            int bodyVariants = CountMappedOrEnumVariants(bodySprites, entry => entry != null ? entry.BodyType.ToString() : null, Enum.GetValues(typeof(BodyType)).Length);
+            int clothingVariants = CountMappedOrEnumVariants(clothingSprites, entry => entry != null ? entry.ClothingStyle.ToString() : null, Enum.GetValues(typeof(ClothingStyleType)).Length);
+            int hairVariants = ResolveHairVariantCount();
+            int eyeColorVariants = Enum.GetValues(typeof(EyeColorType)).Length;
+            int skinToneVariants = Enum.GetValues(typeof(SkinToneType)).Length;
+
+            long total = 1;
+            total *= Mathf.Max(1, faceVariants);
+            total *= Mathf.Max(1, eyeVariants);
+            total *= Mathf.Max(1, bodyVariants);
+            total *= Mathf.Max(1, clothingVariants);
+            total *= Mathf.Max(1, hairVariants);
+            total *= Mathf.Max(1, eyeColorVariants);
+            total *= Mathf.Max(1, skinToneVariants);
+            return total;
+        }
+
+        public bool MeetsLargeSpriteRosterRequirement(int minimumCount = 10000)
+        {
+            return EstimateUniquePortraitCombinationCount() > minimumCount;
+        }
+
+        public string BuildPortraitVariationSummary()
+        {
+            return $"Portrait variation estimate: {EstimateUniquePortraitCombinationCount():N0} combinations (requirement: > 10,000).";
         }
 
         [ContextMenu("Refresh Portrait")]
@@ -323,6 +355,32 @@ namespace Survivebest.UI
             }
 
             image.sprite = sprite;
+        }
+
+        private int ResolveHairVariantCount()
+        {
+            if (appearanceManager != null && appearanceManager.HairstyleDefinitions != null && appearanceManager.HairstyleDefinitions.Count > 0)
+            {
+                return appearanceManager.HairstyleDefinitions.Count;
+            }
+
+            return CountMappedOrEnumVariants(hairSprites, entry => entry != null ? entry.HairStyle.ToString() : null, Enum.GetValues(typeof(HairStyleType)).Length);
+        }
+
+        private static int CountMappedOrEnumVariants<TEntry>(IEnumerable<TEntry> entries, Func<TEntry, string> selector, int fallback)
+        {
+            if (entries == null)
+            {
+                return Mathf.Max(1, fallback);
+            }
+
+            int mapped = entries
+                .Select(selector)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Count();
+
+            return Mathf.Max(1, mapped > 0 ? mapped : fallback);
         }
     }
 }
