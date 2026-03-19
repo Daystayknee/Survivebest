@@ -50,4 +50,15 @@ namespace Survivebest.UI.ViewModels
     [Serializable] public class ZoneScenePanelViewModel { public string ZoneName; public int Population; public int OpenVenues; public float Danger; }
     [Serializable] public class CharacterPortraitViewModel { public string CharacterId; public string DisplayName; public string MoodLabel; public string PortraitKey; }
     [Serializable] public class CharacterRosterItemViewModel { public string CharacterId; public string DisplayName; public string Role; public float Health; public float Energy; }
+    [Serializable] public class PresentationSectionViewModel
+    {
+        public string SectionLabel;
+        public string ScreenMood;
+        public string PopupTheme;
+        public string LocationName;
+        public string ActiveCharacterName;
+        public string RecommendedAction;
+        public string LastEventTitle;
+        public List<string> Tabs = new();
+    }
 }

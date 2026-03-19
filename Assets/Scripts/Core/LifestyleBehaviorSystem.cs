@@ -81,9 +81,15 @@ namespace Survivebest.Core
         [SerializeField] private List<PersonalGoal> activeGoals = new();
         [SerializeField] private List<IdentityTrack> identityTracks = new();
         [SerializeField, Range(0f, 1f)] private float annoyanceChancePerHour = 0.08f;
+        [SerializeField] private bool seedModernAdultGoalsOnEnable = true;
 
         private void OnEnable()
         {
+            if (seedModernAdultGoalsOnEnable)
+            {
+                EnsureModernAdultGoals();
+            }
+
             if (dailyRoutineSystem != null)
             {
                 dailyRoutineSystem.OnAutonomousActivityPerformed += HandleAutonomousActivity;
@@ -125,6 +131,86 @@ namespace Survivebest.Core
                 FinanceBehaviorType.Generous => amount <= balance * 0.22f,
                 _ => amount <= balance * 0.15f
             };
+        }
+
+        public void EnsureModernAdultGoals()
+        {
+            if (activeGoals == null)
+            {
+                activeGoals = new List<PersonalGoal>();
+            }
+
+            AddGoalIfMissing("Build an emergency fund and stay on top of bills");
+            AddGoalIfMissing("Protect a weekly wellness reset and therapy-quality reflection");
+            AddGoalIfMissing("Strengthen one close relationship with deliberate follow-through");
+            AddGoalIfMissing("Grow a creative or side-hustle income stream");
+            AddGoalIfMissing("Make the home feel beautiful, calm, and lived in");
+        }
+
+        public List<string> BuildLifestyleHooks(int desiredCount = 4)
+        {
+            EnsureModernAdultGoals();
+
+            List<string> hooks = new();
+            for (int i = 0; i < activeGoals.Count; i++)
+            {
+                PersonalGoal goal = activeGoals[i];
+                if (goal == null || goal.IsCompleted)
+                {
+                    continue;
+                }
+
+                hooks.Add(goal.Description switch
+                {
+                    string text when text.Contains("emergency fund", StringComparison.OrdinalIgnoreCase) =>
+                        $"Money arc: {LifeActivityCatalog.PickGigWorkActivity()}",
+                    string text when text.Contains("wellness", StringComparison.OrdinalIgnoreCase) || text.Contains("therapy", StringComparison.OrdinalIgnoreCase) =>
+                        $"Reset arc: {LifeActivityCatalog.PickSelfCareActivity()}",
+                    string text when text.Contains("relationship", StringComparison.OrdinalIgnoreCase) =>
+                        $"Relationship arc: {LifeActivityCatalog.PickDatingActivity()}",
+                    string text when text.Contains("creative", StringComparison.OrdinalIgnoreCase) || text.Contains("side-hustle", StringComparison.OrdinalIgnoreCase) =>
+                        $"Creator arc: {LifeActivityCatalog.PickCreatorEconomyActivity()}",
+                    string text when text.Contains("home", StringComparison.OrdinalIgnoreCase) =>
+                        $"Home arc: {LifeActivityCatalog.PickHomeUpgradeProject()}",
+                    _ => $"Life arc: {LifeActivityCatalog.PickAmbitionFocus()}"
+                });
+            }
+
+            if (hooks.Count == 0)
+            {
+                hooks.Add($"Momentum arc: {LifeActivityCatalog.PickAmbitionFocus()}");
+            }
+
+            return hooks.GetRange(0, Mathf.Min(desiredCount, hooks.Count));
+        }
+
+        public string BuildLifestyleDashboard()
+        {
+            EnsureModernAdultGoals();
+
+            int completedGoals = 0;
+            float totalProgress = 0f;
+            int trackedGoals = 0;
+            for (int i = 0; i < activeGoals.Count; i++)
+            {
+                PersonalGoal goal = activeGoals[i];
+                if (goal == null)
+                {
+                    continue;
+                }
+
+                trackedGoals++;
+                totalProgress += goal.Progress;
+                if (goal.IsCompleted)
+                {
+                    completedGoals++;
+                }
+            }
+
+            float averageProgress = trackedGoals > 0 ? totalProgress / trackedGoals : 0f;
+            string financeLabel = financeBehavior.ToString();
+            string ambition = LifeActivityCatalog.PickAmbitionFocus();
+            return $"Lifestyle AI: {completedGoals}/{Mathf.Max(1, trackedGoals)} goals cleared, avg progress {averageProgress:0}%, finance style {financeLabel}, current fantasy {ambition}.";
         }
 
         private void HandleAutonomousActivity(ActivityType type, int hour)
@@ -227,6 +313,13 @@ namespace Survivebest.Core
                     ActivityType.Chore when goal.Description.Contains("clean", StringComparison.OrdinalIgnoreCase) => 12f,
                     ActivityType.Read or ActivityType.HobbyPractice when goal.Description.Contains("skill", StringComparison.OrdinalIgnoreCase) => 10f,
                     ActivityType.Socialize when goal.Description.Contains("relationship", StringComparison.OrdinalIgnoreCase) => 10f,
+                    ActivityType.SmallTalk or ActivityType.Flirt when goal.Description.Contains("relationship", StringComparison.OrdinalIgnoreCase) => 7f,
+                    ActivityType.Cook when goal.Description.Contains("wellness", StringComparison.OrdinalIgnoreCase) => 9f,
+                    ActivityType.Rest or ActivityType.Workout when goal.Description.Contains("wellness", StringComparison.OrdinalIgnoreCase) => 8f,
+                    ActivityType.HobbyPractice or ActivityType.Read when goal.Description.Contains("creative", StringComparison.OrdinalIgnoreCase) => 9f,
+                    ActivityType.HobbyPractice when goal.Description.Contains("side-hustle", StringComparison.OrdinalIgnoreCase) => 10f,
+                    ActivityType.Chore when goal.Description.Contains("home", StringComparison.OrdinalIgnoreCase) => 10f,
+                    ActivityType.Party when goal.Description.Contains("relationship", StringComparison.OrdinalIgnoreCase) => 8f,
                     _ => 2f
                 };
 
@@ -295,6 +388,23 @@ namespace Survivebest.Core
                 ChangeKey = key,
                 Reason = reason,
                 Magnitude = magnitude
+            });
+        }
+
+        private void AddGoalIfMissing(string description)
+        {
+            if (activeGoals.Exists(x => x != null && string.Equals(x.Description, description, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            activeGoals.Add(new PersonalGoal
+            {
+                GoalId = Guid.NewGuid().ToString("N"),
+                Description = description,
+                Progress = 0f,
+                CompletionAt = 100f,
+                IsCompleted = false
             });
         }
     }
