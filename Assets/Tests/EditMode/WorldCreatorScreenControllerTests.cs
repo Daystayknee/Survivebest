@@ -192,18 +192,60 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(root);
         }
 
+
+        [Test]
+        public void GenerateWorld_TourismSettingsCreateNightlifeLandmarksAndTransitLinks()
+        {
+            GameObject root = new GameObject("WorldCreatorInterestingTownLayout");
+            WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
+            WorldCreatorManager worldCreatorManager = root.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem townSimulationSystem = root.AddComponent<TownSimulationSystem>();
+
+            typeof(WorldCreatorScreenController)
+                .GetField("worldCreatorManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(controller, worldCreatorManager);
+            typeof(WorldCreatorManager)
+                .GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(worldCreatorManager, townSimulationSystem);
+
+            controller.Settings.WorldName = "Golden Coast";
+            controller.Settings.SettlementDensity = SettlementDensity.City;
+            controller.Settings.EconomyFocus = EconomyFocus.Tourism;
+            controller.Settings.IncludeTransitHub = true;
+            controller.Settings.IncludeWaterfront = true;
+            controller.GenerateWorld();
+
+            LotDefinition entertainmentLot = FindLotNamed(townSimulationSystem.Lots, "Starlight Amphitheater");
+            LotDefinition transitLot = FindLotNamed(townSimulationSystem.Lots, "Transit Exchange");
+            Assert.IsNotNull(entertainmentLot);
+            Assert.IsNotNull(transitLot);
+            Assert.AreEqual(ZoneType.Entertainment, entertainmentLot.Zone);
+            Assert.Contains("nightlife", entertainmentLot.Tags);
+            Assert.Contains("landmark", entertainmentLot.Tags);
+            Assert.IsTrue(ContainsLotNamed(townSimulationSystem.Lots, "Festival Pier"));
+            Assert.IsTrue(townSimulationSystem.IsLotOpen(entertainmentLot.LotId, 23));
+            Assert.IsFalse(float.IsPositiveInfinity(townSimulationSystem.GetRouteCost(transitLot.LotId, entertainmentLot.LotId)));
+
+            Object.DestroyImmediate(root);
+        }
+
         private static bool ContainsLotNamed(IReadOnlyList<LotDefinition> lots, string displayName)
+        {
+            return FindLotNamed(lots, displayName) != null;
+        }
+
+        private static LotDefinition FindLotNamed(IReadOnlyList<LotDefinition> lots, string displayName)
         {
             for (int i = 0; i < lots.Count; i++)
             {
                 LotDefinition lot = lots[i];
                 if (lot != null && lot.DisplayName == displayName)
                 {
-                    return true;
+                    return lot;
                 }
             }
 
-            return false;
+            return null;
         }
     }
 }

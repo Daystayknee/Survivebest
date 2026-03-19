@@ -199,7 +199,9 @@ namespace Survivebest.World
             List<DistrictDefinition> districts = new();
             List<LotDefinition> lots = new();
             List<RouteEdge> routes = new();
-            Dictionary<string, string> districtByTheme = new();
+            Dictionary<string, string> districtByIdentity = new();
+            List<string> anchorLotIds = new();
+            string transitHubLotId = null;
 
             for (int i = 0; i < templates.Count; i++)
             {
@@ -209,69 +211,234 @@ namespace Survivebest.World
                     continue;
                 }
 
-                string districtId = GetOrCreateDistrictForTheme(template, districts, districtByTheme);
+                ZoneType zone = MapZone(template);
+                string districtIdentity = ResolveDistrictIdentity(template, zone);
+                string districtId = GetOrCreateDistrict(template, zone, districtIdentity, districts, districtByIdentity);
                 string lotId = BuildLotId(template.AreaName, i);
+                bool isAnchor = IsAnchorLocation(template, zone);
+                List<string> tags = BuildTags(template, zone, districtIdentity, isAnchor);
+                int openHour = ResolveOpenHour(template, zone);
+                int closeHour = ResolveCloseHour(template, zone);
+
                 lots.Add(new LotDefinition
                 {
                     LotId = lotId,
                     DisplayName = template.AreaName,
-                    Zone = MapZone(template.Theme),
+                    Zone = zone,
                     DistrictId = districtId,
-                    IsPublicVenue = true,
-                    OpenHour = ResolveOpenHour(template.Theme),
-                    CloseHour = ResolveCloseHour(template.Theme),
+                    IsPublicVenue = zone != ZoneType.Residential,
+                    OpenHour = openHour,
+                    CloseHour = closeHour,
                     Safety = Mathf.Clamp01((template.TheftEnforcement + template.ViolenceEnforcement + template.PoliceFunding) / 3f),
                     Wealth = Mathf.Clamp01((template.HealthcareCoverage + (1f - template.PrisonReform) + template.TheftEnforcement) / 3f),
-                    Capacity = ResolveCapacity(template.Theme),
-                    Tags = BuildTags(template)
+                    Capacity = ResolveCapacity(template, zone, isAnchor),
+                    Tags = tags
                 });
+
+                if (isAnchor)
+                {
+                    anchorLotIds.Add(lotId);
+                }
+
+                if (tags.Contains("transit"))
+                {
+                    transitHubLotId = lotId;
+                }
+            }
+
+            BuildRoutes(lots, routes, anchorLotIds, transitHubLotId);
+            townSimulationSystem.SetTownLayout(districts, lots, routes);
+        }
+
+        private static void BuildRoutes(List<LotDefinition> lots, List<RouteEdge> routes, List<string> anchorLotIds, string transitHubLotId)
+        {
+            HashSet<string> routeKeys = new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, List<LotDefinition>> lotsByDistrict = new(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < lots.Count; i++)
+            {
+                LotDefinition lot = lots[i];
+                if (lot == null || string.IsNullOrWhiteSpace(lot.DistrictId))
+                {
+                    continue;
+                }
+
+                if (!lotsByDistrict.TryGetValue(lot.DistrictId, out List<LotDefinition> districtLots))
+                {
+                    districtLots = new List<LotDefinition>();
+                    lotsByDistrict[lot.DistrictId] = districtLots;
+                }
+
+                districtLots.Add(lot);
+            }
+
+            foreach (List<LotDefinition> districtLots in lotsByDistrict.Values)
+            {
+                for (int i = 0; i < districtLots.Count - 1; i++)
+                {
+                    AddBidirectionalRoute(routes, routeKeys, districtLots[i], districtLots[i + 1], 0.75f + i * 0.12f);
+                }
+            }
+
+            for (int i = 1; i < anchorLotIds.Count; i++)
+            {
+                LotDefinition previous = lots.Find(x => x != null && x.LotId == anchorLotIds[i - 1]);
+                LotDefinition current = lots.Find(x => x != null && x.LotId == anchorLotIds[i]);
+                AddBidirectionalRoute(routes, routeKeys, previous, current, 0.95f + i * 0.15f);
+            }
+
+            if (!string.IsNullOrWhiteSpace(transitHubLotId))
+            {
+                LotDefinition transitHub = lots.Find(x => x != null && x.LotId == transitHubLotId);
+                for (int i = 0; i < lots.Count; i++)
+                {
+                    LotDefinition lot = lots[i];
+                    if (lot == null || transitHub == null || lot == transitHub)
+                    {
+                        continue;
+                    }
+
+                    if (lot.Tags != null && (lot.Tags.Contains("anchor") || lot.Tags.Contains("nightlife") || lot.Tags.Contains("landmark")))
+                    {
+                        AddBidirectionalRoute(routes, routeKeys, transitHub, lot, 0.68f + i * 0.05f);
+                    }
+                }
             }
 
             for (int i = 0; i < lots.Count; i++)
             {
-                for (int j = i + 1; j < lots.Count; j++)
+                LotDefinition lot = lots[i];
+                if (lot == null || lot.Tags == null || !lot.Tags.Contains("nightlife"))
                 {
-                    float travelCost = 0.8f + Mathf.Abs(i - j) * 0.18f;
-                    routes.Add(new RouteEdge
-                    {
-                        FromLotId = lots[i].LotId,
-                        ToLotId = lots[j].LotId,
-                        BaseTravelCost = travelCost,
-                        WeatherPenaltySensitivity = lots[j].Zone == ZoneType.Park ? 0.65f : 0.35f
-                    });
-                    routes.Add(new RouteEdge
-                    {
-                        FromLotId = lots[j].LotId,
-                        ToLotId = lots[i].LotId,
-                        BaseTravelCost = travelCost,
-                        WeatherPenaltySensitivity = lots[i].Zone == ZoneType.Park ? 0.65f : 0.35f
-                    });
+                    continue;
+                }
+
+                LotDefinition nearbyAnchor = FindBestAnchorForLot(lot, lots, anchorLotIds);
+                AddBidirectionalRoute(routes, routeKeys, lot, nearbyAnchor, 0.72f + i * 0.04f);
+            }
+        }
+
+        private static LotDefinition FindBestAnchorForLot(LotDefinition lot, List<LotDefinition> lots, List<string> anchorLotIds)
+        {
+            for (int i = 0; i < anchorLotIds.Count; i++)
+            {
+                LotDefinition anchor = lots.Find(x => x != null && x.LotId == anchorLotIds[i]);
+                if (anchor != null && string.Equals(anchor.DistrictId, lot.DistrictId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return anchor;
                 }
             }
 
-            townSimulationSystem.SetTownLayout(districts, lots, routes);
+            for (int i = 0; i < anchorLotIds.Count; i++)
+            {
+                LotDefinition anchor = lots.Find(x => x != null && x.LotId == anchorLotIds[i]);
+                if (anchor != null)
+                {
+                    return anchor;
+                }
+            }
+
+            return lots.Count > 0 ? lots[0] : null;
         }
 
-        private static string GetOrCreateDistrictForTheme(WorldAreaTemplate template, List<DistrictDefinition> districts, Dictionary<string, string> districtByTheme)
+        private static void AddBidirectionalRoute(List<RouteEdge> routes, HashSet<string> routeKeys, LotDefinition from, LotDefinition to, float baseCost)
         {
-            string themeKey = template.Theme.ToString();
-            if (districtByTheme.TryGetValue(themeKey, out string existing))
+            AddRoute(routes, routeKeys, from, to, baseCost);
+            AddRoute(routes, routeKeys, to, from, baseCost);
+        }
+
+        private static void AddRoute(List<RouteEdge> routes, HashSet<string> routeKeys, LotDefinition from, LotDefinition to, float baseCost)
+        {
+            if (from == null || to == null || string.Equals(from.LotId, to.LotId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            string key = $"{from.LotId}>{to.LotId}";
+            if (!routeKeys.Add(key))
+            {
+                return;
+            }
+
+            routes.Add(new RouteEdge
+            {
+                FromLotId = from.LotId,
+                ToLotId = to.LotId,
+                BaseTravelCost = baseCost,
+                WeatherPenaltySensitivity = ResolveWeatherPenaltySensitivity(from.Zone, to.Zone)
+            });
+        }
+
+        private static string GetOrCreateDistrict(WorldAreaTemplate template, ZoneType zone, string districtIdentity, List<DistrictDefinition> districts, Dictionary<string, string> districtByIdentity)
+        {
+            if (districtByIdentity.TryGetValue(districtIdentity, out string existing))
             {
                 return existing;
             }
 
-            string districtId = $"district_{themeKey.ToLowerInvariant()}";
-            districtByTheme[themeKey] = districtId;
+            string districtId = $"district_{districtIdentity}";
+            districtByIdentity[districtIdentity] = districtId;
             districts.Add(new DistrictDefinition
             {
                 DistrictId = districtId,
-                DisplayName = $"{themeKey} District",
-                Safety = Mathf.Clamp01((template.TheftEnforcement + template.PoliceFunding) * 0.5f),
-                Wealth = Mathf.Clamp01((template.HealthcareCoverage + (1f - template.ViolenceEnforcement)) * 0.5f),
-                IdentityTag = themeKey.ToLowerInvariant()
+                DisplayName = ResolveDistrictDisplayName(districtIdentity),
+                Safety = Mathf.Clamp01((template.TheftEnforcement + template.PoliceFunding) * 0.5f + ResolveDistrictSafetyBonus(zone, districtIdentity)),
+                Wealth = Mathf.Clamp01((template.HealthcareCoverage + (1f - template.ViolenceEnforcement)) * 0.5f + ResolveDistrictWealthBonus(zone, districtIdentity)),
+                IdentityTag = districtIdentity
             });
 
             return districtId;
+        }
+
+        private static string ResolveDistrictIdentity(WorldAreaTemplate template, ZoneType zone)
+        {
+            string name = template.AreaName.Trim().ToLowerInvariant();
+            if (name.Contains("waterfront") || name.Contains("pier") || name.Contains("riverfront") || name.Contains("boardwalk")) return "waterfront";
+            if (name.Contains("school") || name.Contains("library") || name.Contains("hall") || name.Contains("commons") || name.Contains("square")) return "civic_core";
+            if (name.Contains("park") || name.Contains("forest") || name.Contains("preserve") || name.Contains("fairgrounds")) return "greenbelt";
+            if (name.Contains("market") || name.Contains("plaza") || name.Contains("diner") || name.Contains("cafe") || name.Contains("food") || name.Contains("lantern")) return "market_walk";
+            if (zone == ZoneType.Entertainment) return "night_strip";
+            if (zone == ZoneType.Industrial) return "maker_row";
+            return template.Theme.ToString().ToLowerInvariant();
+        }
+
+        private static string ResolveDistrictDisplayName(string districtIdentity)
+        {
+            return districtIdentity switch
+            {
+                "waterfront" => "Waterfront Quarter",
+                "civic_core" => "Civic Core",
+                "greenbelt" => "Greenbelt",
+                "market_walk" => "Market Walk",
+                "night_strip" => "Night Strip",
+                "maker_row" => "Maker Row",
+                _ => NicifyDistrictIdentity(districtIdentity)
+            };
+        }
+
+        private static string NicifyDistrictIdentity(string districtIdentity)
+        {
+            string normalized = districtIdentity.Replace("_", " ");
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return "District";
+            }
+
+            return char.ToUpperInvariant(normalized[0]) + normalized.Substring(1);
+        }
+
+        private static float ResolveDistrictSafetyBonus(ZoneType zone, string districtIdentity)
+        {
+            if (districtIdentity == "civic_core") return 0.08f;
+            if (districtIdentity == "night_strip") return -0.04f;
+            return zone == ZoneType.Medical ? 0.06f : 0f;
+        }
+
+        private static float ResolveDistrictWealthBonus(ZoneType zone, string districtIdentity)
+        {
+            if (districtIdentity == "waterfront" || districtIdentity == "market_walk") return 0.06f;
+            if (districtIdentity == "maker_row") return 0.03f;
+            return zone == ZoneType.Park ? -0.02f : 0f;
         }
 
         private static string BuildLotId(string areaName, int index)
@@ -280,9 +447,15 @@ namespace Survivebest.World
             return $"lot_{index}_{normalized}";
         }
 
-        private static ZoneType MapZone(LocationTheme theme)
+        private static ZoneType MapZone(WorldAreaTemplate template)
         {
-            return theme switch
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            if (areaName.Contains("cinema") || areaName.Contains("arcade") || areaName.Contains("amphitheater") || areaName.Contains("festival") || areaName.Contains("boardwalk") || areaName.Contains("lantern"))
+            {
+                return ZoneType.Entertainment;
+            }
+
+            return template.Theme switch
             {
                 LocationTheme.Residential => ZoneType.Residential,
                 LocationTheme.Nature => ZoneType.Park,
@@ -293,20 +466,29 @@ namespace Survivebest.World
             };
         }
 
-        private static int ResolveOpenHour(LocationTheme theme)
+        private static int ResolveOpenHour(WorldAreaTemplate template, ZoneType zone)
         {
-            return theme switch
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            if (areaName.Contains("diner") || areaName.Contains("cafe")) return 6;
+            if (zone == ZoneType.Entertainment) return 10;
+            if (areaName.Contains("park") || areaName.Contains("preserve")) return 5;
+
+            return template.Theme switch
             {
-                LocationTheme.Nature => 5,
                 LocationTheme.Hospital => 0,
                 LocationTheme.Civic => 7,
                 _ => 8
             };
         }
 
-        private static int ResolveCloseHour(LocationTheme theme)
+        private static int ResolveCloseHour(WorldAreaTemplate template, ZoneType zone)
         {
-            return theme switch
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            if (areaName.Contains("diner")) return 2;
+            if (areaName.Contains("cafe")) return 23;
+            if (zone == ZoneType.Entertainment) return 1;
+
+            return template.Theme switch
             {
                 LocationTheme.Hospital => 23,
                 LocationTheme.Nature => 22,
@@ -315,9 +497,9 @@ namespace Survivebest.World
             };
         }
 
-        private static int ResolveCapacity(LocationTheme theme)
+        private static int ResolveCapacity(WorldAreaTemplate template, ZoneType zone, bool isAnchor)
         {
-            return theme switch
+            int baseCapacity = template.Theme switch
             {
                 LocationTheme.Hospital => 90,
                 LocationTheme.Civic => 80,
@@ -326,16 +508,49 @@ namespace Survivebest.World
                 LocationTheme.Nature => 120,
                 _ => 40
             };
+
+            if (zone == ZoneType.Entertainment) baseCapacity += 35;
+            if (isAnchor) baseCapacity += 20;
+            if (template.AreaName.IndexOf("Transit", StringComparison.OrdinalIgnoreCase) >= 0) baseCapacity += 25;
+            return baseCapacity;
         }
 
-        private static List<string> BuildTags(WorldAreaTemplate template)
+        private static List<string> BuildTags(WorldAreaTemplate template, ZoneType zone, string districtIdentity, bool isAnchor)
         {
-            List<string> tags = new() { template.Theme.ToString().ToLowerInvariant() };
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            List<string> tags = new() { template.Theme.ToString().ToLowerInvariant(), districtIdentity, zone.ToString().ToLowerInvariant() };
             if (template.HealthcareCoverage > 0.65f) tags.Add("well_serviced");
             if (template.PoliceFunding > 0.7f) tags.Add("patrolled");
             if (template.PrisonReform > 0.6f) tags.Add("restorative");
             if (template.ViolenceEnforcement < 0.55f) tags.Add("relaxed");
+            if (isAnchor) tags.Add("anchor");
+            if (zone == ZoneType.Entertainment || areaName.Contains("diner") || areaName.Contains("lantern")) tags.Add("nightlife");
+            if (areaName.Contains("transit") || areaName.Contains("depot")) tags.Add("transit");
+            if (areaName.Contains("waterfront") || areaName.Contains("pier") || areaName.Contains("boardwalk")) tags.Add("waterfront");
+            if (areaName.Contains("library") || areaName.Contains("hall") || areaName.Contains("plaza") || areaName.Contains("square") || areaName.Contains("amphitheater")) tags.Add("landmark");
             return tags;
+        }
+
+        private static bool IsAnchorLocation(WorldAreaTemplate template, ZoneType zone)
+        {
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            return zone == ZoneType.Medical ||
+                areaName.Contains("hall") ||
+                areaName.Contains("library") ||
+                areaName.Contains("plaza") ||
+                areaName.Contains("square") ||
+                areaName.Contains("school") ||
+                areaName.Contains("transit") ||
+                areaName.Contains("waterfront") ||
+                areaName.Contains("park");
+        }
+
+        private static float ResolveWeatherPenaltySensitivity(ZoneType fromZone, ZoneType toZone)
+        {
+            if (fromZone == ZoneType.Park || toZone == ZoneType.Park) return 0.7f;
+            if (fromZone == ZoneType.Entertainment || toZone == ZoneType.Entertainment) return 0.45f;
+            if (fromZone == ZoneType.Medical || toZone == ZoneType.Medical) return 0.2f;
+            return 0.35f;
         }
 
         private static List<WorldAreaTemplate> BuildSensibleDefaultAreas()
