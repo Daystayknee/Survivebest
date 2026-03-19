@@ -31,10 +31,20 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(System.Enum.IsDefined(typeof(SkinToneType), "Alabaster"));
             Assert.IsTrue(System.Enum.IsDefined(typeof(EyeColorType), "DarkBrown"));
             Assert.IsTrue(System.Enum.IsDefined(typeof(EyeColorType), "Violet"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(EyeColorType), "IceBlue"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(EyeColorType), "SteelGray"));
             Assert.IsTrue(System.Enum.IsDefined(typeof(BodyType), "Athletic"));
             Assert.IsTrue(System.Enum.IsDefined(typeof(BodyType), "PlusSize"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(BodyType), "Petite"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(BodyType), "TallLean"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(EyeShapeType), "DeepSet"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(EyeShapeType), "CatEye"));
             Assert.IsTrue(System.Enum.IsDefined(typeof(NoseShapeType), "Roman"));
             Assert.IsTrue(System.Enum.IsDefined(typeof(NoseShapeType), "Nubian"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(NoseShapeType), "FlatBridge"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(LipShapeType), "CupidBow"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(FaceShapeType), "LongOval"));
+            Assert.IsTrue(System.Enum.IsDefined(typeof(SkinIssueType), "UnderEyeDarkness"));
         }
 
         [Test]
