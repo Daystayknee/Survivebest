@@ -123,5 +123,16 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(summary.Contains("Eye Size:very_high"));
             Assert.IsTrue(summary.Contains("Nose Bridge Height:very_low"));
         }
+
+        [Test]
+        public void GeneticTraitCatalog_ProvidesMasterTraitMetadataAcrossClusters()
+        {
+            var rules = GeneticTraitCatalog.GetCoreRules();
+            var noseRules = GeneticTraitCatalog.GetRulesForCluster(GeneticTraitCluster.NoseSystem);
+
+            Assert.GreaterOrEqual(rules.Count, 50);
+            Assert.IsTrue(noseRules.Count >= 4);
+            Assert.IsTrue(System.Array.Exists(System.Linq.Enumerable.ToArray(rules), x => x.TraitKey == "Blood" && !string.IsNullOrEmpty(x.RangeDescription) && !string.IsNullOrEmpty(x.VisualMapping)));
+        }
     }
 }
