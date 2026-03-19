@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Core;
 using Survivebest.Events;
+using Survivebest.UI.ViewModels;
 
 namespace Survivebest.UI
 {
@@ -23,6 +25,8 @@ namespace Survivebest.UI
         [SerializeField] private Color criticalColor = new(0.9f, 0.25f, 0.25f);
 
         private readonly Queue<JournalCardView> cards = new();
+        private readonly Queue<JournalCardViewModel> journalEntries = new();
+        private readonly StringBuilder digestBuilder = new();
 
         private void OnEnable()
         {
@@ -56,6 +60,13 @@ namespace Survivebest.UI
 
             card.Bind(title, body, timestamp, portrait, severityColor);
             cards.Enqueue(card);
+            journalEntries.Enqueue(new JournalCardViewModel
+            {
+                Title = title,
+                Body = body,
+                Timestamp = timestamp,
+                Severity = simulationEvent.Severity.ToString()
+            });
             TrimOldCards();
         }
 
@@ -69,6 +80,43 @@ namespace Survivebest.UI
                     Destroy(oldCard.gameObject);
                 }
             }
+
+            while (journalEntries.Count > maxCards)
+            {
+                journalEntries.Dequeue();
+            }
+        }
+
+        public string BuildDailyDigest(int maxEntriesToInclude = 5)
+        {
+            if (journalEntries.Count == 0)
+            {
+                return "No journal beats recorded yet.";
+            }
+
+            JournalCardViewModel[] entries = journalEntries.ToArray();
+            int start = Mathf.Max(0, entries.Length - Mathf.Max(1, maxEntriesToInclude));
+            digestBuilder.Clear();
+            digestBuilder.Append("Daily Digest");
+
+            for (int i = start; i < entries.Length; i++)
+            {
+                JournalCardViewModel entry = entries[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                digestBuilder.Append("\n• ");
+                digestBuilder.Append(entry.Title);
+                if (!string.IsNullOrWhiteSpace(entry.Body))
+                {
+                    digestBuilder.Append(": ");
+                    digestBuilder.Append(entry.Body);
+                }
+            }
+
+            return digestBuilder.ToString();
         }
 
         private Sprite ResolvePortrait(string sourceCharacterId)

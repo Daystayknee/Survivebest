@@ -47,13 +47,30 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public enum PersonalGoalArchetype
+    {
+        Finance,
+        Wellness,
+        Relationship,
+        Creator,
+        Home,
+        Rest,
+        Nutrition,
+        Hygiene,
+        Exploration
+    }
+
+    [Serializable]
     public class PersonalGoal
     {
         public string GoalId;
         public string Description;
+        public PersonalGoalArchetype Archetype;
         [Range(0f, 100f)] public float Progress;
         [Range(0f, 100f)] public float CompletionAt = 100f;
         public bool IsCompleted;
+        public bool IsPinned;
+        public int LastRetargetedDay = -1;
     }
 
     [Serializable]
@@ -81,9 +98,19 @@ namespace Survivebest.Core
         [SerializeField] private List<PersonalGoal> activeGoals = new();
         [SerializeField] private List<IdentityTrack> identityTracks = new();
         [SerializeField, Range(0f, 1f)] private float annoyanceChancePerHour = 0.08f;
+        [SerializeField] private bool seedModernAdultGoalsOnEnable = true;
+        [SerializeField, Min(1)] private int dynamicGoalRefreshIntervalHours = 6;
+        [SerializeField] private bool retargetGoalsFromNeeds = true;
+
+        private int lastDynamicGoalRefreshHour = int.MinValue;
 
         private void OnEnable()
         {
+            if (seedModernAdultGoalsOnEnable)
+            {
+                EnsureModernAdultGoals();
+            }
+
             if (dailyRoutineSystem != null)
             {
                 dailyRoutineSystem.OnAutonomousActivityPerformed += HandleAutonomousActivity;
@@ -127,6 +154,136 @@ namespace Survivebest.Core
             };
         }
 
+        public void EnsureModernAdultGoals()
+        {
+            if (activeGoals == null)
+            {
+                activeGoals = new List<PersonalGoal>();
+            }
+
+            AddGoalIfMissing(PersonalGoalArchetype.Finance, "Build an emergency fund and stay on top of bills");
+            AddGoalIfMissing(PersonalGoalArchetype.Wellness, "Protect a weekly wellness reset and therapy-quality reflection");
+            AddGoalIfMissing(PersonalGoalArchetype.Relationship, "Strengthen one close relationship with deliberate follow-through");
+            AddGoalIfMissing(PersonalGoalArchetype.Creator, "Grow a creative or side-hustle income stream");
+            AddGoalIfMissing(PersonalGoalArchetype.Home, "Make the home feel beautiful, calm, and lived in");
+        }
+
+        public List<string> BuildLifestyleHooks(int desiredCount = 4)
+        {
+            EnsureModernAdultGoals();
+
+            List<string> hooks = new();
+            for (int i = 0; i < activeGoals.Count; i++)
+            {
+                PersonalGoal goal = activeGoals[i];
+                if (goal == null || goal.IsCompleted)
+                {
+                    continue;
+                }
+
+                hooks.Add(goal.Archetype switch
+                {
+                    PersonalGoalArchetype.Finance =>
+                        $"Money arc: {LifeActivityCatalog.PickGigWorkActivity()}",
+                    PersonalGoalArchetype.Wellness or PersonalGoalArchetype.Rest or PersonalGoalArchetype.Hygiene =>
+                        $"Reset arc: {LifeActivityCatalog.PickSelfCareActivity()}",
+                    PersonalGoalArchetype.Relationship =>
+                        $"Relationship arc: {LifeActivityCatalog.PickDatingActivity()}",
+                    PersonalGoalArchetype.Creator or PersonalGoalArchetype.Exploration =>
+                        $"Creator arc: {LifeActivityCatalog.PickCreatorEconomyActivity()}",
+                    PersonalGoalArchetype.Home =>
+                        $"Home arc: {LifeActivityCatalog.PickHomeUpgradeProject()}",
+                    PersonalGoalArchetype.Nutrition =>
+                        $"Recovery arc: cook, order, or prep something sustaining before your next push",
+                    _ => $"Life arc: {LifeActivityCatalog.PickAmbitionFocus()}"
+                });
+            }
+
+            if (hooks.Count == 0)
+            {
+                hooks.Add($"Momentum arc: {LifeActivityCatalog.PickAmbitionFocus()}");
+            }
+
+            return hooks.GetRange(0, Mathf.Min(desiredCount, hooks.Count));
+        }
+
+        public string BuildLifestyleDashboard()
+        {
+            EnsureModernAdultGoals();
+
+            int completedGoals = 0;
+            float totalProgress = 0f;
+            int trackedGoals = 0;
+            for (int i = 0; i < activeGoals.Count; i++)
+            {
+                PersonalGoal goal = activeGoals[i];
+                if (goal == null)
+                {
+                    continue;
+                }
+
+                trackedGoals++;
+                totalProgress += goal.Progress;
+                if (goal.IsCompleted)
+                {
+                    completedGoals++;
+                }
+            }
+
+            float averageProgress = trackedGoals > 0 ? totalProgress / trackedGoals : 0f;
+            string financeLabel = financeBehavior.ToString();
+            string ambition = LifeActivityCatalog.PickAmbitionFocus();
+            int pinnedGoals = activeGoals.FindAll(goal => goal != null && goal.IsPinned && !goal.IsCompleted).Count;
+            return $"Lifestyle AI: {completedGoals}/{Mathf.Max(1, trackedGoals)} goals cleared, avg progress {averageProgress:0}%, {pinnedGoals} pinned, finance style {financeLabel}, current fantasy {ambition}.";
+        }
+
+        public void PinGoal(string goalId, bool pinned = true)
+        {
+            if (string.IsNullOrWhiteSpace(goalId))
+            {
+                return;
+            }
+
+            PersonalGoal goal = activeGoals.Find(x => x != null && x.GoalId == goalId);
+            if (goal == null)
+            {
+                return;
+            }
+
+            goal.IsPinned = pinned;
+        }
+
+        public void RefreshDynamicGoals()
+        {
+            EnsureModernAdultGoals();
+            if (!retargetGoalsFromNeeds)
+            {
+                return;
+            }
+
+            NeedsDrivenGoalProfile profile = BuildNeedsDrivenGoalProfile();
+            if (profile == null || profile.PrimeGoals.Count == 0)
+            {
+                return;
+            }
+
+            int currentDay = worldClock != null ? worldClock.Day : 0;
+            int profileIndex = 0;
+            for (int i = 0; i < activeGoals.Count && profileIndex < profile.PrimeGoals.Count; i++)
+            {
+                PersonalGoal goal = activeGoals[i];
+                if (goal == null || goal.IsCompleted || goal.IsPinned)
+                {
+                    continue;
+                }
+
+                GoalRetargetDefinition retarget = profile.PrimeGoals[profileIndex++];
+                goal.Archetype = retarget.Archetype;
+                goal.Description = retarget.Description;
+                goal.LastRetargetedDay = currentDay;
+            }
+        }
+
         private void HandleAutonomousActivity(ActivityType type, int hour)
         {
             string trigger = type.ToString();
@@ -166,6 +323,8 @@ namespace Survivebest.Core
                 return;
             }
 
+            MaybeRefreshDynamicGoals(hour);
+
             if (weatherManager != null)
             {
                 float weatherLike = GetPreference("Weather", weatherManager.CurrentWeather.ToString());
@@ -188,6 +347,24 @@ namespace Survivebest.Core
             }
 
             MaybeTriggerRandomAnnoyance(hour);
+        }
+
+        private void MaybeRefreshDynamicGoals(int hour)
+        {
+            if (!retargetGoalsFromNeeds)
+            {
+                return;
+            }
+
+            int absoluteHour = worldClock != null ? worldClock.Day * 24 + hour : hour;
+            if (lastDynamicGoalRefreshHour != int.MinValue &&
+                absoluteHour - lastDynamicGoalRefreshHour < Mathf.Max(1, dynamicGoalRefreshIntervalHours))
+            {
+                return;
+            }
+
+            lastDynamicGoalRefreshHour = absoluteHour;
+            RefreshDynamicGoals();
         }
 
         private void MaybeTriggerRandomAnnoyance(int hour)
@@ -224,9 +401,14 @@ namespace Survivebest.Core
 
                 float step = type switch
                 {
-                    ActivityType.Chore when goal.Description.Contains("clean", StringComparison.OrdinalIgnoreCase) => 12f,
-                    ActivityType.Read or ActivityType.HobbyPractice when goal.Description.Contains("skill", StringComparison.OrdinalIgnoreCase) => 10f,
-                    ActivityType.Socialize when goal.Description.Contains("relationship", StringComparison.OrdinalIgnoreCase) => 10f,
+                    ActivityType.Chore when goal.Archetype == PersonalGoalArchetype.Home => 10f,
+                    ActivityType.Read or ActivityType.HobbyPractice when goal.Archetype is PersonalGoalArchetype.Creator or PersonalGoalArchetype.Exploration => 9f,
+                    ActivityType.Socialize or ActivityType.Party when goal.Archetype == PersonalGoalArchetype.Relationship => 10f,
+                    ActivityType.SmallTalk or ActivityType.Flirt when goal.Archetype == PersonalGoalArchetype.Relationship => 7f,
+                    ActivityType.Cook or ActivityType.Drink when goal.Archetype == PersonalGoalArchetype.Nutrition => 10f,
+                    ActivityType.Rest or ActivityType.Sleep when goal.Archetype == PersonalGoalArchetype.Rest => 12f,
+                    ActivityType.Rest or ActivityType.Workout or ActivityType.Cook when goal.Archetype == PersonalGoalArchetype.Wellness => 8f,
+                    ActivityType.Chore when goal.Archetype == PersonalGoalArchetype.Hygiene => 8f,
                     _ => 2f
                 };
 
@@ -297,5 +479,88 @@ namespace Survivebest.Core
                 Magnitude = magnitude
             });
         }
+
+        private void AddGoalIfMissing(PersonalGoalArchetype archetype, string description, bool pinned = false)
+        {
+            if (activeGoals.Exists(x => x != null && x.Archetype == archetype && !x.IsCompleted))
+            {
+                return;
+            }
+
+            activeGoals.Add(new PersonalGoal
+            {
+                GoalId = Guid.NewGuid().ToString("N"),
+                Description = description,
+                Archetype = archetype,
+                Progress = 0f,
+                CompletionAt = 100f,
+                IsCompleted = false,
+                IsPinned = pinned
+            });
+        }
+
+        private NeedsDrivenGoalProfile BuildNeedsDrivenGoalProfile()
+        {
+            List<GoalRetargetDefinition> goals = new();
+
+            if (needsSystem != null)
+            {
+                if (needsSystem.Energy < 40f)
+                {
+                    goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Rest, "Protect your energy and get one real recovery block in before chasing bigger ambitions"));
+                }
+
+                if (needsSystem.Hunger < 45f || needsSystem.Hydration < 45f)
+                {
+                    goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Nutrition, "Stabilize food and hydration so the day stops feeling like constant triage"));
+                }
+
+                if (needsSystem.Hygiene < 45f || needsSystem.Appearance < 45f)
+                {
+                    goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Hygiene, "Reset hygiene and presentation so public-facing actions feel easier"));
+                }
+
+                if (needsSystem.Boredom > 65f)
+                {
+                    goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Exploration, "Break routine with one novelty-seeking outing, class, or creative detour"));
+                }
+
+                if (needsSystem.Motivation < 40f || needsSystem.BurnoutRiskValue > 60f)
+                {
+                    goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Wellness, "Shrink the day to a manageable win and a nervous-system reset"));
+                }
+            }
+
+            if (goals.Count == 0)
+            {
+                goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Finance, "Build an emergency fund and stay on top of bills"));
+                goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Relationship, "Strengthen one close relationship with deliberate follow-through"));
+                goals.Add(new GoalRetargetDefinition(PersonalGoalArchetype.Creator, "Grow a creative or side-hustle income stream"));
+            }
+
+            return new NeedsDrivenGoalProfile(goals);
+        }
+    }
+
+    internal sealed class GoalRetargetDefinition
+    {
+        public GoalRetargetDefinition(PersonalGoalArchetype archetype, string description)
+        {
+            Archetype = archetype;
+            Description = description;
+        }
+
+        public PersonalGoalArchetype Archetype { get; }
+        public string Description { get; }
+    }
+
+    internal sealed class NeedsDrivenGoalProfile
+    {
+        public NeedsDrivenGoalProfile(List<GoalRetargetDefinition> primeGoals)
+        {
+            PrimeGoals = primeGoals ?? new List<GoalRetargetDefinition>();
+        }
+
+        public List<GoalRetargetDefinition> PrimeGoals { get; }
     }
 }

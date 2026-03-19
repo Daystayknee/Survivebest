@@ -4,6 +4,7 @@ using Survivebest.Core;
 using Survivebest.Emotion;
 using Survivebest.Needs;
 using Survivebest.NPC;
+using Survivebest.UI;
 using Survivebest.World;
 
 namespace Survivebest.Tests.EditMode
@@ -100,6 +101,21 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual("health_overlay_sick", state.HealthOverlayKey);
             Assert.AreEqual("state_overlay_sick", state.StateOverlayKey);
             Assert.AreEqual("ui_feedback_health_alert", state.UiCueKey);
+        }
+
+        [Test]
+        public void CharacterPortraitRenderer_MinimumGuaranteedPortraitVariants_ExceedsTenThousand()
+        {
+            GameObject go = new GameObject("PortraitCoverage");
+            CharacterPortraitRenderer renderer = go.AddComponent<CharacterPortraitRenderer>();
+
+            long total = renderer.EstimateUniquePortraitCombinationCount();
+
+            Assert.Greater(total, 10000);
+            Assert.IsTrue(renderer.MeetsLargeSpriteRosterRequirement());
+            StringAssert.Contains("10,000", renderer.BuildPortraitVariationSummary());
+
+            Object.DestroyImmediate(go);
         }
     }
 }
