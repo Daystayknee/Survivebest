@@ -25,6 +25,23 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(MouthExpressionSet.Smile, phenotype.AvatarLayers.MouthExpressionSet);
             Assert.IsTrue(phenotype.AvatarLayers.BaseBodyLayerKey.StartsWith("body_base_"));
             Assert.IsTrue(phenotype.AvatarLayers.ExpressionPresetKey.StartsWith("exp_"));
+            Assert.IsTrue(phenotype.AvatarLayers.HeadLayerKey.StartsWith("head_"));
+            Assert.IsTrue(phenotype.AvatarLayers.BodySilhouetteLayerKey.StartsWith("silhouette_"));
+            Assert.IsNotEmpty(phenotype.FamilyResemblance.VisibleTraitSummary);
+            Assert.IsNotEmpty(phenotype.Behavior.PosturePresetKey);
+        }
+
+        [Test]
+        public void Resolve_IsDeterministicForGenomeDrivenSkinOverlays()
+        {
+            GeneticProfile genes = InheritanceResolver.BuildFounder(54321, BodySchema.Androgynous);
+            genes.VitiligoChance = 1f;
+            genes.SynchronizeDetailedGenomeFromScalarCache();
+
+            PhenotypeProfile first = PhenotypeResolver.Resolve(genes, LifeStage.Adult, 0.2f);
+            PhenotypeProfile second = PhenotypeResolver.Resolve(genes, LifeStage.Adult, 0.2f);
+
+            Assert.AreEqual(first.Skin.Overlays.Vitiligo, second.Skin.Overlays.Vitiligo);
         }
 
         [Test]
@@ -61,6 +78,24 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(adult.AvatarLayers.EnableOnesieLayer);
             Assert.AreEqual("outfit_adult", adult.AvatarLayers.OutfitLayerKey);
             Assert.AreEqual("skin_age_adult_base", adult.AvatarLayers.SkinAgeOverlayKey);
+        }
+
+        [Test]
+        public void GeneticProfile_RebuildDerivedTraits_PopulatesDetailedGenomeChecklists()
+        {
+            GeneticProfile genes = InheritanceResolver.BuildFounder(12345, BodySchema.Androgynous);
+
+            genes.RebuildDerivedTraitsFromGenome(0.35f);
+
+            Assert.That(genes.FaceStructure.HeadHeight, Is.InRange(0f, 1f));
+            Assert.That(genes.EyeGenome.IrisSize, Is.InRange(0f, 1f));
+            Assert.That(genes.NoseGenome.Projection, Is.InRange(0f, 1f));
+            Assert.That(genes.MouthGenome.MouthWidth, Is.InRange(0f, 1f));
+            Assert.That(genes.SkinGenome.TanningTendency, Is.InRange(0f, 1f));
+            Assert.That(genes.HairGenome.BabyHairDensity, Is.InRange(0f, 1f));
+            Assert.That(genes.BodyGenome.RibcageWidth, Is.InRange(0f, 1f));
+            Assert.That(genes.Biology.HormoneSensitivity, Is.InRange(0f, 1f));
+            Assert.That(genes.Temperament.ResilienceTendency, Is.InRange(0f, 1f));
         }
     }
 }
