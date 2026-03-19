@@ -71,5 +71,28 @@ namespace Survivebest.Tests.EditMode
             coordinator.SendMessage("OnDisable");
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void SetFocusedAction_TravelActionUsesTravelPresentationSection()
+        {
+            GameObject go = new GameObject("PresentationCoordinatorTravel");
+            GameplayPresentationStateCoordinator coordinator = go.AddComponent<GameplayPresentationStateCoordinator>();
+            GameplayVisionSystem vision = go.AddComponent<GameplayVisionSystem>();
+            GameplayInteractionPresentationLayer presentation = go.AddComponent<GameplayInteractionPresentationLayer>();
+            LocationManager location = go.AddComponent<LocationManager>();
+
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayVisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, vision);
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayInteractionPresentationLayer", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, presentation);
+            typeof(GameplayPresentationStateCoordinator).GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, location);
+            typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)?.SetValue(location, new Room { RoomName = "Apartment", Theme = LocationTheme.Residential });
+
+            coordinator.SetFocusedAction("open_map_travel");
+
+            Assert.AreEqual("Travel", coordinator.CurrentState.SectionLabel);
+            Assert.IsTrue(coordinator.CurrentState.Tabs.Contains("Map"));
+            Assert.IsTrue(coordinator.CurrentState.Tabs.Contains("Route"));
+
+            Object.DestroyImmediate(go);
+        }
     }
 }

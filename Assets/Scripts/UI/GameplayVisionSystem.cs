@@ -68,6 +68,15 @@ namespace Survivebest.UI
         {
             if (!string.IsNullOrWhiteSpace(actionKey))
             {
+                if (actionKey.Contains("travel", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("map", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("route", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("ride", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("leave", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GameplaySectionType.Travel;
+                }
+
                 if (actionKey.Contains("cook", StringComparison.OrdinalIgnoreCase) ||
                     actionKey.Contains("bake", StringComparison.OrdinalIgnoreCase) ||
                     actionKey.Contains("drink", StringComparison.OrdinalIgnoreCase))
@@ -88,6 +97,14 @@ namespace Survivebest.UI
                     return GameplaySectionType.Social;
                 }
 
+                if (actionKey.Contains("work", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("job", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("gig", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("shift", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GameplaySectionType.Work;
+                }
+
                 if (actionKey.Contains("fish", StringComparison.OrdinalIgnoreCase) ||
                     actionKey.Contains("forage", StringComparison.OrdinalIgnoreCase) ||
                     actionKey.Contains("camp", StringComparison.OrdinalIgnoreCase) ||
@@ -99,6 +116,25 @@ namespace Survivebest.UI
                 if (actionKey.Contains("skill", StringComparison.OrdinalIgnoreCase) || actionKey.Contains("train", StringComparison.OrdinalIgnoreCase))
                 {
                     return GameplaySectionType.Skills;
+                }
+
+                if (actionKey.Contains("legacy", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("heir", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("inherit", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("succession", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("bloodline", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GameplaySectionType.Legacy;
+                }
+
+                if (actionKey.Contains("shop", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("buy", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("sell", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("vote", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("law", StringComparison.OrdinalIgnoreCase) ||
+                    actionKey.Contains("civic", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GameplaySectionType.World;
                 }
             }
 

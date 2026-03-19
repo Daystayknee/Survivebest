@@ -293,12 +293,37 @@ namespace Survivebest.UI
                 return suggestions;
             }
 
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
             NeedsSystem needs = active.GetComponent<NeedsSystem>();
             if (needs != null)
             {
-                if (needs.Energy < 40f) suggestions.Add("Take a rest action soon");
-                if (needs.Hunger < 45f) suggestions.Add("Find food or cook a meal");
-                if (needs.Hygiene < 45f) suggestions.Add("Use hygiene hotspot (shower/sink)");
+                AddNeedDrivenSuggestions(suggestions, needs, room);
+            }
+
+            AddRoomOpportunitySuggestions(suggestions, room);
+            AddTravelOpportunitySuggestion(suggestions, room);
+
+            if (worldClock != null)
+            {
+                if (worldClock.Hour >= 20) suggestions.Add($"Tonight idea: {LifeActivityCatalog.PickNightlifeActivity()}");
+                if (worldClock.Hour >= 9 && worldClock.Hour <= 18) suggestions.Add($"Adult errand: {LifeActivityCatalog.PickAdultErrand()}");
+            }
+
+            suggestions.Add($"Modern life: {LifeActivityCatalog.PickCreatorEconomyActivity()}");
+            suggestions.Add($"Relationship beat: {LifeActivityCatalog.PickDatingActivity()}");
+            suggestions.Add($"Reset option: {LifeActivityCatalog.PickSelfCareActivity()}");
+            suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
+            suggestions.Add($"Phone/social beat: {LifeActivityCatalog.PickSocialFeedActivity()}");
+            suggestions.Add($"Home glow-up: {LifeActivityCatalog.PickHomeUpgradeProject()}");
+            suggestions.Add(BuildScreenMoodSummary());
+
+            if (lifestyleBehaviorSystem != null)
+            {
+                List<string> lifeHooks = lifestyleBehaviorSystem.BuildLifestyleHooks(4);
+                for (int i = 0; i < lifeHooks.Count; i++)
+                {
+                    suggestions.Add(lifeHooks[i]);
+                }
             }
 
             if (worldClock != null)
@@ -378,6 +403,101 @@ namespace Survivebest.UI
             }
 
             return suggestions;
+        }
+
+        private void AddNeedDrivenSuggestions(List<string> suggestions, NeedsSystem needs, Room room)
+        {
+            if (suggestions == null || needs == null)
+            {
+                return;
+            }
+
+            bool atHome = room == null || room.Theme == LocationTheme.Residential;
+
+            if (needs.Energy < 40f)
+            {
+                suggestions.Add(atHome
+                    ? "Go to the Bed hotspot and rest now"
+                    : "Travel somewhere safe for sleep before pushing more tasks");
+            }
+
+            if (needs.Hunger < 45f)
+            {
+                suggestions.Add(atHome
+                    ? "Use the Kitchen hotspot to cook a recovery meal"
+                    : "Find a food stop or head home to cook before your next outing");
+            }
+
+            if (needs.Hygiene < 45f)
+            {
+                suggestions.Add(atHome
+                    ? "Use the Bathroom hotspot for a shower and reset"
+                    : "Schedule a hygiene reset before your next social beat");
+            }
+        }
+
+        private void AddRoomOpportunitySuggestions(List<string> suggestions, Room room)
+        {
+            if (suggestions == null)
+            {
+                return;
+            }
+
+            LocationTheme theme = room != null ? room.Theme : LocationTheme.Residential;
+            switch (theme)
+            {
+                case LocationTheme.Workplace:
+                    suggestions.Add("Use the Workstation hotspot to lock in one productive block");
+                    suggestions.Add("Take a short break before your next performance push");
+                    break;
+                case LocationTheme.Hospital:
+                    suggestions.Add("Check in at the Doctor Station for treatment or answers");
+                    suggestions.Add("Use the Recovery Bed to stabilize before leaving");
+                    break;
+                case LocationTheme.Civic:
+                    suggestions.Add("Handle one civic errand while you are already here");
+                    break;
+                case LocationTheme.StoreInterior:
+                    suggestions.Add("Resolve one shopping or supply run before heading out");
+                    break;
+                case LocationTheme.Nature:
+                    suggestions.Add("Scan the area, then forage or fish before daylight shifts");
+                    break;
+                default:
+                    suggestions.Add("Use a home hotspot to set up the next chapter of your day");
+                    break;
+            }
+        }
+
+        private void AddTravelOpportunitySuggestion(List<string> suggestions, Room room)
+        {
+            if (suggestions == null)
+            {
+                return;
+            }
+
+            List<MapTravelOption> options = BuildMapTravelOptions();
+            if (options.Count == 0)
+            {
+                if (room != null && room.Theme != LocationTheme.Residential)
+                {
+                    suggestions.Add("Check the map and line up your next district move");
+                }
+
+                return;
+            }
+
+            MapTravelOption bestOption = options
+                .OrderByDescending(option => option.EncounterChance)
+                .ThenBy(option => option.TravelMinutes)
+                .FirstOrDefault();
+
+            if (bestOption == null)
+            {
+                return;
+            }
+
+            suggestions.Add($"Map move: travel to {bestOption.DistrictId} ({bestOption.TravelMinutes:0} min, ${bestOption.Cost:0})");
         }
 
         private int BuildSuggestionSeed(CharacterCore active)

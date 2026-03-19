@@ -257,6 +257,61 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void BuildContextActionSuggestions_AddsRoomAwareRecoveryAndTravelHooks()
+        {
+            GameObject go = new GameObject("PresentationContextualHooks");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            LocationManager location = go.AddComponent<LocationManager>();
+            LivingWorldInfrastructureEngine infrastructure = go.AddComponent<LivingWorldInfrastructureEngine>();
+
+            typeof(LivingWorldInfrastructureEngine)
+                .GetField("districtProfiles", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(infrastructure, new System.Collections.Generic.List<DistrictInfrastructureProfile>
+            {
+                new DistrictInfrastructureProfile { DistrictId = "Downtown", PopulationDensity = 70f, NoiseLevel = 40f, HousingCost = 35f, PopulationFlow = 85f, BusinessActivity = 90f, CrimeRate = 20f },
+                new DistrictInfrastructureProfile { DistrictId = "Harbor", PopulationDensity = 45f, NoiseLevel = 20f, HousingCost = 18f, PopulationFlow = 55f, BusinessActivity = 40f, CrimeRate = 10f }
+            });
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, household);
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, location);
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("livingWorldInfrastructureEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, infrastructure);
+
+            location.SetRooms(new System.Collections.Generic.List<Room>
+            {
+                new Room { RoomName = "Apartment", AreaName = "Home", Theme = LocationTheme.Residential },
+                new Room { RoomName = "Clinic", AreaName = "Downtown", Theme = LocationTheme.Hospital }
+            });
+            typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)
+                ?.SetValue(location, new Room { RoomName = "Clinic", AreaName = "Downtown", Theme = LocationTheme.Hospital });
+
+            GameObject charGo = new GameObject("HooksChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_context_hooks", "Hooks", LifeStage.Adult);
+            NeedsSystem needs = charGo.AddComponent<NeedsSystem>();
+            needs.ModifyEnergy(-70f);
+            needs.ModifyHunger(-75f);
+
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            var suggestions = layer.BuildContextActionSuggestions();
+
+            Assert.IsTrue(suggestions.Exists(s => s.Contains("Travel somewhere safe for sleep", System.StringComparison.OrdinalIgnoreCase)));
+            Assert.IsTrue(suggestions.Exists(s => s.Contains("Doctor Station", System.StringComparison.OrdinalIgnoreCase) || s.Contains("Recovery Bed", System.StringComparison.OrdinalIgnoreCase)));
+            Assert.IsTrue(suggestions.Exists(s => s.Contains("Map move:", System.StringComparison.OrdinalIgnoreCase)));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
         public void BuildTravelMapPrompt_ExplainsMapClickAndIndoorArrows()
         {
             GameObject go = new GameObject("PresentationTravelPrompt");
