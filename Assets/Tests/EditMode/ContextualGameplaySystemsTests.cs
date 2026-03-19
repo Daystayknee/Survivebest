@@ -5,9 +5,11 @@ using UnityEngine;
 using Survivebest.Dialogue;
 using Survivebest.Location;
 using Survivebest.Quest;
+using Survivebest.Social;
 using Survivebest.UI;
 using Survivebest.World;
 using Survivebest.NPC;
+using Survivebest.Core;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -20,6 +22,8 @@ namespace Survivebest.Tests.EditMode
             NpcLifeAIGuideSystem npcAi = root.AddComponent<NpcLifeAIGuideSystem>();
             NpcScheduleSystem schedule = root.AddComponent<NpcScheduleSystem>();
             TownSimulationSystem town = root.AddComponent<TownSimulationSystem>();
+            SocialDramaEngine drama = root.AddComponent<SocialDramaEngine>();
+            LongTermProgressionSystem progression = root.AddComponent<LongTermProgressionSystem>();
 
             typeof(NpcLifeAIGuideSystem)
                 .GetField("npcScheduleSystem", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -27,6 +31,21 @@ namespace Survivebest.Tests.EditMode
             typeof(NpcLifeAIGuideSystem)
                 .GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(npcAi, town);
+            typeof(NpcLifeAIGuideSystem)
+                .GetField("socialDramaEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(npcAi, drama);
+            typeof(NpcLifeAIGuideSystem)
+                .GetField("longTermProgressionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(npcAi, progression);
+            typeof(LongTermProgressionSystem)
+                .GetField("legacyProfile", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(progression, new LegacyProfile { Fame = 25, Infamy = 9, HousePrestige = 18 });
+            typeof(SocialDramaEngine)
+                .GetField("rumors", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(drama, new List<RumorPacket>
+                {
+                    new RumorPacket { RumorId = "r1", SourceCharacterId = "townie", SubjectCharacterId = "npc_medic", Content = "night shift scandal", SpreadPower = 0.62f, TruthLevel = 0.55f }
+                });
 
             typeof(TownSimulationSystem)
                 .GetField("lots", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -47,7 +66,13 @@ namespace Survivebest.Tests.EditMode
                         CurrentLotId = "lot_hospital",
                         Stress = 72f,
                         Reputation = 18,
-                        Memory = new List<NpcMemoryEntry> { new NpcMemoryEntry { Topic = "night shift", Sentiment = 10 } }
+                        Memory = new List<NpcMemoryEntry>
+                        {
+                            new NpcMemoryEntry { Topic = "rough first meeting", Sentiment = -25, IsFirstImpression = true, Kind = NpcMemoryKind.FirstImpression, Importance = 0.75f, Confidence = 1f },
+                            new NpcMemoryEntry { Topic = "night shift scandal", Sentiment = -35, IsRumor = true, Kind = NpcMemoryKind.Rumor, Importance = 0.68f, Confidence = 0.52f },
+                            new NpcMemoryEntry { Topic = "lost patient promise", Sentiment = -45, IsLegacyThread = true, Kind = NpcMemoryKind.Legacy, Importance = 0.82f, Confidence = 0.93f },
+                            new NpcMemoryEntry { Topic = "stolen medicine stash", Sentiment = -20, IsSecret = true, Kind = NpcMemoryKind.Secret, Sensitivity = NpcKnowledgeSensitivity.Secret, Importance = 0.88f, Confidence = 0.64f }
+                        }
                     }
                 });
 
@@ -58,9 +83,40 @@ namespace Survivebest.Tests.EditMode
 
             Assert.IsTrue(guidance.Contains("NPC AI:"));
             Assert.IsTrue(guidance.Contains("Mara"));
+            Assert.IsTrue(guidance.Contains("first impression") || guidance.Contains("Legacy weight"));
+            Assert.IsTrue(guidance.Contains("rumor") || guidance.Contains("secret"));
             Assert.GreaterOrEqual(spoken.Count, 3);
             Assert.GreaterOrEqual(textOptions.Count, 3);
             Assert.IsTrue(spoken[0].PreviewText.Length > 0);
+            Assert.IsTrue(spoken.Exists(x => x.Label.Contains("Rumor") || x.Label.Contains("Legacy") || x.Label.Contains("Grudge") || x.Label.Contains("Repair")));
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void NpcScheduleSystem_PrioritizesGrudgesSecretsAndLegacyMemories()
+        {
+            GameObject root = new GameObject("NpcMemoryPriorityTest");
+            NpcScheduleSystem schedule = root.AddComponent<NpcScheduleSystem>();
+            schedule.RegisterNpc("npc_guard", "Iris", NpcJobType.Guard, "lot_guard", "lot_guard");
+
+            schedule.RememberFirstImpression("npc_guard", "player", "botched checkpoint intro", -18);
+            schedule.RememberGrudge("npc_guard", "player", "family debt betrayal", -65);
+            schedule.RememberRumor("npc_guard", "player", "smuggling ring whisper", -20, 0.42f, 0.55f, "dock_worker");
+            schedule.RememberSecret("npc_guard", "player", "hidden key stash", -5, 0.91f, "iris");
+            schedule.RememberLegacy("npc_guard", "player", "father's unsolved murder", -40, 0.88f);
+
+            NpcProfile npc = schedule.GetNpcProfile("npc_guard");
+            NpcMemoryEntry strongest = schedule.GetStrongestMemory("npc_guard");
+
+            Assert.NotNull(npc);
+            Assert.AreEqual(5, npc.Memory.Count);
+            Assert.NotNull(strongest);
+            Assert.IsTrue(strongest.IsSecret || strongest.IsGrudge || strongest.IsLegacyThread);
+            Assert.IsTrue(npc.Memory.Exists(x => x.IsFirstImpression));
+            Assert.IsTrue(npc.Memory.Exists(x => x.IsRumor));
+            Assert.IsTrue(npc.Memory.Exists(x => x.IsSecret));
+            Assert.IsTrue(npc.Memory.Exists(x => x.IsLegacyThread));
 
             Object.DestroyImmediate(root);
         }
