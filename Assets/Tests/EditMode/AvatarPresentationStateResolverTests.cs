@@ -52,5 +52,31 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void ResolveDynamicState_HighConfidenceLowStress_PrefersConfidentReadableOutputs()
+        {
+            PhenotypeProfile phenotype = PhenotypeResolver.Resolve(new GeneticProfile(), LifeStage.Adult, 0.05f);
+
+            AvatarPresentationState state = AvatarPresentationStateResolver.ResolveDynamicState(
+                phenotype,
+                new AvatarPresentationInput
+                {
+                    Stress = 12f,
+                    Anger = 8f,
+                    Affection = 40f,
+                    Energy = 88f,
+                    IllnessPressure = 5f,
+                    Confidence = 91f,
+                    SocialPressure = 10f,
+                    Grooming = 85f,
+                    SafetyUrgency = 5f
+                });
+
+            Assert.AreEqual("posture_confident", state.PosturePresetKey);
+            Assert.AreEqual("resting_composed", state.RestingExpressionKey);
+            Assert.AreEqual("ui_feedback_confidence_pulse", state.UiCueKey);
+            Assert.AreEqual(EyeExpressionSet.Sharp, state.EyeExpressionSet);
+        }
     }
 }
