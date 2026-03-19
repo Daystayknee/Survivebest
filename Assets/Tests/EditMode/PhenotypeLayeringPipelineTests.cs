@@ -7,6 +7,28 @@ namespace Survivebest.Tests.EditMode
     public class PhenotypeLayeringPipelineTests
     {
         [Test]
+        public void GeneticsGuideAi_BuildProfileGuidance_UsesResolvedPhenotypeSignals()
+        {
+            UnityEngine.GameObject root = new UnityEngine.GameObject("GeneticsGuideAiProfile");
+            GeneticsGuideAISystem guide = root.AddComponent<GeneticsGuideAISystem>();
+
+            GeneticProfile genes = InheritanceResolver.BuildFounder(2468, BodySchema.Androgynous);
+            genes.Biology.ImmuneResilience = 0.78f;
+            genes.Temperament.ResilienceTendency = 0.72f;
+            genes.SynchronizeDetailedGenomeFromScalarCache();
+
+            string guidance = guide.BuildProfileGuidance(genes, LifeStage.YoungAdult);
+
+            Assert.IsTrue(guidance.Contains("Genetics AI:"));
+            Assert.IsTrue(guidance.Contains("silhouette"));
+            Assert.IsTrue(guidance.Contains("Blood type reads"));
+            Assert.IsTrue(guidance.Contains("Behavior leans toward"));
+            Assert.IsTrue(guidance.Contains("Visible family read"));
+
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+
+        [Test]
         public void ResolveAvatarLayers_EncodesBodySchemaPresentationBiases()
         {
             GeneticProfile genes = new GeneticProfile

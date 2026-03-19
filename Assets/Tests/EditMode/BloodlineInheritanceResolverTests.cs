@@ -6,6 +6,27 @@ namespace Survivebest.Tests.EditMode
     public class BloodlineInheritanceResolverTests
     {
         [Test]
+        public void GeneticsGuideAi_BuildOffspringGuidance_SummarizesStandoutInheritance()
+        {
+            UnityEngine.GameObject root = new UnityEngine.GameObject("GeneticsGuideAiOffspring");
+            GeneticsGuideAISystem guide = root.AddComponent<GeneticsGuideAISystem>();
+
+            GeneticProfile parentA = InheritanceResolver.BuildFounder(707, BodySchema.Feminine);
+            GeneticProfile parentB = InheritanceResolver.BuildFounder(808, BodySchema.Masculine);
+            parentA.Reproduction.RareTraitResurfacing = 0.35f;
+            parentB.Mutations.RandomMutationLoad = 0.28f;
+
+            string guidance = guide.BuildOffspringGuidance(parentA, parentB, 6, 999);
+
+            Assert.IsTrue(guidance.Contains("Genetics AI:"));
+            Assert.IsTrue(guidance.Contains("Standout preview"));
+            Assert.IsTrue(guidance.Contains("Health read:"));
+            Assert.IsTrue(guidance.Contains("Primary inheritance anchor:"));
+
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+
+        [Test]
         public void BuildChildPreview_FavorsParentA_CopiesAnchorClustersTowardParentA()
         {
             GeneticProfile parentA = new GeneticProfile

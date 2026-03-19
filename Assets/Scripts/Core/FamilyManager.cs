@@ -10,6 +10,7 @@ namespace Survivebest.Core
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private GameObject characterPrefab;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private GeneticsGuideAISystem geneticsGuideAISystem;
 
         public event Action<CharacterCore> OnFamilyMemberCreated;
         public event Action<CharacterCore, CharacterCore, CharacterCore> OnChildBorn;
@@ -82,6 +83,18 @@ namespace Survivebest.Core
             }
 
             return BloodlineInheritanceResolver.BuildPreviewSet(geneticsA.Profile, geneticsB.Profile, previewCount);
+        }
+
+        public string BuildOffspringAIGuidance(CharacterCore parentA, CharacterCore parentB, int previewCount = 6, int seed = 0)
+        {
+            GeneticsSystem geneticsA = parentA != null ? parentA.GetComponent<GeneticsSystem>() : null;
+            GeneticsSystem geneticsB = parentB != null ? parentB.GetComponent<GeneticsSystem>() : null;
+            if (geneticsGuideAISystem == null || geneticsA == null || geneticsB == null)
+            {
+                return string.Empty;
+            }
+
+            return geneticsGuideAISystem.BuildOffspringGuidance(geneticsA.Profile, geneticsB.Profile, previewCount, seed);
         }
 
         private CharacterCore SpawnCharacter(string defaultName, LifeStage stage)
