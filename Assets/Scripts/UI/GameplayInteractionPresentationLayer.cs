@@ -81,6 +81,7 @@ namespace Survivebest.UI
         [SerializeField] private ActionPopupController actionPopupController;
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private HouseholdManager householdManager;
+        [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
@@ -267,6 +268,22 @@ namespace Survivebest.UI
             return packs;
         }
 
+        public List<string> BuildSectionTabsForCurrentLocation()
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            return gameplayVisionSystem != null
+                ? gameplayVisionSystem.BuildTabsForContext(null, room)
+                : new List<string>();
+        }
+
+        public string BuildScreenMoodSummary()
+        {
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            return gameplayVisionSystem != null
+                ? gameplayVisionSystem.BuildVisionStatement(null, room)
+                : "Presentation vision: every life domain should feel contextual and alive.";
+        }
+
         public List<string> BuildContextActionSuggestions()
         {
             List<string> suggestions = new();
@@ -296,6 +313,7 @@ namespace Survivebest.UI
             suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
             suggestions.Add($"Phone/social beat: {LifeActivityCatalog.PickSocialFeedActivity()}");
             suggestions.Add($"Home glow-up: {LifeActivityCatalog.PickHomeUpgradeProject()}");
+            suggestions.Add(BuildScreenMoodSummary());
 
             if (lifestyleBehaviorSystem != null)
             {
