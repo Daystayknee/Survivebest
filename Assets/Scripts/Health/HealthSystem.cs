@@ -46,6 +46,40 @@ namespace Survivebest.Health
             PublishHealthEvent("VitalityHeal", $"Recovered {applied:0.0} vitality", applied, SimulationEventSeverity.Info);
         }
 
+        public void ApplySunlightExposure(float exposureHours, bool sheltered = false)
+        {
+            float hours = Mathf.Max(0f, exposureHours);
+            if (hours <= 0f || sheltered)
+            {
+                return;
+            }
+
+            if (owner != null && owner.IsVampire)
+            {
+                float damage = hours * 9f;
+                Damage(damage);
+                PublishHealthEvent("SunlightExposure", "Vampire took sunlight damage", damage, SimulationEventSeverity.Critical);
+                return;
+            }
+
+            float recovery = hours * 0.35f;
+            Heal(recovery);
+            PublishHealthEvent("SunlightExposure", "Sunlight refreshed vitality", recovery, SimulationEventSeverity.Info);
+        }
+
+        public void ApplyRestorativeDarkness(float hours)
+        {
+            float duration = Mathf.Max(0f, hours);
+            if (duration <= 0f || owner == null || !owner.IsVampire)
+            {
+                return;
+            }
+
+            float recovery = duration * 1.25f;
+            Heal(recovery);
+            PublishHealthEvent("DarknessRecovery", "Vampire recovered in darkness", recovery, SimulationEventSeverity.Info);
+        }
+
         private void SetVitality(float value)
         {
             vitality = Mathf.Clamp(value, 0f, 100f);
