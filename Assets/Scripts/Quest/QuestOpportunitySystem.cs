@@ -78,6 +78,16 @@ namespace Survivebest.Quest
         public IReadOnlyList<ActiveOpportunity> ActiveOpportunities => activeOpportunities;
         public IReadOnlyList<OpportunityDefinition> Definitions => definitions;
 
+        public IReadOnlyList<ActiveOpportunity> GetAvailableOpportunitiesForLocation(string locationId)
+        {
+            return GetOpportunitiesForLocation(locationId, OpportunityState.Available);
+        }
+
+        public IReadOnlyList<ActiveOpportunity> GetAcceptedOpportunitiesForLocation(string locationId)
+        {
+            return GetOpportunitiesForLocation(locationId, OpportunityState.Accepted);
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)
@@ -246,6 +256,31 @@ namespace Survivebest.Quest
                     PublishOpportunity(active.Definition.FailureNextOpportunityId);
                 }
             }
+        }
+
+        private List<ActiveOpportunity> GetOpportunitiesForLocation(string locationId, OpportunityState state)
+        {
+            List<ActiveOpportunity> matches = new();
+            if (string.IsNullOrWhiteSpace(locationId))
+            {
+                return matches;
+            }
+
+            for (int i = 0; i < activeOpportunities.Count; i++)
+            {
+                ActiveOpportunity active = activeOpportunities[i];
+                if (active == null || active.Definition == null || active.State != state)
+                {
+                    continue;
+                }
+
+                if (string.Equals(active.Definition.LocationId, locationId, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches.Add(active);
+                }
+            }
+
+            return matches;
         }
 
         private int GetCurrentHour()

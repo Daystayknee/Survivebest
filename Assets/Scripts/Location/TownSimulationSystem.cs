@@ -182,6 +182,14 @@ namespace Survivebest.Location
             return results;
         }
 
+        public void SetTownLayout(List<DistrictDefinition> newDistricts, List<LotDefinition> newLots, List<RouteEdge> newRouteGraph)
+        {
+            districts = newDistricts ?? new List<DistrictDefinition>();
+            lots = newLots ?? new List<LotDefinition>();
+            routeGraph = newRouteGraph ?? new List<RouteEdge>();
+            RefreshLotStates(forcePublish: false);
+        }
+
         private void HandleHourPassed(int hour)
         {
             RefreshLotStates(forcePublish: true);
