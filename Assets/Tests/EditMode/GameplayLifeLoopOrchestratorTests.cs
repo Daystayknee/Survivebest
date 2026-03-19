@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Needs;
+using Survivebest.UI;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -17,6 +18,7 @@ namespace Survivebest.Tests.EditMode
             HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
             PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
             PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+            GameplayInteractionPresentationLayer presentation = go.AddComponent<GameplayInteractionPresentationLayer>();
 
             typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(orchestrator, household);
@@ -26,6 +28,8 @@ namespace Survivebest.Tests.EditMode
                 ?.SetValue(orchestrator, decisions);
             typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(orchestrator, mental);
+            typeof(GameplayLifeLoopOrchestrator).GetField("gameplayInteractionPresentationLayer", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, presentation);
 
             GameObject charGo = new GameObject("Char");
             CharacterCore character = charGo.AddComponent<CharacterCore>();
@@ -38,6 +42,8 @@ namespace Survivebest.Tests.EditMode
 
             Assert.Greater(orchestrator.RecentSteps.Count, 0);
             Assert.Greater(life.RecentThoughts.Count, 0);
+            Assert.IsNotNull(orchestrator.CurrentSnapshot);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(orchestrator.CurrentSnapshot.Summary));
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
@@ -125,6 +131,42 @@ namespace Survivebest.Tests.EditMode
             }
 
             Assert.AreEqual(1, recoverySteps);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void ExecuteManualLifeLoopTick_BuildsSnapshotWithCoreExperiencePillars()
+        {
+            GameObject go = new GameObject("LoopOrchestratorSnapshot");
+            GameplayLifeLoopOrchestrator orchestrator = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+            GameplayInteractionPresentationLayer presentation = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(orchestrator, household);
+            typeof(GameplayLifeLoopOrchestrator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(orchestrator, life);
+            typeof(GameplayLifeLoopOrchestrator).GetField("personalityDecisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(orchestrator, decisions);
+            typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(orchestrator, mental);
+            typeof(GameplayLifeLoopOrchestrator).GetField("gameplayInteractionPresentationLayer", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(orchestrator, presentation);
+
+            GameObject charGo = new GameObject("SnapshotChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_loop_snapshot", "Snapshot", LifeStage.Adult);
+            charGo.AddComponent<NeedsSystem>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            orchestrator.ExecuteManualLifeLoopTick(18);
+
+            Assert.IsNotNull(orchestrator.CurrentSnapshot);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(orchestrator.CurrentSnapshot.PresenceLabel));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(orchestrator.CurrentSnapshot.ConsequenceLabel));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(orchestrator.CurrentSnapshot.ContinuityLabel));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(orchestrator.CurrentSnapshot.RecommendedAction));
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
