@@ -98,6 +98,7 @@ namespace Survivebest.Core
             {
                 goal.Completed = true;
                 OnGoalCompleted?.Invoke(goal);
+                PublishGoalCompleted(goal);
                 AddFame(15, $"Goal completed: {goal.Title}");
                 AddHousePrestige(8, $"Goal milestone: {goal.Title}");
             }
@@ -225,6 +226,19 @@ namespace Survivebest.Core
                 ChangeKey = key,
                 Reason = reason,
                 Magnitude = magnitude
+            });
+        }
+
+        private void PublishGoalCompleted(AspirationGoal goal)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.GoalCompleted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(LongTermProgressionSystem),
+                ChangeKey = goal != null ? goal.GoalId : "Goal",
+                Reason = goal != null ? $"Goal completed: {goal.Title}" : "Goal completed",
+                Magnitude = goal != null ? goal.TargetAmount : 1f
             });
         }
     }
