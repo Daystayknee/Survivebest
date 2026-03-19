@@ -15,6 +15,9 @@ namespace Survivebest.NPC
         public string Label;
         public string PreviewText;
         public bool IsTextMessage;
+        public string Category;
+        public float ReplayabilityScore;
+        public string FollowupHook;
     }
 
     public class NpcLifeAIGuideSystem : MonoBehaviour
@@ -24,6 +27,7 @@ namespace Survivebest.NPC
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private SocialDramaEngine socialDramaEngine;
         [SerializeField] private LongTermProgressionSystem longTermProgressionSystem;
+        [SerializeField] private LifestyleBehaviorSystem lifestyleBehaviorSystem;
 
         public string LatestGuidance { get; private set; }
 
@@ -158,8 +162,136 @@ namespace Survivebest.NPC
                 });
             }
 
+            suggestions.Add(new NpcChatSuggestion
+            {
+                Label = isTextMessage ? "Plan Something Real" : "Pitch a Real Plan",
+                PreviewText = isTextMessage
+                    ? $"Want to turn this vibe into something real — dinner, errands, a walk, or a chaotic little night out?"
+                    : "Offer a specific adult-life plan instead of vague chemistry: dinner, chores together, or an actual night out.",
+                IsTextMessage = isTextMessage,
+                Category = "dating"
+            });
+
+            suggestions.Add(new NpcChatSuggestion
+            {
+                Label = isTextMessage ? "Talk Money Pressure" : "Check Their Money Stress",
+                PreviewText = isTextMessage
+                    ? $"How are bills, work, and the whole survival grind treating you this week?"
+                    : "Ask about money pressure, schedule load, and whether they need practical backup.",
+                IsTextMessage = isTextMessage,
+                Category = "finance"
+            });
+
+            suggestions.Add(new NpcChatSuggestion
+            {
+                Label = isTextMessage ? "Push the Side Hustle" : "Talk Ambition",
+                PreviewText = isTextMessage
+                    ? $"You still serious about that next chapter, or do we need to build a better plan together?"
+                    : "Open a conversation about ambition, burnout, and whether they want to chase a bigger move.",
+                IsTextMessage = isTextMessage,
+                Category = "creator"
+            });
+
             return suggestions;
         }
+
+        public List<NpcChatSuggestion> BuildEndlessChatSuggestions(Room room, bool isTextMessage, int seed, int desiredCount = 12)
+        {
+            List<NpcChatSuggestion> suggestions = new();
+            NpcProfile npc = FindPrimaryNpcForRoom(room);
+            if (npc == null)
+            {
+                return suggestions;
+            }
+
+            System.Random random = new System.Random(seed ^ npc.DisplayName.GetHashCode());
+            string[] tones = { "gentle", "playful", "probing", "strategic", "nostalgic", "protective" };
+            string[] categories = { "routine", "work", "memory", "rumor", "legacy", "romance", "survival", "town", "wellness", "finance", "creator", "dating" };
+            string[] actions =
+            {
+                "ask what they want next",
+                "follow up on a promise",
+                "test whether they trust you",
+                "offer help with today's pressure",
+                "pull on a memory thread",
+                "invite them into a riskier plan",
+                "trade gossip for truth",
+                "talk about who they are becoming",
+                "check whether burnout is creeping in",
+                "turn attraction into an actual plan",
+                "ask how they are funding their next move"
+            };
+
+            NpcMemoryEntry strongest = GetMostImportantMemory(npc, includeSecrets: false);
+            string memoryTopic = strongest != null ? strongest.Topic : $"their {npc.Job.ToString().ToLowerInvariant()} routine";
+
+            for (int i = 0; i < Mathf.Max(4, desiredCount); i++)
+            {
+                string tone = tones[(i + random.Next(tones.Length)) % tones.Length];
+                string category = categories[(i + random.Next(categories.Length)) % categories.Length];
+                string action = actions[(i + random.Next(actions.Length)) % actions.Length];
+                string label = $"{char.ToUpper(tone[0]) + tone.Substring(1)} {category}";
+                string preview = BuildProceduralPreview(npc, isTextMessage, tone, category, action, memoryTopic);
+
+                suggestions.Add(new NpcChatSuggestion
+                {
+                    Label = label,
+                    PreviewText = preview,
+                    IsTextMessage = isTextMessage,
+                    Category = category,
+                    ReplayabilityScore = Mathf.Clamp01(0.45f + i * 0.04f),
+                    FollowupHook = memoryTopic
+                });
+            }
+
+            return suggestions;
+        }
+
+        public string BuildReplayabilitySummary(Room room, int seed)
+        {
+            List<NpcChatSuggestion> options = BuildEndlessChatSuggestions(room, true, seed, 10);
+            if (options.Count == 0)
+            {
+                return "Replay AI: no dynamic social options are available here right now.";
+            }
+
+            HashSet<string> categories = new HashSet<string>();
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(options[i].Category))
+                {
+                    categories.Add(options[i].Category);
+                }
+            }
+
+            string lifestyleOverlay = lifestyleBehaviorSystem != null ? $" {lifestyleBehaviorSystem.BuildLifestyleDashboard()}" : string.Empty;
+            return $"Replay AI: {options.Count} procedural social angles available across {categories.Count} categories.{lifestyleOverlay}";
+        }
+
+        private static string BuildProceduralPreview(NpcProfile npc, bool isTextMessage, string tone, string category, string action, string memoryTopic)
+        {
+            string job = npc.Job.ToString().ToLowerInvariant();
+            string state = npc.CurrentState.ToString().ToLowerInvariant();
+            string core = category switch
+            {
+                "legacy" => $"how {memoryTopic} still shapes their reputation and future",
+                "rumor" => $"whether the town is reading {memoryTopic} correctly",
+                "memory" => $"what {memoryTopic} still means to them",
+                "survival" => $"what feels risky or necessary in their life right now",
+                "romance" => $"whether closeness fits into their current {state} rhythm",
+                "wellness" => $"what is draining or restoring them lately",
+                "finance" => $"how bills, work pressure, and survival math are shaping their choices",
+                "creator" => $"whether ambition, attention, and creative risk still feel worth it",
+                "dating" => $"whether chemistry can become an actual plan instead of a vague vibe",
+                "work" => $"how {job} pressure is changing their mood",
+                _ => $"how their current {state} routine is landing emotionally"
+            };
+
+            return isTextMessage
+                ? $"Take a {tone} angle and {action} about {core}."
+                : $"Use a {tone} tone, {action}, and steer the conversation toward {core}.";
+        }
+
 
         public string BuildInteractionSummary(Room room, bool isTextMessage)
         {

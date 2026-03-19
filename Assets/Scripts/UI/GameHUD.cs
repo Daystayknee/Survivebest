@@ -16,6 +16,7 @@ namespace Survivebest.UI
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private OrderingSystem orderingSystem;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
 
         [Header("Bars")]
         [SerializeField] private Slider hungerBar;
@@ -26,6 +27,7 @@ namespace Survivebest.UI
         [SerializeField] private Text moneyText;
         [SerializeField] private Text clockText;
         [SerializeField] private Text feedText;
+        [SerializeField] private Text lifeLoopSummaryText;
         [SerializeField, Min(1)] private int maxFeedLines = 12;
 
         private readonly StringBuilder feedBuilder = new();
@@ -59,6 +61,15 @@ namespace Survivebest.UI
             {
                 gameEventHub.OnEventPublished += HandleEventPublished;
             }
+
+            if (gameplayLifeLoopOrchestrator != null)
+            {
+                gameplayLifeLoopOrchestrator.OnSnapshotUpdated += HandleSnapshotUpdated;
+                if (gameplayLifeLoopOrchestrator.CurrentSnapshot != null)
+                {
+                    HandleSnapshotUpdated(gameplayLifeLoopOrchestrator.CurrentSnapshot);
+                }
+            }
         }
 
         private void OnDisable()
@@ -81,6 +92,11 @@ namespace Survivebest.UI
             if (gameEventHub != null)
             {
                 gameEventHub.OnEventPublished -= HandleEventPublished;
+            }
+
+            if (gameplayLifeLoopOrchestrator != null)
+            {
+                gameplayLifeLoopOrchestrator.OnSnapshotUpdated -= HandleSnapshotUpdated;
             }
 
             if (observedNeeds != null)
@@ -158,6 +174,16 @@ namespace Survivebest.UI
             AppendFeed(line);
         }
 
+        private void HandleSnapshotUpdated(LifeLoopExperienceSnapshot snapshot)
+        {
+            if (lifeLoopSummaryText == null || snapshot == null)
+            {
+                return;
+            }
+
+            lifeLoopSummaryText.text = BuildHudLoopDigest(snapshot);
+        }
+
         private void AppendFeed(string line)
         {
             string current = feedText.text;
@@ -187,6 +213,19 @@ namespace Survivebest.UI
             slider.minValue = 0f;
             slider.maxValue = 100f;
             slider.value = Mathf.Clamp(value, 0f, 100f);
+        }
+
+        public string BuildHudLoopDigest(LifeLoopExperienceSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return "No life-loop snapshot available.";
+            }
+
+            return $"Now: {snapshot.PresenceLabel}\n" +
+                   $"Consequence: {snapshot.ConsequenceLabel}\n" +
+                   $"Continuity: {snapshot.ContinuityLabel}\n" +
+                   $"Next up: {snapshot.RecommendedAction}";
         }
     }
 }

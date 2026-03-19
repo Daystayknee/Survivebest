@@ -124,6 +124,33 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void BuildScreenMoodSummary_UsesVisionSystemForCurrentRoom()
+        {
+            GameObject go = new GameObject("PresentationVision");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            GameplayVisionSystem vision = go.AddComponent<GameplayVisionSystem>();
+            LocationManager location = go.AddComponent<LocationManager>();
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("gameplayVisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, vision);
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, location);
+            typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)
+                ?.SetValue(location, new Room { RoomName = "Clinic", Theme = LocationTheme.Hospital });
+
+            string summary = layer.BuildScreenMoodSummary();
+            var tabs = layer.BuildSectionTabsForCurrentLocation();
+
+            StringAssert.Contains("Medical", summary);
+            Assert.IsTrue(tabs.Contains("Vitals"));
+            Assert.IsTrue(tabs.Contains("Recovery"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void BuildContextActionSuggestions_UsesNeedsAndDecisionSpace()
         {
             GameObject go = new GameObject("PresentationSuggestions");
