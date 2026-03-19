@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Survivebest.Events;
 
 namespace Survivebest.Core
 {
@@ -22,6 +23,8 @@ namespace Survivebest.Core
     {
         [SerializeField] private CharacterCore owner;
         [SerializeField] private GameBalanceManager balanceManager;
+        [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField, Min(1f)] private float pointsPerLevel = 10f;
 
         private readonly Dictionary<string, float> skillLevels = new()
         {
@@ -42,6 +45,7 @@ namespace Survivebest.Core
         };
 
         public event Action<string, float> OnSkillChanged;
+        public event Action<string, int> OnSkillLevelUp;
 
         public IReadOnlyDictionary<string, float> SkillLevels => skillLevels;
 
@@ -82,10 +86,31 @@ namespace Survivebest.Core
                 skillLevels[skillName] = 0f;
             }
 
+            int previousLevel = GetSkillLevel(skillName);
             float ownerMultiplier = owner != null ? owner.GetSkillMultiplier(skillName) : 1f;
             float balanceMultiplier = balanceManager != null ? balanceManager.SkillXpMultiplier : 1f;
             skillLevels[skillName] = Mathf.Max(0f, skillLevels[skillName] + amount * ownerMultiplier * balanceMultiplier);
             OnSkillChanged?.Invoke(skillName, skillLevels[skillName]);
+
+            int newLevel = GetSkillLevel(skillName);
+            if (newLevel > previousLevel)
+            {
+                for (int level = previousLevel + 1; level <= newLevel; level++)
+                {
+                    OnSkillLevelUp?.Invoke(skillName, level);
+                    PublishSkillLevelUp(skillName, level);
+                }
+            }
+        }
+
+        public int GetSkillLevel(string skillName)
+        {
+            if (string.IsNullOrWhiteSpace(skillName) || !skillLevels.TryGetValue(skillName, out float value))
+            {
+                return 0;
+            }
+
+            return Mathf.FloorToInt(Mathf.Max(0f, value) / Mathf.Max(1f, pointsPerLevel));
         }
 
         public void SaveToJson(string filename = "skills.json")
@@ -124,6 +149,20 @@ namespace Survivebest.Core
                 skillLevels[entry.SkillName] = entry.SkillValue;
                 OnSkillChanged?.Invoke(entry.SkillName, entry.SkillValue);
             }
+        }
+
+        private void PublishSkillLevelUp(string skillName, int level)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.SkillLevelUp,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(SkillSystem),
+                SourceCharacterId = owner != null ? owner.CharacterId : null,
+                ChangeKey = skillName,
+                Reason = $"{skillName} reached level {level}",
+                Magnitude = level
+            });
         }
     }
 }
