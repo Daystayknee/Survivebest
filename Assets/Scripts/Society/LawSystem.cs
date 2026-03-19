@@ -15,10 +15,22 @@ namespace Survivebest.Society
 
     public enum SubstanceType
     {
+        Caffeine,
+        Nicotine,
         Alcohol,
-        Weed,
-        PrescriptionDrug,
-        HardDrug
+        Cannabis,
+        PrescriptionStimulant,
+        PrescriptionPainkiller,
+        PrescriptionSedative,
+        SleepAid,
+        Psychedelic,
+        ClubDrug,
+        Cocaine,
+        Methamphetamine,
+        Opioid,
+        Dissociative,
+        Inhalant,
+        Steroid
     }
 
     [Serializable]
@@ -181,10 +193,22 @@ namespace Survivebest.Society
         {
             return new List<SubstanceLaw>
             {
+                new SubstanceLaw { Substance = SubstanceType.Caffeine, Severity = LawSeverity.Legal },
+                new SubstanceLaw { Substance = SubstanceType.Nicotine, Severity = LawSeverity.Legal },
                 new SubstanceLaw { Substance = SubstanceType.Alcohol, Severity = LawSeverity.Legal },
-                new SubstanceLaw { Substance = SubstanceType.Weed, Severity = LawSeverity.Infraction },
-                new SubstanceLaw { Substance = SubstanceType.PrescriptionDrug, Severity = LawSeverity.Legal },
-                new SubstanceLaw { Substance = SubstanceType.HardDrug, Severity = LawSeverity.Felony }
+                new SubstanceLaw { Substance = SubstanceType.Cannabis, Severity = LawSeverity.Infraction },
+                new SubstanceLaw { Substance = SubstanceType.PrescriptionStimulant, Severity = LawSeverity.Misdemeanor },
+                new SubstanceLaw { Substance = SubstanceType.PrescriptionPainkiller, Severity = LawSeverity.Misdemeanor },
+                new SubstanceLaw { Substance = SubstanceType.PrescriptionSedative, Severity = LawSeverity.Misdemeanor },
+                new SubstanceLaw { Substance = SubstanceType.SleepAid, Severity = LawSeverity.Legal },
+                new SubstanceLaw { Substance = SubstanceType.Psychedelic, Severity = LawSeverity.Felony },
+                new SubstanceLaw { Substance = SubstanceType.ClubDrug, Severity = LawSeverity.Felony },
+                new SubstanceLaw { Substance = SubstanceType.Cocaine, Severity = LawSeverity.Felony },
+                new SubstanceLaw { Substance = SubstanceType.Methamphetamine, Severity = LawSeverity.Felony },
+                new SubstanceLaw { Substance = SubstanceType.Opioid, Severity = LawSeverity.Felony },
+                new SubstanceLaw { Substance = SubstanceType.Dissociative, Severity = LawSeverity.Felony },
+                new SubstanceLaw { Substance = SubstanceType.Inhalant, Severity = LawSeverity.Misdemeanor },
+                new SubstanceLaw { Substance = SubstanceType.Steroid, Severity = LawSeverity.Misdemeanor }
             };
         }
 

@@ -641,23 +641,23 @@ namespace Survivebest.World
                 LocationTheme.Nature => new List<SubstanceLaw>
                 {
                     new SubstanceLaw { Substance = SubstanceType.Alcohol, Severity = LawSeverity.Legal },
-                    new SubstanceLaw { Substance = SubstanceType.Weed, Severity = LawSeverity.Infraction },
-                    new SubstanceLaw { Substance = SubstanceType.PrescriptionDrug, Severity = LawSeverity.Legal },
-                    new SubstanceLaw { Substance = SubstanceType.HardDrug, Severity = LawSeverity.Misdemeanor }
+                    new SubstanceLaw { Substance = SubstanceType.Cannabis, Severity = LawSeverity.Infraction },
+                    new SubstanceLaw { Substance = SubstanceType.PrescriptionPainkiller, Severity = LawSeverity.Legal },
+                    new SubstanceLaw { Substance = SubstanceType.Opioid, Severity = LawSeverity.Misdemeanor }
                 },
                 LocationTheme.Hospital => new List<SubstanceLaw>
                 {
                     new SubstanceLaw { Substance = SubstanceType.Alcohol, Severity = LawSeverity.Infraction },
-                    new SubstanceLaw { Substance = SubstanceType.Weed, Severity = LawSeverity.Misdemeanor },
-                    new SubstanceLaw { Substance = SubstanceType.PrescriptionDrug, Severity = LawSeverity.Legal },
-                    new SubstanceLaw { Substance = SubstanceType.HardDrug, Severity = LawSeverity.Felony }
+                    new SubstanceLaw { Substance = SubstanceType.Cannabis, Severity = LawSeverity.Misdemeanor },
+                    new SubstanceLaw { Substance = SubstanceType.PrescriptionPainkiller, Severity = LawSeverity.Legal },
+                    new SubstanceLaw { Substance = SubstanceType.Opioid, Severity = LawSeverity.Felony }
                 },
                 _ => new List<SubstanceLaw>
                 {
                     new SubstanceLaw { Substance = SubstanceType.Alcohol, Severity = LawSeverity.Legal },
-                    new SubstanceLaw { Substance = SubstanceType.Weed, Severity = LawSeverity.Infraction },
-                    new SubstanceLaw { Substance = SubstanceType.PrescriptionDrug, Severity = LawSeverity.Legal },
-                    new SubstanceLaw { Substance = SubstanceType.HardDrug, Severity = LawSeverity.Felony }
+                    new SubstanceLaw { Substance = SubstanceType.Cannabis, Severity = LawSeverity.Infraction },
+                    new SubstanceLaw { Substance = SubstanceType.PrescriptionPainkiller, Severity = LawSeverity.Legal },
+                    new SubstanceLaw { Substance = SubstanceType.Opioid, Severity = LawSeverity.Felony }
                 }
             };
         }
