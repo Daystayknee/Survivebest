@@ -107,6 +107,88 @@ namespace Survivebest.Core
         [Range(0f, 1f)] public float NeighborhoodVisibility = 0f;
     }
 
+    public enum CognitiveDistortionType
+    {
+        None,
+        Catastrophizing,
+        Overgeneralizing,
+        MindReading,
+        EmotionalReasoning,
+        ImposterSyndrome,
+        Delusion,
+        Intuition
+    }
+
+    public enum AttachmentStyle
+    {
+        Secure,
+        Anxious,
+        Avoidant,
+        Disorganized
+    }
+
+    [Serializable]
+    public class CognitiveDistortionProfile
+    {
+        public string CharacterId;
+        public CognitiveDistortionType DominantDistortion = CognitiveDistortionType.None;
+        [Range(0f, 1f)] public float Catastrophizing = 0f;
+        [Range(0f, 1f)] public float Overgeneralizing = 0f;
+        [Range(0f, 1f)] public float MindReading = 0f;
+        [Range(0f, 1f)] public float EmotionalReasoning = 0f;
+        [Range(0f, 1f)] public float ImposterSyndrome = 0f;
+        [Range(0f, 1f)] public float DelusionIntensity = 0f;
+        [Range(0f, 1f)] public float IntuitionTrust = 0f;
+
+        public float GetDominantIntensity()
+        {
+            return Mathf.Max(Catastrophizing, Overgeneralizing, MindReading, EmotionalReasoning, ImposterSyndrome, DelusionIntensity, IntuitionTrust);
+        }
+    }
+
+    [Serializable]
+    public class InnerMonologueProfile
+    {
+        public string CharacterId;
+        public string ConsciousVoice = "steady";
+        public string SubconsciousVoice = "watchful";
+        public string ConflictingThoughtA = "Stay open.";
+        public string ConflictingThoughtB = "Protect yourself first.";
+        public string IntrusiveThought = "Something will go wrong if you relax.";
+        public string SuppressedThought = "I still want what I pretend not to need.";
+        [Range(0f, 1f)] public float HarshSelfTalk = 0f;
+        [Range(0f, 1f)] public float KindSelfTalk = 0.5f;
+        [Range(0f, 1f)] public float IntrusiveThoughtFrequency = 0f;
+        [Range(0f, 1f)] public float SuppressionLoad = 0f;
+    }
+
+    [Serializable]
+    public class IdentityFragmentProfile
+    {
+        public string CharacterId;
+        public string HomeSelf = "unguarded";
+        public string WorkSelf = "competent";
+        public string OnlineSelf = "curated";
+        public string IdealizedSelf = "becoming";
+        public string SocialMirrorSelf = "misread";
+        [Range(0f, 1f)] public float MaskingLoad = 0f;
+        [Range(0f, 1f)] public float IdentityConflictStress = 0f;
+        [Range(0f, 1f)] public float IdentityShiftVelocity = 0f;
+    }
+
+    [Serializable]
+    public class AttachmentStyleProfile
+    {
+        public string CharacterId;
+        public AttachmentStyle AttachmentStyle = AttachmentStyle.Secure;
+        [Range(0f, 1f)] public float ClosenessNeed = 0.5f;
+        [Range(0f, 1f)] public float DistanceNeed = 0.5f;
+        [Range(0f, 1f)] public float JealousySensitivity = 0f;
+        [Range(0f, 1f)] public float ConflictAvoidance = 0f;
+        [Range(0f, 1f)] public float ReconciliationReadiness = 0.5f;
+        [Range(0f, 1f)] public float TextingDependence = 0f;
+    }
+
     public enum MemoryMeaningType
     {
         Embarrassing,
@@ -480,6 +562,10 @@ namespace Survivebest.Core
         [SerializeField] private List<SensoryLifeProfile> sensoryProfiles = new();
         [SerializeField] private List<IdentityExpressionProfile> identityProfiles = new();
         [SerializeField] private List<SocialRoleBurdenProfile> socialRoleBurdenProfiles = new();
+        [SerializeField] private List<CognitiveDistortionProfile> cognitiveDistortionProfiles = new();
+        [SerializeField] private List<InnerMonologueProfile> innerMonologueProfiles = new();
+        [SerializeField] private List<IdentityFragmentProfile> identityFragmentProfiles = new();
+        [SerializeField] private List<AttachmentStyleProfile> attachmentStyleProfiles = new();
         [SerializeField] private List<MemoryMeaningRecord> memoryMeaningRecords = new();
         [SerializeField] private List<DomesticIntimacyMoment> domesticIntimacyMoments = new();
         [SerializeField] private List<LifeAdministrationProfile> lifeAdministrationProfiles = new();
@@ -511,6 +597,10 @@ namespace Survivebest.Core
         public IReadOnlyList<SensoryLifeProfile> SensoryProfiles => sensoryProfiles;
         public IReadOnlyList<IdentityExpressionProfile> IdentityProfiles => identityProfiles;
         public IReadOnlyList<SocialRoleBurdenProfile> SocialRoleBurdenProfiles => socialRoleBurdenProfiles;
+        public IReadOnlyList<CognitiveDistortionProfile> CognitiveDistortionProfiles => cognitiveDistortionProfiles;
+        public IReadOnlyList<InnerMonologueProfile> InnerMonologueProfiles => innerMonologueProfiles;
+        public IReadOnlyList<IdentityFragmentProfile> IdentityFragmentProfiles => identityFragmentProfiles;
+        public IReadOnlyList<AttachmentStyleProfile> AttachmentStyleProfiles => attachmentStyleProfiles;
         public IReadOnlyList<LifeAdministrationProfile> LifeAdministrationProfiles => lifeAdministrationProfiles;
         public IReadOnlyList<FamilyRealismProfile> FamilyProfiles => familyProfiles;
         public IReadOnlyList<EducationJourneyProfile> EducationProfiles => educationProfiles;
@@ -730,6 +820,50 @@ namespace Survivebest.Core
         public IdentityExpressionProfile SetIdentityExpressionProfile(CharacterCore actor, IdentityExpressionProfile profile)
         {
             return UpsertProfile(actor, profile, identityProfiles, () => new IdentityExpressionProfile());
+        }
+
+        public CognitiveDistortionProfile SetCognitiveDistortionProfile(CharacterCore actor, CognitiveDistortionProfile profile)
+        {
+            CognitiveDistortionProfile stored = UpsertProfile(actor, profile, cognitiveDistortionProfiles, () => new CognitiveDistortionProfile());
+            if (stored != null && stored.GetDominantIntensity() > 0.55f)
+            {
+                AppendThought(actor, "cognitive_distortion", $"Thought loops keep bending toward {DescribeDistortion(stored)}.", stored.GetDominantIntensity(), null);
+            }
+
+            return stored;
+        }
+
+        public InnerMonologueProfile SetInnerMonologueProfile(CharacterCore actor, InnerMonologueProfile profile)
+        {
+            InnerMonologueProfile stored = UpsertProfile(actor, profile, innerMonologueProfiles, () => new InnerMonologueProfile());
+            if (stored != null && Mathf.Max(stored.HarshSelfTalk, stored.IntrusiveThoughtFrequency, stored.SuppressionLoad) > 0.55f)
+            {
+                AppendThought(actor, "inner_monologue", BuildInnerMonologueSnapshot(actor.CharacterId, true), Mathf.Max(stored.HarshSelfTalk, stored.IntrusiveThoughtFrequency, stored.SuppressionLoad), null);
+            }
+
+            return stored;
+        }
+
+        public IdentityFragmentProfile SetIdentityFragmentProfile(CharacterCore actor, IdentityFragmentProfile profile)
+        {
+            IdentityFragmentProfile stored = UpsertProfile(actor, profile, identityFragmentProfiles, () => new IdentityFragmentProfile());
+            if (stored != null && Mathf.Max(stored.IdentityConflictStress, stored.MaskingLoad) > 0.5f)
+            {
+                AppendThought(actor, "identity_fragment", $"Home self ({stored.HomeSelf}) and work self ({stored.WorkSelf}) are pulling in different directions.", Mathf.Max(stored.IdentityConflictStress, stored.MaskingLoad), null);
+            }
+
+            return stored;
+        }
+
+        public AttachmentStyleProfile SetAttachmentStyleProfile(CharacterCore actor, AttachmentStyleProfile profile)
+        {
+            AttachmentStyleProfile stored = UpsertProfile(actor, profile, attachmentStyleProfiles, () => new AttachmentStyleProfile());
+            if (stored != null && Mathf.Max(stored.JealousySensitivity, stored.TextingDependence, stored.ConflictAvoidance) > 0.5f)
+            {
+                AppendThought(actor, "attachment_style", $"Connection keeps moving through a {stored.AttachmentStyle.ToString().ToLowerInvariant()} attachment filter.", Mathf.Max(stored.JealousySensitivity, stored.TextingDependence, stored.ConflictAvoidance), null);
+            }
+
+            return stored;
         }
 
         public SocialRoleBurdenProfile SetSocialRoleBurdenProfile(CharacterCore actor, SocialRoleBurdenProfile profile)
@@ -1003,6 +1137,26 @@ namespace Survivebest.Core
                 return FindProfile(characterId, identityProfiles) as T;
             }
 
+            if (typeof(T) == typeof(CognitiveDistortionProfile))
+            {
+                return FindProfile(characterId, cognitiveDistortionProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(InnerMonologueProfile))
+            {
+                return FindProfile(characterId, innerMonologueProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(IdentityFragmentProfile))
+            {
+                return FindProfile(characterId, identityFragmentProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(AttachmentStyleProfile))
+            {
+                return FindProfile(characterId, attachmentStyleProfiles) as T;
+            }
+
             if (typeof(T) == typeof(SocialRoleBurdenProfile))
             {
                 return FindProfile(characterId, socialRoleBurdenProfiles) as T;
@@ -1098,12 +1252,14 @@ namespace Survivebest.Core
                 return null;
             }
 
+            string interpretedSummary = InterpretMemoryThroughBias(actor.CharacterId, summary);
+
             MemoryMeaningRecord memory = new MemoryMeaningRecord
             {
                 MemoryId = Guid.NewGuid().ToString("N"),
                 CharacterId = actor.CharacterId,
                 MeaningType = meaningType,
-                Summary = summary,
+                Summary = interpretedSummary,
                 TriggerId = triggerId,
                 LinkedPlaceId = linkedPlaceId,
                 EmotionalWeight = Mathf.Clamp01(emotionalWeight),
@@ -1119,8 +1275,8 @@ namespace Survivebest.Core
                 memoryMeaningRecords.RemoveAt(0);
             }
 
-            AppendThought(actor, "memory_meaning", $"A {meaningType.ToString().ToLowerInvariant()} memory resurfaces: {summary}", memory.EmotionalWeight, linkedPlaceId);
-            RecordLifeTimelineEvent(actor, "Memory meaning", summary, "memory_meaning");
+            AppendThought(actor, "memory_meaning", $"A {meaningType.ToString().ToLowerInvariant()} memory resurfaces: {interpretedSummary}", memory.EmotionalWeight, linkedPlaceId);
+            RecordLifeTimelineEvent(actor, "Memory meaning", interpretedSummary, "memory_meaning");
             return memory;
         }
 
@@ -1165,6 +1321,10 @@ namespace Survivebest.Core
             SensoryLifeProfile sensory = FindProfile(characterId, sensoryProfiles);
             IdentityExpressionProfile identity = FindProfile(characterId, identityProfiles);
             SocialRoleBurdenProfile burden = FindProfile(characterId, socialRoleBurdenProfiles);
+            CognitiveDistortionProfile distortion = FindProfile(characterId, cognitiveDistortionProfiles);
+            InnerMonologueProfile monologue = FindProfile(characterId, innerMonologueProfiles);
+            IdentityFragmentProfile identityFragments = FindProfile(characterId, identityFragmentProfiles);
+            AttachmentStyleProfile attachment = FindProfile(characterId, attachmentStyleProfiles);
             DigitalLifeProfile digital = FindProfile(characterId, digitalProfiles);
             BeliefPhilosophyProfile belief = FindProfile(characterId, beliefProfiles);
             HumanMicroConditionProfile micro = FindProfile(characterId, humanMicroConditionProfiles);
@@ -1187,6 +1347,26 @@ namespace Survivebest.Core
             if (burden != null && burden.SecretDoubleLifeBurden > 0.2f)
             {
                 parts.Add($"Role burden: double-life strain {burden.SecretDoubleLifeBurden:0.00}");
+            }
+
+            if (distortion != null && distortion.GetDominantIntensity() > 0.2f)
+            {
+                parts.Add($"Thought bias: {DescribeDistortion(distortion)}");
+            }
+
+            if (monologue != null && Mathf.Max(monologue.HarshSelfTalk, monologue.IntrusiveThoughtFrequency) > 0.2f)
+            {
+                parts.Add($"Inner voice: conscious {monologue.ConsciousVoice}, subconscious {monologue.SubconsciousVoice}");
+            }
+
+            if (identityFragments != null && Mathf.Max(identityFragments.MaskingLoad, identityFragments.IdentityConflictStress) > 0.2f)
+            {
+                parts.Add($"Fragmented identity: home {identityFragments.HomeSelf} / work {identityFragments.WorkSelf} / online {identityFragments.OnlineSelf}");
+            }
+
+            if (attachment != null)
+            {
+                parts.Add($"Attachment style: {attachment.AttachmentStyle.ToString().ToLowerInvariant()}");
             }
 
             if (digital != null && digital.DoomscrollingHabit > 0.2f)
@@ -1304,6 +1484,30 @@ namespace Survivebest.Core
                 observations.Add("Tiny physical discomforts—hangnails, sore feet, headache haze—keep quietly rewriting your mood.");
             }
 
+            CognitiveDistortionProfile distortion = FindProfile(actor.CharacterId, cognitiveDistortionProfiles);
+            if (distortion != null && distortion.GetDominantIntensity() > 0.5f)
+            {
+                observations.Add($"Your read on the moment keeps sliding toward {DescribeDistortion(distortion)}.");
+            }
+
+            InnerMonologueProfile monologue = FindProfile(actor.CharacterId, innerMonologueProfiles);
+            if (monologue != null && Mathf.Max(monologue.HarshSelfTalk, monologue.IntrusiveThoughtFrequency, monologue.SuppressionLoad) > 0.5f)
+            {
+                observations.Add(BuildInnerMonologueSnapshot(actor.CharacterId, true));
+            }
+
+            IdentityFragmentProfile fragments = FindProfile(actor.CharacterId, identityFragmentProfiles);
+            if (fragments != null && Mathf.Max(fragments.IdentityConflictStress, fragments.MaskingLoad) > 0.5f)
+            {
+                observations.Add("Your home self, work self, and online self are not agreeing on who gets to lead today.");
+            }
+
+            AttachmentStyleProfile attachment = FindProfile(actor.CharacterId, attachmentStyleProfiles);
+            if (attachment != null && Mathf.Max(attachment.JealousySensitivity, attachment.TextingDependence, attachment.ConflictAvoidance) > 0.5f)
+            {
+                observations.Add($"Relationships feel filtered through {attachment.AttachmentStyle.ToString().ToLowerInvariant()} attachment instincts.");
+            }
+
             FriendshipConstellationProfile friendships = FindProfile(actor.CharacterId, friendshipConstellationProfiles);
             if (friendships != null && (friendships.BestFriendDrift > 0.45f || friendships.GroupChatChaos > 0.5f || friendships.FriendshipJealousy > 0.45f))
             {
@@ -1325,6 +1529,79 @@ namespace Survivebest.Core
             AppendThought(actor, "human_texture_pulse", message, 0.45f + rng.Next(35) / 100f, null);
             RecordLifeTimelineEvent(actor, $"Texture pulse {hour:00}:00", message, "human_texture_pulse");
             return message;
+        }
+
+        public string BuildInnerMonologueSnapshot(string characterId, bool includeSuppressedThought)
+        {
+            InnerMonologueProfile monologue = FindProfile(characterId, innerMonologueProfiles);
+            if (monologue == null)
+            {
+                return "The inner voice is quiet enough to stay in the background.";
+            }
+
+            List<string> parts = new()
+            {
+                $"Conscious voice says '{monologue.ConflictingThoughtA}' while another part insists '{monologue.ConflictingThoughtB}'."
+            };
+
+            if (monologue.IntrusiveThoughtFrequency > 0.4f)
+            {
+                parts.Add($"An intrusive thought keeps returning: '{monologue.IntrusiveThought}'." );
+            }
+
+            if (includeSuppressedThought && monologue.SuppressionLoad > 0.35f)
+            {
+                parts.Add($"A suppressed thought resurfaces: '{monologue.SuppressedThought}'." );
+            }
+
+            parts.Add(monologue.HarshSelfTalk > monologue.KindSelfTalk
+                ? "The tone is harsher than kind."
+                : "The tone is trying to stay compassionate.");
+
+            return string.Join(" ", parts);
+        }
+
+        public string InterpretMemoryThroughBias(string characterId, string trueSummary)
+        {
+            if (string.IsNullOrWhiteSpace(trueSummary))
+            {
+                return string.Empty;
+            }
+
+            CognitiveDistortionProfile distortion = FindProfile(characterId, cognitiveDistortionProfiles);
+            if (distortion == null || distortion.GetDominantIntensity() <= 0.2f)
+            {
+                return trueSummary;
+            }
+
+            return distortion.DominantDistortion switch
+            {
+                CognitiveDistortionType.Catastrophizing => $"It feels like {trueSummary.ToLowerInvariant()} proves everything is about to collapse.",
+                CognitiveDistortionType.Overgeneralizing => $"{trueSummary} starts to feel like proof that this always happens.",
+                CognitiveDistortionType.MindReading => $"{trueSummary} and you become sure everyone can see your weakness.",
+                CognitiveDistortionType.EmotionalReasoning => $"Because it felt true in your body, {trueSummary.ToLowerInvariant()} becomes unquestionable.",
+                CognitiveDistortionType.ImposterSyndrome => $"{trueSummary} gets rewritten as evidence that you never deserved your place.",
+                CognitiveDistortionType.Delusion when distortion.DelusionIntensity > distortion.IntuitionTrust => $"{trueSummary} links to a pattern only you believe is undeniably real.",
+                CognitiveDistortionType.Intuition => $"{trueSummary} lands like a quiet intuition you cannot fully explain yet.",
+                _ => trueSummary
+            };
+        }
+
+        public float GetRelationshipAttachmentModifier(string characterId)
+        {
+            AttachmentStyleProfile attachment = FindProfile(characterId, attachmentStyleProfiles);
+            if (attachment == null)
+            {
+                return 1f;
+            }
+
+            return attachment.AttachmentStyle switch
+            {
+                AttachmentStyle.Secure => Mathf.Clamp(1f + attachment.ReconciliationReadiness * 0.15f, 0.8f, 1.25f),
+                AttachmentStyle.Anxious => Mathf.Clamp(1f + attachment.TextingDependence * 0.1f - attachment.JealousySensitivity * 0.18f, 0.65f, 1.2f),
+                AttachmentStyle.Avoidant => Mathf.Clamp(1f - attachment.DistanceNeed * 0.2f - attachment.ConflictAvoidance * 0.1f, 0.6f, 1.05f),
+                _ => Mathf.Clamp(1f - attachment.JealousySensitivity * 0.15f - attachment.ConflictAvoidance * 0.1f + attachment.ReconciliationReadiness * 0.08f, 0.55f, 1.1f)
+            };
         }
 
         public ThoughtMessage TriggerSensoryMemoryRecall(CharacterCore actor, string triggerId, string placeId = null)
@@ -1668,6 +1945,26 @@ namespace Survivebest.Core
             }
 
             return blood.PreferredSources[0].ToLowerInvariant();
+        }
+
+        private string DescribeDistortion(CognitiveDistortionProfile profile)
+        {
+            if (profile == null)
+            {
+                return "clear thinking";
+            }
+
+            return profile.DominantDistortion switch
+            {
+                CognitiveDistortionType.Catastrophizing => "catastrophizing",
+                CognitiveDistortionType.Overgeneralizing => "overgeneralizing",
+                CognitiveDistortionType.MindReading => "mind reading",
+                CognitiveDistortionType.EmotionalReasoning => "emotional reasoning",
+                CognitiveDistortionType.ImposterSyndrome => "imposter syndrome",
+                CognitiveDistortionType.Delusion when profile.DelusionIntensity > profile.IntuitionTrust => "delusion",
+                CognitiveDistortionType.Intuition => "intuition",
+                _ => "distorted thinking"
+            };
         }
 
         private static bool ContainsIgnoreCase(List<string> values, string value)

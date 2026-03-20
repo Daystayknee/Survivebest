@@ -291,5 +291,71 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
         }
+
+        [Test]
+        public void DeepHumanComplexityProfiles_InfluenceSummaryMemoryAndRelationshipSignals()
+        {
+            GameObject go = new GameObject("DeepComplexity");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharDeep");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_deep", "Deep", LifeStage.Adult);
+
+            system.SetCognitiveDistortionProfile(character, new CognitiveDistortionProfile
+            {
+                DominantDistortion = CognitiveDistortionType.ImposterSyndrome,
+                ImposterSyndrome = 0.82f,
+                EmotionalReasoning = 0.4f
+            });
+            system.SetInnerMonologueProfile(character, new InnerMonologueProfile
+            {
+                ConsciousVoice = "careful",
+                SubconsciousVoice = "panicked",
+                ConflictingThoughtA = "Speak honestly.",
+                ConflictingThoughtB = "Hide before they notice.",
+                IntrusiveThought = "You are about to be exposed.",
+                SuppressedThought = "You want to be chosen.",
+                HarshSelfTalk = 0.79f,
+                IntrusiveThoughtFrequency = 0.73f,
+                SuppressionLoad = 0.68f
+            });
+            system.SetIdentityFragmentProfile(character, new IdentityFragmentProfile
+            {
+                HomeSelf = "soft and exhausted",
+                WorkSelf = "hyper-competent",
+                OnlineSelf = "effortlessly funny",
+                IdentityConflictStress = 0.76f,
+                MaskingLoad = 0.71f
+            });
+            system.SetAttachmentStyleProfile(character, new AttachmentStyleProfile
+            {
+                AttachmentStyle = AttachmentStyle.Anxious,
+                JealousySensitivity = 0.63f,
+                TextingDependence = 0.74f,
+                ReconciliationReadiness = 0.81f
+            });
+
+            MemoryMeaningRecord memory = system.RecordMemoryMeaning(
+                character,
+                MemoryMeaningType.IdentityDefining,
+                "The meeting ended awkwardly.",
+                0.8f);
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string monologue = system.BuildInnerMonologueSnapshot(character.CharacterId, true);
+            float relationshipModifier = system.GetRelationshipAttachmentModifier(character.CharacterId);
+
+            StringAssert.Contains("Thought bias", summary);
+            StringAssert.Contains("Fragmented identity", summary);
+            StringAssert.Contains("Attachment style", summary);
+            StringAssert.Contains("intrusive thought", monologue.ToLowerInvariant());
+            StringAssert.Contains("never deserved your place", memory.Summary);
+            Assert.Less(relationshipModifier, 1f);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }
