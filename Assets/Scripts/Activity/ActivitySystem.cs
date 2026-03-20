@@ -31,6 +31,13 @@ namespace Survivebest.Activity
 
     public class ActivitySystem : MonoBehaviour
     {
+        [Serializable]
+        public class ActivityRuntimeState
+        {
+            public int SameActivityStreak;
+            public ActivityType LastActivityType;
+        }
+
         [SerializeField] private CharacterCore owner;
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private SkillSystem skillSystem;
@@ -223,6 +230,28 @@ namespace Survivebest.Activity
                 ActivityType.Argue => stage is not (LifeStage.Baby or LifeStage.Infant),
                 _ => true
             };
+        }
+
+        public ActivityRuntimeState CaptureRuntimeState()
+        {
+            return new ActivityRuntimeState
+            {
+                SameActivityStreak = sameActivityStreak,
+                LastActivityType = lastActivityType
+            };
+        }
+
+        public void ApplyRuntimeState(ActivityRuntimeState state)
+        {
+            if (state == null)
+            {
+                sameActivityStreak = 0;
+                lastActivityType = ActivityType.Rest;
+                return;
+            }
+
+            sameActivityStreak = Mathf.Max(0, state.SameActivityStreak);
+            lastActivityType = state.LastActivityType;
         }
     }
 }

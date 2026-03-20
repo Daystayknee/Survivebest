@@ -34,6 +34,14 @@ namespace Survivebest.Crime
 
     public class RehabilitationSystem : MonoBehaviour
     {
+        [Serializable]
+        public class RehabilitationRuntimeState
+        {
+            public RehabilitationProgramType ActiveProgram;
+            public int RemainingProgramDays;
+            public string ActiveCenterName;
+        }
+
         [SerializeField] private CharacterCore owner;
         [SerializeField] private AddictionLifecycleSystem addictionLifecycleSystem;
         [SerializeField] private CravingSystem cravingSystem;
@@ -62,6 +70,30 @@ namespace Survivebest.Crime
         public bool HasActiveProgram => remainingProgramDays > 0;
         public string ActiveCenterName => activeCenterName;
         public IReadOnlyList<RehabilitationCenterProfile> RehabilitationCenters => rehabilitationCenters;
+
+        public RehabilitationRuntimeState CaptureRuntimeState()
+        {
+            return new RehabilitationRuntimeState
+            {
+                ActiveProgram = activeProgram,
+                RemainingProgramDays = remainingProgramDays,
+                ActiveCenterName = activeCenterName
+            };
+        }
+
+        public void ApplyRuntimeState(RehabilitationRuntimeState state)
+        {
+            if (state == null)
+            {
+                remainingProgramDays = 0;
+                activeCenterName = string.Empty;
+                return;
+            }
+
+            activeProgram = state.ActiveProgram;
+            remainingProgramDays = Mathf.Max(0, state.RemainingProgramDays);
+            activeCenterName = state.ActiveCenterName ?? string.Empty;
+        }
 
         private void OnEnable()
         {
