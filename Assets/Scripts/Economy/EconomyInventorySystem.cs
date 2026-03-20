@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Events;
 using Survivebest.World;
+using Survivebest.Catalog;
 
 namespace Survivebest.Economy
 {
@@ -71,6 +72,7 @@ namespace Survivebest.Economy
         [SerializeField] private List<EconomyItemDefinition> itemDefinitions = new();
         [SerializeField] private List<EconomyItemInstance> itemInstances = new();
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private SupplyCatalog supplyCatalog;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Range(0.1f, 1f)] private float refrigeratedSpoilageMultiplier = 0.35f;
         [SerializeField, Min(0f)] private float lowFundsWarningThreshold = 45f;
@@ -89,6 +91,7 @@ namespace Survivebest.Economy
         private void Awake()
         {
             funds = Mathf.Max(0f, startingFunds);
+            SynchronizeSupplyDefinitions();
             RebuildLookup();
             RebuildDefinitionLookup();
         }
@@ -430,6 +433,77 @@ namespace Survivebest.Economy
             itemDefinitions.RemoveAll(x => x != null && string.Equals(x.ItemId, definition.ItemId, StringComparison.OrdinalIgnoreCase));
             itemDefinitions.Add(definition);
             definitionsById[definition.ItemId] = definition;
+        }
+
+        private void SynchronizeSupplyDefinitions()
+        {
+            if (supplyCatalog == null || supplyCatalog.Supplies == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < supplyCatalog.Supplies.Count; i++)
+            {
+                SupplyItem supply = supplyCatalog.Supplies[i];
+                if (supply == null || string.IsNullOrWhiteSpace(supply.Name))
+                {
+                    continue;
+                }
+
+                RegisterDefinition(BuildDefinitionFromSupply(supply));
+            }
+        }
+
+        private static EconomyItemDefinition BuildDefinitionFromSupply(SupplyItem supply)
+        {
+            string itemId = supply.Name.Trim().ToLowerInvariant().Replace(" ", "_");
+            bool equippable = supply.Group is SupplyGroup.Accessory or SupplyGroup.Clothing or SupplyGroup.Weapon or SupplyGroup.Tool;
+            bool illegal = supply.Group == SupplyGroup.Weapon && (supply.Name.Contains("Handgun", StringComparison.OrdinalIgnoreCase) || supply.Name.Contains("Taser", StringComparison.OrdinalIgnoreCase));
+
+            return new EconomyItemDefinition
+            {
+                ItemId = itemId,
+                DisplayName = supply.Name,
+                BaseValue = GetBaseValueForGroup(supply.Group),
+                DepreciationPerDay = GetDepreciationForGroup(supply.Group),
+                SpoilagePerDay = supply.Group == SupplyGroup.Consumable ? 0.01f : 0f,
+                MaxQuality = 100f,
+                IsStackable = supply.Group is not (SupplyGroup.Electronics or SupplyGroup.Household or SupplyGroup.Weapon or SupplyGroup.Tool or SupplyGroup.Toy),
+                IsIllegal = illegal,
+                IsEquippable = equippable
+            };
+        }
+
+        private static float GetBaseValueForGroup(SupplyGroup group)
+        {
+            return group switch
+            {
+                SupplyGroup.Electronics => 120f,
+                SupplyGroup.Weapon => 95f,
+                SupplyGroup.Tool => 45f,
+                SupplyGroup.Clothing => 35f,
+                SupplyGroup.Accessory => 24f,
+                SupplyGroup.Toy => 18f,
+                SupplyGroup.Trinket => 14f,
+                SupplyGroup.Household => 20f,
+                SupplyGroup.Hygiene => 8f,
+                SupplyGroup.Store => 75f,
+                _ => 10f
+            };
+        }
+
+        private static float GetDepreciationForGroup(SupplyGroup group)
+        {
+            return group switch
+            {
+                SupplyGroup.Electronics => 0.025f,
+                SupplyGroup.Weapon => 0.015f,
+                SupplyGroup.Tool => 0.012f,
+                SupplyGroup.Clothing => 0.02f,
+                SupplyGroup.Accessory => 0.015f,
+                SupplyGroup.Toy => 0.01f,
+                _ => 0.005f
+            };
         }
 
         public void SimulateHourTick()

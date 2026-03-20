@@ -125,6 +125,7 @@ namespace Survivebest.Commerce
         };
 
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private FoodDatabase foodDatabase;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField, Min(0f)] private float wallet = 250f;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
@@ -142,6 +143,11 @@ namespace Survivebest.Commerce
         public IReadOnlyList<PendingOrder> PendingOrders => pendingOrders;
         public IReadOnlyList<MenuItem> Menu => menu;
         public IReadOnlyList<FastFoodLocation> FastFoodLocations => fastFoodLocations;
+
+        private void Awake()
+        {
+            EnsureContentSynchronization();
+        }
 
         public OrderingRuntimeState CaptureRuntimeState()
         {
@@ -220,6 +226,8 @@ namespace Survivebest.Commerce
 
         private void OnEnable()
         {
+            EnsureContentSynchronization();
+
             if (worldClock != null)
             {
                 worldClock.OnMinutePassed += HandleMinutePassed;
@@ -227,6 +235,164 @@ namespace Survivebest.Commerce
             }
 
             BuildProceduralDailyMenu();
+        }
+
+        private void EnsureContentSynchronization()
+        {
+            if (menu == null)
+            {
+                menu = new List<MenuItem>();
+            }
+
+            if (fastFoodLocations == null)
+            {
+                fastFoodLocations = new List<FastFoodLocation>();
+            }
+
+            if (foodDatabase == null || foodDatabase.Foods == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < foodDatabase.Foods.Count; i++)
+            {
+                FoodItem food = foodDatabase.Foods[i];
+                if (food == null || string.IsNullOrWhiteSpace(food.Name))
+                {
+                    continue;
+                }
+
+                if (ShouldAppearInGeneralOrdering(food))
+                {
+                    AddMenuItemIfMissing(menu, BuildMenuItemForFood(food, ResolveVendorName(food), false));
+                }
+
+                if (ShouldAppearInFastFood(food))
+                {
+                    string locationName = ResolveFastFoodLocationName(food);
+                    FastFoodLocation location = GetOrCreateFastFoodLocation(locationName);
+                    AddMenuItemIfMissing(location.Menu, BuildMenuItemForFood(food, locationName, true));
+                }
+            }
+        }
+
+        private bool ShouldAppearInGeneralOrdering(FoodItem food)
+        {
+            if (food == null || food.Category == FoodCategory.Drink)
+            {
+                return false;
+            }
+
+            return food.Purpose is MealPurpose.Everyday or MealPurpose.Breakfast or MealPurpose.Healthy or MealPurpose.Comfort or MealPurpose.FamilyMeal or MealPurpose.Gourmet or MealPurpose.Takeout;
+        }
+
+        private bool ShouldAppearInFastFood(FoodItem food)
+        {
+            if (food == null)
+            {
+                return false;
+            }
+
+            if (food.CuisineType == CuisineType.FastFood || food.Category == FoodCategory.StreetFood)
+            {
+                return true;
+            }
+
+            return food.Tags != null && food.Tags.Exists(tag =>
+                string.Equals(tag, "takeout", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(tag, "fast-food", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(tag, "street-food", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private FastFoodLocation GetOrCreateFastFoodLocation(string locationName)
+        {
+            FastFoodLocation location = fastFoodLocations.Find(x => x != null && string.Equals(x.LocationName, locationName, StringComparison.OrdinalIgnoreCase));
+            if (location != null)
+            {
+                location.Menu ??= new List<MenuItem>();
+                return location;
+            }
+
+            location = new FastFoodLocation
+            {
+                LocationName = locationName,
+                Menu = new List<MenuItem>()
+            };
+
+            fastFoodLocations.Add(location);
+            return location;
+        }
+
+        private MenuItem BuildMenuItemForFood(FoodItem food, string vendorName, bool fastFood)
+        {
+            float hunger = food.HungerRestore;
+            float comfort = food.ComfortValue;
+            int price = Mathf.Max(5, Mathf.RoundToInt((hunger * 0.22f) + (comfort * 0.08f) + (fastFood ? 4f : 6f)));
+            int delivery = fastFood
+                ? Mathf.Clamp(12 + Mathf.RoundToInt(food.HungerRestore * 0.08f), 10, 24)
+                : Mathf.Clamp(18 + Mathf.RoundToInt(food.HungerRestore * 0.15f), 18, 45);
+
+            return new MenuItem
+            {
+                VendorName = vendorName,
+                Food = food,
+                Price = price,
+                DeliveryMinutes = delivery,
+                CuisineType = food.CuisineType,
+                TipMultiplier = fastFood ? 0.9f : 1.1f
+            };
+        }
+
+        private void AddMenuItemIfMissing(List<MenuItem> targetMenu, MenuItem item)
+        {
+            if (targetMenu == null || item == null || item.Food == null)
+            {
+                return;
+            }
+
+            bool exists = targetMenu.Exists(entry => entry != null &&
+                entry.Food != null &&
+                string.Equals(entry.Food.Name, item.Food.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (!exists)
+            {
+                targetMenu.Add(item);
+            }
+        }
+
+        private static string ResolveVendorName(FoodItem food)
+        {
+            return food.CuisineType switch
+            {
+                CuisineType.FastFood => "Quickbite Dispatch",
+                CuisineType.Mexican => "Mercado Express",
+                CuisineType.Japanese => "Night Market Bento",
+                CuisineType.Thai => "Lantern Wok",
+                CuisineType.Indian => "Spice Route Kitchen",
+                CuisineType.Italian => "Family Pasta House",
+                CuisineType.Mediterranean => "Fresh Table Delivery",
+                _ => food.Purpose == MealPurpose.Breakfast ? "Sunrise Cafe" : "Neighborhood Kitchen"
+            };
+        }
+
+        private static string ResolveFastFoodLocationName(FoodItem food)
+        {
+            if (food.CuisineType == CuisineType.Mexican)
+            {
+                return "Turbo Taco Forge";
+            }
+
+            if (food.Tags != null && food.Tags.Exists(tag => string.Equals(tag, "pizza", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "Slice Current";
+            }
+
+            if (food.Tags != null && food.Tags.Exists(tag => string.Equals(tag, "handheld", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "Sizzle Shuttle";
+            }
+
+            return food.CuisineType == CuisineType.FastFood ? "Burger Reactor" : "Quickbite Corner";
         }
 
         private void OnDisable()
