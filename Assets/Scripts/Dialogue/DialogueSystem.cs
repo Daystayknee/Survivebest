@@ -103,7 +103,8 @@ namespace Survivebest.Dialogue
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private List<DialogueLine> dialogueLines = new();
         [SerializeField] private List<DialogueGeneratedLine> generatedLines = new();
-        [SerializeField, Min(100)] private int minimumLinesPerBucket = 120;
+        [SerializeField, Min(12)] private int minimumLinesPerBucket = 24;
+        [SerializeField, Min(120)] private int maximumGeneratedLines = 480;
         [SerializeField] private GameEventHub gameEventHub;
 
         public event Action<string, bool> OnDialogueResolved;
@@ -161,7 +162,7 @@ namespace Survivebest.Dialogue
                 MoodTag = contextualLine != null ? contextualLine.MoodTag : ResolveMoodTag(context),
                 SituationTag = contextualLine != null ? contextualLine.SituationTag : ResolveSituationTag(context),
                 MemoryTag = contextualLine != null ? contextualLine.MemoryTag : ResolveMemoryTag(target, context),
-                SpeakerSpecies = contextualLine != null ? contextualLine.SpeakerSpecies : "human",
+                SpeakerSpecies = contextualLine != null ? contextualLine.SpeakerSpecies : ResolveSpeakerSpeciesKey(context),
                 IsPetInteraction = contextualLine != null && contextualLine.IsPetInteraction
             });
 
@@ -284,7 +285,7 @@ namespace Survivebest.Dialogue
                 MoodTag = ResolveMoodTag(null),
                 SituationTag = resolvedSituation,
                 MemoryTag = "shared_meal",
-                SpeakerSpecies = "human",
+                SpeakerSpecies = ResolveSpeakerSpeciesKey(null),
                 IsPetInteraction = false
             });
 
@@ -352,68 +353,202 @@ namespace Survivebest.Dialogue
             generatedLines.Clear();
 
             string[] moods = { "calm", "happy", "tense", "sad", "romantic", "awkward" };
-            string[] situations = { "home", "work", "street", "hospital", "market", "school" };
-            string[] memories = { "first_meeting", "shared_meal", "big_argument", "helped_me", "festival_night", "storm_day" };
+            string[] situations = { "home", "work", "street", "hospital", "market", "school", "nightlife", "safehouse" };
+            string[] memories = { "first_meeting", "shared_meal", "big_argument", "helped_me", "festival_night", "storm_day", "secret_kept", "late_night_confession" };
 
-            string[] openers =
-            {
-                "I keep thinking about", "I wanted to ask about", "Do you remember", "I still feel something about",
-                "Can we revisit", "I appreciate", "I'm nervous about", "I laughed earlier about",
-                "I've been carrying", "Let's talk through", "I noticed", "I can't shake"
-            };
-            string[] middles =
-            {
-                "that moment", "what happened", "the way you looked", "our decision", "the energy between us",
-                "how we handled it", "your perspective", "the small detail", "the silence after", "the promise"
-            };
-            string[] closers =
-            {
-                "and I want us aligned.", "because it matters to me.", "before the day gets away from us.",
-                "so we don't repeat old mistakes.", "and I think we can do better together.",
-                "if you're willing to hear me out.", "and I'm trying to be honest.",
-                "so we can keep trust intact.", "and maybe end today lighter.", "while it's still fresh in my mind."
-            };
-
-            DialogueIntent[] intents =
-            {
-                DialogueIntent.SmallTalk,
-                DialogueIntent.FriendlyChat,
-                DialogueIntent.Compliment,
-                DialogueIntent.Comfort,
-                DialogueIntent.Gossip,
-                DialogueIntent.Flirt,
-                DialogueIntent.Apologize,
-                DialogueIntent.Argue
-            };
-
-            for (int mi = 0; mi < moods.Length; mi++)
-            {
-                for (int si = 0; si < situations.Length; si++)
-                {
-                    for (int me = 0; me < memories.Length; me++)
-                    {
-                        for (int i = 0; i < openers.Length; i++)
-                        {
-                            string line = $"{openers[i]} {middles[(i + si) % middles.Length]} from {situations[si]} around {memories[me]}, {closers[(i + mi) % closers.Length]}";
-                            generatedLines.Add(new DialogueGeneratedLine
-                            {
-                                Intent = intents[(i + mi + si + me) % intents.Length],
-                                MoodTag = moods[mi],
-                                SituationTag = situations[si],
-                                MemoryTag = memories[me],
-                                SpeakerSpecies = "human",
-                                IsPetInteraction = false,
-                                Line = line
-                            });
-                        }
-                    }
-                }
-            }
+            SeedSpeciesDialogue("human", moods, situations, memories, BuildHumanDialogueFragments());
+            SeedSpeciesDialogue("vampire", moods, situations, memories, BuildVampireDialogueFragments());
 
             EnsureMinimumPerMood(moods);
             EnsureMinimumPerSituation(situations);
             EnsureMinimumPerMemory(memories);
             EnsurePetInteractionDepth();
+            TrimGeneratedLines();
+        }
+
+
+        private void SeedSpeciesDialogue(string speakerSpecies, string[] moods, string[] situations, string[] memories, Dictionary<DialogueIntent, string[]> fragments)
+        {
+            if (fragments == null || fragments.Count == 0)
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<DialogueIntent, string[]> pair in fragments)
+            {
+                DialogueIntent intent = pair.Key;
+                string[] lines = pair.Value;
+                if (lines == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    generatedLines.Add(new DialogueGeneratedLine
+                    {
+                        Intent = intent,
+                        MoodTag = moods[i % moods.Length],
+                        SituationTag = situations[(i + (int)intent) % situations.Length],
+                        MemoryTag = memories[(i + (speakerSpecies == "vampire" ? 2 : 0) + (int)intent) % memories.Length],
+                        SpeakerSpecies = speakerSpecies,
+                        IsPetInteraction = false,
+                        Line = lines[i]
+                    });
+                }
+            }
+        }
+
+        private Dictionary<DialogueIntent, string[]> BuildHumanDialogueFragments()
+        {
+            return new Dictionary<DialogueIntent, string[]>
+            {
+                [DialogueIntent.SmallTalk] = new[]
+                {
+                    "Did you get any quiet time today, or did life run you over again?",
+                    "I passed the corner store and thought about your usual order.",
+                    "This whole block feels different depending on whether you're in it.",
+                    "I know it's ordinary, but I like having a normal conversation with you.",
+                    "Tell me one small win from today before the world interrupts us again."
+                },
+                [DialogueIntent.FriendlyChat] = new[]
+                {
+                    "I want the real answer, not the practiced one—how are you holding up?",
+                    "You always notice the thing everyone else rushes past; what did you catch today?",
+                    "If we had one free weekend and no obligations, where would you disappear to?",
+                    "I'm curious what version of your life feels most like you right now.",
+                    "What's been giving you energy lately instead of draining it?"
+                },
+                [DialogueIntent.Compliment] = new[]
+                {
+                    "You make difficult things look survivable, and that matters more than you know.",
+                    "People trust you because you don't pretend care is effortless.",
+                    "You have a way of making a room feel less hostile.",
+                    "You're better at rebuilding after a bad day than you give yourself credit for.",
+                    "The future feels slightly more manageable when you're honest in it."
+                },
+                [DialogueIntent.Comfort] = new[]
+                {
+                    "You don't have to perform strength with me tonight.",
+                    "We can solve one problem at a time; you don't owe the whole world recovery by morning.",
+                    "If all you can do is breathe and stay here, that's enough for now.",
+                    "I remember how much you've already survived, even when you forget it.",
+                    "Let the day be ugly if it has to be; you still deserve gentleness."
+                },
+                [DialogueIntent.Flirt] = new[]
+                {
+                    "I like how your attention lands—it feels deliberate.",
+                    "You keep acting casual about the fact that you're distracting.",
+                    "If I stand any closer, I'm blaming you for what happens to my focus.",
+                    "You make even awkward silence feel like chemistry.",
+                    "Be honest: do you know what your smile does to people?"
+                },
+                [DialogueIntent.Apologize] = new[]
+                {
+                    "I was defensive when I should have been careful with you.",
+                    "You deserved honesty sooner, not after the damage was done.",
+                    "I'm not asking you to skip the hurt; I just want to repair what I can.",
+                    "I made your day heavier, and I am sorry for that weight.",
+                    "I know trust rebuilds slowly, but I'm willing to do the slow part."
+                },
+                [DialogueIntent.Argue] = new[]
+                {
+                    "You keep calling it miscommunication when it was a choice.",
+                    "I'm tired of pretending this pattern is accidental.",
+                    "If we're going to have this fight, let's at least say the true thing out loud.",
+                    "I can handle bad news; what I can't handle is being managed.",
+                    "Stop softening the story just enough to escape responsibility."
+                },
+                [DialogueIntent.Gossip] = new[]
+                {
+                    "Everyone on this street is pretending not to notice the tension, which means they definitely noticed.",
+                    "I heard a version of the story at the market, and somehow you came off cooler in the retelling.",
+                    "Town rumor moves faster than truth, but sometimes it trips over something real.",
+                    "Apparently half the neighborhood has an opinion about last night, none of them useful.",
+                    "Tell me if the gossip is nonsense before I accidentally enjoy it."
+                }
+            };
+        }
+
+        private Dictionary<DialogueIntent, string[]> BuildVampireDialogueFragments()
+        {
+            return new Dictionary<DialogueIntent, string[]>
+            {
+                [DialogueIntent.SmallTalk] = new[]
+                {
+                    "Did the night treat you kindly, or are you still outrunning dawn in your head?",
+                    "You look composed, which usually means the hunger was inconvenient.",
+                    "Was tonight a feeding night, a politics night, or the worst kind—both?",
+                    "Your cover is elegant, but your eyes say the city asked too much of you.",
+                    "I brought up your name carefully; the wrong ears are always listening after dark."
+                },
+                [DialogueIntent.FriendlyChat] = new[]
+                {
+                    "What part of eternity feels most unbearable this decade?",
+                    "Do you miss who you were, or just the illusion that life moved in one direction?",
+                    "Tell me whether your sire taught restraint or merely demanded it.",
+                    "How much of your identity is chosen, and how much is architecture built by hunger?",
+                    "When mortals disappoint you, what still keeps you invested in them?"
+                },
+                [DialogueIntent.Compliment] = new[]
+                {
+                    "You make discipline look almost graceful, which is rarer than beauty in our kind.",
+                    "Most immortals become repetitive; you somehow stayed dangerous and interesting.",
+                    "Your restraint is sharper than most elders' threats.",
+                    "I've seen courts collapse under less pressure than the calm you carry.",
+                    "You wear secrecy like tailored velvet instead of a panic response."
+                },
+                [DialogueIntent.Comfort] = new[]
+                {
+                    "You are allowed to be more than the worst thing hunger has ever asked of you.",
+                    "Sit with me until the frenzy passes; dawn can wait outside the shutters.",
+                    "Even immortals deserve witness when the old grief starts speaking again.",
+                    "You don't have to decide tonight whether to turn love into distance.",
+                    "If the blood debt is crushing you, let me share the weight before it becomes a chain."
+                },
+                [DialogueIntent.Flirt] = new[]
+                {
+                    "If you keep looking at me like that, I'm going to mistake it for permission.",
+                    "Your voice should count as a supernatural influence all by itself.",
+                    "I can't tell if the danger is your smile or the fact that I want it anyway.",
+                    "You make secrecy feel indecent in the most appealing way.",
+                    "Be careful—mystique turns into invitation when you get this close."
+                },
+                [DialogueIntent.Apologize] = new[]
+                {
+                    "I treated your trust like a renewable resource, and it isn't.",
+                    "I exposed you to rumor and called it necessity; that was cowardice dressed as strategy.",
+                    "I should have protected your name before I protected my position.",
+                    "You asked for honesty, and I answered with court instincts instead.",
+                    "I know some wounds outlive apologies, but I am still offering mine."
+                },
+                [DialogueIntent.Argue] = new[]
+                {
+                    "Don't invoke ancient law when what you mean is personal convenience.",
+                    "You call it preservation, but it looks suspiciously like control.",
+                    "I won't let your hunger make policy for both of us.",
+                    "If your plan ends with mortals broken and our court calmer, it is still a failure.",
+                    "Stop speaking like inevitability excuses cruelty."
+                },
+                [DialogueIntent.Gossip] = new[]
+                {
+                    "Word is an elder changed feeding territory without asking permission, so naturally everyone is pretending not to panic.",
+                    "The court says it was a strategic disappearance, which is how our kind describes every disaster.",
+                    "Some fledgling posted a mirror glitch online, and now three cleaners are having the worst week imaginable.",
+                    "Apparently there's a rare donor moving through the clubs, and half the city suddenly has moral principles to negotiate.",
+                    "I heard a blood debt got settled with a nightclub instead of cash, which honestly feels on brand."
+                }
+            };
+        }
+
+        private void TrimGeneratedLines()
+        {
+            if (generatedLines.Count <= maximumGeneratedLines)
+            {
+                return;
+            }
+
+            generatedLines.RemoveRange(maximumGeneratedLines, generatedLines.Count - maximumGeneratedLines);
         }
 
         private void EnsurePetInteractionDepth()
@@ -493,7 +628,7 @@ namespace Survivebest.Dialogue
                     MoodTag = mood,
                     SituationTag = situation,
                     MemoryTag = memory,
-                    SpeakerSpecies = "human",
+                    SpeakerSpecies = ResolveSpeakerSpeciesKey(null),
                     IsPetInteraction = false,
                     Line = $"(fallback) Let's keep talking about {memory} in {situation} while we're {mood}. #{i + 1}"
                 });
@@ -512,7 +647,7 @@ namespace Survivebest.Dialogue
             string desiredSituation = ResolveSituationTag(context);
             string desiredMemory = ResolveMemoryTag(target, context);
             bool requirePet = context != null && context.IsPetInteraction;
-            string desiredSpecies = context != null ? context.SpeakerSpecies : null;
+            string desiredSpecies = ResolveSpeakerSpeciesKey(context);
 
             int bestScore = int.MinValue;
             List<DialogueGeneratedLine> bestMatches = new();
@@ -565,6 +700,21 @@ namespace Survivebest.Dialogue
             }
 
             return bestMatches[UnityEngine.Random.Range(0, bestMatches.Count)];
+        }
+
+        private string ResolveSpeakerSpeciesKey(DialogueContext context)
+        {
+            if (context != null && !string.IsNullOrWhiteSpace(context.SpeakerSpecies))
+            {
+                return context.SpeakerSpecies;
+            }
+
+            if (owner != null)
+            {
+                return owner.IsVampire ? "vampire" : "human";
+            }
+
+            return "human";
         }
 
         private string ResolveMoodTag(DialogueContext context)
