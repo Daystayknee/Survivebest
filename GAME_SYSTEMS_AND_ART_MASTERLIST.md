@@ -4,6 +4,11 @@ This file is a comprehensive implementation inventory for the current codebase.
 
 ## Development Snapshot (What is done so far)
 
+## Detailed content reference set
+
+- Added a dedicated content-reference set under `Docs/Reference/` for separated, detail-heavy coverage of animals/species, human ages and face types, foods/recipes, drinks, jobs/careers, minigames, housing/house types, skills, skill trees, drugs/substances, and crimes/justice.
+- Start here: `Docs/Reference/SYSTEM_CONTENT_REFERENCE_INDEX.md`
+
 ### Completed in code
 - Core manager architecture, simulation runtime systems, and event backbone are implemented.
 - Economy/inventory ownership is centralized and connected to grocery, ordering, and recipes.
