@@ -85,5 +85,97 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
         }
+
+        [Test]
+        public void SetProfiles_StoresHumanTextureLayersAndBuildsSummary()
+        {
+            GameObject go = new GameObject("LifeTexture");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharTexture");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_texture", "Texture", LifeStage.Adult, CharacterSpecies.Vampire);
+
+            system.SetSensoryProfile(character, new SensoryLifeProfile
+            {
+                FavoriteSmells = new System.Collections.Generic.List<string> { "rain on brick", "old books" },
+                NoiseSensitivity = 0.8f,
+                FoodTexturePreferences = new System.Collections.Generic.List<string> { "crunchy", "silky" },
+                SleepEnvironmentPreference = "Cold and silent"
+            });
+            system.SetIdentityExpressionProfile(character, new IdentityExpressionProfile
+            {
+                PublicSelf = "polished nightlife icon",
+                PrivateSelf = "tired immortal trying to feel real",
+                AuthenticityMaskingTension = 0.82f
+            });
+            system.SetSocialRoleBurdenProfile(character, new SocialRoleBurdenProfile
+            {
+                SecretDoubleLifeBurden = 0.77f,
+                BreadwinnerStress = 0.58f
+            });
+            system.SetDigitalLifeProfile(character, new DigitalLifeProfile
+            {
+                DoomscrollingHabit = 0.51f,
+                VampireFootprintRisk = 0.73f
+            });
+            system.SetBeliefPhilosophyProfile(character, new BeliefPhilosophyProfile
+            {
+                MeaningCrisis = 0.64f,
+                VampireTheology = "cursed immortality as a test"
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            SensoryLifeProfile sensory = system.GetProfile<SensoryLifeProfile>(character.CharacterId);
+
+            StringAssert.Contains("rain on brick", summary);
+            StringAssert.Contains("public polished nightlife icon", summary);
+            StringAssert.Contains("Role burden", summary);
+            StringAssert.Contains("Digital drag", summary);
+            StringAssert.Contains("Belief weather", summary);
+            Assert.AreEqual("Cold and silent", sensory.SleepEnvironmentPreference);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void MemoryAndDomesticMoments_RecordMeaningAndEverydayIntimacy()
+        {
+            GameObject go = new GameObject("LifeMemory");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharMemory");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_memory", "Memory", LifeStage.Adult);
+
+            MemoryMeaningRecord memory = system.RecordMemoryMeaning(
+                character,
+                MemoryMeaningType.Distorted,
+                "The kitchen fight replayed louder than it happened.",
+                0.9f,
+                "burnt_toast",
+                "apartment_kitchen",
+                "The argument was quiet but cutting.");
+
+            DomesticIntimacyMoment domestic = system.RecordDomesticIntimacyMoment(
+                character,
+                "partner_1",
+                "sharing a blanket while watching the rain",
+                0.6f,
+                0.85f);
+
+            Assert.IsNotNull(memory);
+            Assert.AreEqual(MemoryMeaningType.Distorted, memory.MeaningType);
+            Assert.Greater(memory.Distortion, 0f);
+            Assert.IsNotNull(domestic);
+            Assert.AreEqual("partner_1", domestic.OtherCharacterId);
+            Assert.GreaterOrEqual(system.MemoryMeaningRecords.Count, 1);
+            Assert.GreaterOrEqual(system.DomesticIntimacyMoments.Count, 1);
+            Assert.AreEqual("domestic_intimacy", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
     }
 }

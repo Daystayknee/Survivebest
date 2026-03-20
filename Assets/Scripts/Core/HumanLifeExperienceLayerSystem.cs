@@ -62,6 +62,185 @@ namespace Survivebest.Core
         public string Source;
     }
 
+    [Serializable]
+    public class SensoryLifeProfile
+    {
+        public string CharacterId;
+        public List<string> FavoriteSmells = new();
+        [Range(0f, 1f)] public float NoiseSensitivity = 0.5f;
+        public List<string> TouchComforts = new();
+        public List<string> TouchDiscomforts = new();
+        public List<string> FoodTexturePreferences = new();
+        [Range(0f, 1f)] public float LightSensitivity = 0.5f;
+        public string TemperaturePreference = "Temperate";
+        [Range(0f, 1f)] public float RoomClutterTolerance = 0.5f;
+        public string SleepEnvironmentPreference = "Cool, quiet, and dark";
+        public List<string> ScentMemoryTriggers = new();
+    }
+
+    [Serializable]
+    public class IdentityExpressionProfile
+    {
+        public string CharacterId;
+        [Range(-1f, 1f)] public float SelfImage = 0f;
+        [Range(-1f, 1f)] public float BodyImage = 0f;
+        [Range(0f, 1f)] public float ConfidencePresentationMismatch = 0f;
+        [Range(0f, 1f)] public float AuthenticityMaskingTension = 0f;
+        public string PersonalReinventionArc = "Stable identity";
+        public string SubcultureBelonging = "None";
+        [Range(0f, 1f)] public float BeautyStandardsPressure = 0f;
+        public string PrivateSelf = "Unwritten";
+        public string PublicSelf = "Unwritten";
+    }
+
+    [Serializable]
+    public class SocialRoleBurdenProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float CaretakerFatigue = 0f;
+        [Range(0f, 1f)] public float EldestSiblingBurden = 0f;
+        [Range(0f, 1f)] public float BreadwinnerStress = 0f;
+        public string FamilyRoleDynamic = "Neutral";
+        [Range(0f, 1f)] public float CommunityPillarExpectation = 0f;
+        [Range(0f, 1f)] public float SecretDoubleLifeBurden = 0f;
+        [Range(0f, 1f)] public float InfluencerPersonaFatigue = 0f;
+        [Range(0f, 1f)] public float NeighborhoodVisibility = 0f;
+    }
+
+    public enum MemoryMeaningType
+    {
+        Embarrassing,
+        Cherished,
+        Traumatic,
+        IdentityDefining,
+        PlaceLinked,
+        AnniversaryReaction,
+        SmellTriggered,
+        MusicTriggered,
+        Distorted,
+        Rewritten
+    }
+
+    [Serializable]
+    public class MemoryMeaningRecord
+    {
+        public string MemoryId;
+        public string CharacterId;
+        public MemoryMeaningType MeaningType;
+        public string Summary;
+        public string LinkedPlaceId;
+        public string TriggerId;
+        [Range(0f, 1f)] public float EmotionalWeight = 0.5f;
+        [Range(0f, 1f)] public float RecallStrength = 0.5f;
+        [Range(0f, 1f)] public float Distortion = 0f;
+        public bool AnniversaryActive;
+        public string TrueMemorySummary;
+    }
+
+    [Serializable]
+    public class DomesticIntimacyMoment
+    {
+        public string MomentId;
+        public string CharacterId;
+        public string OtherCharacterId;
+        public string Activity;
+        [Range(-1f, 1f)] public float ComfortDelta = 0f;
+        [Range(0f, 1f)] public float IntimacyWeight = 0.5f;
+        public int Day;
+        public int Hour;
+    }
+
+    [Serializable]
+    public class LifeAdministrationProfile
+    {
+        public string CharacterId;
+        public List<string> ActiveDocuments = new();
+        [Range(0f, 1f)] public float TaxStress = 0f;
+        [Range(0f, 1f)] public float InsuranceFragility = 0f;
+        [Range(0f, 1f)] public float DebtLoad = 0f;
+        public List<string> Subscriptions = new();
+        [Range(0f, 1f)] public float LeaseRenewalPressure = 0f;
+        [Range(0f, 1f)] public float MedicalSchedulingLoad = 0f;
+        [Range(0f, 1f)] public float LegalPaperworkStress = 0f;
+        [Range(0f, 1f)] public float BankingFriction = 0f;
+        [Range(0f, 1f)] public float CreditDamageRisk = 0f;
+        public List<string> AssistancePrograms = new();
+    }
+
+    [Serializable]
+    public class FamilyRealismProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float FertilityVariation = 0.5f;
+        public bool HasLossHistory;
+        public string CurrentPregnancyTrimester = "None";
+        public List<string> PregnancySymptoms = new();
+        [Range(0f, 1f)] public float PostpartumRecoveryLoad = 0f;
+        public string FeedingPlan = "Undecided";
+        [Range(0f, 1f)] public float CoparentingStrain = 0f;
+        public string CustodyArrangement = "None";
+        public string AdoptionOrFosterStatus = "None";
+        [Range(0f, 1f)] public float InfertilityGrief = 0f;
+        [Range(0f, 1f)] public float FamilyPlanningConflict = 0f;
+        public string InheritedDiseaseCounseling = "None";
+        public string VampireHumanReproductionRule = "Not evaluated";
+    }
+
+    [Serializable]
+    public class EducationJourneyProfile
+    {
+        public string CharacterId;
+        public string CurrentStage = "Unassigned";
+        [Range(0f, 1f)] public float HomeworkLoad = 0f;
+        [Range(0f, 1f)] public float TestPressure = 0f;
+        [Range(0f, 1f)] public float SocialHierarchyPressure = 0f;
+        [Range(0f, 1f)] public float TeacherFavoritismImpact = 0f;
+        [Range(0f, 1f)] public float TruancyRisk = 0f;
+        public List<string> Activities = new();
+        [Range(0f, 1f)] public float CollegeDebtLoad = 0f;
+        public string TradeSchoolTrack = "None";
+        public string AdultEducationTrack = "None";
+        [Range(0f, 1f)] public float ScholarshipReliance = 0f;
+        [Range(0f, 1f)] public float AcademicBurnout = 0f;
+        public string VampireRecordRisk = "None";
+    }
+
+    [Serializable]
+    public class DigitalLifeProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float TextingReliance = 0f;
+        public List<string> SocialApps = new();
+        [Range(0f, 1f)] public float GroupChatLoad = 0f;
+        [Range(0f, 1f)] public float VideoCallFatigue = 0f;
+        [Range(0f, 1f)] public float OnlineDatingExposure = 0f;
+        [Range(0f, 1f)] public float DoomscrollingHabit = 0f;
+        [Range(0f, 1f)] public float InternetFame = 0f;
+        [Range(0f, 1f)] public float CancellationRisk = 0f;
+        [Range(0f, 1f)] public float ParasocialPressure = 0f;
+        [Range(0f, 1f)] public float DigitalReputation = 0.5f;
+        [Range(0f, 1f)] public float LeakRisk = 0f;
+        [Range(0f, 1f)] public float ScamExposure = 0f;
+        [Range(0f, 1f)] public float VampireFootprintRisk = 0f;
+    }
+
+    [Serializable]
+    public class BeliefPhilosophyProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float MeaningCrisis = 0f;
+        public List<string> PersonalRituals = new();
+        [Range(0f, 1f)] public float Superstition = 0f;
+        public List<string> GriefRituals = new();
+        public string MoralCode = "Unwritten";
+        [Range(0f, 1f)] public float OccultFascination = 0f;
+        [Range(0f, 1f)] public float Skepticism = 0.5f;
+        public List<string> CulturalPractices = new();
+        [Range(0f, 1f)] public float ExistentialDread = 0f;
+        public string AfterlifeBelief = "Unknown";
+        public string VampireTheology = "Unexamined";
+    }
+
     public enum LifeReflectionType
     {
         Gratitude,
@@ -97,14 +276,28 @@ namespace Survivebest.Core
         [SerializeField] private List<ThoughtMessage> recentThoughts = new();
         [SerializeField] private List<ProceduralLifeMoment> recentMoments = new();
         [SerializeField] private List<LifeTimelineEntry> recentTimeline = new();
+        [SerializeField] private List<SensoryLifeProfile> sensoryProfiles = new();
+        [SerializeField] private List<IdentityExpressionProfile> identityProfiles = new();
+        [SerializeField] private List<SocialRoleBurdenProfile> socialRoleBurdenProfiles = new();
+        [SerializeField] private List<MemoryMeaningRecord> memoryMeaningRecords = new();
+        [SerializeField] private List<DomesticIntimacyMoment> domesticIntimacyMoments = new();
+        [SerializeField] private List<LifeAdministrationProfile> lifeAdministrationProfiles = new();
+        [SerializeField] private List<FamilyRealismProfile> familyProfiles = new();
+        [SerializeField] private List<EducationJourneyProfile> educationProfiles = new();
+        [SerializeField] private List<DigitalLifeProfile> digitalProfiles = new();
+        [SerializeField] private List<BeliefPhilosophyProfile> beliefProfiles = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
         [SerializeField, Min(10)] private int maxMoments = 300;
         [SerializeField, Min(10)] private int maxTimelineEntries = 500;
+        [SerializeField, Min(10)] private int maxMemoryMeaningRecords = 300;
+        [SerializeField, Min(10)] private int maxDomesticMoments = 200;
 
         public IReadOnlyList<PlaceAttachmentState> PlaceAttachments => placeAttachments;
         public IReadOnlyList<ThoughtMessage> RecentThoughts => recentThoughts;
         public IReadOnlyList<ProceduralLifeMoment> RecentMoments => recentMoments;
         public IReadOnlyList<LifeTimelineEntry> RecentTimeline => recentTimeline;
+        public IReadOnlyList<MemoryMeaningRecord> MemoryMeaningRecords => memoryMeaningRecords;
+        public IReadOnlyList<DomesticIntimacyMoment> DomesticIntimacyMoments => domesticIntimacyMoments;
 
         public event Action<ThoughtMessage> OnThoughtLogged;
         public event Action<ProceduralLifeMoment> OnMomentGenerated;
@@ -296,6 +489,216 @@ namespace Survivebest.Core
             }
 
             return generated;
+        }
+
+        public SensoryLifeProfile SetSensoryProfile(CharacterCore actor, SensoryLifeProfile profile)
+        {
+            return UpsertProfile(actor, profile, sensoryProfiles, () => new SensoryLifeProfile());
+        }
+
+        public IdentityExpressionProfile SetIdentityExpressionProfile(CharacterCore actor, IdentityExpressionProfile profile)
+        {
+            return UpsertProfile(actor, profile, identityProfiles, () => new IdentityExpressionProfile());
+        }
+
+        public SocialRoleBurdenProfile SetSocialRoleBurdenProfile(CharacterCore actor, SocialRoleBurdenProfile profile)
+        {
+            SocialRoleBurdenProfile stored = UpsertProfile(actor, profile, socialRoleBurdenProfiles, () => new SocialRoleBurdenProfile());
+            if (stored != null && stored.SecretDoubleLifeBurden > 0.6f)
+            {
+                AppendThought(actor, "role_burden", "Keeping your public role and private truth aligned is exhausting.", stored.SecretDoubleLifeBurden, null);
+            }
+
+            return stored;
+        }
+
+        public LifeAdministrationProfile SetLifeAdministrationProfile(CharacterCore actor, LifeAdministrationProfile profile)
+        {
+            LifeAdministrationProfile stored = UpsertProfile(actor, profile, lifeAdministrationProfiles, () => new LifeAdministrationProfile());
+            if (stored != null && stored.CreditDamageRisk > 0.5f)
+            {
+                AppendThought(actor, "life_admin", "Missed paperwork and bills are starting to shape your future.", stored.CreditDamageRisk, null);
+            }
+
+            return stored;
+        }
+
+        public FamilyRealismProfile SetFamilyRealismProfile(CharacterCore actor, FamilyRealismProfile profile)
+        {
+            return UpsertProfile(actor, profile, familyProfiles, () => new FamilyRealismProfile());
+        }
+
+        public EducationJourneyProfile SetEducationJourneyProfile(CharacterCore actor, EducationJourneyProfile profile)
+        {
+            return UpsertProfile(actor, profile, educationProfiles, () => new EducationJourneyProfile());
+        }
+
+        public DigitalLifeProfile SetDigitalLifeProfile(CharacterCore actor, DigitalLifeProfile profile)
+        {
+            DigitalLifeProfile stored = UpsertProfile(actor, profile, digitalProfiles, () => new DigitalLifeProfile());
+            if (stored != null && stored.VampireFootprintRisk > 0.45f)
+            {
+                AppendThought(actor, "digital_life", "Your online trail feels one post away from exposing too much.", stored.VampireFootprintRisk, null);
+            }
+
+            return stored;
+        }
+
+        public BeliefPhilosophyProfile SetBeliefPhilosophyProfile(CharacterCore actor, BeliefPhilosophyProfile profile)
+        {
+            return UpsertProfile(actor, profile, beliefProfiles, () => new BeliefPhilosophyProfile());
+        }
+
+        public T GetProfile<T>(string characterId) where T : class
+        {
+            if (typeof(T) == typeof(SensoryLifeProfile))
+            {
+                return FindProfile(characterId, sensoryProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(IdentityExpressionProfile))
+            {
+                return FindProfile(characterId, identityProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(SocialRoleBurdenProfile))
+            {
+                return FindProfile(characterId, socialRoleBurdenProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(LifeAdministrationProfile))
+            {
+                return FindProfile(characterId, lifeAdministrationProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(FamilyRealismProfile))
+            {
+                return FindProfile(characterId, familyProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(EducationJourneyProfile))
+            {
+                return FindProfile(characterId, educationProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(DigitalLifeProfile))
+            {
+                return FindProfile(characterId, digitalProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(BeliefPhilosophyProfile))
+            {
+                return FindProfile(characterId, beliefProfiles) as T;
+            }
+
+            return null;
+        }
+
+        public MemoryMeaningRecord RecordMemoryMeaning(CharacterCore actor, MemoryMeaningType meaningType, string summary, float emotionalWeight, string triggerId = null, string linkedPlaceId = null, string trueMemorySummary = null)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(summary))
+            {
+                return null;
+            }
+
+            MemoryMeaningRecord memory = new MemoryMeaningRecord
+            {
+                MemoryId = Guid.NewGuid().ToString("N"),
+                CharacterId = actor.CharacterId,
+                MeaningType = meaningType,
+                Summary = summary,
+                TriggerId = triggerId,
+                LinkedPlaceId = linkedPlaceId,
+                EmotionalWeight = Mathf.Clamp01(emotionalWeight),
+                RecallStrength = Mathf.Clamp01(0.35f + emotionalWeight * 0.65f),
+                Distortion = meaningType == MemoryMeaningType.Distorted || meaningType == MemoryMeaningType.Rewritten ? 0.45f : 0f,
+                AnniversaryActive = meaningType == MemoryMeaningType.AnniversaryReaction,
+                TrueMemorySummary = string.IsNullOrWhiteSpace(trueMemorySummary) ? summary : trueMemorySummary
+            };
+
+            memoryMeaningRecords.Add(memory);
+            while (memoryMeaningRecords.Count > maxMemoryMeaningRecords)
+            {
+                memoryMeaningRecords.RemoveAt(0);
+            }
+
+            AppendThought(actor, "memory_meaning", $"A {meaningType.ToString().ToLowerInvariant()} memory resurfaces: {summary}", memory.EmotionalWeight, linkedPlaceId);
+            RecordLifeTimelineEvent(actor, "Memory meaning", summary, "memory_meaning");
+            return memory;
+        }
+
+        public DomesticIntimacyMoment RecordDomesticIntimacyMoment(CharacterCore actor, string otherCharacterId, string activity, float comfortDelta, float intimacyWeight)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(activity))
+            {
+                return null;
+            }
+
+            DomesticIntimacyMoment moment = new DomesticIntimacyMoment
+            {
+                MomentId = Guid.NewGuid().ToString("N"),
+                CharacterId = actor.CharacterId,
+                OtherCharacterId = otherCharacterId,
+                Activity = activity,
+                ComfortDelta = Mathf.Clamp(comfortDelta, -1f, 1f),
+                IntimacyWeight = Mathf.Clamp01(intimacyWeight),
+                Day = worldClock != null ? worldClock.Day : 0,
+                Hour = worldClock != null ? worldClock.Hour : 0
+            };
+
+            domesticIntimacyMoments.Add(moment);
+            while (domesticIntimacyMoments.Count > maxDomesticMoments)
+            {
+                domesticIntimacyMoments.RemoveAt(0);
+            }
+
+            string tone = moment.ComfortDelta >= 0f ? "lands as care" : "turns into friction";
+            AppendThought(actor, "domestic_intimacy", $"{activity} {tone}.", moment.IntimacyWeight, null);
+            RecordLifeTimelineEvent(actor, "Domestic moment", activity, "domestic_intimacy");
+            return moment;
+        }
+
+        public string BuildHumanTextureSummary(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No human texture available.";
+            }
+
+            SensoryLifeProfile sensory = FindProfile(characterId, sensoryProfiles);
+            IdentityExpressionProfile identity = FindProfile(characterId, identityProfiles);
+            SocialRoleBurdenProfile burden = FindProfile(characterId, socialRoleBurdenProfiles);
+            DigitalLifeProfile digital = FindProfile(characterId, digitalProfiles);
+            BeliefPhilosophyProfile belief = FindProfile(characterId, beliefProfiles);
+
+            List<string> parts = new();
+            if (sensory != null)
+            {
+                string smell = sensory.FavoriteSmells.Count > 0 ? sensory.FavoriteSmells[0] : "familiar rooms";
+                parts.Add($"Sensory anchor: {smell}");
+            }
+
+            if (identity != null)
+            {
+                parts.Add($"Identity tension: public {identity.PublicSelf} vs private {identity.PrivateSelf}");
+            }
+
+            if (burden != null && burden.SecretDoubleLifeBurden > 0.2f)
+            {
+                parts.Add($"Role burden: double-life strain {burden.SecretDoubleLifeBurden:0.00}");
+            }
+
+            if (digital != null && digital.DoomscrollingHabit > 0.2f)
+            {
+                parts.Add($"Digital drag: doomscrolling {digital.DoomscrollingHabit:0.00}");
+            }
+
+            if (belief != null && belief.MeaningCrisis > 0.2f)
+            {
+                parts.Add($"Belief weather: meaning crisis {belief.MeaningCrisis:0.00}");
+            }
+
+            return parts.Count > 0 ? string.Join(" | ", parts) : "Life texture is still being discovered.";
         }
 
 
@@ -515,6 +918,51 @@ namespace Survivebest.Core
             };
             placeAttachments.Add(created);
             return created;
+        }
+
+        private static T UpsertProfile<T>(CharacterCore actor, T profile, List<T> profiles, Func<T> factory) where T : class
+        {
+            if (actor == null || profile == null || profiles == null)
+            {
+                return null;
+            }
+
+            string characterId = actor.CharacterId;
+            T existing = FindProfile(characterId, profiles);
+            if (existing == null)
+            {
+                existing = factory();
+                profiles.Add(existing);
+            }
+
+            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(profile), existing);
+            typeof(T).GetField("CharacterId")?.SetValue(existing, characterId);
+            return existing;
+        }
+
+        private static T FindProfile<T>(string characterId, List<T> profiles) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || profiles == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < profiles.Count; i++)
+            {
+                T entry = profiles[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                object value = typeof(T).GetField("CharacterId")?.GetValue(entry);
+                if (value is string id && id == characterId)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
         }
 
         private void AppendThought(CharacterCore actor, string source, string body, float intensity, string placeId)
