@@ -17,8 +17,14 @@ namespace Survivebest.Minigames
         Fishing,
         Repairs,
         FirstAid,
+        Triage,
+        Bandaging,
+        Casting,
+        Pharmacy,
         Cleaning,
         Surgery,
+        VeterinaryCare,
+        Dermatology,
         RestaurantService,
         EmergencyResponse,
         MovieNight,
@@ -35,6 +41,36 @@ namespace Survivebest.Minigames
         public string Prompt;
         public string RecommendedSkill;
         [Range(0.5f, 3f)] public float DurationMultiplier = 1f;
+    }
+
+    public enum MinigameInputStyle
+    {
+        Tap,
+        Hold,
+        Drag,
+        Trace,
+        Sequence,
+        TimingWindow
+    }
+
+    [Serializable]
+    public class MinigameStepBlueprint
+    {
+        public string StepId;
+        public string Instruction;
+        public string ToolId;
+        public MinigameInputStyle InputStyle;
+        [Range(0f, 1f)] public float PrecisionRequirement = 0.5f;
+    }
+
+    [Serializable]
+    public class MinigameSessionBlueprint
+    {
+        public MinigameType Type;
+        public string SessionTitle;
+        public string AnatomyFocus;
+        public bool EmergencyPacing;
+        public List<MinigameStepBlueprint> Steps = new();
     }
 
     public class MinigameManager : MonoBehaviour
@@ -55,8 +91,14 @@ namespace Survivebest.Minigames
             new MinigameSceneProfile { Type = MinigameType.Fishing, SceneBackdropId = "riverbank", Prompt = "Pick the right bait, cast with rhythm, and react to fish tension.", RecommendedSkill = "Fishing", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.Repairs, SceneBackdropId = "garage_bench", Prompt = "Diagnose the fault, pick safe tools, and verify the fix under load.", RecommendedSkill = "Engineering", DurationMultiplier = 1.1f },
             new MinigameSceneProfile { Type = MinigameType.FirstAid, SceneBackdropId = "triage_room", Prompt = "Stabilize airway, control bleeding, and monitor vitals.", RecommendedSkill = "First aid", DurationMultiplier = 1.1f },
+            new MinigameSceneProfile { Type = MinigameType.Triage, SceneBackdropId = "triage_desk", Prompt = "Sort patients by urgency, check vitals, and route them to the right care lane.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f },
+            new MinigameSceneProfile { Type = MinigameType.Bandaging, SceneBackdropId = "treatment_cart", Prompt = "Clean the wound, layer gauze, wrap with even pressure, and reassess bleeding.", RecommendedSkill = "First aid", DurationMultiplier = 0.95f },
+            new MinigameSceneProfile { Type = MinigameType.Casting, SceneBackdropId = "ortho_bay", Prompt = "Align the limb, pad pressure points, wrap the cast evenly, and confirm circulation.", RecommendedSkill = "First aid", DurationMultiplier = 1.25f },
+            new MinigameSceneProfile { Type = MinigameType.Pharmacy, SceneBackdropId = "pharmacy_counter", Prompt = "Match the prescription, calculate doses, label clearly, and prevent interactions.", RecommendedSkill = "First aid", DurationMultiplier = 0.9f },
             new MinigameSceneProfile { Type = MinigameType.Cleaning, SceneBackdropId = "home_maintenance", Prompt = "Sanitize high-touch areas and manage supplies without wasting water.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f },
             new MinigameSceneProfile { Type = MinigameType.Surgery, SceneBackdropId = "operating_theater", Prompt = "Prep sterile field, follow operation checklist, and close safely.", RecommendedSkill = "First aid", DurationMultiplier = 1.5f },
+            new MinigameSceneProfile { Type = MinigameType.VeterinaryCare, SceneBackdropId = "vet_operatory", Prompt = "Restrain gently, read species cues, treat safely, and coach the owner on aftercare.", RecommendedSkill = "First aid", DurationMultiplier = 1.2f },
+            new MinigameSceneProfile { Type = MinigameType.Dermatology, SceneBackdropId = "clinic_exam_room", Prompt = "Inspect skin layers, identify flare triggers, and choose the right topical or procedural care.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f },
             new MinigameSceneProfile { Type = MinigameType.RestaurantService, SceneBackdropId = "restaurant_line", Prompt = "Coordinate orders, avoid cross-contamination, and maintain ticket speed.", RecommendedSkill = "Cooking", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.EmergencyResponse, SceneBackdropId = "emergency_scene", Prompt = "Secure the scene, triage quickly, and coordinate responders.", RecommendedSkill = "Survival skills", DurationMultiplier = 1.35f },
             new MinigameSceneProfile { Type = MinigameType.MovieNight, SceneBackdropId = "living_room", Prompt = "Pick a film mood, settle in, and recover stress while staying present.", RecommendedSkill = "Storytelling", DurationMultiplier = 0.8f },
@@ -113,6 +155,7 @@ namespace Survivebest.Minigames
             {
                 ProfessionType.Doctor => MinigameType.Surgery,
                 ProfessionType.Nurse => MinigameType.FirstAid,
+                ProfessionType.Veterinarian => MinigameType.VeterinaryCare,
                 ProfessionType.Chef => MinigameType.RestaurantService,
                 ProfessionType.Mechanic => MinigameType.Repairs,
                 ProfessionType.Police => MinigameType.EmergencyResponse,
@@ -145,6 +188,24 @@ namespace Survivebest.Minigames
             }
 
             return null;
+        }
+
+        public MinigameSessionBlueprint BuildSessionBlueprint(MinigameType type, string anatomyFocus = null, bool emergencyPacing = false)
+        {
+            MinigameSessionBlueprint blueprint = new()
+            {
+                Type = type,
+                SessionTitle = type.ToString(),
+                AnatomyFocus = string.IsNullOrWhiteSpace(anatomyFocus) ? "general station" : anatomyFocus,
+                EmergencyPacing = emergencyPacing
+            };
+
+            foreach (MinigameStepBlueprint step in BuildStepBlueprints(type, blueprint.AnatomyFocus, emergencyPacing))
+            {
+                blueprint.Steps.Add(step);
+            }
+
+            return blueprint;
         }
 
         private IEnumerator RunMinigame(MinigameType type, CharacterCore performer, Action<bool> onComplete)
@@ -235,8 +296,14 @@ namespace Survivebest.Minigames
                 MinigameType.Fishing => "Fishing",
                 MinigameType.Repairs => "Engineering",
                 MinigameType.FirstAid => "First aid",
+                MinigameType.Triage => "First aid",
+                MinigameType.Bandaging => "First aid",
+                MinigameType.Casting => "First aid",
+                MinigameType.Pharmacy => "First aid",
                 MinigameType.Cleaning => "Survival skills",
                 MinigameType.Surgery => "First aid",
+                MinigameType.VeterinaryCare => "First aid",
+                MinigameType.Dermatology => "First aid",
                 MinigameType.RestaurantService => "Cooking",
                 MinigameType.EmergencyResponse => "Survival skills",
                 MinigameType.MovieNight => "Storytelling",
@@ -276,8 +343,14 @@ namespace Survivebest.Minigames
                 MinigameType.Fishing => 0.13f,
                 MinigameType.Repairs => 0.14f,
                 MinigameType.FirstAid => 0.12f,
+                MinigameType.Triage => 0.13f,
+                MinigameType.Bandaging => 0.08f,
+                MinigameType.Casting => 0.16f,
+                MinigameType.Pharmacy => 0.11f,
                 MinigameType.Cleaning => 0.04f,
                 MinigameType.Surgery => 0.2f,
+                MinigameType.VeterinaryCare => 0.17f,
+                MinigameType.Dermatology => 0.09f,
                 MinigameType.RestaurantService => 0.16f,
                 MinigameType.EmergencyResponse => 0.18f,
                 MinigameType.MovieNight => 0.02f,
@@ -300,7 +373,7 @@ namespace Survivebest.Minigames
 
             if (needs != null)
             {
-                float energyCost = type is MinigameType.Surgery or MinigameType.EmergencyResponse
+                float energyCost = type is MinigameType.Surgery or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare or MinigameType.Casting
                     ? (success ? -5f : -8f)
                     : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading
                         ? (success ? 4f : 1f)
@@ -315,11 +388,71 @@ namespace Survivebest.Minigames
             if (skillSystem != null)
             {
                 string skillName = ResolveSkillForMinigame(type);
-                float xp = type is MinigameType.Surgery or MinigameType.EmergencyResponse
+                float xp = type is MinigameType.Surgery or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare
                     ? (success ? 6f : 2f)
                     : (success ? 4f : 1.5f);
                 skillSystem.AddExperience(skillName, xp);
             }
+        }
+
+        private static IEnumerable<MinigameStepBlueprint> BuildStepBlueprints(MinigameType type, string anatomyFocus, bool emergencyPacing)
+        {
+            switch (type)
+            {
+                case MinigameType.Triage:
+                    yield return Step("read_chart", $"Read symptoms and tag urgency for {anatomyFocus}.", "chart", MinigameInputStyle.Sequence, 0.35f);
+                    yield return Step("check_vitals", "Place monitors and read pulse / temp / oxygen cleanly.", "monitor", MinigameInputStyle.TimingWindow, 0.5f);
+                    yield return Step("route_case", "Drag the case into the correct treatment lane.", "triage_board", MinigameInputStyle.Drag, 0.45f);
+                    break;
+                case MinigameType.Bandaging:
+                    yield return Step("irrigate", $"Irrigate debris from {anatomyFocus}.", "saline", MinigameInputStyle.Hold, 0.45f);
+                    yield return Step("apply_gauze", "Place gauze pads over the deepest bleeding points.", "gauze", MinigameInputStyle.Drag, 0.55f);
+                    yield return Step("wrap_evenly", "Wrap the bandage with even pressure without cutting circulation.", "bandage_roll", MinigameInputStyle.Trace, 0.65f);
+                    break;
+                case MinigameType.Casting:
+                    yield return Step("align", $"Align the injured structure at {anatomyFocus}.", "splint", MinigameInputStyle.Drag, 0.7f);
+                    yield return Step("pad", "Pad bony landmarks before hard wrap goes on.", "padding", MinigameInputStyle.Tap, 0.4f);
+                    yield return Step("cast_wrap", "Trace a smooth cast layer with no gaps or pressure spikes.", "cast_roll", MinigameInputStyle.Trace, 0.75f);
+                    yield return Step("circulation_check", "Tap-check warmth, color, and cap refill after the cast sets.", "pulse_check", MinigameInputStyle.Sequence, 0.55f);
+                    break;
+                case MinigameType.Pharmacy:
+                    yield return Step("verify_med", $"Match medication, anatomy notes, and warnings for {anatomyFocus}.", "rx_card", MinigameInputStyle.Sequence, 0.45f);
+                    yield return Step("dose", "Hold and release at the right fill line for the ordered dose.", "pill_tray", MinigameInputStyle.Hold, 0.55f);
+                    yield return Step("label", "Drag warning labels to the correct bottle / package.", "label_printer", MinigameInputStyle.Drag, 0.5f);
+                    break;
+                case MinigameType.Surgery:
+                    yield return Step("sterile_prep", $"Prep and drape the operative field around {anatomyFocus}.", "sterile_drape", MinigameInputStyle.Sequence, 0.6f);
+                    yield return Step("incision", "Trace a controlled incision along the marked safe line.", "scalpel", MinigameInputStyle.Trace, 0.82f);
+                    yield return Step("repair", "Sequence clamp, suction, reduction, or extraction tools in the right order.", "instrument_set", MinigameInputStyle.Sequence, 0.78f);
+                    yield return Step("closure", "Place closure passes with even spacing and tension.", "suture_kit", MinigameInputStyle.TimingWindow, 0.8f);
+                    break;
+                case MinigameType.Dermatology:
+                    yield return Step("inspect_skin", $"Inspect skin layers and lesion edges at {anatomyFocus}.", "dermatoscope", MinigameInputStyle.Drag, 0.4f);
+                    yield return Step("treat_surface", "Tap the correct lesions for wash, cryo, drainage, or topical care.", "topical_kit", MinigameInputStyle.Tap, 0.55f);
+                    yield return Step("aftercare", "Sequence cleanse, drying, and take-home care instructions.", "aftercare_card", MinigameInputStyle.Sequence, 0.45f);
+                    break;
+                case MinigameType.VeterinaryCare:
+                    yield return Step("animal_intake", $"Read posture and stress cues before touching {anatomyFocus}.", "lead_or_towel", MinigameInputStyle.Sequence, 0.45f);
+                    yield return Step("gentle_restrain", "Hold pressure in the calm zone without spiking stress.", "restraint_wrap", MinigameInputStyle.Hold, 0.58f);
+                    yield return Step("species_treatment", "Drag the right species-safe treatment tools in order.", "vet_tray", MinigameInputStyle.Drag, 0.62f);
+                    break;
+                default:
+                    yield return Step("generic_start", $"Perform the main interaction for {anatomyFocus}.", "tool", emergencyPacing ? MinigameInputStyle.TimingWindow : MinigameInputStyle.Tap, 0.4f);
+                    yield return Step("generic_finish", "Finish cleanly and verify the result.", "tool", MinigameInputStyle.Sequence, 0.45f);
+                    break;
+            }
+        }
+
+        private static MinigameStepBlueprint Step(string stepId, string instruction, string toolId, MinigameInputStyle inputStyle, float precision)
+        {
+            return new MinigameStepBlueprint
+            {
+                StepId = stepId,
+                Instruction = instruction,
+                ToolId = toolId,
+                InputStyle = inputStyle,
+                PrecisionRequirement = precision
+            };
         }
 
         private void SetOverlayActive(bool value)

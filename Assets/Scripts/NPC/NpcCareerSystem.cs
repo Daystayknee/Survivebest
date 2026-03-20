@@ -24,7 +24,8 @@ namespace Survivebest.NPC
         TruckDriver,
         OfficeAdministrator,
         Electrician,
-        ConstructionWorker
+        ConstructionWorker,
+        Veterinarian
     }
 
     [Serializable]
@@ -336,6 +337,7 @@ namespace Survivebest.NPC
         {
             AddRoleIfMissing(ProfessionType.Doctor, "General Hospital", 8, 16, 62, true, "medical_scrubs", "medical_kit", "hospital");
             AddRoleIfMissing(ProfessionType.Nurse, "General Hospital", 7, 19, 38, true, "nurse_scrubs", "medical_kit", "hospital");
+            AddRoleIfMissing(ProfessionType.Veterinarian, "Animal Care Clinic", 8, 18, 44, true, "vet_scrubs", "animal_medical_kit", "animal_care");
             AddRoleIfMissing(ProfessionType.Teacher, "Elementary School", 7, 15, 29, true, "teacher_badge", "lesson_tablet", "school");
             AddRoleIfMissing(ProfessionType.Police, "Police Precinct", 6, 18, 36, true, "police_uniform", "duty_belt", "public_safety");
             AddRoleIfMissing(ProfessionType.Firefighter, "Fire Station", 6, 18, 34, true, "fire_uniform", "rescue_kit", "public_safety");

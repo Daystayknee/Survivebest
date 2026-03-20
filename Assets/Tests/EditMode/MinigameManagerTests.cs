@@ -16,6 +16,7 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(MinigameType.Surgery, manager.ResolveProfessionMinigame(ProfessionType.Doctor));
             Assert.AreEqual(MinigameType.RestaurantService, manager.ResolveProfessionMinigame(ProfessionType.Chef));
             Assert.AreEqual(MinigameType.FirstAid, manager.ResolveProfessionMinigame(ProfessionType.Nurse));
+            Assert.AreEqual(MinigameType.VeterinaryCare, manager.ResolveProfessionMinigame(ProfessionType.Veterinarian));
             Assert.AreEqual(MinigameType.EmergencyResponse, manager.ResolveProfessionMinigame(ProfessionType.Firefighter));
 
             Object.DestroyImmediate(go);
@@ -46,10 +47,33 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(types.Contains(MinigameType.Fishing));
             Assert.IsTrue(types.Contains(MinigameType.Baking));
             Assert.IsTrue(types.Contains(MinigameType.DrinkMixing));
+            Assert.IsTrue(types.Contains(MinigameType.Triage));
+            Assert.IsTrue(types.Contains(MinigameType.Bandaging));
+            Assert.IsTrue(types.Contains(MinigameType.Casting));
+            Assert.IsTrue(types.Contains(MinigameType.Pharmacy));
+            Assert.IsTrue(types.Contains(MinigameType.VeterinaryCare));
+            Assert.IsTrue(types.Contains(MinigameType.Dermatology));
             Assert.IsTrue(types.Contains(MinigameType.MovieNight));
             Assert.IsTrue(types.Contains(MinigameType.TVMarathon));
             Assert.IsTrue(types.Contains(MinigameType.BookReading));
             Assert.IsTrue(types.Contains(MinigameType.SingingSession));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildSessionBlueprint_ForSurgeryProducesStepByStepProcedure()
+        {
+            GameObject go = new GameObject("MinigameBlueprint");
+            MinigameManager manager = go.AddComponent<MinigameManager>();
+
+            MinigameSessionBlueprint blueprint = manager.BuildSessionBlueprint(MinigameType.Surgery, "Forearm fracture", true);
+
+            Assert.IsNotNull(blueprint);
+            Assert.AreEqual(MinigameType.Surgery, blueprint.Type);
+            Assert.GreaterOrEqual(blueprint.Steps.Count, 4);
+            Assert.AreEqual("sterile_prep", blueprint.Steps[0].StepId);
+            Assert.IsTrue(blueprint.Steps.Exists(x => x.ToolId == "suture_kit"));
 
             Object.DestroyImmediate(go);
         }
