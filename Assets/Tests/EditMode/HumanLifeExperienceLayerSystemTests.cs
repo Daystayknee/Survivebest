@@ -357,5 +357,110 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void CollectionIdentityProfile_InfluencesHumanTextureSummaryAndPulse()
+        {
+            GameObject go = new GameObject("CollectionTexture");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharCollection");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_collection", "Collection", LifeStage.Adult);
+
+            system.SetCollectionIdentityProfile(character, new CollectionIdentityProfile
+            {
+                CollectionFocuses = new System.Collections.Generic.List<string> { "vinyl collecting", "retro game collecting" },
+                FavoriteKeepsake = "concert ticket stub",
+                EverydayCarryItem = "phone charger",
+                WishlistItems = new System.Collections.Generic.List<string> { "limited pressing", "signed poster" },
+                CollectorDrive = 0.82f,
+                NostalgiaPull = 0.74f,
+                ThriftLuck = 0.63f
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string pulse = system.SimulateHumanTexturePulse(character, 14, 99);
+
+            StringAssert.Contains("Collection life", summary);
+            StringAssert.Contains("concert ticket stub", summary);
+            Assert.IsTrue(pulse.Contains("vinyl collecting") || pulse.Contains("concert ticket stub"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void EverydayLifeSuggestions_ReflectMundaneAndCollectionProfiles()
+        {
+            GameObject go = new GameObject("LifeSuggestions");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharSuggestions");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_suggestions", "Suggestions", LifeStage.Adult);
+
+            system.SetMundaneEarthLifeProfile(character, new MundaneEarthLifeProfile
+            {
+                LaundryBacklog = 0.8f,
+                PhoneBatteryAnxiety = 0.9f,
+                SmallPleasures = new System.Collections.Generic.List<string> { "iced coffee" }
+            });
+            system.SetCollectionIdentityProfile(character, new CollectionIdentityProfile
+            {
+                CollectionFocuses = new System.Collections.Generic.List<string> { "vinyl collecting" },
+                EverydayCarryItem = "phone charger",
+                WishlistItems = new System.Collections.Generic.List<string> { "limited pressing" },
+                CollectorDrive = 0.8f
+            });
+
+            System.Collections.Generic.List<string> suggestions = system.BuildEverydayLifeSuggestions(character.CharacterId, 4);
+            string combined = string.Join(" | ", suggestions);
+
+            Assert.IsTrue(combined.Contains("laundry") || combined.Contains("charger") || combined.Contains("vinyl"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void WorkLifeProfile_InfluencesSummaryPulseAndSuggestions()
+        {
+            GameObject go = new GameObject("WorkLifeTexture");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharWorkLife");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_worklife", "WorkLife", LifeStage.Adult);
+
+            system.SetAmericanWorkLifeProfile(character, new AmericanWorkLifeProfile
+            {
+                JobTitle = "Train Conductor",
+                CareerDomain = "transportation",
+                WorkplaceName = "Union Rail Yard",
+                CommuteMode = "train",
+                ShiftWindow = "5-15",
+                WorkStatus = "seniority battle",
+                CoworkerRumors = new System.Collections.Generic.List<string> { "dispatch says a schedule reshuffle is coming" },
+                Certifications = new System.Collections.Generic.List<string> { "rail safety", "hazmat" },
+                JobPrestige = 0.62f,
+                WorkplaceDrama = 0.78f,
+                RumorHeat = 0.74f,
+                Burnout = 0.58f,
+                PromotionPressure = 0.71f
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string pulse = system.SimulateHumanTexturePulse(character, 7, 12);
+            System.Collections.Generic.List<string> suggestions = system.BuildEverydayLifeSuggestions(character.CharacterId, 5);
+            string combined = string.Join(" | ", suggestions);
+
+            StringAssert.Contains("Work life", summary);
+            Assert.IsTrue(pulse.Contains("Train Conductor") || pulse.Contains("Union Rail Yard") || pulse.Contains("train"));
+            Assert.IsTrue(combined.Contains("shift") || combined.Contains("rumor") || combined.Contains("commute"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }

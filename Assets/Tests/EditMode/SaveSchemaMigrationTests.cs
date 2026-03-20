@@ -13,6 +13,7 @@ using Survivebest.Health;
 using Survivebest.Quest;
 using Survivebest.Story;
 using Survivebest.World;
+using Survivebest.Appearance;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -20,7 +21,7 @@ namespace Survivebest.Tests.EditMode
     {
 
         [Test]
-        public void Version2Payload_IsMigratedToVersion3()
+        public void Version2Payload_IsMigratedToCurrentVersion()
         {
             GameObject go = new GameObject("SaveGameManagerTestV2");
             SaveGameManager manager = go.AddComponent<SaveGameManager>();
@@ -36,7 +37,7 @@ namespace Survivebest.Tests.EditMode
 
             SaveSlotPayload migrated = (SaveSlotPayload)migrate.Invoke(manager, new object[] { payload });
             Assert.IsNotNull(migrated);
-            Assert.AreEqual(5, migrated.SchemaVersion);
+            Assert.AreEqual(6, migrated.SchemaVersion);
             Assert.IsNotNull(migrated.Systems);
 
             Object.DestroyImmediate(go);
@@ -59,7 +60,7 @@ namespace Survivebest.Tests.EditMode
 
             SaveSlotPayload migrated = (SaveSlotPayload)migrate.Invoke(manager, new object[] { payload });
             Assert.IsNotNull(migrated);
-            Assert.AreEqual(5, migrated.SchemaVersion);
+            Assert.AreEqual(6, migrated.SchemaVersion);
             Assert.IsNotNull(migrated.Systems);
 
             Object.DestroyImmediate(go);
@@ -83,6 +84,7 @@ namespace Survivebest.Tests.EditMode
             AutonomousStoryGenerator story = root.AddComponent<AutonomousStoryGenerator>();
             WorldCultureSocietyEngine culture = root.AddComponent<WorldCultureSocietyEngine>();
             PlayerExperienceCascadeSystem cascade = root.AddComponent<PlayerExperienceCascadeSystem>();
+            HumanLifeExperienceLayerSystem humanLife = root.AddComponent<HumanLifeExperienceLayerSystem>();
 
             GameObject npcGo = new GameObject("NpcSchedule");
             NpcScheduleSystem npcSchedule = npcGo.AddComponent<NpcScheduleSystem>();
@@ -93,6 +95,7 @@ namespace Survivebest.Tests.EditMode
             HealthSystem health = characterGo.AddComponent<HealthSystem>();
             ActivitySystem activity = characterGo.AddComponent<ActivitySystem>();
             RehabilitationSystem rehab = characterGo.AddComponent<RehabilitationSystem>();
+            AppearanceManager appearance = characterGo.AddComponent<AppearanceManager>();
 
             character.Initialize("char_1", "Avery", LifeStage.Adult);
             household.AddMember(character);
@@ -112,11 +115,12 @@ namespace Survivebest.Tests.EditMode
             SetPrivateField(manager, "autonomousStoryGenerator", story);
             SetPrivateField(manager, "worldCultureSocietyEngine", culture);
             SetPrivateField(manager, "playerExperienceCascadeSystem", cascade);
+            SetPrivateField(manager, "humanLifeExperienceLayerSystem", humanLife);
 
             household.ApplyRuntimeState(
                 HouseholdControlMode.AutoRotate,
                 new List<HouseholdAutonomyNote> { new HouseholdAutonomyNote { CharacterId = "char_1", Intention = "Cook dinner", Day = 2, Hour = 18 } },
-                new List<HouseholdPetProfile> { new HouseholdPetProfile { PetId = "pet_1", Name = "Nova", Species = "Dog", BondLevel = 61f } });
+                new List<HouseholdPetProfile> { new HouseholdPetProfile { PetId = "pet_1", Name = "Nova", Species = "Dog", Breed = "Shepherd", BondLevel = 61f } });
             activity.ApplyRuntimeState(new ActivitySystem.ActivityRuntimeState { SameActivityStreak = 3, LastActivityType = ActivityType.Read });
             rehab.ApplyRuntimeState(new RehabilitationSystem.RehabilitationRuntimeState { ActiveProgram = RehabilitationProgramType.Therapy, RemainingProgramDays = 6, ActiveCenterName = "Sunrise Recovery Clinic" });
             justice.ApplyRuntimeState(new List<JusticeSystem.ActiveSentenceRecord>
@@ -184,10 +188,31 @@ namespace Survivebest.Tests.EditMode
                 new List<RegretEntry> { new RegretEntry { CharacterId = "char_1", OpportunityId = "regret_1", Summary = "Missed the audition", Weight = 26f } },
                 new List<MeaningProfile> { new MeaningProfile { CharacterId = "char_1", Purpose = 61f } },
                 new List<LifeStorySnapshot> { new LifeStorySnapshot { CharacterId = "char_1", Headline = "A life in progress." } });
+            appearance.SetEyeColor(EyeColorType.Green);
+            appearance.SetSkinTone(SkinToneType.Deep);
+            appearance.SetUseDyedHairColor(true);
+            appearance.SetHairColor(new Color(0.3f, 0.1f, 0.75f, 1f));
+            humanLife.SetCollectionIdentityProfile(character, new CollectionIdentityProfile
+            {
+                CollectionFocuses = new List<string> { "vinyl collecting" },
+                FavoriteKeepsake = "concert ticket stub",
+                EverydayCarryItem = "phone charger",
+                WishlistItems = new List<string> { "signed poster" },
+                CollectorDrive = 0.9f,
+                NostalgiaPull = 0.7f,
+                ThriftLuck = 0.5f
+            });
+            humanLife.SetMundaneEarthLifeProfile(character, new MundaneEarthLifeProfile
+            {
+                LaundryBacklog = 0.72f,
+                PhoneBatteryAnxiety = 0.84f,
+                SmallPleasures = new List<string> { "iced coffee" }
+            });
+            humanLife.LogReflection(character, LifeReflectionType.Nostalgia, 0.6f);
 
             SaveSlotPayload payload = InvokePrivate<SaveSlotPayload>(manager, "BuildPayload", "ParityWorld");
 
-            Assert.AreEqual(5, payload.SchemaVersion);
+            Assert.AreEqual(6, payload.SchemaVersion);
             Assert.NotNull(payload.Systems);
             Assert.AreEqual(1, payload.Systems.ActiveSentences.Count);
             Assert.AreEqual(1, payload.Systems.Contracts.Count);
@@ -195,6 +220,8 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(1, payload.Systems.LifeStories.Count);
             Assert.AreEqual(ActivityType.Read, payload.HouseholdCharacters[0].ActivityState.LastActivityType);
             Assert.AreEqual("Sunrise Recovery Clinic", payload.HouseholdCharacters[0].RehabilitationState.ActiveCenterName);
+            Assert.AreEqual(EyeColorType.Green, payload.HouseholdCharacters[0].Appearance.EyeColor);
+            Assert.AreEqual("concert ticket stub", payload.Systems.HumanLife.CollectionIdentityProfiles[0].FavoriteKeepsake);
 
             household.ApplyRuntimeState(HouseholdControlMode.Manual, new List<HouseholdAutonomyNote>(), new List<HouseholdPetProfile>());
             activity.ApplyRuntimeState(new ActivitySystem.ActivityRuntimeState());
@@ -211,11 +238,15 @@ namespace Survivebest.Tests.EditMode
             story.ApplyRuntimeState(new AutonomousStoryGenerator.StoryRuntimeState());
             culture.ApplyRuntimeState(new List<CultureProfile>(), new List<CulturalIdentityState>(), new List<NeighborhoodMicroCultureProfile>());
             cascade.ApplyRuntimeState(new List<LifeDirectionState>(), new List<RegretEntry>(), new List<MeaningProfile>(), new List<LifeStorySnapshot>());
+            appearance.SetEyeColor(EyeColorType.Brown);
+            appearance.SetSkinTone(SkinToneType.Fair);
+            humanLife.ApplyRuntimeState(new HumanLifeRuntimeState());
 
             InvokePrivate<object>(manager, "ApplyPayload", payload);
 
             Assert.AreEqual(HouseholdControlMode.AutoRotate, household.ControlMode);
             Assert.AreEqual(1, household.AutonomyNotes.Count);
+            Assert.AreEqual("Shepherd", household.Pets[0].Breed);
             Assert.AreEqual(ActivityType.Read, activity.CaptureRuntimeState().LastActivityType);
             Assert.AreEqual(6, rehab.CaptureRuntimeState().RemainingProgramDays);
             Assert.AreEqual(1, justice.ActiveSentences.Count);
@@ -228,6 +259,11 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(1, culling.LotStates.Count);
             Assert.AreEqual(1, culture.Cultures.Count);
             Assert.AreEqual(1, cascade.StorySnapshots.Count);
+            Assert.AreEqual(EyeColorType.Green, appearance.CurrentProfile.EyeColor);
+            Assert.AreEqual(SkinToneType.Deep, appearance.CurrentProfile.SkinTone);
+            Assert.AreEqual(1, humanLife.CollectionIdentityProfiles.Count);
+            Assert.AreEqual(1, humanLife.MundaneEarthLifeProfiles.Count);
+            Assert.Greater(humanLife.RecentThoughts.Count, 0);
 
             Object.DestroyImmediate(root);
             Object.DestroyImmediate(npcGo);
