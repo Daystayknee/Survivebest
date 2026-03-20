@@ -55,6 +55,7 @@ namespace Survivebest.World
 
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private HousingPropertySystem housingPropertySystem;
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<WorldAreaTemplate> areaTemplates = new();
@@ -272,6 +273,7 @@ namespace Survivebest.World
 
             BuildRoutes(lots, routes, anchorLotIds, homeLotIds, transitHubLotId, layoutRandom);
             townSimulationSystem.SetTownLayout(districts, lots, routes);
+            housingPropertySystem?.SyncPropertiesFromTownLayout(lastGeneratedSummary.MasterSeed);
             lastGeneratedSummary.DistrictCount = districts.Count;
             lastGeneratedSummary.RouteCount = routes.Count;
         }

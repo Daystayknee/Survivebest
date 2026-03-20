@@ -95,6 +95,36 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+        [Test]
+        public void BuildWorldFromTemplates_PopulatesHousingPlotsBlueprintsAndFurniture()
+        {
+            GameObject go = new GameObject("WorldHousingSync");
+            WorldCreatorManager creator = go.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem town = go.AddComponent<TownSimulationSystem>();
+            HousingPropertySystem housing = go.AddComponent<HousingPropertySystem>();
+
+            typeof(WorldCreatorManager).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(creator, town);
+            typeof(WorldCreatorManager).GetField("housingPropertySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(creator, housing);
+            typeof(HousingPropertySystem).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(housing, town);
+
+            creator.SetWorldMetadata("Housing World", 5150, "delta", "Town", "Balanced", "Balanced");
+            creator.BuildWorldFromTemplates(new List<WorldAreaTemplate>
+            {
+                new WorldAreaTemplate { AreaName = "Waterfront Manor", Theme = LocationTheme.Residential, TheftEnforcement = 0.55f, ViolenceEnforcement = 0.62f, PoliceFunding = 0.58f, PrisonReform = 0.45f, HealthcareCoverage = 0.6f },
+                new WorldAreaTemplate { AreaName = "Market Square", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.6f, ViolenceEnforcement = 0.7f, PoliceFunding = 0.55f, PrisonReform = 0.42f, HealthcareCoverage = 0.5f },
+                new WorldAreaTemplate { AreaName = "Community Park", Theme = LocationTheme.Nature, TheftEnforcement = 0.4f, ViolenceEnforcement = 0.45f, PoliceFunding = 0.45f, PrisonReform = 0.5f, HealthcareCoverage = 0.4f }
+            });
+
+            Assert.Greater(housing.Properties.Count, 0);
+            PropertyRecord firstHome = housing.Properties[0];
+            Assert.IsNotEmpty(firstHome.PlotId);
+            Assert.IsNotEmpty(firstHome.BlueprintLabel);
+            Assert.Greater(firstHome.Bedrooms, 0);
+            Assert.Greater(firstHome.FurnitureLayout.Count, 0);
+
+            Object.DestroyImmediate(go);
+        }
+
         private static string GenerateTownSignature(int seed)
         {
             GameObject go = new GameObject($"WorldSeed_{seed}");

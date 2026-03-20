@@ -13,6 +13,15 @@ namespace Survivebest.Location
         public string PropertyId;
         public string LotId;
         public string OwnerCharacterId;
+        public string PlotId;
+        public HomePlotType PlotType = HomePlotType.StandardLot;
+        public HouseBlueprintType BlueprintType = HouseBlueprintType.CompactStarter;
+        public string BlueprintLabel = "Starter Blueprint";
+        public string HomeType = "house";
+        [Min(1)] public int Bedrooms = 2;
+        [Min(1)] public int Bathrooms = 1;
+        [Min(20)] public int FloorArea = 70;
+        public string FurnitureStyle = "practical";
         [Min(0)] public int RentPerDay;
         [Min(0)] public int MortgagePerDay;
         [Min(0)] public int ElectricityBillPerDay;
@@ -54,6 +63,51 @@ namespace Survivebest.Location
         [Min(0)] public int StorageUsed;
         public bool ElectricityOn = true;
         public bool WaterOn = true;
+        public List<FurniturePlacementRecord> FurnitureLayout = new();
+    }
+
+    public enum HomePlotType
+    {
+        StandardLot,
+        CornerLot,
+        RuralHomestead,
+        WaterfrontParcel,
+        CompactUrbanLot,
+        EstateParcel
+    }
+
+    public enum HouseBlueprintType
+    {
+        CompactStarter,
+        FamilyRanch,
+        UrbanTownhouse,
+        RuralFarmhouse,
+        WaterfrontDuplex,
+        EstateManor
+    }
+
+    public enum FurnitureCategory
+    {
+        Seating,
+        Sleeping,
+        Storage,
+        Dining,
+        Bath,
+        Kitchen,
+        Decor,
+        Utility
+    }
+
+    [Serializable]
+    public class FurniturePlacementRecord
+    {
+        public string FurnitureId;
+        public string Label;
+        public FurnitureCategory Category;
+        public string RoomTag;
+        public string StyleTag;
+        [Range(0f, 100f)] public float ComfortContribution = 5f;
+        [Range(0f, 100f)] public float DecorContribution = 4f;
     }
 
     public enum WasteItemState
@@ -88,6 +142,7 @@ namespace Survivebest.Location
     {
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
+        [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<PropertyRecord> properties = new();
@@ -109,6 +164,11 @@ namespace Survivebest.Location
 
         private void OnEnable()
         {
+            if (properties.Count == 0)
+            {
+                SyncPropertiesFromTownLayout(0);
+            }
+
             if (worldClock != null)
             {
                 worldClock.OnDayPassed += HandleDayPassed;
@@ -126,6 +186,37 @@ namespace Survivebest.Location
         public PropertyRecord GetProperty(string propertyId)
         {
             return properties.Find(x => x != null && x.PropertyId == propertyId);
+        }
+
+        public void SyncPropertiesFromTownLayout(int masterSeed)
+        {
+            if (townSimulationSystem == null)
+            {
+                return;
+            }
+
+            System.Random random = BuildHousingRandom(masterSeed);
+            HashSet<string> existing = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < properties.Count; i++)
+            {
+                if (properties[i] != null && !string.IsNullOrWhiteSpace(properties[i].LotId))
+                {
+                    existing.Add(properties[i].LotId);
+                }
+            }
+
+            for (int i = 0; i < townSimulationSystem.Lots.Count; i++)
+            {
+                LotDefinition lot = townSimulationSystem.Lots[i];
+                if (lot == null || lot.Zone != ZoneType.Residential || string.IsNullOrWhiteSpace(lot.LotId) || existing.Contains(lot.LotId))
+                {
+                    continue;
+                }
+
+                PropertyRecord property = BuildPropertyFromLot(lot, i, random);
+                properties.Add(property);
+                OnPropertyChanged?.Invoke(property);
+            }
         }
 
         public void TransferOwnership(string propertyId, string newOwnerCharacterId)
@@ -375,6 +466,206 @@ namespace Survivebest.Location
             OnPropertyChanged?.Invoke(property);
             PublishPropertyEvent(property, $"Repair resolved: {request.Label}", SimulationEventSeverity.Info, request.Cost);
             return true;
+        }
+
+        private PropertyRecord BuildPropertyFromLot(LotDefinition lot, int index, System.Random random)
+        {
+            HomePlotType plotType = ResolvePlotType(lot);
+            HouseBlueprintType blueprintType = ResolveBlueprintType(plotType);
+            int bedrooms = ResolveBedroomCount(blueprintType);
+            int bathrooms = Mathf.Max(1, bedrooms - (blueprintType == HouseBlueprintType.EstateManor ? 0 : 1));
+            int floorArea = ResolveFloorArea(blueprintType);
+            string furnitureStyle = ResolveFurnitureStyle(plotType, blueprintType);
+            List<FurniturePlacementRecord> furniture = BuildFurnitureLayout(blueprintType, furnitureStyle);
+            float decorBonus = Mathf.Clamp(furniture.Count * 2.5f, 0f, 30f);
+            float comfortBonus = Mathf.Clamp(furniture.Count * 2f, 0f, 28f);
+
+            return new PropertyRecord
+            {
+                PropertyId = $"property_{lot.LotId}",
+                LotId = lot.LotId,
+                PlotId = $"plot_{lot.LotId}",
+                PlotType = plotType,
+                BlueprintType = blueprintType,
+                BlueprintLabel = ResolveBlueprintLabel(blueprintType),
+                HomeType = ResolveHomeType(blueprintType),
+                Bedrooms = bedrooms,
+                Bathrooms = bathrooms,
+                FloorArea = floorArea,
+                FurnitureStyle = furnitureStyle,
+                RentPerDay = Mathf.RoundToInt(12 + lot.Wealth * 24f + bedrooms * 2),
+                MortgagePerDay = Mathf.RoundToInt(8 + lot.Wealth * 18f + floorArea * 0.04f),
+                ElectricityBillPerDay = Mathf.RoundToInt(3 + floorArea * 0.04f),
+                WaterBillPerDay = Mathf.RoundToInt(2 + bathrooms * 1.5f),
+                InternetBillPerDay = 3 + bedrooms,
+                GasBillPerDay = Mathf.RoundToInt(2 + floorArea * 0.02f),
+                TrashBillPerDay = 2 + bedrooms,
+                RoomQualityScore = 58f + comfortBonus * 0.4f,
+                ComfortScore = 54f + comfortBonus,
+                CleanlinessScore = 72f,
+                ClutterScore = 18f,
+                RoomCleanliness = 72f,
+                RoomClutter = 18f,
+                ApplianceCondition = 88f,
+                WasherCondition = 87f,
+                DryerCondition = 86f,
+                FridgeCondition = 90f,
+                StoveCondition = 89f,
+                VehicleCondition = plotType is HomePlotType.RuralHomestead or HomePlotType.EstateParcel ? 92f : 84f,
+                LightingQuality = 58f + decorBonus * 0.4f,
+                NoiseLevel = Mathf.Clamp(32f - lot.Safety * 12f + (plotType == HomePlotType.CompactUrbanLot ? 10f : 0f), 0f, 100f),
+                DecorQuality = 46f + decorBonus,
+                NeighborhoodDesirability = Mathf.Clamp(44f + lot.Wealth * 35f + lot.Safety * 18f, 0f, 100f),
+                StorageCapacity = 80 + bedrooms * 35 + random.Next(0, 26),
+                FurnitureLayout = furniture
+            };
+        }
+
+        private static System.Random BuildHousingRandom(int masterSeed)
+        {
+            return new System.Random(masterSeed * 31 + 17);
+        }
+
+        private static HomePlotType ResolvePlotType(LotDefinition lot)
+        {
+            if (lot == null)
+            {
+                return HomePlotType.StandardLot;
+            }
+
+            if (lot.Tags != null)
+            {
+                if (lot.Tags.Contains("waterfront")) return HomePlotType.WaterfrontParcel;
+                if (lot.Tags.Contains("rural_home")) return HomePlotType.RuralHomestead;
+                if (lot.Tags.Contains("luxury_home")) return HomePlotType.EstateParcel;
+                if (lot.Tags.Contains("urban_home")) return HomePlotType.CompactUrbanLot;
+            }
+
+            if (lot.DisplayName.IndexOf("corner", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return HomePlotType.CornerLot;
+            }
+
+            return HomePlotType.StandardLot;
+        }
+
+        private static HouseBlueprintType ResolveBlueprintType(HomePlotType plotType)
+        {
+            return plotType switch
+            {
+                HomePlotType.CompactUrbanLot => HouseBlueprintType.UrbanTownhouse,
+                HomePlotType.RuralHomestead => HouseBlueprintType.RuralFarmhouse,
+                HomePlotType.WaterfrontParcel => HouseBlueprintType.WaterfrontDuplex,
+                HomePlotType.EstateParcel => HouseBlueprintType.EstateManor,
+                _ => HouseBlueprintType.FamilyRanch
+            };
+        }
+
+        private static string ResolveBlueprintLabel(HouseBlueprintType blueprintType)
+        {
+            return blueprintType switch
+            {
+                HouseBlueprintType.UrbanTownhouse => "Urban Townhouse Blueprint",
+                HouseBlueprintType.RuralFarmhouse => "Farmhouse Blueprint",
+                HouseBlueprintType.WaterfrontDuplex => "Waterfront Duplex Blueprint",
+                HouseBlueprintType.EstateManor => "Estate Manor Blueprint",
+                HouseBlueprintType.CompactStarter => "Compact Starter Blueprint",
+                _ => "Family Ranch Blueprint"
+            };
+        }
+
+        private static string ResolveHomeType(HouseBlueprintType blueprintType)
+        {
+            return blueprintType switch
+            {
+                HouseBlueprintType.UrbanTownhouse => "townhouse",
+                HouseBlueprintType.WaterfrontDuplex => "duplex",
+                HouseBlueprintType.EstateManor => "manor",
+                HouseBlueprintType.RuralFarmhouse => "farmhouse",
+                _ => "house"
+            };
+        }
+
+        private static int ResolveBedroomCount(HouseBlueprintType blueprintType)
+        {
+            return blueprintType switch
+            {
+                HouseBlueprintType.CompactStarter => 1,
+                HouseBlueprintType.UrbanTownhouse => 2,
+                HouseBlueprintType.WaterfrontDuplex => 3,
+                HouseBlueprintType.EstateManor => 5,
+                HouseBlueprintType.RuralFarmhouse => 4,
+                _ => 3
+            };
+        }
+
+        private static int ResolveFloorArea(HouseBlueprintType blueprintType)
+        {
+            return blueprintType switch
+            {
+                HouseBlueprintType.CompactStarter => 52,
+                HouseBlueprintType.UrbanTownhouse => 88,
+                HouseBlueprintType.WaterfrontDuplex => 124,
+                HouseBlueprintType.EstateManor => 240,
+                HouseBlueprintType.RuralFarmhouse => 156,
+                _ => 110
+            };
+        }
+
+        private static string ResolveFurnitureStyle(HomePlotType plotType, HouseBlueprintType blueprintType)
+        {
+            if (plotType == HomePlotType.WaterfrontParcel) return "coastal";
+            if (plotType == HomePlotType.RuralHomestead) return "rustic";
+            if (plotType == HomePlotType.EstateParcel) return "luxury";
+            return blueprintType == HouseBlueprintType.UrbanTownhouse ? "modern" : "practical";
+        }
+
+        private static List<FurniturePlacementRecord> BuildFurnitureLayout(HouseBlueprintType blueprintType, string styleTag)
+        {
+            List<FurniturePlacementRecord> furniture = new()
+            {
+                CreateFurniture("sofa_main", "Sofa", FurnitureCategory.Seating, "living_room", styleTag, 8f, 6f),
+                CreateFurniture("dining_table", "Dining Table", FurnitureCategory.Dining, "kitchen", styleTag, 4f, 4f),
+                CreateFurniture("fridge", "Fridge", FurnitureCategory.Kitchen, "kitchen", styleTag, 2f, 2f),
+                CreateFurniture("stove", "Stove", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 2f),
+                CreateFurniture("wardrobe", "Wardrobe", FurnitureCategory.Storage, "bedroom", styleTag, 2f, 4f),
+                CreateFurniture("bed_primary", "Primary Bed", FurnitureCategory.Sleeping, "bedroom", styleTag, 9f, 5f),
+                CreateFurniture("bath_vanity", "Bath Vanity", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f),
+                CreateFurniture("washer", "Washer", FurnitureCategory.Utility, "utility", styleTag, 1f, 1f)
+            };
+
+            if (blueprintType is HouseBlueprintType.WaterfrontDuplex or HouseBlueprintType.EstateManor or HouseBlueprintType.RuralFarmhouse)
+            {
+                furniture.Add(CreateFurniture("patio_set", "Patio Set", FurnitureCategory.Seating, "outdoor", styleTag, 4f, 6f));
+                furniture.Add(CreateFurniture("guest_bed", "Guest Bed", FurnitureCategory.Sleeping, "guest_room", styleTag, 6f, 3f));
+            }
+
+            if (blueprintType == HouseBlueprintType.EstateManor)
+            {
+                furniture.Add(CreateFurniture("study_desk", "Study Desk", FurnitureCategory.Storage, "study", styleTag, 3f, 5f));
+                furniture.Add(CreateFurniture("grand_piano", "Grand Piano", FurnitureCategory.Decor, "parlor", styleTag, 2f, 12f));
+            }
+
+            if (blueprintType == HouseBlueprintType.UrbanTownhouse)
+            {
+                furniture.Add(CreateFurniture("media_console", "Media Console", FurnitureCategory.Decor, "living_room", styleTag, 2f, 5f));
+            }
+
+            return furniture;
+        }
+
+        private static FurniturePlacementRecord CreateFurniture(string furnitureId, string label, FurnitureCategory category, string roomTag, string styleTag, float comfort, float decor)
+        {
+            return new FurniturePlacementRecord
+            {
+                FurnitureId = furnitureId,
+                Label = label,
+                Category = category,
+                RoomTag = roomTag,
+                StyleTag = styleTag,
+                ComfortContribution = comfort,
+                DecorContribution = decor
+            };
         }
 
         private void HandleDayPassed(int day)
