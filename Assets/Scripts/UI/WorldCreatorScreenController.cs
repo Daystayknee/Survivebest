@@ -562,8 +562,8 @@ namespace Survivebest.UI
             builder.AppendLine($"Fatigue: {(settings.EnableFatigue ? "On" : "Off")}");
             builder.AppendLine($"Permadeath: {(settings.Permadeath ? "On" : "Off")}");
             builder.AppendLine($"Experience: {(settings.SandboxExperience ? "Sandbox" : "Standard")}");
-            builder.AppendLine("USA Jobs: Doctor, Nurse, Teacher, Police, Firefighter, Retail, Chef, Mechanic, Driver, Office, Electrician, Construction");
-            builder.AppendLine("USA Skills: Driving, Customer Service, Office Admin, Electrical Repair, Healthcare, Teaching, Food Service, Logistics");
+            builder.AppendLine("USA Jobs: healthcare, office ladders, trades, nightlife, retail, logistics, media, care work, bus/train/plane crews, trucking, dispatch, and delivery");
+            builder.AppendLine("USA Skills: driving, customer service, office politics, dispatch timing, trade certifications, healthcare, teaching, food service, logistics, and transportation ops");
             return builder.ToString().TrimEnd();
         }
 

@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Survivebest.Core;
 using Survivebest.Health;
 using Survivebest.World;
+using Survivebest.Catalog;
 
 namespace Survivebest.UI
 {
@@ -11,6 +12,7 @@ namespace Survivebest.UI
     {
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private PersonalityMatrixSystem personalityMatrixSystem;
+        [SerializeField] private SupplyCatalog supplyCatalog;
 
         [Header("Panels")]
         [SerializeField] private CharacterPortraitRenderer portraitRenderer;
@@ -80,7 +82,27 @@ namespace Survivebest.UI
                 return;
             }
 
-            identityText.text = $"{character.DisplayName}\nLife Stage: {character.CurrentLifeStage}\nBirthday: Y{character.BirthYear} M{character.BirthMonth} D{character.BirthDay}";
+            builder.Clear();
+            builder.AppendLine(character.DisplayName);
+            builder.AppendLine($"Life Stage: {character.CurrentLifeStage}");
+            builder.AppendLine($"Birthday: Y{character.BirthYear} M{character.BirthMonth} D{character.BirthDay}");
+
+            if (supplyCatalog != null)
+            {
+                var groups = supplyCatalog.GetPriorityGroupsForCharacter(character);
+                var items = supplyCatalog.GetSuggestedSuppliesForCharacter(character, 3);
+                if (groups.Count > 0)
+                {
+                    builder.AppendLine($"Retail Focus: {string.Join(", ", groups.GetRange(0, Mathf.Min(3, groups.Count)))}");
+                }
+
+                if (items.Count > 0)
+                {
+                    builder.AppendLine($"Starter Buys: {string.Join(", ", items.ConvertAll(x => x.Name).GetRange(0, Mathf.Min(3, items.Count)))}");
+                }
+            }
+
+            identityText.text = builder.ToString().TrimEnd();
         }
 
         private void RenderBodyStats(BodyCompositionSystem body)

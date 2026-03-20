@@ -193,7 +193,9 @@ namespace Survivebest.Interaction
 
         private bool ExecuteClosetChange(CharacterCore active, NeedsSystem needs, StatusEffectSystem status, out string outfitTag)
         {
-            outfitTag = PickRandom(outfitTags, "Everyday");
+            outfitTag = active != null
+                ? LifeActivityCatalog.PickRandomOutfitStyle(active.CurrentLifeStage)
+                : PickRandom(outfitTags, "Everyday");
             if (needs == null || active == null)
             {
                 return false;
