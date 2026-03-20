@@ -163,7 +163,7 @@ namespace Survivebest.Tests.EditMode
             actor.Initialize("actor", "Actor", LifeStage.Adult);
             household.AddMember(actor);
             household.SetActiveCharacter(actor);
-            household.RegisterPet("pet_01", "Whiskers", "cat");
+            household.RegisterPet("pet_01", "Whiskers", "cat", "Siamese");
 
             typeof(DialogueSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, actor);
             typeof(DialogueSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, social);
@@ -189,6 +189,8 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotNull(payload);
             Assert.IsTrue(payload.IsPetInteraction);
             Assert.AreEqual("cat", payload.SpeakerSpecies);
+            Assert.AreEqual("Siamese", payload.SpeakerBreed);
+            StringAssert.Contains("Siamese", payload.AnimalSoundText);
 
             MethodInfo onDisable = typeof(InteractionDialogueBridge).GetMethod("OnDisable", BindingFlags.NonPublic | BindingFlags.Instance);
             onDisable?.Invoke(bridge, null);
