@@ -21,6 +21,10 @@ namespace Survivebest.Core
         private static readonly string[] SocialFeedActivities = { "Post a thirst-trap selfie", "Reply to a situationship story", "Plan brunch in the group chat", "Soft-launch a relationship", "Curate a private close-friends post", "Voice-note your best friend", "Update your dating profile", "Send a late-night meme check-in" };
         private static readonly string[] HomeUpgradeProjects = { "Apartment glow-up corner", "Gallery wall refresh", "LED mood-light setup", "Closet reset", "Bathroom shelf styling", "Cozy balcony makeover", "Desk cable-management overhaul", "Kitchen organization sprint" };
         private static readonly string[] AmbitionFocuses = { "Emergency fund grind", "Soft life reset", "Fitness comeback arc", "Creative breakthrough", "Promotion chase", "Dating confidence era", "Healing season", "Move-out plan" };
+        private static readonly string[] CollectibleHobbies = { "Vinyl collecting", "Sneaker collecting", "Action figure hunting", "Comic back-issue digging", "Trading card collecting", "Thrifted mug collecting", "Keychain collecting", "Retro game collecting", "Perfume sampling", "Stamp collecting" };
+        private static readonly string[] SentimentalObjects = { "concert ticket stub", "childhood blanket", "favorite hoodie", "signed baseball", "polaroid strip", "holiday ornament", "lucky coin", "handwritten recipe card", "old game cartridge", "friendship bracelet" };
+        private static readonly string[] EverydayCarryItems = { "phone charger", "water bottle", "lip balm", "transit card", "headphones", "pocket notebook", "keys", "wallet", "gum pack", "hand sanitizer" };
+        private static readonly string[] HumanExperienceMoments = { "late-night grocery run", "mall wandering with no plan", "thrift-store luck streak", "yard-sale find", "group-chat debate over dinner", "waiting-room small talk", "school pickup scramble", "weekend Costco run", "laundry-room negotiation", "parking-lot car snack reset" };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -52,6 +56,10 @@ namespace Survivebest.Core
         public static string PickSocialFeedActivity() => Pick(SocialFeedActivities, "Social check-in");
         public static string PickHomeUpgradeProject() => Pick(HomeUpgradeProjects, "Home refresh");
         public static string PickAmbitionFocus() => Pick(AmbitionFocuses, "Personal growth");
+        public static string PickCollectibleHobby() => Pick(CollectibleHobbies, "Small collection");
+        public static string PickSentimentalObject() => Pick(SentimentalObjects, "keepsake");
+        public static string PickEverydayCarryItem() => Pick(EverydayCarryItems, "daily item");
+        public static string PickHumanExperienceMoment() => Pick(HumanExperienceMoments, "everyday moment");
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
             => OutfitStylesByLifeStage.TryGetValue(lifeStage, out string[] styles) && styles != null && styles.Length > 0
                 ? styles
