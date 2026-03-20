@@ -65,6 +65,7 @@ namespace Survivebest.Social
         [SerializeField] private StyleIdentitySystem styleIdentitySystem;
         [SerializeField] private FashionSystem fashionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private UltraDepthSocialPsychSystem ultraDepthSocialPsychSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<RelationshipCompatibilityProfile> profiles = new();
 
@@ -155,6 +156,16 @@ namespace Survivebest.Social
             profile.CompatibilityScore = Mathf.Clamp01(compatibility) * 100f;
             profile.Attraction = Mathf.Clamp(profile.Attraction + (ComputePhysicalAttraction(characterA.CharacterId, characterB.CharacterId) * 8f), 0f, 100f);
             profile.Familiarity = Mathf.Clamp(profile.Familiarity + 8f, 0f, 100f);
+
+            if (ultraDepthSocialPsychSystem != null)
+            {
+                PresenceImpactResult presenceA = ultraDepthSocialPsychSystem.EvaluatePresenceImpact(characterA.CharacterId, characterB.CharacterId);
+                PresenceImpactResult presenceB = ultraDepthSocialPsychSystem.EvaluatePresenceImpact(characterB.CharacterId, characterA.CharacterId);
+                profile.Attraction = Mathf.Clamp(profile.Attraction + presenceA.AttractionDelta + presenceB.AttractionDelta, 0f, 100f);
+                profile.Trust = Mathf.Clamp(profile.Trust + presenceA.TrustDelta + presenceB.TrustDelta, 0f, 100f);
+                profile.Comfort = Mathf.Clamp(profile.Comfort + presenceA.ComfortDelta + presenceB.ComfortDelta, 0f, 100f);
+                profile.Tension = Mathf.Clamp(profile.Tension + Mathf.Max(presenceA.FearDelta, presenceB.FearDelta), 0f, 100f);
+            }
 
             ResolveStages(profile);
             PublishRelationshipEvent(profile, "Initial compatibility evaluated");

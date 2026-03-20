@@ -223,13 +223,34 @@ namespace Survivebest.Core
             clarity -= p.AnxietyLevel / 250f;
             clarity -= p.DepressionLevel / 300f;
             clarity += p.SelfEsteem / 400f;
-            return Mathf.Clamp(clarity, 0.35f, 1.35f);
+
+            if (humanLifeExperienceLayerSystem != null)
+            {
+                CognitiveDistortionProfile distortion = humanLifeExperienceLayerSystem.GetProfile<CognitiveDistortionProfile>(characterId);
+                IdentityFragmentProfile fragments = humanLifeExperienceLayerSystem.GetProfile<IdentityFragmentProfile>(characterId);
+                if (distortion != null)
+                {
+                    clarity -= distortion.GetDominantIntensity() * 0.28f;
+                }
+
+                if (fragments != null)
+                {
+                    clarity -= fragments.IdentityConflictStress * 0.16f;
+                }
+            }
+
+            return Mathf.Clamp(clarity, 0.25f, 1.35f);
         }
 
         public float GetRelationshipStabilityModifier(string characterId)
         {
             MentalHealthProfile p = GetOrCreateProfile(characterId);
             float value = 1f + ((p.EmotionalResilience - p.Loneliness) / 250f) - (p.StressLevel / 320f);
+            if (humanLifeExperienceLayerSystem != null)
+            {
+                value *= humanLifeExperienceLayerSystem.GetRelationshipAttachmentModifier(characterId);
+            }
+
             return Mathf.Clamp(value, 0.3f, 1.5f);
         }
 

@@ -80,6 +80,20 @@ namespace Survivebest.Core
         [Range(0f, 100f)] public float Strength;
     }
 
+
+    [Serializable]
+    public class RoutineIdentityLockProfile
+    {
+        public List<string> MorningRituals = new();
+        public List<string> ComfortHabits = new();
+        public List<string> Addictions = new();
+        public List<string> IdentityHabits = new();
+        [Range(0f, 100f)] public float Discomfort = 10f;
+        [Range(0f, 100f)] public float IdentityCrisis = 0f;
+        [Range(0f, 100f)] public float GrowthPotential = 25f;
+        [Range(0f, 100f)] public float CollapseRisk = 5f;
+    }
+
     public class LifestyleBehaviorSystem : MonoBehaviour
     {
         [SerializeField] private CharacterCore owner;
@@ -97,6 +111,7 @@ namespace Survivebest.Core
         [SerializeField] private List<PreferenceEntry> preferences = new();
         [SerializeField] private List<PersonalGoal> activeGoals = new();
         [SerializeField] private List<IdentityTrack> identityTracks = new();
+        [SerializeField] private RoutineIdentityLockProfile routineIdentityLockProfile = new();
         [SerializeField, Range(0f, 1f)] private float annoyanceChancePerHour = 0.08f;
         [SerializeField] private bool seedModernAdultGoalsOnEnable = true;
         [SerializeField, Min(1)] private int dynamicGoalRefreshIntervalHours = 6;
@@ -119,6 +134,7 @@ namespace Survivebest.Core
             if (worldClock != null)
             {
                 worldClock.OnHourPassed += HandleHourPassed;
+                worldClock.OnDayPassed += HandleDayPassed;
             }
         }
 
@@ -132,7 +148,71 @@ namespace Survivebest.Core
             if (worldClock != null)
             {
                 worldClock.OnHourPassed -= HandleHourPassed;
+                worldClock.OnDayPassed -= HandleDayPassed;
             }
+        }
+
+
+        public RoutineIdentityLockProfile RoutineIdentityLock => routineIdentityLockProfile;
+
+        public void RegisterRoutineIdentityAction(string trigger, bool isMorningRitual = false, bool isComfortHabit = false, bool isAddiction = false, bool isIdentityHabit = false)
+        {
+            if (string.IsNullOrWhiteSpace(trigger))
+            {
+                return;
+            }
+
+            AddUniqueRoutineEntry(isMorningRitual ? routineIdentityLockProfile.MorningRituals : null, trigger);
+            AddUniqueRoutineEntry(isComfortHabit ? routineIdentityLockProfile.ComfortHabits : null, trigger);
+            AddUniqueRoutineEntry(isAddiction ? routineIdentityLockProfile.Addictions : null, trigger);
+            AddUniqueRoutineEntry(isIdentityHabit ? routineIdentityLockProfile.IdentityHabits : null, trigger);
+            routineIdentityLockProfile.Discomfort = Mathf.Clamp(routineIdentityLockProfile.Discomfort - 1.5f, 0f, 100f);
+            routineIdentityLockProfile.IdentityCrisis = Mathf.Clamp(routineIdentityLockProfile.IdentityCrisis - 0.5f, 0f, 100f);
+        }
+
+        public void BreakRoutineIdentity(string trigger, float severity)
+        {
+            if (string.IsNullOrWhiteSpace(trigger))
+            {
+                return;
+            }
+
+            float s = Mathf.Clamp(severity, 0f, 100f);
+            bool core = routineIdentityLockProfile.IdentityHabits.Contains(trigger) || routineIdentityLockProfile.Addictions.Contains(trigger) || routineIdentityLockProfile.MorningRituals.Contains(trigger);
+            routineIdentityLockProfile.Discomfort = Mathf.Clamp(routineIdentityLockProfile.Discomfort + s * 0.25f, 0f, 100f);
+            routineIdentityLockProfile.IdentityCrisis = Mathf.Clamp(routineIdentityLockProfile.IdentityCrisis + (core ? s * 0.35f : s * 0.18f), 0f, 100f);
+            routineIdentityLockProfile.GrowthPotential = Mathf.Clamp(routineIdentityLockProfile.GrowthPotential + s * 0.12f, 0f, 100f);
+            routineIdentityLockProfile.CollapseRisk = Mathf.Clamp(routineIdentityLockProfile.CollapseRisk + (core ? s * 0.16f : s * 0.08f), 0f, 100f);
+            emotionSystem?.ModifyStress(s * 0.05f);
+            needsSystem?.ModifyMood(-s * 0.03f);
+        }
+
+        public void ApplyPassiveIdentityDrift(float intensity)
+        {
+            float drift = Mathf.Clamp(intensity, 0f, 2f);
+            for (int i = 0; i < habits.Count; i++)
+            {
+                HabitEntry habit = habits[i];
+                if (habit == null)
+                {
+                    continue;
+                }
+
+                habit.HabitStrength = Mathf.Clamp(habit.HabitStrength - drift * 0.45f, 0f, 100f);
+            }
+
+            for (int i = 0; i < identityTracks.Count; i++)
+            {
+                IdentityTrack identity = identityTracks[i];
+                if (identity == null)
+                {
+                    continue;
+                }
+
+                identity.Strength = Mathf.Clamp(identity.Strength + (drift * 0.3f) - 0.1f, 0f, 100f);
+            }
+
+            routineIdentityLockProfile.Discomfort = Mathf.Clamp(routineIdentityLockProfile.Discomfort + drift * 0.8f, 0f, 100f);
         }
 
         public float GetPreference(string category, string key)
@@ -287,6 +367,7 @@ namespace Survivebest.Core
         private void HandleAutonomousActivity(ActivityType type, int hour)
         {
             string trigger = type.ToString();
+            RegisterRoutineIdentityAction(trigger, hour < 11, type == ActivityType.Rest || type == ActivityType.Sleep, type == ActivityType.Drink, type == ActivityType.Chore || type == ActivityType.Workout);
             HabitEntry habit = habits.Find(x => x != null && x.HabitTrigger == trigger);
             if (habit == null)
             {
@@ -314,6 +395,11 @@ namespace Survivebest.Core
             MaybeTriggerKindness(type);
 
             Publish("HabitUpdated", $"Habit {trigger} strength is now {habit.HabitStrength:0.0}", habit.HabitStrength, SimulationEventSeverity.Info);
+        }
+
+        private void HandleDayPassed(int day)
+        {
+            ApplyPassiveIdentityDrift(1f);
         }
 
         private void HandleHourPassed(int hour)
@@ -464,6 +550,17 @@ namespace Survivebest.Core
             relationshipMemorySystem.RecordEvent(owner.CharacterId, null, topic, 10, true, "district_default");
             needsSystem?.ModifyMood(2f);
             emotionSystem?.ModifyAffection(1.2f);
+        }
+
+
+        private static void AddUniqueRoutineEntry(List<string> list, string value)
+        {
+            if (list == null || string.IsNullOrWhiteSpace(value) || list.Contains(value))
+            {
+                return;
+            }
+
+            list.Add(value);
         }
 
         private void Publish(string key, string reason, float magnitude, SimulationEventSeverity severity)

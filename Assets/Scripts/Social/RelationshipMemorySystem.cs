@@ -8,6 +8,12 @@ namespace Survivebest.Social
 {
     public enum ReputationScope
     {
+        Personal,
+        Household,
+        Neighborhood,
+        City,
+        Online,
+        Underground,
         District,
         Family,
         Faction,
@@ -142,6 +148,53 @@ namespace Survivebest.Social
             return created;
         }
 
+
+
+        public void ApplyLayeredReputationImpact(string characterId, string personalTargetId, string householdId, string neighborhoodId, string cityId, int personalDelta, int householdDelta, int neighborhoodDelta, int cityDelta, int onlineDelta, int undergroundDelta)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(personalTargetId))
+            {
+                AdjustReputation(characterId, ReputationScope.Personal, personalTargetId, personalDelta);
+            }
+
+            if (!string.IsNullOrWhiteSpace(householdId))
+            {
+                AdjustReputation(characterId, ReputationScope.Household, householdId, householdDelta);
+            }
+
+            if (!string.IsNullOrWhiteSpace(neighborhoodId))
+            {
+                AdjustReputation(characterId, ReputationScope.Neighborhood, neighborhoodId, neighborhoodDelta);
+            }
+
+            if (!string.IsNullOrWhiteSpace(cityId))
+            {
+                AdjustReputation(characterId, ReputationScope.City, cityId, cityDelta);
+                AdjustReputation(characterId, ReputationScope.Online, cityId, onlineDelta);
+                AdjustReputation(characterId, ReputationScope.Underground, cityId, undergroundDelta);
+            }
+        }
+
+        public string BuildLayeredReputationSummary(string characterId, string personalTargetId, string householdId, string neighborhoodId, string cityId)
+        {
+            List<string> parts = new();
+            if (!string.IsNullOrWhiteSpace(personalTargetId)) parts.Add($"Personal {GetReputation(characterId, ReputationScope.Personal, personalTargetId)}");
+            if (!string.IsNullOrWhiteSpace(householdId)) parts.Add($"Household {GetReputation(characterId, ReputationScope.Household, householdId)}");
+            if (!string.IsNullOrWhiteSpace(neighborhoodId)) parts.Add($"Neighborhood {GetReputation(characterId, ReputationScope.Neighborhood, neighborhoodId)}");
+            if (!string.IsNullOrWhiteSpace(cityId))
+            {
+                parts.Add($"City {GetReputation(characterId, ReputationScope.City, cityId)}");
+                parts.Add($"Online {GetReputation(characterId, ReputationScope.Online, cityId)}");
+                parts.Add($"Underground {GetReputation(characterId, ReputationScope.Underground, cityId)}");
+            }
+
+            return parts.Count > 0 ? string.Join(" | ", parts) : "No layered reputation data.";
+        }
 
         public void ApplyFamilyReputationConsequences(string offenderId, List<string> familyMemberIds, int baseImpact, string reason)
         {
