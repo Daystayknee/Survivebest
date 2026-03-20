@@ -962,7 +962,7 @@ namespace Survivebest.UI
         }
 
         public void Back() => menuFlowController?.Back();
-        public void Next() => menuFlowController?.ContinueFromHousehold();
+        public void Next() => menuFlowController?.ContinueFromCharacterCreator();
 
         public CharacterCreatorDashboardViewModel CaptureViewModel()
         {

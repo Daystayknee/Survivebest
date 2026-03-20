@@ -42,6 +42,36 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void TriggerConfiguredIncident_AppliesConfiguredEffects()
+        {
+            GameObject go = new GameObject("DramaEngineConfigured");
+            SocialDramaEngine engine = go.AddComponent<SocialDramaEngine>();
+
+            SetPrivateField(engine, "socialIncidentDefinitions", new System.Collections.Generic.List<SocialIncidentDefinition>
+            {
+                new SocialIncidentDefinition
+                {
+                    IncidentId = "configured_1",
+                    EventType = SocialEventType.RelationshipDrama,
+                    Location = "boardwalk",
+                    Effects = new System.Collections.Generic.List<Survivebest.Core.GameplayEffectDefinition>
+                    {
+                        new Survivebest.Core.GameplayEffectDefinition { EffectType = Survivebest.Core.GameplayEffectType.Reputation, Magnitude = -10f },
+                        new Survivebest.Core.GameplayEffectDefinition { EffectType = Survivebest.Core.GameplayEffectType.Scandal, Magnitude = -12f, Payload = "relationship_drama" }
+                    }
+                }
+            });
+
+            SocialEventSignal signal = engine.TriggerConfiguredIncident("configured_1", new System.Collections.Generic.List<string> { "avery" }, new System.Collections.Generic.List<string> { "witness" });
+
+            Assert.NotNull(signal);
+            Assert.AreEqual(1, engine.Scandals.Count);
+            Assert.Less(engine.GetOrCreateReputation("avery").CommunityReputation, 0f);
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void RetellRumor_IncreasesHopCount()
         {

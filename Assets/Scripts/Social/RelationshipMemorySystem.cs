@@ -233,6 +233,14 @@ namespace Survivebest.Social
             return entry != null ? entry.Value : 0;
         }
 
+
+        public void ApplyRuntimeState(List<RelationshipMemory> savedMemories, List<RelationshipProfile> savedProfiles, List<ReputationEntry> savedReputations)
+        {
+            memories = savedMemories != null ? new List<RelationshipMemory>(savedMemories) : new List<RelationshipMemory>();
+            profiles = savedProfiles != null ? new List<RelationshipProfile>(savedProfiles) : new List<RelationshipProfile>();
+            reputations = savedReputations != null ? new List<ReputationEntry>(savedReputations) : new List<ReputationEntry>();
+        }
+
         public void AdjustReputation(string characterId, ReputationScope scope, string scopeId, int amount)
         {
             ReputationEntry entry = reputations.Find(x => x != null && x.CharacterId == characterId && x.Scope == scope && x.ScopeId == scopeId);

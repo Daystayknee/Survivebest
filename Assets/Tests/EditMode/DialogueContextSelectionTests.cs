@@ -133,5 +133,46 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(actorGo);
         }
 
+        [Test]
+        public void PerformPetInteractionDialogue_WithBreed_EmitsAnimalSoundAndInnerThought()
+        {
+            GameObject root = new GameObject("PetDialogueBreed");
+            DialogueSystem dialogue = root.AddComponent<DialogueSystem>();
+            HumanLifeExperienceLayerSystem life = root.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject ownerGo = new GameObject("OwnerBreed");
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner_breed", "Riley", LifeStage.Adult);
+
+            typeof(DialogueSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, owner);
+            typeof(DialogueSystem).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, life);
+
+            life.SetInnerMonologueProfile(owner, new InnerMonologueProfile
+            {
+                CharacterId = owner.CharacterId,
+                ConsciousVoice = "steady",
+                SubconsciousVoice = "protective",
+                ConflictingThoughtA = "Stay gentle.",
+                ConflictingThoughtB = "Don't lose the animal.",
+                HarshSelfTalk = 0.2f,
+                KindSelfTalk = 0.8f
+            });
+
+            DialoguePresentationPayload payload = null;
+            dialogue.OnDialoguePresentationReady += p => payload = p;
+
+            bool success = dialogue.PerformPetInteractionDialogue("cow", "Holstein", "Bessie");
+
+            Assert.IsTrue(success);
+            Assert.IsNotNull(payload);
+            Assert.AreEqual("Holstein", payload.SpeakerBreed);
+            StringAssert.Contains("Animal audio text", payload.Line);
+            StringAssert.Contains("moo", payload.AnimalSoundText.ToLowerInvariant());
+            StringAssert.Contains("AI self-talk", payload.InnerThought);
+
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(ownerGo);
+        }
+
     }
 }

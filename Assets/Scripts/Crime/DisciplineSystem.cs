@@ -48,6 +48,16 @@ namespace Survivebest.Crime
 
         public IReadOnlyList<DisciplineRecord> History => history;
 
+        public List<DisciplineRecord> CaptureRuntimeState()
+        {
+            return new List<DisciplineRecord>(history);
+        }
+
+        public void ApplyRuntimeState(List<DisciplineRecord> savedHistory)
+        {
+            history = savedHistory != null ? new List<DisciplineRecord>(savedHistory) : new List<DisciplineRecord>();
+        }
+
         public void ApplyOffense(CharacterCore actor, DisciplineOffenseType offense)
         {
             if (actor == null)
