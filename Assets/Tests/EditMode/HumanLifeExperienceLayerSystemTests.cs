@@ -177,5 +177,119 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
         }
+
+        [Test]
+        public void GenerateProceduralLifeMoments_UsesStoredHumanTextureContext()
+        {
+            GameObject go = new GameObject("LifeMomentContext");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharMomentContext");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_context", "Context", LifeStage.Adult, CharacterSpecies.Vampire);
+
+            system.SetSensoryProfile(character, new SensoryLifeProfile
+            {
+                FavoriteSmells = new System.Collections.Generic.List<string> { "rain on concrete" }
+            });
+            system.SetIdentityExpressionProfile(character, new IdentityExpressionProfile
+            {
+                PublicSelf = "the perfect regular",
+                PrivateSelf = "a hungry immortal",
+                AuthenticityMaskingTension = 0.9f
+            });
+            system.SetLifeAdministrationProfile(character, new LifeAdministrationProfile
+            {
+                DebtLoad = 0.9f
+            });
+            system.SetDigitalLifeProfile(character, new DigitalLifeProfile
+            {
+                VampireFootprintRisk = 0.8f
+            });
+
+            var moments = system.GenerateProceduralLifeMoments(character, 1, 12, false);
+            string combined = string.Join(" || ", moments.ConvertAll(moment => moment.Headline));
+
+            StringAssert.Contains("rain on concrete", combined);
+            Assert.IsTrue(
+                combined.Contains("the perfect regular") ||
+                combined.Contains("Money stress follows even ordinary errands.") ||
+                combined.Contains("leave a trace online."));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void HumanTexturePulse_AndSensoryRecall_UseStoredProfilesAndMemories()
+        {
+            GameObject go = new GameObject("LifePulseAdvanced");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharPulseAdvanced");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_advanced", "Advanced", LifeStage.Adult);
+
+            system.SetSensoryProfile(character, new SensoryLifeProfile
+            {
+                FavoriteSmells = new System.Collections.Generic.List<string> { "lavender detergent" },
+                ScentMemoryTriggers = new System.Collections.Generic.List<string> { "lavender detergent" },
+                NoiseSensitivity = 0.9f
+            });
+            system.SetIdentityExpressionProfile(character, new IdentityExpressionProfile
+            {
+                PublicSelf = "reliable oldest daughter",
+                PrivateSelf = "exhausted person looking for air",
+                AuthenticityMaskingTension = 0.8f
+            });
+            system.SetSocialRoleBurdenProfile(character, new SocialRoleBurdenProfile
+            {
+                CaretakerFatigue = 0.91f
+            });
+            system.SetLifeAdministrationProfile(character, new LifeAdministrationProfile
+            {
+                CreditDamageRisk = 0.82f
+            });
+            system.RecordMemoryMeaning(character, MemoryMeaningType.SmellTriggered, "Laundry nights with grandma felt safe.", 0.85f, "lavender detergent", "old_house");
+
+            string pulse = system.SimulateHumanTexturePulse(character, 21, 42);
+            ThoughtMessage recall = system.TriggerSensoryMemoryRecall(character, "lavender detergent", "old_house");
+
+            StringAssert.Contains("pressure", pulse);
+            Assert.IsNotNull(recall);
+            Assert.AreEqual("sensory_memory", recall.Source);
+            Assert.AreEqual("old_house", recall.PlaceId);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void AdvanceMemoryDecay_CanRewriteHighDistortionMemories()
+        {
+            GameObject go = new GameObject("LifeDecay");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharDecay");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_decay", "Decay", LifeStage.Adult);
+
+            MemoryMeaningRecord memory = system.RecordMemoryMeaning(
+                character,
+                MemoryMeaningType.Traumatic,
+                "The breakup speech still echoes.",
+                0.8f,
+                "song_1");
+
+            float originalRecall = memory.RecallStrength;
+            system.AdvanceMemoryDecay(character.CharacterId, 0.5f, true);
+
+            Assert.Less(memory.RecallStrength, originalRecall);
+            Assert.AreEqual(MemoryMeaningType.Rewritten, memory.MeaningType);
+            Assert.Greater(memory.Distortion, 0f);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
     }
 }

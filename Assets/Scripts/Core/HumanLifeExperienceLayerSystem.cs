@@ -296,6 +296,14 @@ namespace Survivebest.Core
         public IReadOnlyList<ThoughtMessage> RecentThoughts => recentThoughts;
         public IReadOnlyList<ProceduralLifeMoment> RecentMoments => recentMoments;
         public IReadOnlyList<LifeTimelineEntry> RecentTimeline => recentTimeline;
+        public IReadOnlyList<SensoryLifeProfile> SensoryProfiles => sensoryProfiles;
+        public IReadOnlyList<IdentityExpressionProfile> IdentityProfiles => identityProfiles;
+        public IReadOnlyList<SocialRoleBurdenProfile> SocialRoleBurdenProfiles => socialRoleBurdenProfiles;
+        public IReadOnlyList<LifeAdministrationProfile> LifeAdministrationProfiles => lifeAdministrationProfiles;
+        public IReadOnlyList<FamilyRealismProfile> FamilyProfiles => familyProfiles;
+        public IReadOnlyList<EducationJourneyProfile> EducationProfiles => educationProfiles;
+        public IReadOnlyList<DigitalLifeProfile> DigitalProfiles => digitalProfiles;
+        public IReadOnlyList<BeliefPhilosophyProfile> BeliefProfiles => beliefProfiles;
         public IReadOnlyList<MemoryMeaningRecord> MemoryMeaningRecords => memoryMeaningRecords;
         public IReadOnlyList<DomesticIntimacyMoment> DomesticIntimacyMoments => domesticIntimacyMoments;
 
@@ -466,7 +474,7 @@ namespace Survivebest.Core
                     MomentId = $"{actor.CharacterId}_{seed}_{i}",
                     CharacterId = actor.CharacterId,
                     Source = source,
-                    Headline = $"You {action} at the {place}.",
+                    Headline = BuildContextualMomentHeadline(actor, action, place, source, intensity),
                     PlaceId = place,
                     Intensity = intensity
                 };
@@ -701,6 +709,141 @@ namespace Survivebest.Core
             return parts.Count > 0 ? string.Join(" | ", parts) : "Life texture is still being discovered.";
         }
 
+        public string SimulateHumanTexturePulse(CharacterCore actor, int hour, int seed)
+        {
+            if (actor == null)
+            {
+                return "No actor available for human texture pulse.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            List<string> observations = new();
+
+            SensoryLifeProfile sensory = FindProfile(actor.CharacterId, sensoryProfiles);
+            if (sensory != null && (sensory.NoiseSensitivity > 0.65f || sensory.LightSensitivity > 0.65f))
+            {
+                string stimulus = sensory.NoiseSensitivity >= sensory.LightSensitivity ? "noise" : "harsh light";
+                string anchor = sensory.FavoriteSmells.Count > 0 ? sensory.FavoriteSmells[rng.Next(sensory.FavoriteSmells.Count)] : "a familiar scent";
+                observations.Add($"Sensory friction rises around {stimulus}, and {anchor} helps you regulate.");
+            }
+
+            IdentityExpressionProfile identity = FindProfile(actor.CharacterId, identityProfiles);
+            if (identity != null && identity.AuthenticityMaskingTension > 0.55f)
+            {
+                observations.Add($"Your public self ({identity.PublicSelf}) feels far from your private self ({identity.PrivateSelf}).");
+            }
+
+            SocialRoleBurdenProfile burden = FindProfile(actor.CharacterId, socialRoleBurdenProfiles);
+            if (burden != null)
+            {
+                float weight = Mathf.Max(burden.CaretakerFatigue, burden.BreadwinnerStress, burden.SecretDoubleLifeBurden, burden.CommunityPillarExpectation);
+                if (weight > 0.55f)
+                {
+                    observations.Add($"Role pressure is peaking through {DescribeDominantBurden(burden)}.");
+                }
+            }
+
+            LifeAdministrationProfile administration = FindProfile(actor.CharacterId, lifeAdministrationProfiles);
+            if (administration != null)
+            {
+                float paperworkWeight = Mathf.Max(administration.TaxStress, administration.LeaseRenewalPressure, administration.MedicalSchedulingLoad, administration.CreditDamageRisk);
+                if (paperworkWeight > 0.55f)
+                {
+                    observations.Add("Adult bureaucracy is quietly eating part of the day.");
+                }
+            }
+
+            FamilyRealismProfile family = FindProfile(actor.CharacterId, familyProfiles);
+            if (family != null && (family.CoparentingStrain > 0.5f || family.PostpartumRecoveryLoad > 0.5f || family.FamilyPlanningConflict > 0.5f))
+            {
+                observations.Add("Family planning and caregiving choices are shaping the emotional weather.");
+            }
+
+            EducationJourneyProfile education = FindProfile(actor.CharacterId, educationProfiles);
+            if (education != null && (education.AcademicBurnout > 0.5f || education.TestPressure > 0.5f || education.TruancyRisk > 0.5f))
+            {
+                observations.Add($"Education pressure follows you outside class at the {education.CurrentStage.ToLowerInvariant()} stage.");
+            }
+
+            DigitalLifeProfile digital = FindProfile(actor.CharacterId, digitalProfiles);
+            if (digital != null && (digital.DoomscrollingHabit > 0.5f || digital.CancellationRisk > 0.5f || digital.VampireFootprintRisk > 0.5f))
+            {
+                observations.Add("Your digital life is bleeding into your real nervous system.");
+            }
+
+            BeliefPhilosophyProfile belief = FindProfile(actor.CharacterId, beliefProfiles);
+            if (belief != null && (belief.MeaningCrisis > 0.5f || belief.ExistentialDread > 0.5f || belief.OccultFascination > 0.5f))
+            {
+                observations.Add("Questions about meaning and what comes after keep hovering nearby.");
+            }
+
+            if (observations.Count == 0)
+            {
+                observations.Add("The hour passes quietly, textured more by habit than crisis.");
+            }
+
+            string message = observations[rng.Next(observations.Count)];
+            AppendThought(actor, "human_texture_pulse", message, 0.45f + rng.Next(35) / 100f, null);
+            RecordLifeTimelineEvent(actor, $"Texture pulse {hour:00}:00", message, "human_texture_pulse");
+            return message;
+        }
+
+        public ThoughtMessage TriggerSensoryMemoryRecall(CharacterCore actor, string triggerId, string placeId = null)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(triggerId))
+            {
+                return null;
+            }
+
+            SensoryLifeProfile sensory = FindProfile(actor.CharacterId, sensoryProfiles);
+            MemoryMeaningRecord matchedMemory = memoryMeaningRecords.Find(record =>
+                record != null &&
+                record.CharacterId == actor.CharacterId &&
+                ((!string.IsNullOrWhiteSpace(record.TriggerId) && string.Equals(record.TriggerId, triggerId, StringComparison.OrdinalIgnoreCase)) ||
+                 (!string.IsNullOrWhiteSpace(record.LinkedPlaceId) && string.Equals(record.LinkedPlaceId, placeId, StringComparison.OrdinalIgnoreCase))));
+
+            if (matchedMemory == null && (sensory == null || !ContainsIgnoreCase(sensory.ScentMemoryTriggers, triggerId)))
+            {
+                return null;
+            }
+
+            string memoryText = matchedMemory != null
+                ? $"A {matchedMemory.MeaningType.ToString().ToLowerInvariant()} memory returns when {triggerId} hits."
+                : $"The sensory cue {triggerId} unlocks a vivid feeling you cannot quite name.";
+
+            AppendThought(actor, "sensory_memory", memoryText, matchedMemory?.RecallStrength ?? 0.65f, placeId);
+            RecordLifeTimelineEvent(actor, "Sensory recall", memoryText, "sensory_memory");
+            return recentThoughts[^1];
+        }
+
+        public void AdvanceMemoryDecay(string characterId, float decayAmount, bool allowRewrite = true)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || decayAmount <= 0f)
+            {
+                return;
+            }
+
+            float decay = Mathf.Clamp01(decayAmount);
+            for (int i = 0; i < memoryMeaningRecords.Count; i++)
+            {
+                MemoryMeaningRecord memory = memoryMeaningRecords[i];
+                if (memory == null || memory.CharacterId != characterId)
+                {
+                    continue;
+                }
+
+                memory.RecallStrength = Mathf.Clamp01(memory.RecallStrength - decay);
+                if (allowRewrite)
+                {
+                    memory.Distortion = Mathf.Clamp01(memory.Distortion + decay * (memory.MeaningType == MemoryMeaningType.Traumatic ? 0.15f : 0.3f));
+                    if (memory.Distortion > 0.55f && memory.MeaningType != MemoryMeaningType.Rewritten)
+                    {
+                        memory.MeaningType = MemoryMeaningType.Rewritten;
+                    }
+                }
+            }
+        }
+
 
 
         public void RecordLifeTimelineEvent(CharacterCore actor, string title, string body, string source = "life")
@@ -918,6 +1061,89 @@ namespace Survivebest.Core
             };
             placeAttachments.Add(created);
             return created;
+        }
+
+        private string BuildContextualMomentHeadline(CharacterCore actor, string action, string place, string source, float intensity)
+        {
+            string headline = $"You {action} at the {place}.";
+            if (actor == null)
+            {
+                return headline;
+            }
+
+            SensoryLifeProfile sensory = FindProfile(actor.CharacterId, sensoryProfiles);
+            if (sensory != null && sensory.FavoriteSmells.Count > 0 && intensity > 0.6f)
+            {
+                headline += $" The air carries {sensory.FavoriteSmells[0]}.";
+            }
+
+            IdentityExpressionProfile identity = FindProfile(actor.CharacterId, identityProfiles);
+            if (identity != null && identity.AuthenticityMaskingTension > 0.65f && (source == "identity" || source == "romance" || source == "community"))
+            {
+                headline += $" You feel the distance between {identity.PublicSelf} and {identity.PrivateSelf}.";
+            }
+
+            LifeAdministrationProfile administration = FindProfile(actor.CharacterId, lifeAdministrationProfiles);
+            if (administration != null && administration.DebtLoad > 0.6f && source == "finance")
+            {
+                headline += " Money stress follows even ordinary errands.";
+            }
+
+            DigitalLifeProfile digital = FindProfile(actor.CharacterId, digitalProfiles);
+            if (digital != null && digital.VampireFootprintRisk > 0.55f && actor.IsVampire)
+            {
+                headline += " A small part of you worries the moment could leave a trace online.";
+            }
+
+            return headline;
+        }
+
+        private static bool ContainsIgnoreCase(List<string> values, string value)
+        {
+            if (values == null || string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]) && string.Equals(values[i], value, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string DescribeDominantBurden(SocialRoleBurdenProfile burden)
+        {
+            if (burden == null)
+            {
+                return "unspoken expectations";
+            }
+
+            float maxValue = burden.CaretakerFatigue;
+            string label = "caretaker fatigue";
+
+            if (burden.BreadwinnerStress > maxValue)
+            {
+                maxValue = burden.BreadwinnerStress;
+                label = "breadwinner stress";
+            }
+
+            if (burden.SecretDoubleLifeBurden > maxValue)
+            {
+                maxValue = burden.SecretDoubleLifeBurden;
+                label = "a secret double life";
+            }
+
+            if (burden.CommunityPillarExpectation > maxValue)
+            {
+                label = "community expectations";
+            }
+
+            return label;
         }
 
         private static T UpsertProfile<T>(CharacterCore actor, T profile, List<T> profiles, Func<T> factory) where T : class
