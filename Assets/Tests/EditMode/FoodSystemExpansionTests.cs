@@ -75,6 +75,25 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void IngredientCatalog_Awake_InjectsMegaGroceryCoverage()
+        {
+            GameObject go = new GameObject("IngredientCatalogMegaCoverage");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            Assert.IsNotNull(catalog.GetIngredient("Pineapple"));
+            Assert.IsNotNull(catalog.GetIngredient("Romaine"));
+            Assert.IsNotNull(catalog.GetIngredient("Pork chops"));
+            Assert.IsNotNull(catalog.GetIngredient("Cashew"));
+            Assert.IsNotNull(catalog.GetIngredient("Sea salt"));
+            Assert.IsNotNull(catalog.GetIngredient("Tortilla"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void RecipeSystem_DiscoverRecipeFromIngredients_AddsRecipe()
         {
             GameObject go = new GameObject("RecipeSystem");
@@ -127,6 +146,115 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(MealPurpose.Takeout, database.GetRecipe("Sushi Roll").Purpose);
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_Awake_AddsExpandedGameplayFoodsAndRecipes()
+        {
+            GameObject go = new GameObject("ExpandedFoodDb");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            string[] expected = { "Veggie Tray", "Roast Pork Plate", "Sea Salt Fries", "Taco Combo", "Chicken Wrap", "Smoothie Bowl Deluxe" };
+            for (int i = 0; i < expected.Length; i++)
+            {
+                Assert.IsNotNull(database.GetFood(expected[i]), $"Missing expanded food: {expected[i]}");
+                Assert.IsNotNull(database.GetRecipe(expected[i]), $"Missing expanded recipe: {expected[i]}");
+            }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void DrinkDatabase_Awake_AddsExpandedDrinkCoverage()
+        {
+            GameObject go = new GameObject("ExpandedDrinkDb");
+            DrinkDatabase database = go.AddComponent<DrinkDatabase>();
+
+            MethodInfo awake = typeof(DrinkDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            Assert.IsTrue(database.Drinks.Count >= 65);
+            Assert.IsTrue(ContainsDrink(database, "Sweet Tea"));
+            Assert.IsTrue(ContainsDrink(database, "Sports Drink"));
+            Assert.IsTrue(ContainsDrink(database, "Matcha Latte"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void OrderingSystem_Awake_SyncsExpandedFoodDatabaseIntoMenus()
+        {
+            GameObject go = new GameObject("OrderingExpandedSync");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+            OrderingSystem ordering = go.AddComponent<OrderingSystem>();
+
+            MethodInfo foodAwake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            foodAwake?.Invoke(database, null);
+
+            typeof(OrderingSystem).GetField("foodDatabase", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(ordering, database);
+
+            MethodInfo orderingAwake = typeof(OrderingSystem).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            orderingAwake?.Invoke(ordering, null);
+
+            Assert.IsTrue(ContainsMenuItem(ordering.Menu, "Veggie Tray"));
+            Assert.IsTrue(ContainsMenuItem(ordering.Menu, "Roast Pork Plate"));
+            Assert.IsTrue(ContainsMenuItem(ordering.Menu, "Smoothie Bowl Deluxe"));
+            Assert.IsTrue(ContainsFastFood(ordering, "Turbo Taco Forge", "Taco Combo"));
+            Assert.IsTrue(ContainsFastFood(ordering, "Sizzle Shuttle", "Chicken Wrap"));
+            Assert.IsTrue(ContainsFastFood(ordering, "Slice Current", "Pizza Combo"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        private static bool ContainsDrink(DrinkDatabase database, string name)
+        {
+            for (int i = 0; i < database.Drinks.Count; i++)
+            {
+                if (database.Drinks[i] != null && database.Drinks[i].Name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsMenuItem(IReadOnlyList<MenuItem> menu, string foodName)
+        {
+            for (int i = 0; i < menu.Count; i++)
+            {
+                if (menu[i]?.Food != null && menu[i].Food.Name == foodName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsFastFood(OrderingSystem ordering, string locationName, string foodName)
+        {
+            for (int i = 0; i < ordering.FastFoodLocations.Count; i++)
+            {
+                FastFoodLocation location = ordering.FastFoodLocations[i];
+                if (location == null || location.Menu == null || location.LocationName != locationName)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < location.Menu.Count; j++)
+                {
+                    if (location.Menu[j]?.Food != null && location.Menu[j].Food.Name == foodName)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         [Test]
