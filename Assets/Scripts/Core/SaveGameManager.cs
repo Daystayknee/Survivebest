@@ -15,6 +15,8 @@ using Survivebest.Crime;
 using Survivebest.NPC;
 using Survivebest.Quest;
 using Survivebest.Story;
+using Survivebest.Social;
+using Survivebest.Tasks;
 
 namespace Survivebest.Core
 {
@@ -66,11 +68,26 @@ namespace Survivebest.Core
         public HouseholdControlMode HouseholdControlMode;
         public List<HouseholdAutonomyNote> HouseholdAutonomyNotes = new();
         public List<HouseholdPetProfile> HouseholdPets = new();
+        public List<RelationshipMemory> RelationshipMemories = new();
+        public List<RelationshipProfile> RelationshipProfiles = new();
+        public List<ReputationEntry> RelationshipReputations = new();
+        public List<SocialEventSignal> SocialSignals = new();
+        public List<SecretEntry> Secrets = new();
+        public List<ScandalEvent> Scandals = new();
+        public List<ReputationLayerProfile> SocialReputations = new();
+        public List<RumorPacket> Rumors = new();
         public List<JusticeSystem.ActiveSentenceRecord> ActiveSentences = new();
         public List<InmateRoutineState> InmateStates = new();
+        public List<DisciplineRecord> DisciplineHistory = new();
+        public List<InmateContrabandInventory> ContrabandInventories = new();
         public OrderingSystem.OrderingRuntimeState Ordering;
         public List<AnimalSightingContract> Contracts = new();
+        public List<ActiveOpportunity> Opportunities = new();
         public List<HouseholdChore> HouseholdChores = new();
+        public List<PropertyRecord> HousingProperties = new();
+        public List<RepairRequest> RepairRequests = new();
+        public int HousingDaysSinceBilling;
+        public List<ActiveTaskSessionSnapshot> ActiveTaskSessions = new();
         public List<NpcProfile> Npcs = new();
         public List<DistrictDefinition> Districts = new();
         public List<LotDefinition> Lots = new();
@@ -115,7 +132,9 @@ namespace Survivebest.Core
         [SerializeField] private PrisonRoutineSystem prisonRoutineSystem;
         [SerializeField] private OrderingSystem orderingSystem;
         [SerializeField] private ContractBoardSystem contractBoardSystem;
+        [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private HouseholdChoreSystem householdChoreSystem;
+        [SerializeField] private HousingPropertySystem housingPropertySystem;
         [SerializeField] private NpcScheduleSystem npcScheduleSystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
@@ -124,6 +143,11 @@ namespace Survivebest.Core
         [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
         [SerializeField] private PlayerExperienceCascadeSystem playerExperienceCascadeSystem;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private SocialDramaEngine socialDramaEngine;
+        [SerializeField] private DisciplineSystem disciplineSystem;
+        [SerializeField] private ContrabandSystem contrabandSystem;
+        [SerializeField] private TaskInteractionManager taskInteractionManager;
         [SerializeField] private SimulationRestoreCoordinator simulationRestoreCoordinator;
 
         public bool SaveToSlot(int slotIndex, string worldName)
@@ -306,11 +330,26 @@ namespace Survivebest.Core
                 snapshot.HouseholdPets = new List<HouseholdPetProfile>(householdManager.Pets);
             }
 
+            snapshot.RelationshipMemories = relationshipMemorySystem != null ? new List<RelationshipMemory>(relationshipMemorySystem.Memories) : new List<RelationshipMemory>();
+            snapshot.RelationshipProfiles = relationshipMemorySystem != null ? new List<RelationshipProfile>(relationshipMemorySystem.Profiles) : new List<RelationshipProfile>();
+            snapshot.RelationshipReputations = relationshipMemorySystem != null ? new List<ReputationEntry>(relationshipMemorySystem.Reputations) : new List<ReputationEntry>();
+            snapshot.SocialSignals = socialDramaEngine != null ? new List<SocialEventSignal>(socialDramaEngine.SocialSignals) : new List<SocialEventSignal>();
+            snapshot.Secrets = socialDramaEngine != null ? new List<SecretEntry>(socialDramaEngine.Secrets) : new List<SecretEntry>();
+            snapshot.Scandals = socialDramaEngine != null ? new List<ScandalEvent>(socialDramaEngine.Scandals) : new List<ScandalEvent>();
+            snapshot.SocialReputations = socialDramaEngine != null ? new List<ReputationLayerProfile>(socialDramaEngine.Reputations) : new List<ReputationLayerProfile>();
+            snapshot.Rumors = socialDramaEngine != null ? new List<RumorPacket>(socialDramaEngine.Rumors) : new List<RumorPacket>();
             snapshot.ActiveSentences = justiceSystem != null ? justiceSystem.CaptureRuntimeState() : new List<JusticeSystem.ActiveSentenceRecord>();
             snapshot.InmateStates = prisonRoutineSystem != null ? prisonRoutineSystem.CaptureRuntimeState() : new List<InmateRoutineState>();
+            snapshot.DisciplineHistory = disciplineSystem != null ? disciplineSystem.CaptureRuntimeState() : new List<DisciplineRecord>();
+            snapshot.ContrabandInventories = contrabandSystem != null ? contrabandSystem.CaptureRuntimeState() : new List<InmateContrabandInventory>();
             snapshot.Ordering = orderingSystem != null ? orderingSystem.CaptureRuntimeState() : null;
             snapshot.Contracts = contractBoardSystem != null ? contractBoardSystem.CaptureRuntimeState() : new List<AnimalSightingContract>();
+            snapshot.Opportunities = questOpportunitySystem != null ? questOpportunitySystem.CaptureRuntimeState() : new List<ActiveOpportunity>();
             snapshot.HouseholdChores = householdChoreSystem != null ? householdChoreSystem.CaptureRuntimeState() : new List<HouseholdChore>();
+            snapshot.HousingProperties = housingPropertySystem != null ? new List<PropertyRecord>(housingPropertySystem.Properties) : new List<PropertyRecord>();
+            snapshot.RepairRequests = housingPropertySystem != null ? new List<RepairRequest>(housingPropertySystem.RepairRequests) : new List<RepairRequest>();
+            snapshot.HousingDaysSinceBilling = housingPropertySystem != null ? housingPropertySystem.DaysSinceBilling : 0;
+            snapshot.ActiveTaskSessions = taskInteractionManager != null ? taskInteractionManager.CaptureRuntimeState() : new List<ActiveTaskSessionSnapshot>();
             snapshot.Npcs = npcScheduleSystem != null ? npcScheduleSystem.CaptureRuntimeState() : new List<NpcProfile>();
             snapshot.Districts = townSimulationSystem != null ? new List<DistrictDefinition>(townSimulationSystem.Districts) : new List<DistrictDefinition>();
             snapshot.Lots = townSimulationSystem != null ? new List<LotDefinition>(townSimulationSystem.Lots) : new List<LotDefinition>();
@@ -383,6 +422,8 @@ namespace Survivebest.Core
                 {
                     if (payload.Systems != null)
                     {
+                        relationshipMemorySystem?.ApplyRuntimeState(payload.Systems.RelationshipMemories, payload.Systems.RelationshipProfiles, payload.Systems.RelationshipReputations);
+                        socialDramaEngine?.ApplyRuntimeState(payload.Systems.SocialSignals, payload.Systems.Secrets, payload.Systems.Scandals, payload.Systems.SocialReputations, payload.Systems.Rumors);
                         humanLifeExperienceLayerSystem?.ApplyRuntimeState(payload.Systems.HumanLife);
                         worldCultureSocietyEngine?.ApplyRuntimeState(payload.Systems.Cultures, payload.Systems.CulturalIdentities, payload.Systems.NeighborhoodMicroCultures);
                         playerExperienceCascadeSystem?.ApplyRuntimeState(payload.Systems.LifeDirections, payload.Systems.Regrets, payload.Systems.MeaningProfiles, payload.Systems.LifeStories);
@@ -405,6 +446,8 @@ namespace Survivebest.Core
                     {
                         justiceSystem?.ApplyRuntimeState(payload.Systems.ActiveSentences, householdManager != null ? householdManager.Members : null);
                         prisonRoutineSystem?.ApplyRuntimeState(payload.Systems.InmateStates);
+                        disciplineSystem?.ApplyRuntimeState(payload.Systems.DisciplineHistory);
+                        contrabandSystem?.ApplyRuntimeState(payload.Systems.ContrabandInventories);
                     }
                 },
                 ActivityTaskRestore = () =>
@@ -412,7 +455,10 @@ namespace Survivebest.Core
                     if (payload.Systems != null)
                     {
                         contractBoardSystem?.ApplyRuntimeState(payload.Systems.Contracts);
+                        questOpportunitySystem?.ApplyRuntimeState(payload.Systems.Opportunities);
                         householdChoreSystem?.ApplyRuntimeState(payload.Systems.HouseholdChores);
+                        housingPropertySystem?.ApplyRuntimeState(payload.Systems.HousingProperties, payload.Systems.RepairRequests, payload.Systems.HousingDaysSinceBilling);
+                        taskInteractionManager?.ApplyRuntimeState(payload.Systems.ActiveTaskSessions);
                     }
                 },
                 FinalPresentationSync = () =>
@@ -547,10 +593,24 @@ namespace Survivebest.Core
             payload.Systems ??= new WorldSystemsSnapshot();
             payload.Systems.HouseholdAutonomyNotes ??= new List<HouseholdAutonomyNote>();
             payload.Systems.HouseholdPets ??= new List<HouseholdPetProfile>();
+            payload.Systems.RelationshipMemories ??= new List<RelationshipMemory>();
+            payload.Systems.RelationshipProfiles ??= new List<RelationshipProfile>();
+            payload.Systems.RelationshipReputations ??= new List<ReputationEntry>();
+            payload.Systems.SocialSignals ??= new List<SocialEventSignal>();
+            payload.Systems.Secrets ??= new List<SecretEntry>();
+            payload.Systems.Scandals ??= new List<ScandalEvent>();
+            payload.Systems.SocialReputations ??= new List<ReputationLayerProfile>();
+            payload.Systems.Rumors ??= new List<RumorPacket>();
             payload.Systems.ActiveSentences ??= new List<JusticeSystem.ActiveSentenceRecord>();
             payload.Systems.InmateStates ??= new List<InmateRoutineState>();
+            payload.Systems.DisciplineHistory ??= new List<DisciplineRecord>();
+            payload.Systems.ContrabandInventories ??= new List<InmateContrabandInventory>();
             payload.Systems.Contracts ??= new List<AnimalSightingContract>();
+            payload.Systems.Opportunities ??= new List<ActiveOpportunity>();
             payload.Systems.HouseholdChores ??= new List<HouseholdChore>();
+            payload.Systems.HousingProperties ??= new List<PropertyRecord>();
+            payload.Systems.RepairRequests ??= new List<RepairRequest>();
+            payload.Systems.ActiveTaskSessions ??= new List<ActiveTaskSessionSnapshot>();
             payload.Systems.Npcs ??= new List<NpcProfile>();
             payload.Systems.Districts ??= new List<DistrictDefinition>();
             payload.Systems.Lots ??= new List<LotDefinition>();

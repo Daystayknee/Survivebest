@@ -14,6 +14,8 @@ using Survivebest.Quest;
 using Survivebest.Story;
 using Survivebest.World;
 using Survivebest.Appearance;
+using Survivebest.Social;
+using Survivebest.Tasks;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -77,7 +79,9 @@ namespace Survivebest.Tests.EditMode
             PrisonRoutineSystem prison = root.AddComponent<PrisonRoutineSystem>();
             OrderingSystem ordering = root.AddComponent<OrderingSystem>();
             ContractBoardSystem contracts = root.AddComponent<ContractBoardSystem>();
+            QuestOpportunitySystem opportunities = root.AddComponent<QuestOpportunitySystem>();
             HouseholdChoreSystem chores = root.AddComponent<HouseholdChoreSystem>();
+            HousingPropertySystem housing = root.AddComponent<HousingPropertySystem>();
             TownSimulationSystem town = root.AddComponent<TownSimulationSystem>();
             WorldPersistenceCullingSystem culling = root.AddComponent<WorldPersistenceCullingSystem>();
             AIDirectorDramaManager director = root.AddComponent<AIDirectorDramaManager>();
@@ -85,6 +89,12 @@ namespace Survivebest.Tests.EditMode
             WorldCultureSocietyEngine culture = root.AddComponent<WorldCultureSocietyEngine>();
             PlayerExperienceCascadeSystem cascade = root.AddComponent<PlayerExperienceCascadeSystem>();
             HumanLifeExperienceLayerSystem humanLife = root.AddComponent<HumanLifeExperienceLayerSystem>();
+            RelationshipMemorySystem relationshipMemory = root.AddComponent<RelationshipMemorySystem>();
+            SocialDramaEngine socialDrama = root.AddComponent<SocialDramaEngine>();
+            DisciplineSystem discipline = root.AddComponent<DisciplineSystem>();
+            ContrabandSystem contraband = root.AddComponent<ContrabandSystem>();
+            TaskInteractionManager taskManager = root.AddComponent<TaskInteractionManager>();
+            TaskDatabase taskDatabase = root.AddComponent<TaskDatabase>();
 
             GameObject npcGo = new GameObject("NpcSchedule");
             NpcScheduleSystem npcSchedule = npcGo.AddComponent<NpcScheduleSystem>();
@@ -107,7 +117,9 @@ namespace Survivebest.Tests.EditMode
             SetPrivateField(manager, "prisonRoutineSystem", prison);
             SetPrivateField(manager, "orderingSystem", ordering);
             SetPrivateField(manager, "contractBoardSystem", contracts);
+            SetPrivateField(manager, "questOpportunitySystem", opportunities);
             SetPrivateField(manager, "householdChoreSystem", chores);
+            SetPrivateField(manager, "housingPropertySystem", housing);
             SetPrivateField(manager, "npcScheduleSystem", npcSchedule);
             SetPrivateField(manager, "townSimulationSystem", town);
             SetPrivateField(manager, "worldPersistenceCullingSystem", culling);
@@ -116,6 +128,12 @@ namespace Survivebest.Tests.EditMode
             SetPrivateField(manager, "worldCultureSocietyEngine", culture);
             SetPrivateField(manager, "playerExperienceCascadeSystem", cascade);
             SetPrivateField(manager, "humanLifeExperienceLayerSystem", humanLife);
+            SetPrivateField(manager, "relationshipMemorySystem", relationshipMemory);
+            SetPrivateField(manager, "socialDramaEngine", socialDrama);
+            SetPrivateField(manager, "disciplineSystem", discipline);
+            SetPrivateField(manager, "contrabandSystem", contraband);
+            SetPrivateField(manager, "taskInteractionManager", taskManager);
+            SetPrivateField(taskManager, "taskDatabase", taskDatabase);
 
             household.ApplyRuntimeState(
                 HouseholdControlMode.AutoRotate,
@@ -209,13 +227,103 @@ namespace Survivebest.Tests.EditMode
                 SmallPleasures = new List<string> { "iced coffee" }
             });
             humanLife.LogReflection(character, LifeReflectionType.Nostalgia, 0.6f);
+            relationshipMemory.ApplyRuntimeState(
+                new List<RelationshipMemory>
+                {
+                    new RelationshipMemory { MemoryId = "mem_1", SubjectCharacterId = "char_1", TargetCharacterId = "npc_1", Topic = "shared secret", IsPublic = true, Impact = 12, TimestampHour = 9, MemoryKind = PersonalMemoryKind.SharedExperience }
+                },
+                new List<RelationshipProfile>
+                {
+                    new RelationshipProfile { CharacterId = "char_1", Trust = 18, Respect = 11, Loyalty = 9 }
+                },
+                new List<ReputationEntry>
+                {
+                    new ReputationEntry { CharacterId = "char_1", Scope = ReputationScope.Neighborhood, ScopeId = "district_1", Value = 7 }
+                });
+            socialDrama.ApplyRuntimeState(
+                new List<SocialEventSignal>
+                {
+                    new SocialEventSignal { EventId = "signal_1", EventType = SocialEventType.Rumor, Location = "lot_shop", Severity = 0.5f, TimestampHour = 10 }
+                },
+                new List<SecretEntry>
+                {
+                    new SecretEntry { SecretId = "secret_1", OwnerCharacterId = "char_1", ExposureRisk = 0.4f, SecrecyLevel = 0.8f, IsExposed = false }
+                },
+                new List<ScandalEvent>
+                {
+                    new ScandalEvent { ScandalId = "scandal_1", CharacterId = "char_1", Type = "rumor_wave", Severity = 0.45f, ReputationShift = -8f, MediaSpread = 0.3f }
+                },
+                new List<ReputationLayerProfile>
+                {
+                    new ReputationLayerProfile { CharacterId = "char_1", CommunityReputation = -4f, ProfessionalReputation = 3f }
+                },
+                new List<RumorPacket>
+                {
+                    new RumorPacket { RumorId = "rumor_1", SourceCharacterId = "npc_1", SubjectCharacterId = "char_1", Content = "Late rent talk", TruthLevel = 0.7f, SpreadPower = 0.4f }
+                },
+                8);
+            discipline.ApplyRuntimeState(new List<DisciplineRecord>
+            {
+                new DisciplineRecord { CharacterId = "char_1", Offense = DisciplineOffenseType.GuardDisobedience, Punishment = DisciplinePunishmentType.PrivilegeLoss, Hours = 8 }
+            });
+            contraband.ApplyRuntimeState(new List<InmateContrabandInventory>
+            {
+                new InmateContrabandInventory { CharacterId = "char_1", Items = new List<ContrabandItem> { new ContrabandItem { ItemId = "burner_phone", Category = ContrabandCategory.Communication, Risk = 0.7f, Value = 55 } } }
+            });
+            opportunities.ApplyRuntimeState(new List<ActiveOpportunity>
+            {
+                new ActiveOpportunity
+                {
+                    Definition = new OpportunityDefinition
+                    {
+                        OpportunityId = "opp_1",
+                        Title = "Fix the laundry room",
+                        LocationId = "lot_shop",
+                        RewardFunds = 55,
+                        DurationHours = 12,
+                        Objectives = new List<OpportunityObjective>
+                        {
+                            new OpportunityObjective { ObjectiveId = "obj_1", Type = ObjectiveType.GoToLocation, TargetId = "lot_shop", RequiredAmount = 2, CurrentAmount = 1, IsCompleted = false }
+                        }
+                    },
+                    State = OpportunityState.Accepted,
+                    AcceptedAtHour = 4,
+                    DeadlineHour = 16,
+                    AcceptedCharacterId = "char_1"
+                }
+            });
+            housing.ApplyRuntimeState(
+                new List<PropertyRecord>
+                {
+                    new PropertyRecord { PropertyId = "prop_1", LotId = "lot_shop", OwnerCharacterId = "char_1", CleanlinessScore = 61f, DishStack = 9f, LaundryPile = 7f, OdorLevel = 22f, StorageCapacity = 100, StorageUsed = 46, ElectricityOn = true, WaterOn = true }
+                },
+                new List<RepairRequest>
+                {
+                    new RepairRequest { RequestId = "repair_1", PropertyId = "prop_1", Label = "Leak", Severity = 18f, Cost = 45, IsResolved = false }
+                },
+                3);
+            typeof(TaskDatabase).GetField("taskDefinitions", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(taskDatabase, new List<TaskDefinition>
+            {
+                new TaskDefinition { TaskId = "task_clean", DisplayName = "Clean Kitchen", Results = new List<TaskResultDefinition>(), InteractiveSteps = new List<TaskStepDefinition>() }
+            });
+            taskManager.ApplyRuntimeState(new List<ActiveTaskSessionSnapshot>
+            {
+                new ActiveTaskSessionSnapshot { SessionId = "session_1", TaskId = "task_clean", Mode = TaskMode.Auto, CurrentStepIndex = 0, IsCompleted = false, ActorCharacterId = "char_1", SourceStationId = "kitchen_station" }
+            });
 
             SaveSlotPayload payload = InvokePrivate<SaveSlotPayload>(manager, "BuildPayload", "ParityWorld");
 
             Assert.AreEqual(6, payload.SchemaVersion);
             Assert.NotNull(payload.Systems);
+            Assert.AreEqual(1, payload.Systems.RelationshipMemories.Count);
+            Assert.AreEqual(1, payload.Systems.Rumors.Count);
             Assert.AreEqual(1, payload.Systems.ActiveSentences.Count);
+            Assert.AreEqual(1, payload.Systems.DisciplineHistory.Count);
+            Assert.AreEqual(1, payload.Systems.ContrabandInventories.Count);
             Assert.AreEqual(1, payload.Systems.Contracts.Count);
+            Assert.AreEqual(1, payload.Systems.Opportunities.Count);
+            Assert.AreEqual(1, payload.Systems.HousingProperties.Count);
+            Assert.AreEqual(1, payload.Systems.ActiveTaskSessions.Count);
             Assert.AreEqual(1, payload.Systems.Npcs.Count);
             Assert.AreEqual(1, payload.Systems.LifeStories.Count);
             Assert.AreEqual(ActivityType.Read, payload.HouseholdCharacters[0].ActivityState.LastActivityType);
@@ -231,6 +339,13 @@ namespace Survivebest.Tests.EditMode
             ordering.ApplyRuntimeState(new OrderingSystem.OrderingRuntimeState(), household.Members);
             contracts.ApplyRuntimeState(new List<AnimalSightingContract>());
             chores.ApplyRuntimeState(new List<HouseholdChore>());
+            housing.ApplyRuntimeState(new List<PropertyRecord>(), new List<RepairRequest>(), 0);
+            opportunities.ApplyRuntimeState(new List<ActiveOpportunity>());
+            discipline.ApplyRuntimeState(new List<DisciplineRecord>());
+            contraband.ApplyRuntimeState(new List<InmateContrabandInventory>());
+            taskManager.ApplyRuntimeState(new List<ActiveTaskSessionSnapshot>());
+            relationshipMemory.ApplyRuntimeState(new List<RelationshipMemory>(), new List<RelationshipProfile>(), new List<ReputationEntry>());
+            socialDrama.ApplyRuntimeState(new List<SocialEventSignal>(), new List<SecretEntry>(), new List<ScandalEvent>(), new List<ReputationLayerProfile>(), new List<RumorPacket>());
             npcSchedule.ApplyRuntimeState(new List<NpcProfile>());
             town.ApplyRuntimeState(new List<DistrictDefinition>(), new List<LotDefinition>(), new List<RouteEdge>());
             culling.ApplyRuntimeState(new List<LotSimulationState>(), new List<RemoteNpcSnapshot>());
@@ -253,7 +368,16 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(1, prison.InmateStates.Count);
             Assert.AreEqual(1, ordering.PendingOrders.Count);
             Assert.AreEqual(1, contracts.Contracts.Count);
+            Assert.AreEqual(1, opportunities.ActiveOpportunities.Count);
             Assert.AreEqual(1, chores.DailyChores.Count);
+            Assert.AreEqual(1, housing.Properties.Count);
+            Assert.AreEqual(1, housing.RepairRequests.Count);
+            Assert.AreEqual(3, housing.DaysSinceBilling);
+            Assert.AreEqual(1, taskManager.ActiveSessions.Count);
+            Assert.AreEqual(1, relationshipMemory.Memories.Count);
+            Assert.AreEqual(1, socialDrama.Rumors.Count);
+            Assert.AreEqual(1, discipline.History.Count);
+            Assert.AreEqual(1, contraband.Inventories.Count);
             Assert.AreEqual(1, npcSchedule.NpcProfiles.Count);
             Assert.AreEqual(1, town.Districts.Count);
             Assert.AreEqual(1, culling.LotStates.Count);

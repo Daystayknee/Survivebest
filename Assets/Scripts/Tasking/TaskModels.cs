@@ -93,6 +93,20 @@ namespace Survivebest.Tasks
     }
 
     [Serializable]
+
+    [Serializable]
+    public class ActiveTaskSessionSnapshot
+    {
+        public string SessionId;
+        public string TaskId;
+        public TaskMode Mode;
+        public int CurrentStepIndex;
+        public bool IsCompleted;
+        public string ActorCharacterId;
+        public string SourceStationId;
+        public List<string> CompletedStepIds = new();
+    }
+
     public class ActiveTaskSession
     {
         public string SessionId;

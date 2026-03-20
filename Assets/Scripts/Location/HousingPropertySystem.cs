@@ -161,6 +161,14 @@ namespace Survivebest.Location
 
         public IReadOnlyList<PropertyRecord> Properties => properties;
         public IReadOnlyList<RepairRequest> RepairRequests => repairRequests;
+        public int DaysSinceBilling => daysSinceBilling;
+
+        public void ApplyRuntimeState(List<PropertyRecord> savedProperties, List<RepairRequest> savedRepairRequests, int savedDaysSinceBilling)
+        {
+            properties = savedProperties != null ? new List<PropertyRecord>(savedProperties) : new List<PropertyRecord>();
+            repairRequests = savedRepairRequests != null ? new List<RepairRequest>(savedRepairRequests) : new List<RepairRequest>();
+            daysSinceBilling = Mathf.Max(0, savedDaysSinceBilling);
+        }
 
         private void OnEnable()
         {
