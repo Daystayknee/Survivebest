@@ -184,6 +184,31 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+        [Test]
+        public void OrderingSystem_Awake_SyncsExpandedFoodDatabaseIntoMenus()
+        {
+            GameObject go = new GameObject("OrderingExpandedSync");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+            OrderingSystem ordering = go.AddComponent<OrderingSystem>();
+
+            MethodInfo foodAwake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            foodAwake?.Invoke(database, null);
+
+            typeof(OrderingSystem).GetField("foodDatabase", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(ordering, database);
+
+            MethodInfo orderingAwake = typeof(OrderingSystem).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            orderingAwake?.Invoke(ordering, null);
+
+            Assert.IsTrue(ContainsMenuItem(ordering.Menu, "Veggie Tray"));
+            Assert.IsTrue(ContainsMenuItem(ordering.Menu, "Roast Pork Plate"));
+            Assert.IsTrue(ContainsMenuItem(ordering.Menu, "Smoothie Bowl Deluxe"));
+            Assert.IsTrue(ContainsFastFood(ordering, "Turbo Taco Forge", "Taco Combo"));
+            Assert.IsTrue(ContainsFastFood(ordering, "Sizzle Shuttle", "Chicken Wrap"));
+            Assert.IsTrue(ContainsFastFood(ordering, "Slice Current", "Pizza Combo"));
+
+            Object.DestroyImmediate(go);
+        }
+
         private static bool ContainsDrink(DrinkDatabase database, string name)
         {
             for (int i = 0; i < database.Drinks.Count; i++)
@@ -191,6 +216,41 @@ namespace Survivebest.Tests.EditMode
                 if (database.Drinks[i] != null && database.Drinks[i].Name == name)
                 {
                     return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsMenuItem(IReadOnlyList<MenuItem> menu, string foodName)
+        {
+            for (int i = 0; i < menu.Count; i++)
+            {
+                if (menu[i]?.Food != null && menu[i].Food.Name == foodName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsFastFood(OrderingSystem ordering, string locationName, string foodName)
+        {
+            for (int i = 0; i < ordering.FastFoodLocations.Count; i++)
+            {
+                FastFoodLocation location = ordering.FastFoodLocations[i];
+                if (location == null || location.Menu == null || location.LocationName != locationName)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < location.Menu.Count; j++)
+                {
+                    if (location.Menu[j]?.Food != null && location.Menu[j].Food.Name == foodName)
+                    {
+                        return true;
+                    }
                 }
             }
 
