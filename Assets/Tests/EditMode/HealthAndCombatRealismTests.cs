@@ -293,6 +293,11 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Triage));
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Casting));
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
+            Assert.AreEqual(TissueLayerDepth.Bone, condition.TissueDepth);
+            Assert.IsTrue(condition.RequiresImaging);
+            Assert.IsTrue(condition.RequiresCast);
+            Assert.IsTrue(condition.RequiresSurgeryConsult);
+            Assert.Greater(condition.InternalBleedingRisk, 0f);
             StringAssert.Contains("sterile", plan.ReprocessingSummary.ToLowerInvariant());
             StringAssert.Contains("Medication lane", plan.MedicationSummary);
 
@@ -312,6 +317,7 @@ namespace Survivebest.Tests.EditMode
             HealthcareEncounterPlan plan = healthcare.BuildPlan(condition);
 
             Assert.IsNotNull(plan);
+            Assert.AreEqual(SkinConditionType.CysticAcne, condition.SkinConditionType);
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Dermatology));
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
 

@@ -118,6 +118,40 @@ namespace Survivebest.Health
         Depressed
     }
 
+    public enum TissueLayerDepth
+    {
+        Surface,
+        Dermal,
+        Subcutaneous,
+        Muscle,
+        Tendon,
+        Organ,
+        Bone,
+        Systemic
+    }
+
+    public enum InternalComplicationType
+    {
+        None,
+        InternalBleeding,
+        OrganBruising,
+        NerveCompression,
+        InfectionSpread,
+        AirwayRisk,
+        ShockRisk
+    }
+
+    public enum SkinConditionType
+    {
+        None,
+        Pimple,
+        CysticAcne,
+        Wart,
+        Rash,
+        Blister,
+        Abscess
+    }
+
     public enum MedicationType
     {
         Painkiller,
@@ -158,6 +192,14 @@ namespace Survivebest.Health
         [Range(0f, 1f)] public float InfectionRisk;
         public bool IsOpenWound;
         public bool IsBoneInjury;
+        public TissueLayerDepth TissueDepth;
+        public InternalComplicationType InternalComplication;
+        public SkinConditionType SkinConditionType;
+        [Range(0f, 1f)] public float InternalBleedingRisk;
+        public bool RequiresImaging;
+        public bool RequiresSutures;
+        public bool RequiresCast;
+        public bool RequiresSurgeryConsult;
         public string DetailSummary;
     }
 
@@ -472,7 +514,50 @@ namespace Survivebest.Health
                 Contagiousness = contagious,
                 PainLevel = pain * mult,
                 RequiresBedRest = bedRest,
-                RecommendedMedication = med
+                RecommendedMedication = med,
+                BodyLocation = type is IllnessType.SkinInfection or IllnessType.WartCluster or IllnessType.SevereAcneFlare or IllnessType.Abscess ? BodyLocation.Scalp : BodyLocation.Unknown,
+                WoundType = WoundType.None,
+                FractureType = FractureType.None,
+                BleedingRate = 0f,
+                MobilityPenalty = type is IllnessType.Sepsis ? 0.45f : 0f,
+                InfectionRisk = type is IllnessType.SkinInfection or IllnessType.Abscess or IllnessType.Sepsis ? 0.35f : 0f,
+                IsOpenWound = false,
+                IsBoneInjury = false,
+                TissueDepth = type switch
+                {
+                    IllnessType.SkinInfection or IllnessType.WartCluster or IllnessType.SevereAcneFlare => TissueLayerDepth.Dermal,
+                    IllnessType.Abscess => TissueLayerDepth.Subcutaneous,
+                    IllnessType.Sepsis => TissueLayerDepth.Systemic,
+                    _ => TissueLayerDepth.Systemic
+                },
+                InternalComplication = type switch
+                {
+                    IllnessType.Abscess => InternalComplicationType.InfectionSpread,
+                    IllnessType.Sepsis => InternalComplicationType.ShockRisk,
+                    _ => InternalComplicationType.None
+                },
+                SkinConditionType = type switch
+                {
+                    IllnessType.WartCluster => SkinConditionType.Wart,
+                    IllnessType.SevereAcneFlare => SkinConditionType.CysticAcne,
+                    IllnessType.SkinInfection => SkinConditionType.Rash,
+                    IllnessType.Abscess => SkinConditionType.Abscess,
+                    _ => SkinConditionType.None
+                },
+                InternalBleedingRisk = 0f,
+                RequiresImaging = false,
+                RequiresSutures = false,
+                RequiresCast = false,
+                RequiresSurgeryConsult = type is IllnessType.Abscess or IllnessType.Sepsis,
+                DetailSummary = type switch
+                {
+                    IllnessType.WartCluster => "Clustered skin-growth care plan: inspect lesions, cryo or topical treatment, and hygiene follow-up.",
+                    IllnessType.SevereAcneFlare => "Deep inflammatory skin-care plan: cleanse, topical/oral medication, drainage watch, and scar prevention.",
+                    IllnessType.SkinInfection => "Localized skin infection care: monitor spread, pain, drainage, and antibiotic response.",
+                    IllnessType.Abscess => "Abscess care: assess depth, infection spread, drainage need, and dressing changes.",
+                    IllnessType.Sepsis => "Systemic infection emergency: fluids, antibiotics, monitoring, and urgent escalation.",
+                    _ => null
+                }
             };
         }
 
@@ -499,6 +584,13 @@ namespace Survivebest.Health
             float bleedingRate = bleedingRateOverride ?? baseBleedingRate;
             float mobilityPenalty = mobilityPenaltyOverride ?? baseMobilityPenalty;
             float infectionRisk = Mathf.Clamp01(bleedingRate * 0.55f + (openWound ? 0.18f : 0f) + (type == InjuryType.Bite ? 0.14f : 0f));
+            TissueLayerDepth tissueDepth = ResolveTissueDepth(type, woundType, fractureType);
+            InternalComplicationType internalComplication = ResolveInternalComplication(type, bodyLocation, severity, woundType);
+            float internalBleedingRisk = ComputeInternalBleedingRisk(bodyLocation, severity, woundType, fractureType);
+            bool requiresImaging = type == InjuryType.Fracture || bodyLocation is BodyLocation.Ribs or BodyLocation.Chest or BodyLocation.Abdomen or BodyLocation.Spine or BodyLocation.Kidney;
+            bool requiresSutures = openWound && type is InjuryType.Cut or InjuryType.Bite;
+            bool requiresCast = type == InjuryType.Fracture;
+            bool requiresSurgeryConsult = fractureType is FractureType.Open or FractureType.Comminuted || internalComplication is InternalComplicationType.InternalBleeding or InternalComplicationType.AirwayRisk or InternalComplicationType.ShockRisk;
 
             return new MedicalCondition
             {
@@ -524,7 +616,15 @@ namespace Survivebest.Health
                 InfectionRisk = infectionRisk,
                 IsOpenWound = openWound,
                 IsBoneInjury = boneInjury,
-                DetailSummary = string.IsNullOrWhiteSpace(detailSummary) ? BuildInjuryDetailSummary(finalLabel, woundType, bodyLocation, severity, fractureType) : detailSummary
+                TissueDepth = tissueDepth,
+                InternalComplication = internalComplication,
+                SkinConditionType = SkinConditionType.None,
+                InternalBleedingRisk = internalBleedingRisk,
+                RequiresImaging = requiresImaging,
+                RequiresSutures = requiresSutures,
+                RequiresCast = requiresCast,
+                RequiresSurgeryConsult = requiresSurgeryConsult,
+                DetailSummary = string.IsNullOrWhiteSpace(detailSummary) ? BuildInjuryDetailSummary(finalLabel, woundType, bodyLocation, severity, fractureType, tissueDepth, internalComplication, internalBleedingRisk) : detailSummary
             };
         }
 
@@ -661,7 +761,90 @@ namespace Survivebest.Health
             string woundLabel = woundType == WoundType.None ? "injury" : woundType.ToString();
             string fractureLabel = fractureType == FractureType.None ? string.Empty : $" with a {fractureType.ToString().ToLowerInvariant()} fracture pattern";
             string locationLabel = bodyLocation == BodyLocation.Unknown ? "unspecified location" : bodyLocation.ToString();
-            return $"{label}: {severityLabel} {woundLabel} affecting {locationLabel}{fractureLabel}.";
+            return BuildInjuryDetailSummary(label, woundType, bodyLocation, severity, fractureType, ResolveTissueDepth(InjuryType.Bruise, woundType, fractureType), InternalComplicationType.None, 0f);
+        }
+
+        private static string BuildInjuryDetailSummary(string label, WoundType woundType, BodyLocation bodyLocation, ConditionSeverity severity, FractureType fractureType, TissueLayerDepth tissueDepth, InternalComplicationType complication, float internalBleedingRisk)
+        {
+            string severityLabel = severity.ToString().ToLowerInvariant();
+            string woundLabel = woundType == WoundType.None ? "injury" : woundType.ToString();
+            string fractureLabel = fractureType == FractureType.None ? string.Empty : $" with a {fractureType.ToString().ToLowerInvariant()} fracture pattern";
+            string locationLabel = bodyLocation == BodyLocation.Unknown ? "unspecified location" : bodyLocation.ToString();
+            string complicationLabel = complication == InternalComplicationType.None ? string.Empty : $" Complication watch: {complication}.";
+            string internalBleedLabel = internalBleedingRisk > 0.05f ? $" Internal bleeding risk {internalBleedingRisk:P0}." : string.Empty;
+            return $"{label}: {severityLabel} {woundLabel} affecting {locationLabel}, depth {tissueDepth}{fractureLabel}.{complicationLabel}{internalBleedLabel}";
+        }
+
+        private static TissueLayerDepth ResolveTissueDepth(InjuryType injuryType, WoundType woundType, FractureType fractureType)
+        {
+            if (injuryType == InjuryType.Fracture || fractureType != FractureType.None)
+            {
+                return TissueLayerDepth.Bone;
+            }
+
+            return woundType switch
+            {
+                WoundType.Abrasion => TissueLayerDepth.Surface,
+                WoundType.DeepBruising or WoundType.BluntImpact => TissueLayerDepth.Subcutaneous,
+                WoundType.Laceration or WoundType.Puncture => TissueLayerDepth.Muscle,
+                WoundType.JointTwist or WoundType.LigamentTear => TissueLayerDepth.Tendon,
+                WoundType.InternalTrauma => TissueLayerDepth.Organ,
+                WoundType.VenomExposure => TissueLayerDepth.Systemic,
+                WoundType.ConcussiveTrauma => TissueLayerDepth.Organ,
+                _ => TissueLayerDepth.Dermal
+            };
+        }
+
+        private static InternalComplicationType ResolveInternalComplication(InjuryType injuryType, BodyLocation bodyLocation, ConditionSeverity severity, WoundType woundType)
+        {
+            if (severity != ConditionSeverity.Severe)
+            {
+                return InternalComplicationType.None;
+            }
+
+            if (bodyLocation == BodyLocation.Neck)
+            {
+                return InternalComplicationType.AirwayRisk;
+            }
+
+            if (bodyLocation is BodyLocation.Chest or BodyLocation.Ribs or BodyLocation.Abdomen or BodyLocation.Kidney)
+            {
+                return InternalComplicationType.InternalBleeding;
+            }
+
+            if (bodyLocation == BodyLocation.Spine)
+            {
+                return InternalComplicationType.NerveCompression;
+            }
+
+            if (injuryType == InjuryType.Bite || woundType == WoundType.VenomExposure)
+            {
+                return InternalComplicationType.InfectionSpread;
+            }
+
+            return woundType == WoundType.InternalTrauma ? InternalComplicationType.OrganBruising : InternalComplicationType.ShockRisk;
+        }
+
+        private static float ComputeInternalBleedingRisk(BodyLocation bodyLocation, ConditionSeverity severity, WoundType woundType, FractureType fractureType)
+        {
+            float baseRisk = bodyLocation switch
+            {
+                BodyLocation.Chest or BodyLocation.Ribs or BodyLocation.Abdomen or BodyLocation.Kidney or BodyLocation.Groin => 0.26f,
+                BodyLocation.Spine or BodyLocation.Hip or BodyLocation.Thigh => 0.18f,
+                _ => 0.04f
+            };
+
+            if (woundType == WoundType.InternalTrauma)
+            {
+                baseRisk += 0.16f;
+            }
+
+            if (fractureType is FractureType.Open or FractureType.Comminuted)
+            {
+                baseRisk += 0.08f;
+            }
+
+            return Mathf.Clamp01(baseRisk * (severity == ConditionSeverity.Severe ? 1.4f : severity == ConditionSeverity.Moderate ? 0.8f : 0.35f));
         }
 
         private void AddCondition(MedicalCondition condition)

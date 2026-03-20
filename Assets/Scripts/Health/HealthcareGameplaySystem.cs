@@ -45,6 +45,7 @@ namespace Survivebest.Health
         public string Description;
         public CareProviderRole ProviderRole;
         public CareFacilityType FacilityType;
+        public string AnatomyFocus;
         public MinigameType InteractiveMinigame;
         public MedicationType MedicationType;
         public int EstimatedMinutes;
@@ -52,6 +53,7 @@ namespace Survivebest.Health
         public bool RequiresFollowUp;
         public List<string> Supplies = new();
         public List<string> ProcedureSteps = new();
+        public List<string> ReprocessingChecklist = new();
     }
 
     [Serializable]
@@ -153,10 +155,14 @@ namespace Survivebest.Health
             for (int i = 0; i < plan.Directives.Count; i++)
             {
                 TreatmentDirective directive = plan.Directives[i];
-                builder.AppendLine($"[{i + 1}] {directive.Title} - {directive.ProviderRole} at {directive.FacilityType}");
+                builder.AppendLine($"[{i + 1}] {directive.Title} - {directive.ProviderRole} at {directive.FacilityType} ({directive.AnatomyFocus})");
                 for (int stepIndex = 0; stepIndex < directive.ProcedureSteps.Count; stepIndex++)
                 {
                     builder.AppendLine($"   • {directive.ProcedureSteps[stepIndex]}");
+                }
+                for (int checkIndex = 0; checkIndex < directive.ReprocessingChecklist.Count; checkIndex++)
+                {
+                    builder.AppendLine($"   ◦ Reprocess: {directive.ReprocessingChecklist[checkIndex]}");
                 }
             }
 
@@ -174,6 +180,7 @@ namespace Survivebest.Health
                 Description = animalPatient ? "Assess temperament, hydration, gait, visible wounds, and ownership history." : "Check vitals, bleeding, mobility, pain response, infection signs, and escalation risk.",
                 ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Nurse,
                 FacilityType = animalPatient ? CareFacilityType.VeterinaryClinic : CareFacilityType.Clinic,
+                AnatomyFocus = condition.BodyLocation == BodyLocation.Unknown ? condition.DisplayName : condition.BodyLocation.ToString(),
                 InteractiveMinigame = MinigameType.Triage,
                 EstimatedMinutes = 12,
                 Supplies = new List<string> { "Vitals chart", "Pulse oximeter", animalPatient ? "Muzzle/comfort wrap" : "Clipboard" },
@@ -182,7 +189,8 @@ namespace Survivebest.Health
                     "Read complaint and observe posture, limp, breathing, and distress.",
                     "Check pressure points, exposed tissue, skin color, and pain response.",
                     "Tag severity lane for meds, imaging, casting, or surgery."
-                }
+                },
+                ReprocessingChecklist = new List<string> { "Discard gloves", "Sanitize vitals station", "Reset triage tray" }
             });
         }
 
@@ -198,6 +206,7 @@ namespace Survivebest.Health
                         Description = "Inspect skin surface, deeper inflammation, clogged pores, wart tissue, and infection spread.",
                         ProviderRole = CareProviderRole.Dermatologist,
                         FacilityType = CareFacilityType.DermatologySuite,
+                        AnatomyFocus = $"{condition.SkinConditionType} / {condition.TissueDepth}",
                         InteractiveMinigame = MinigameType.Dermatology,
                         EstimatedMinutes = 22,
                         Supplies = new List<string> { "Dermatoscope", "Topical wash", "Cryotherapy swabs", "Sterile extractor kit" },
@@ -206,7 +215,8 @@ namespace Survivebest.Health
                             "Map redness, swelling, raised tissue, drainage, and tenderness.",
                             "Choose cleanse, topical medication, drainage, or cryo removal.",
                             "Document aftercare and hygiene routine for recurrence prevention."
-                        }
+                        },
+                        ReprocessingChecklist = new List<string> { "Disinfect dermatoscope", "Replace extraction tips", "Bag contaminated cotton and swabs" }
                     });
                 }
 
@@ -233,12 +243,14 @@ namespace Survivebest.Health
                 Description = condition.DetailSummary,
                 ProviderRole = provider,
                 FacilityType = facility,
+                AnatomyFocus = $"{condition.BodyLocation} / depth {condition.TissueDepth} / complication {condition.InternalComplication}",
                 InteractiveMinigame = minigame,
                 EstimatedMinutes = plan.NeedsSurgery ? 95 : condition.InjuryType == InjuryType.Fracture ? 40 : 18,
                 RequiresSterileField = condition.IsOpenWound || plan.NeedsSurgery,
                 RequiresFollowUp = condition.Severity != ConditionSeverity.Mild || condition.IsBoneInjury,
                 Supplies = supplies,
-                ProcedureSteps = procedure
+                ProcedureSteps = procedure,
+                ReprocessingChecklist = BuildReprocessingChecklist(condition, plan.NeedsSurgery)
             });
         }
 
@@ -250,6 +262,7 @@ namespace Survivebest.Health
                 Description = $"Prepare {condition.RecommendedMedication} with pain, infection, hydration, and follow-up guidance.",
                 ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Pharmacist,
                 FacilityType = CareFacilityType.Pharmacy,
+                AnatomyFocus = $"{condition.DisplayName} / med {condition.RecommendedMedication}",
                 InteractiveMinigame = MinigameType.Pharmacy,
                 MedicationType = condition.RecommendedMedication,
                 EstimatedMinutes = 10,
@@ -259,7 +272,8 @@ namespace Survivebest.Health
                     "Confirm diagnosis, allergies, and current medications.",
                     "Measure dose, label timing, and explain side effects.",
                     "Queue refill, wound-cleaning schedule, and red-flag return symptoms."
-                }
+                },
+                ReprocessingChecklist = new List<string> { "Log lot number", "Wipe counting tray", "Seal sharps and contaminated packaging" }
             });
         }
 
@@ -271,6 +285,7 @@ namespace Survivebest.Health
                 Description = "Schedule dressing changes, rehab checks, hydration, and return precautions.",
                 ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Nurse,
                 FacilityType = plan.NeedsHospitalization ? CareFacilityType.HospitalWard : CareFacilityType.Home,
+                AnatomyFocus = condition.BodyLocation == BodyLocation.Unknown ? condition.DisplayName : condition.BodyLocation.ToString(),
                 EstimatedMinutes = 8,
                 RequiresFollowUp = true,
                 Supplies = new List<string> { "Bandages", "Ice pack", "Cast cover", "Symptom log" },
@@ -279,7 +294,8 @@ namespace Survivebest.Health
                     "Teach red flags: fever, deep swelling, foul drainage, numbness, and uncontrolled bleeding.",
                     "Explain rest windows, cleaning rhythm, dressing changes, and cast protection.",
                     "Book recheck for wound closure, x-ray review, dermatology follow-up, or suture removal."
-                }
+                },
+                ReprocessingChecklist = new List<string> { "Restock take-home supplies", "Print aftercare sheet" }
             });
         }
 
@@ -357,8 +373,8 @@ namespace Survivebest.Health
         {
             return condition.InjuryType switch
             {
-                InjuryType.Fracture => "Ortho Reduction, Splinting & Cast Care",
-                InjuryType.Cut => "Wound Cleaning, Closure & Dressing",
+                InjuryType.Fracture => condition.RequiresSurgeryConsult ? "Orthopedic Surgery Prep, Reduction & Cast Care" : "Ortho Reduction, Splinting & Cast Care",
+                InjuryType.Cut => condition.RequiresSutures ? "Wound Cleaning, Suturing & Dressing" : "Wound Cleaning, Closure & Dressing",
                 InjuryType.Bite => "Bite Irrigation & Infection Control",
                 InjuryType.Burn => "Burn Cooling, Debridement & Dressing",
                 InjuryType.Scrape => "Surface Wound Clean & Cover",
@@ -415,7 +431,39 @@ namespace Survivebest.Health
                 steps.Insert(1, "Assess whether closure needs strips, glue, sutures, or surgical washout.");
             }
 
+            if (condition.InternalBleedingRisk >= 0.2f)
+            {
+                steps.Add("Escalate for imaging, repeat vitals, and watch for internal bleeding or shock progression.");
+            }
+
+            if (condition.RequiresSurgeryConsult)
+            {
+                steps.Add("Page surgeon, prep consent, confirm sterile tray, and move patient to procedure-ready lane.");
+            }
+
             return steps;
+        }
+
+        private static List<string> BuildReprocessingChecklist(MedicalCondition condition, bool needsSurgery)
+        {
+            List<string> checklist = new()
+            {
+                "Bag bloodied gauze and outer wraps",
+                "Disinfect treatment tray and contact surfaces",
+                "Replace gloves, drapes, and single-use tools"
+            };
+
+            if (needsSurgery || condition.IsOpenWound)
+            {
+                checklist.Add("Run full sterile-field turnover and instrument soak");
+            }
+
+            if (condition.InjuryType == InjuryType.Fracture)
+            {
+                checklist.Add("Reset splint/cast station and restock orthopedic padding");
+            }
+
+            return checklist;
         }
     }
 }
