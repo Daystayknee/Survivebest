@@ -21,6 +21,16 @@ namespace Survivebest.Social
         Town
     }
 
+    public enum MemoryEmotionalTint
+    {
+        Neutral,
+        Warm,
+        Bitter,
+        Anxious,
+        Nostalgic,
+        Traumatic
+    }
+
     [Serializable]
     public enum PersonalMemoryKind
     {
@@ -43,6 +53,16 @@ namespace Survivebest.Social
         [Range(-100, 100)] public int Impact;
         public int TimestampHour;
         public PersonalMemoryKind MemoryKind;
+        [Range(0f, 1f)] public float Importance;
+        public MemoryEmotionalTint EmotionalTint;
+        [Range(0f, 1f)] public float Distortion;
+        [Range(0f, 1f)] public float RepetitionStrength;
+        public List<string> TriggerAssociations = new();
+        public int AnniversaryDay = -1;
+        public bool SuppressedMemory;
+        [Range(0f, 1f)] public float TraumaIntensity;
+        [Range(0f, 1f)] public float NostalgiaScore;
+        public string LinkedPlaceId;
     }
 
     [Serializable]
@@ -85,22 +105,38 @@ namespace Survivebest.Social
 
         public void RecordEvent(string subjectCharacterId, string targetCharacterId, string topic, int impact, bool isPublic, string contextLotId = null)
         {
+            RecordEventDetailed(subjectCharacterId, targetCharacterId, topic, impact, isPublic, contextLotId);
+        }
+
+        public RelationshipMemory RecordEventDetailed(string subjectCharacterId, string targetCharacterId, string topic, int impact, bool isPublic, string contextLotId = null, List<string> triggerAssociations = null, bool suppressedMemory = false)
+        {
             if (string.IsNullOrWhiteSpace(subjectCharacterId) || string.IsNullOrWhiteSpace(topic))
             {
-                return;
+                return null;
             }
 
+            int clampedImpact = Mathf.Clamp(impact, -100, 100);
             RelationshipMemory memory = new RelationshipMemory
             {
                 MemoryId = Guid.NewGuid().ToString("N"),
                 SubjectCharacterId = subjectCharacterId,
                 TargetCharacterId = targetCharacterId,
                 ContextLotId = contextLotId,
+                LinkedPlaceId = contextLotId,
                 Topic = topic,
                 IsPublic = isPublic,
-                Impact = Mathf.Clamp(impact, -100, 100),
+                Impact = clampedImpact,
                 TimestampHour = GetCurrentTotalHours(),
-                MemoryKind = InferMemoryKind(topic, impact)
+                MemoryKind = InferMemoryKind(topic, clampedImpact),
+                Importance = ComputeImportance(topic, clampedImpact),
+                EmotionalTint = InferEmotionalTint(topic, clampedImpact),
+                Distortion = ComputeDistortion(topic, clampedImpact, suppressedMemory),
+                RepetitionStrength = ComputeRepetitionStrength(subjectCharacterId, targetCharacterId, topic),
+                TriggerAssociations = triggerAssociations != null ? new List<string>(triggerAssociations) : BuildDefaultTriggers(topic, contextLotId),
+                AnniversaryDay = worldClock != null ? worldClock.Day : -1,
+                SuppressedMemory = suppressedMemory,
+                TraumaIntensity = ComputeTraumaIntensity(topic, clampedImpact),
+                NostalgiaScore = ComputeNostalgiaScore(topic, clampedImpact)
             };
 
             memories.Add(memory);
@@ -119,6 +155,7 @@ namespace Survivebest.Social
             }
 
             PublishMemoryEvent(memory, "Memory recorded", SimulationEventSeverity.Info);
+            return memory;
         }
 
         public void RecordPersonalMemory(string subjectCharacterId, string targetCharacterId, PersonalMemoryKind kind, int impact, bool isPublic, string contextLotId = null)
@@ -225,6 +262,84 @@ namespace Survivebest.Social
                 Reason = reason,
                 Magnitude = perMemberImpact
             });
+        }
+
+        public List<RelationshipMemory> GetMemoriesForCharacter(string characterId)
+        {
+            return memories.FindAll(x => x != null && (x.SubjectCharacterId == characterId || x.TargetCharacterId == characterId));
+        }
+
+        public List<RelationshipMemory> GetTriggeredMemories(string characterId, string trigger)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(trigger))
+            {
+                return new List<RelationshipMemory>();
+            }
+
+            return memories.FindAll(x => x != null
+                && (x.SubjectCharacterId == characterId || x.TargetCharacterId == characterId)
+                && x.TriggerAssociations != null
+                && x.TriggerAssociations.Exists(t => string.Equals(t, trigger, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        public List<RelationshipMemory> GetPlaceLinkedMemories(string characterId, string placeId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(placeId))
+            {
+                return new List<RelationshipMemory>();
+            }
+
+            return memories.FindAll(x => x != null
+                && (x.SubjectCharacterId == characterId || x.TargetCharacterId == characterId)
+                && string.Equals(x.LinkedPlaceId, placeId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public string BuildMemoryInsight(string characterId, string placeOrTrigger = null)
+        {
+            List<RelationshipMemory> relevant = !string.IsNullOrWhiteSpace(placeOrTrigger)
+                ? GetTriggeredMemories(characterId, placeOrTrigger)
+                : GetMemoriesForCharacter(characterId);
+
+            if (relevant.Count == 0 && !string.IsNullOrWhiteSpace(placeOrTrigger))
+            {
+                relevant = GetPlaceLinkedMemories(characterId, placeOrTrigger);
+            }
+
+            if (relevant.Count == 0)
+            {
+                return "Nothing in the moment catches hard enough to become memory.";
+            }
+
+            relevant.Sort((a, b) => (b.Importance + b.RepetitionStrength).CompareTo(a.Importance + a.RepetitionStrength));
+            RelationshipMemory memory = relevant[0];
+            string tint = memory.EmotionalTint.ToString().ToLowerInvariant();
+            string suppression = memory.SuppressedMemory ? " even though part of it wants to stay buried" : string.Empty;
+            return $"{memory.Topic} comes back with a {tint} edge{suppression}.";
+        }
+
+        public string BuildJournalSummary(string characterId, int day)
+        {
+            List<RelationshipMemory> dayMemories = GetMemoriesForCharacter(characterId).FindAll(x => x != null && (x.AnniversaryDay == day || x.TimestampHour / 24 == day));
+            if (dayMemories.Count == 0)
+            {
+                return "The day passed without anything sticking hard enough to rewrite the emotional weather.";
+            }
+
+            dayMemories.Sort((a, b) => b.Importance.CompareTo(a.Importance));
+            RelationshipMemory strongest = dayMemories[0];
+            return $"The day kept circling {strongest.Topic}, tinted {strongest.EmotionalTint.ToString().ToLowerInvariant()}, with recall strength {strongest.RepetitionStrength:0.00}.";
+        }
+
+        public string BuildRumorText(RelationshipMemory memory)
+        {
+            if (memory == null)
+            {
+                return "Nobody can agree on what really happened.";
+            }
+
+            string confidence = memory.Distortion >= 0.55f ? "wild certainty" : memory.Importance >= 0.7f ? "sharp detail" : "secondhand confidence";
+            string secrecy = memory.IsPublic ? "everyone acts like it was always public knowledge" : "it is still being passed around like contraband";
+            return $"People repeat that {memory.Topic} happened, with {confidence}, and {secrecy}.";
         }
 
         public int GetReputation(string characterId, ReputationScope scope, string scopeId)
@@ -361,6 +476,90 @@ namespace Survivebest.Social
             }
 
             return PersonalMemoryKind.SharedExperience;
+        }
+
+        private float ComputeImportance(string topic, int impact)
+        {
+            float baseValue = Mathf.Clamp01(Mathf.Abs(impact) / 100f);
+            if (!string.IsNullOrWhiteSpace(topic) && (topic.Contains("betray", StringComparison.OrdinalIgnoreCase) || topic.Contains("love", StringComparison.OrdinalIgnoreCase) || topic.Contains("death", StringComparison.OrdinalIgnoreCase)))
+            {
+                baseValue += 0.25f;
+            }
+
+            return Mathf.Clamp01(baseValue);
+        }
+
+        private static MemoryEmotionalTint InferEmotionalTint(string topic, int impact)
+        {
+            if (!string.IsNullOrWhiteSpace(topic) && (topic.Contains("betray", StringComparison.OrdinalIgnoreCase) || topic.Contains("harm", StringComparison.OrdinalIgnoreCase)))
+            {
+                return MemoryEmotionalTint.Traumatic;
+            }
+
+            if (impact >= 30) return MemoryEmotionalTint.Warm;
+            if (impact <= -30) return MemoryEmotionalTint.Bitter;
+            if (!string.IsNullOrWhiteSpace(topic) && topic.Contains("home", StringComparison.OrdinalIgnoreCase)) return MemoryEmotionalTint.Nostalgic;
+            return impact < 0 ? MemoryEmotionalTint.Anxious : MemoryEmotionalTint.Neutral;
+        }
+
+        private float ComputeDistortion(string topic, int impact, bool suppressed)
+        {
+            float distortion = Mathf.Clamp01(Mathf.Abs(impact) / 180f);
+            if (!string.IsNullOrWhiteSpace(topic) && topic.Contains("rumor", StringComparison.OrdinalIgnoreCase))
+            {
+                distortion += 0.2f;
+            }
+
+            if (suppressed)
+            {
+                distortion += 0.2f;
+            }
+
+            return Mathf.Clamp01(distortion);
+        }
+
+        private float ComputeRepetitionStrength(string subjectCharacterId, string targetCharacterId, string topic)
+        {
+            int repeated = memories.FindAll(x => x != null && x.SubjectCharacterId == subjectCharacterId && x.TargetCharacterId == targetCharacterId && string.Equals(x.Topic, topic, StringComparison.OrdinalIgnoreCase)).Count;
+            return Mathf.Clamp01(repeated / 5f);
+        }
+
+        private static List<string> BuildDefaultTriggers(string topic, string contextLotId)
+        {
+            List<string> triggers = new();
+            if (!string.IsNullOrWhiteSpace(contextLotId)) triggers.Add(contextLotId);
+            if (!string.IsNullOrWhiteSpace(topic))
+            {
+                string lowered = topic.ToLowerInvariant();
+                if (lowered.Contains("song") || lowered.Contains("music")) triggers.Add("music");
+                if (lowered.Contains("rain") || lowered.Contains("storm")) triggers.Add("weather");
+                if (lowered.Contains("perfume") || lowered.Contains("scent") || lowered.Contains("smell")) triggers.Add("scent");
+                if (lowered.Contains("anniversary") || lowered.Contains("birthday")) triggers.Add("anniversary");
+            }
+
+            return triggers;
+        }
+
+        private static float ComputeTraumaIntensity(string topic, int impact)
+        {
+            float intensity = impact < 0 ? Mathf.Clamp01(Mathf.Abs(impact) / 100f) : 0f;
+            if (!string.IsNullOrWhiteSpace(topic) && (topic.Contains("betray", StringComparison.OrdinalIgnoreCase) || topic.Contains("violence", StringComparison.OrdinalIgnoreCase)))
+            {
+                intensity += 0.2f;
+            }
+
+            return Mathf.Clamp01(intensity);
+        }
+
+        private static float ComputeNostalgiaScore(string topic, int impact)
+        {
+            float score = impact > 0 ? Mathf.Clamp01(impact / 100f) : 0f;
+            if (!string.IsNullOrWhiteSpace(topic) && (topic.Contains("home", StringComparison.OrdinalIgnoreCase) || topic.Contains("childhood", StringComparison.OrdinalIgnoreCase) || topic.Contains("old", StringComparison.OrdinalIgnoreCase)))
+            {
+                score += 0.25f;
+            }
+
+            return Mathf.Clamp01(score);
         }
 
         private void PublishMemoryEvent(RelationshipMemory memory, string reason, SimulationEventSeverity severity)
