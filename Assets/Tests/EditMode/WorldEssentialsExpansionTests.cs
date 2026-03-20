@@ -22,6 +22,30 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(catalog.HasSupply("Pet Supply Store", SupplyGroup.Store));
             Assert.IsTrue(catalog.HasSupply("Dog", SupplyGroup.Pet));
             Assert.IsTrue(catalog.HasSupply("Oak Tree", SupplyGroup.Foliage));
+            Assert.IsTrue(catalog.HasSupply("Laptop", SupplyGroup.Electronics));
+            Assert.IsTrue(catalog.HasSupply("Teddy Bear", SupplyGroup.Toy));
+            Assert.IsTrue(catalog.HasSupply("Kitchen Knife", SupplyGroup.Weapon));
+            Assert.IsTrue(catalog.HasSupply("Toothbrush", SupplyGroup.Hygiene));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SupplyCatalog_Awake_InjectsBroadAmericanRetailCategories()
+        {
+            GameObject go = new GameObject("SupplyCatalogRetailCoverage");
+            SupplyCatalog catalog = go.AddComponent<SupplyCatalog>();
+
+            MethodInfo awake = typeof(SupplyCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Electronics).Count, 10);
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Household).Count, 9);
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Trinket).Count, 6);
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Toy).Count, 8);
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Weapon).Count, 7);
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Tool).Count, 6);
+            Assert.GreaterOrEqual(catalog.GetByGroup(SupplyGroup.Hygiene).Count, 10);
 
             Object.DestroyImmediate(go);
         }
@@ -41,6 +65,38 @@ namespace Survivebest.Tests.EditMode
             Assert.GreaterOrEqual(inventory.GetStackQuantity("pet_supplies", "Pet Food"), 1);
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void EconomyInventorySystem_Awake_SyncsSupplyCatalogIntoDefinitions()
+        {
+            GameObject root = new GameObject("EconomySupplySync");
+            SupplyCatalog catalog = root.AddComponent<SupplyCatalog>();
+            EconomyInventorySystem economy = root.AddComponent<EconomyInventorySystem>();
+
+            MethodInfo catalogAwake = typeof(SupplyCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            catalogAwake?.Invoke(catalog, null);
+
+            typeof(EconomyInventorySystem).GetField("supplyCatalog", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(economy, catalog);
+
+            MethodInfo economyAwake = typeof(EconomyInventorySystem).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            economyAwake?.Invoke(economy, null);
+
+            MethodInfo resolve = typeof(EconomyInventorySystem).GetMethod("ResolveDefinition", BindingFlags.NonPublic | BindingFlags.Instance);
+            EconomyItemDefinition laptop = resolve?.Invoke(economy, new object[] { "laptop" }) as EconomyItemDefinition;
+            EconomyItemDefinition teddyBear = resolve?.Invoke(economy, new object[] { "teddy_bear" }) as EconomyItemDefinition;
+            EconomyItemDefinition handgun = resolve?.Invoke(economy, new object[] { "handgun" }) as EconomyItemDefinition;
+
+            Assert.IsNotNull(laptop);
+            Assert.AreEqual("Laptop", laptop.DisplayName);
+            Assert.IsFalse(laptop.IsStackable);
+            Assert.IsNotNull(teddyBear);
+            Assert.AreEqual("Teddy Bear", teddyBear.DisplayName);
+            Assert.IsNotNull(handgun);
+            Assert.IsTrue(handgun.IsIllegal);
+            Assert.IsTrue(handgun.IsEquippable);
+
+            Object.DestroyImmediate(root);
         }
 
         [Test]

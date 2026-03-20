@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Survivebest.Core
 {
@@ -20,12 +21,26 @@ namespace Survivebest.Core
         private static readonly string[] SocialFeedActivities = { "Post a thirst-trap selfie", "Reply to a situationship story", "Plan brunch in the group chat", "Soft-launch a relationship", "Curate a private close-friends post", "Voice-note your best friend", "Update your dating profile", "Send a late-night meme check-in" };
         private static readonly string[] HomeUpgradeProjects = { "Apartment glow-up corner", "Gallery wall refresh", "LED mood-light setup", "Closet reset", "Bathroom shelf styling", "Cozy balcony makeover", "Desk cable-management overhaul", "Kitchen organization sprint" };
         private static readonly string[] AmbitionFocuses = { "Emergency fund grind", "Soft life reset", "Fitness comeback arc", "Creative breakthrough", "Promotion chase", "Dating confidence era", "Healing season", "Move-out plan" };
+        private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
+        {
+            { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
+            { LifeStage.Infant, new[] { "Printed Onesie", "Cozy Knit Set", "Daycare Outfit", "Soft Romper", "Weather Coverall" } },
+            { LifeStage.Toddler, new[] { "Playdate Outfit", "Story Time Pajamas", "Park Explorer Set", "Tiny Streetwear", "Mini Formalwear" } },
+            { LifeStage.Child, new[] { "School Casual", "Sport Uniform", "Birthday Party Outfit", "Rainy Day Layers", "Youth Streetwear", "Family Photo Look" } },
+            { LifeStage.Preteen, new[] { "Club Activity Fit", "Weekend Casual", "Youth Streetwear", "Rec Center Sport Set", "Preteen Formalwear", "Sleepover Cozy Set" } },
+            { LifeStage.Teen, new[] { "Teen Streetwear", "Study Session Layers", "Date Night Fit", "School Formalwear", "Gig Outfit", "Athleisure" } },
+            { LifeStage.YoungAdult, new[] { "Brunch Casual", "Office Workwear", "Gym Athleisure", "Nightlife Look", "Festival Fit", "Apartment Cozywear", "Creator Streetwear" } },
+            { LifeStage.Adult, new[] { "Workwear", "Business Formal", "Weekend Casual", "Parent-on-the-go Utility", "Dinner Date Look", "Outdoor Layers", "Loungewear" } },
+            { LifeStage.OlderAdult, new[] { "Refined Casual", "Garden Utility", "Warm Layered Knitwear", "Celebration Formal", "Walking Outfit", "Relaxed Eveningwear" } },
+            { LifeStage.Elder, new[] { "Soft Knit Set", "Sunday Best", "Comfort Layers", "Weatherproof Outerwear", "Family Gathering Formal", "Home Lounge Set" } }
+        };
 
         public static string PickTvGenre() => Pick(TvGenres, "General show");
         public static string PickMovieGenre() => Pick(MovieGenres, "General movie");
         public static string PickBookGenre() => Pick(BookGenres, "General reading");
         public static string PickSingingStyle() => Pick(SingingStyles, "Open mic");
         public static string PickRandomOutfitStyle() => Pick(OutfitStyles, "Everyday");
+        public static string PickRandomOutfitStyle(LifeStage lifeStage) => Pick(GetOutfitStylesForLifeStage(lifeStage), "Everyday");
         public static string PickHobbyActivity() => Pick(HobbyActivities, "General hobby");
         public static string PickFamilyMoment() => Pick(FamilyMoments, "Family time");
         public static string PickDatingActivity() => Pick(DatingActivities, "Relationship time");
@@ -37,6 +52,10 @@ namespace Survivebest.Core
         public static string PickSocialFeedActivity() => Pick(SocialFeedActivities, "Social check-in");
         public static string PickHomeUpgradeProject() => Pick(HomeUpgradeProjects, "Home refresh");
         public static string PickAmbitionFocus() => Pick(AmbitionFocuses, "Personal growth");
+        public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
+            => OutfitStylesByLifeStage.TryGetValue(lifeStage, out string[] styles) && styles != null && styles.Length > 0
+                ? styles
+                : OutfitStyles;
 
         private static string Pick(string[] values, string fallback)
         {
