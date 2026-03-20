@@ -17,11 +17,35 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(engine.PublicServices.Count, 0);
             Assert.Greater(engine.TransportRoutes.Count, 0);
             Assert.Greater(engine.ItemStocks.Count, 0);
+            Assert.Greater(engine.DistrictEcologyProfiles.Count, 0);
+            Assert.Greater(engine.DistrictResourceProfiles.Count, 0);
+            Assert.Greater(engine.SeasonalConsequenceProfiles.Count, 0);
 
             Object.DestroyImmediate(go);
         }
 
+        [Test]
+        public void EnsureSeededDefaults_CreatesEcologyAndResourceDataForDistrict()
+        {
+            GameObject go = new GameObject("InfrastructureProfiles");
+            LivingWorldInfrastructureEngine engine = go.AddComponent<LivingWorldInfrastructureEngine>();
+            engine.EnsureSeededDefaults();
 
+            DistrictEcologyProfile ecology = engine.GetDistrictEcology("district_default");
+            DistrictResourceGeographyProfile resources = engine.GetDistrictResources("district_default");
+            SeasonalDistrictConsequenceProfile seasonal = engine.GetSeasonalConsequences("district_default");
+
+            Assert.IsNotNull(ecology);
+            Assert.IsNotNull(resources);
+            Assert.IsNotNull(seasonal);
+            Assert.IsNotEmpty(ecology.WildlifeTable);
+            Assert.IsNotEmpty(ecology.ForagingTable);
+            Assert.IsNotEmpty(ecology.DiseaseZoneTags);
+            Assert.GreaterOrEqual(resources.VampireNightInfrastructure, 0f);
+            Assert.Greater(seasonal.DaylightHours, 0f);
+
+            Object.DestroyImmediate(go);
+        }
 
         [Test]
         public void GetItemAvailability_ReturnsSeededValueRange()
@@ -48,6 +72,7 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(engine.PublicServices.Count, 0);
             Assert.Greater(engine.TransportRoutes.Count, 0);
             Assert.Greater(engine.ItemStocks.Count, 0);
+            Assert.Greater(engine.SeasonalConsequenceProfiles.Count, 0);
 
             Object.DestroyImmediate(go);
         }
@@ -62,6 +87,20 @@ namespace Survivebest.Tests.EditMode
 
             Assert.Greater(engine.PublicServices.Count, 0);
             Assert.GreaterOrEqual(engine.DistrictProfiles.Count, 0);
+            Assert.Greater(engine.DistrictEcologyProfiles.Count, 0);
+            Assert.Greater(engine.DistrictResourceProfiles.Count, 0);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SimulateInfrastructureDay_CanRegisterDisasterPressure()
+        {
+            GameObject go = new GameObject("InfrastructureDisaster");
+            LivingWorldInfrastructureEngine engine = go.AddComponent<LivingWorldInfrastructureEngine>();
+            engine.SimulateInfrastructureDay(12);
+
+            Assert.GreaterOrEqual(engine.ActiveDisasters.Count, 0);
 
             Object.DestroyImmediate(go);
         }
