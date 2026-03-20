@@ -105,8 +105,20 @@ namespace Survivebest.Social
         private int lastPulseHour = -9999;
 
         public IReadOnlyList<SocialEventSignal> SocialSignals => socialSignals;
+        public IReadOnlyList<SecretEntry> Secrets => secrets;
         public IReadOnlyList<ScandalEvent> Scandals => scandals;
+        public IReadOnlyList<ReputationLayerProfile> Reputations => reputations;
         public IReadOnlyList<RumorPacket> Rumors => rumors;
+
+        public void ApplyRuntimeState(List<SocialEventSignal> savedSignals, List<SecretEntry> savedSecrets, List<ScandalEvent> savedScandals, List<ReputationLayerProfile> savedReputations, List<RumorPacket> savedRumors, int savedLastPulseHour = -9999)
+        {
+            socialSignals = savedSignals != null ? new List<SocialEventSignal>(savedSignals) : new List<SocialEventSignal>();
+            secrets = savedSecrets != null ? new List<SecretEntry>(savedSecrets) : new List<SecretEntry>();
+            scandals = savedScandals != null ? new List<ScandalEvent>(savedScandals) : new List<ScandalEvent>();
+            reputations = savedReputations != null ? new List<ReputationLayerProfile>(savedReputations) : new List<ReputationLayerProfile>();
+            rumors = savedRumors != null ? new List<RumorPacket>(savedRumors) : new List<RumorPacket>();
+            lastPulseHour = savedLastPulseHour;
+        }
 
         private void OnEnable()
         {

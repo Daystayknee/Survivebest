@@ -27,6 +27,75 @@ namespace Survivebest.Tasks
 
         public IReadOnlyList<ActiveTaskSession> ActiveSessions => activeSessions;
 
+        public List<ActiveTaskSessionSnapshot> CaptureRuntimeState()
+        {
+            List<ActiveTaskSessionSnapshot> snapshots = new();
+            for (int i = 0; i < activeSessions.Count; i++)
+            {
+                ActiveTaskSession session = activeSessions[i];
+                if (session == null || session.Task == null)
+                {
+                    continue;
+                }
+
+                snapshots.Add(new ActiveTaskSessionSnapshot
+                {
+                    SessionId = session.SessionId,
+                    TaskId = session.Task.TaskId,
+                    Mode = session.Mode,
+                    CurrentStepIndex = session.CurrentStepIndex,
+                    IsCompleted = session.IsCompleted,
+                    ActorCharacterId = session.ActorCharacterId,
+                    SourceStationId = session.SourceStationId,
+                    CompletedStepIds = new List<string>(session.CompletedStepIds)
+                });
+            }
+
+            return snapshots;
+        }
+
+        public void ApplyRuntimeState(List<ActiveTaskSessionSnapshot> snapshots)
+        {
+            activeSessions.Clear();
+            if (snapshots == null || taskDatabase == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < snapshots.Count; i++)
+            {
+                ActiveTaskSessionSnapshot snapshot = snapshots[i];
+                if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.TaskId))
+                {
+                    continue;
+                }
+
+                TaskDefinition definition = taskDatabase.FindById(snapshot.TaskId);
+                if (definition == null)
+                {
+                    continue;
+                }
+
+                ActiveTaskSession session = new ActiveTaskSession
+                {
+                    SessionId = string.IsNullOrWhiteSpace(snapshot.SessionId) ? Guid.NewGuid().ToString("N") : snapshot.SessionId,
+                    Task = definition,
+                    Mode = snapshot.Mode,
+                    CurrentStepIndex = snapshot.CurrentStepIndex,
+                    IsCompleted = snapshot.IsCompleted,
+                    ActorCharacterId = snapshot.ActorCharacterId,
+                    SourceStationId = snapshot.SourceStationId
+                };
+
+                if (snapshot.CompletedStepIds != null)
+                {
+                    session.CompletedStepIds.AddRange(snapshot.CompletedStepIds);
+                }
+
+                activeSessions.Add(session);
+            }
+        }
+
         private void OnEnable()
         {
             if (interactiveTaskRunner != null)

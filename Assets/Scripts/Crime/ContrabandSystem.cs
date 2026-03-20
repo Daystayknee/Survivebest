@@ -42,6 +42,16 @@ namespace Survivebest.Crime
 
         public IReadOnlyList<InmateContrabandInventory> Inventories => inventories;
 
+        public List<InmateContrabandInventory> CaptureRuntimeState()
+        {
+            return new List<InmateContrabandInventory>(inventories);
+        }
+
+        public void ApplyRuntimeState(List<InmateContrabandInventory> savedInventories)
+        {
+            inventories = savedInventories != null ? new List<InmateContrabandInventory>(savedInventories) : new List<InmateContrabandInventory>();
+        }
+
         public void AddContraband(CharacterCore actor, ContrabandItem item)
         {
             if (actor == null || item == null)

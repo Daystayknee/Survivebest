@@ -415,7 +415,14 @@ namespace Survivebest.UI
                 return "Track a wildlife encounter for finder payout, mood boosts, and skill growth.";
             }
 
-            return $"Care for {currentSighting.AnimalName} ({currentSighting.AnimalSpecies}). {currentSighting.Description}\nFinder payout: ${currentSighting.Payment}.";
+            string animalSound = BuildAnimalSoundText(currentSighting.AnimalSpecies, false);
+            string npcRead = BuildAnimalNpcRead(currentSighting, false);
+            string selfTalk = BuildAnimalHandlerSelfTalk(currentSighting, false);
+            return $"Care for {currentSighting.AnimalName} ({currentSighting.AnimalSpecies}). {currentSighting.Description}
+{animalSound}
+{npcRead}
+{selfTalk}
+Finder payout: ${currentSighting.Payment}.";
         }
 
         private string BuildOptionsPreview(string actionKey)
@@ -571,6 +578,8 @@ namespace Survivebest.UI
             sb.AppendLine($"Target: {currentSighting.AnimalName} ({currentSighting.AnimalSpecies})");
             sb.AppendLine($"Difficulty: {(int)(currentSighting.Difficulty * 100f)}%");
             sb.AppendLine($"Payout: ${currentSighting.Payment}");
+            sb.AppendLine($"Animal audio text: {BuildAnimalSoundText(currentSighting.AnimalSpecies, false)}");
+            sb.AppendLine($"NPC read: {BuildAnimalNpcRead(currentSighting, false)}");
             sb.AppendLine($"Need impact: Energy {currentSighting.EnergyDelta:+0;-0;0}, Hygiene {currentSighting.HygieneDelta:+0;-0;0}, Mood {currentSighting.MoodDelta:+0;-0;0}");
             sb.AppendLine("Confirm to attempt the wildlife sighting.");
         }
@@ -791,9 +800,37 @@ namespace Survivebest.UI
             }
 
             magnitude = success ? gig.Payment : -gig.Difficulty * 10f;
+            string animalSound = BuildAnimalSoundText(gig.AnimalSpecies, !success);
+            string npcRead = BuildAnimalNpcRead(gig, !success);
+            string selfTalk = BuildAnimalHandlerSelfTalk(gig, !success);
             return success
-                ? $"Animal sighting success: {gig.AnimalName} is happy. Earned ${gig.Payment}."
-                : $"Animal sighting failed: {gig.AnimalName} became stressed. Partial progress only.";
+                ? $"Animal sighting success: {gig.AnimalName} is happy. {animalSound} {npcRead} {selfTalk} Earned ${gig.Payment}."
+                : $"Animal sighting failed: {gig.AnimalName} became stressed. {animalSound} {npcRead} {selfTalk} Partial progress only.";
+        }
+
+        private string BuildAnimalSoundText(string species, bool stressed)
+        {
+            string normalized = string.IsNullOrWhiteSpace(species) ? "animal" : species.Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "deer" => stressed ? "snort-bark! brush crashes in the reeds." : "soft snff... hooves whisper through the grass.",
+                "bird" => stressed ? "skree-chit-chit! wings hammer the air." : "chirp-trill... feathers settle in the rafters.",
+                "reptile" => stressed ? "HSSS—water slaps the bank." : "low scrape... scales glide over mud.",
+                "mammal" => stressed ? "yip-huff! brush snaps uphill." : "huff-snff... paws test the trail.",
+                _ => stressed ? "the animal erupts into sharp warning noise." : "the animal answers with a calm natural call."
+            };
+        }
+
+        private string BuildAnimalNpcRead(AnimalSightingEncounter gig, bool stressed)
+        {
+            string cue = stressed ? "Back off, lower your profile, and stop forcing the moment." : "Good read—stay slow, keep your hands visible, and let the animal choose the distance.";
+            return $"AI wildlife guide: {gig.AnimalName} reads as {(stressed ? "spooked" : "curious but manageable")}. {cue}";
+        }
+
+        private string BuildAnimalHandlerSelfTalk(AnimalSightingEncounter gig, bool stressed)
+        {
+            string focus = stressed ? "Do not chase the outcome. Calm the scene first." : "Easy now. Quiet hands, soft steps, steady breathing.";
+            return $"AI self-talk: You clock {gig.AnimalName}'s body language and tell yourself, '{focus}'";
         }
 
         private void AppendTopCatalogItems(StringBuilder sb, int count)
@@ -1001,7 +1038,7 @@ namespace Survivebest.UI
             needs?.ModifyMood(6f);
             needs?.ModifyGrooming(4f);
 
-            string style = LifeActivityCatalog.PickRandomOutfitStyle();
+            string style = LifeActivityCatalog.PickRandomOutfitStyle(active.CurrentLifeStage);
             return $"Bought a {style} outfit and updated your closet.";
         }
 

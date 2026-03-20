@@ -48,7 +48,8 @@ namespace Survivebest.Dialogue
             {
                 string petName = interactable.gameObject != null ? interactable.gameObject.name : "Pet";
                 string petSpecies = ResolvePetSpecies(petName);
-                dialogueSystem.PerformPetInteractionDialogue(petSpecies, petName, "pet_home");
+                string petBreed = ResolvePetBreed(petName);
+                dialogueSystem.PerformPetInteractionDialogue(petSpecies, petBreed, petName, "pet_home");
                 return;
             }
 
@@ -83,9 +84,22 @@ namespace Survivebest.Dialogue
 
         private string ResolvePetSpecies(string petName)
         {
+            HouseholdPetProfile pet = FindPetProfile(petName);
+            return pet != null && !string.IsNullOrWhiteSpace(pet.Species) ? pet.Species.ToLowerInvariant() : "dog";
+        }
+
+
+        private string ResolvePetBreed(string petName)
+        {
+            HouseholdPetProfile pet = FindPetProfile(petName);
+            return pet != null && !string.IsNullOrWhiteSpace(pet.Breed) ? pet.Breed : null;
+        }
+
+        private HouseholdPetProfile FindPetProfile(string petName)
+        {
             if (householdManager == null || householdManager.Pets == null)
             {
-                return "dog";
+                return null;
             }
 
             for (int i = 0; i < householdManager.Pets.Count; i++)
@@ -98,16 +112,15 @@ namespace Survivebest.Dialogue
 
                 bool nameMatch = !string.IsNullOrWhiteSpace(pet.Name) && string.Equals(pet.Name, petName, System.StringComparison.OrdinalIgnoreCase);
                 bool idMatch = !string.IsNullOrWhiteSpace(pet.PetId) && string.Equals(pet.PetId, petName, System.StringComparison.OrdinalIgnoreCase);
-                if (!nameMatch && !idMatch)
+                if (nameMatch || idMatch)
                 {
-                    continue;
+                    return pet;
                 }
-
-                return string.IsNullOrWhiteSpace(pet.Species) ? "dog" : pet.Species.ToLowerInvariant();
             }
 
-            return "dog";
+            return null;
         }
+
 
         public static DialogueIntent ResolveIntentForActor(CharacterCore actor)
         {

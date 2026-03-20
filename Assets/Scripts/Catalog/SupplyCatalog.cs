@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 
 namespace Survivebest.Catalog
 {
@@ -21,7 +22,14 @@ namespace Survivebest.Catalog
         Store,
         Foliage,
         Pet,
-        Consumable
+        Consumable,
+        Electronics,
+        Household,
+        Trinket,
+        Toy,
+        Weapon,
+        Tool,
+        Hygiene
     }
 
     [Serializable]
@@ -29,6 +37,12 @@ namespace Survivebest.Catalog
     {
         public string Name;
         public SupplyGroup Group;
+        public string Species;
+        public string Breed;
+
+        public string SpeciesOrName => string.IsNullOrWhiteSpace(Species) ? Name : Species;
+        public bool HasBreed => !string.IsNullOrWhiteSpace(Breed);
+        public string DisplayLabel => HasBreed ? $"{SpeciesOrName} ({Breed})" : Name;
     }
 
     public class SupplyCatalog : MonoBehaviour
@@ -258,42 +272,54 @@ namespace Survivebest.Catalog
             new SupplyItem { Name = "Zinc supplements", Group = SupplyGroup.Medicine },
             new SupplyItem { Name = "Vitamin C", Group = SupplyGroup.Medicine },
 
-            // Animals (35)
-            new SupplyItem { Name = "Dog", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Cat", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Horse", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Cow", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Pig", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Sheep", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Goat", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Rabbit", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Rat", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Mouse", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Squirrel", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Deer", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Bear", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Wolf", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Fox", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Lion", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Tiger", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Elephant", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Giraffe", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Zebra", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Kangaroo", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Koala", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Panda", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Monkey", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Gorilla", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Chimpanzee", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Dolphin", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Whale", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Shark", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Eagle", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Owl", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Hawk", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Falcon", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Penguin", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Flamingo", Group = SupplyGroup.Animal },
+            // Animals (species + breed variants)
+            CreateAnimal("Dog"),
+            CreateAnimal("Cat"),
+            CreateAnimal("Horse"),
+            CreateAnimal("Cow"),
+            CreateAnimalBreed("Cow", "Holstein"),
+            CreateAnimalBreed("Cow", "Jersey"),
+            CreateAnimalBreed("Cow", "Angus"),
+            CreateAnimalBreed("Cow", "Highland"),
+            CreateAnimal("Pig"),
+            CreateAnimalBreed("Pig", "Yorkshire"),
+            CreateAnimalBreed("Pig", "Berkshire"),
+            CreateAnimal("Sheep"),
+            CreateAnimalBreed("Sheep", "Merino"),
+            CreateAnimalBreed("Sheep", "Suffolk"),
+            CreateAnimal("Goat"),
+            CreateAnimalBreed("Goat", "Nubian"),
+            CreateAnimalBreed("Goat", "Boer"),
+            CreateAnimal("Rabbit"),
+            CreateAnimalBreed("Rabbit", "Holland Lop"),
+            CreateAnimalBreed("Rabbit", "Flemish Giant"),
+            CreateAnimal("Rat"),
+            CreateAnimal("Mouse"),
+            CreateAnimal("Squirrel"),
+            CreateAnimal("Deer"),
+            CreateAnimal("Bear"),
+            CreateAnimal("Wolf"),
+            CreateAnimal("Fox"),
+            CreateAnimal("Lion"),
+            CreateAnimal("Tiger"),
+            CreateAnimal("Elephant"),
+            CreateAnimal("Giraffe"),
+            CreateAnimal("Zebra"),
+            CreateAnimal("Kangaroo"),
+            CreateAnimal("Koala"),
+            CreateAnimal("Panda"),
+            CreateAnimal("Monkey"),
+            CreateAnimal("Gorilla"),
+            CreateAnimal("Chimpanzee"),
+            CreateAnimal("Dolphin"),
+            CreateAnimal("Whale"),
+            CreateAnimal("Shark"),
+            CreateAnimal("Eagle"),
+            CreateAnimal("Owl"),
+            CreateAnimal("Hawk"),
+            CreateAnimal("Falcon"),
+            CreateAnimal("Penguin"),
+            CreateAnimal("Flamingo"),
 
             // Skills (35)
             new SupplyItem { Name = "Cooking", Group = SupplyGroup.Skill },
@@ -413,6 +439,80 @@ namespace Survivebest.Catalog
             AddIfMissing("Batteries", SupplyGroup.Consumable);
             AddIfMissing("Laundry Detergent", SupplyGroup.Consumable);
             AddIfMissing("Soap", SupplyGroup.Consumable);
+
+            EnsureAmericanRetailCoverage();
+        }
+
+        private void EnsureAmericanRetailCoverage()
+        {
+            AddIfMissing("Laptop", SupplyGroup.Electronics);
+            AddIfMissing("Tablet", SupplyGroup.Electronics);
+            AddIfMissing("Smartphone", SupplyGroup.Electronics);
+            AddIfMissing("Phone Charger", SupplyGroup.Electronics);
+            AddIfMissing("Headphones", SupplyGroup.Electronics);
+            AddIfMissing("Bluetooth Speaker", SupplyGroup.Electronics);
+            AddIfMissing("Game Console", SupplyGroup.Electronics);
+            AddIfMissing("TV Remote", SupplyGroup.Electronics);
+            AddIfMissing("Power Bank", SupplyGroup.Electronics);
+            AddIfMissing("USB Cable", SupplyGroup.Electronics);
+
+            AddIfMissing("Paper Towels", SupplyGroup.Household);
+            AddIfMissing("Trash Bags", SupplyGroup.Household);
+            AddIfMissing("Dish Soap", SupplyGroup.Household);
+            AddIfMissing("Light Bulbs", SupplyGroup.Household);
+            AddIfMissing("Storage Bin", SupplyGroup.Household);
+            AddIfMissing("Extension Cord", SupplyGroup.Household);
+            AddIfMissing("Flashlight", SupplyGroup.Household);
+            AddIfMissing("Cooler", SupplyGroup.Household);
+            AddIfMissing("Air Mattress", SupplyGroup.Household);
+
+            AddIfMissing("Keychain", SupplyGroup.Trinket);
+            AddIfMissing("Snow Globe", SupplyGroup.Trinket);
+            AddIfMissing("Souvenir Magnet", SupplyGroup.Trinket);
+            AddIfMissing("Pocket Watch", SupplyGroup.Trinket);
+            AddIfMissing("Lucky Coin", SupplyGroup.Trinket);
+            AddIfMissing("Collectible Pin", SupplyGroup.Trinket);
+
+            AddIfMissing("Teddy Bear", SupplyGroup.Toy);
+            AddIfMissing("Action Figure", SupplyGroup.Toy);
+            AddIfMissing("Toy Car", SupplyGroup.Toy);
+            AddIfMissing("Building Blocks", SupplyGroup.Toy);
+            AddIfMissing("Board Game", SupplyGroup.Toy);
+            AddIfMissing("Basketball", SupplyGroup.Toy);
+            AddIfMissing("Baseball Glove", SupplyGroup.Toy);
+            AddIfMissing("Puzzle Box", SupplyGroup.Toy);
+
+            AddIfMissing("Kitchen Knife", SupplyGroup.Weapon);
+            AddIfMissing("Baseball Bat", SupplyGroup.Weapon);
+            AddIfMissing("Pepper Spray", SupplyGroup.Weapon);
+            AddIfMissing("Taser", SupplyGroup.Weapon);
+            AddIfMissing("Hunting Bow", SupplyGroup.Weapon);
+            AddIfMissing("Handgun", SupplyGroup.Weapon);
+            AddIfMissing("Ammo Box", SupplyGroup.Weapon);
+
+            AddIfMissing("Hammer", SupplyGroup.Tool);
+            AddIfMissing("Screwdriver Set", SupplyGroup.Tool);
+            AddIfMissing("Wrench", SupplyGroup.Tool);
+            AddIfMissing("Drill", SupplyGroup.Tool);
+            AddIfMissing("Tape Measure", SupplyGroup.Tool);
+            AddIfMissing("Ladder", SupplyGroup.Tool);
+
+            AddIfMissing("Toothbrush", SupplyGroup.Hygiene);
+            AddIfMissing("Toothpaste", SupplyGroup.Hygiene);
+            AddIfMissing("Shampoo", SupplyGroup.Hygiene);
+            AddIfMissing("Conditioner", SupplyGroup.Hygiene);
+            AddIfMissing("Body Wash", SupplyGroup.Hygiene);
+            AddIfMissing("Deodorant", SupplyGroup.Hygiene);
+            AddIfMissing("Lotion", SupplyGroup.Hygiene);
+            AddIfMissing("Razors", SupplyGroup.Hygiene);
+            AddIfMissing("Hand Soap", SupplyGroup.Hygiene);
+            AddIfMissing("First Aid Kit", SupplyGroup.Hygiene);
+
+            AddIfMissing("Electronics Store", SupplyGroup.Store);
+            AddIfMissing("Toy Store", SupplyGroup.Store);
+            AddIfMissing("Sporting Goods Store", SupplyGroup.Store);
+            AddIfMissing("Pharmacy", SupplyGroup.Store);
+            AddIfMissing("Big Box Retailer", SupplyGroup.Store);
         }
 
         private void AddIfMissing(string name, SupplyGroup group)
@@ -430,11 +530,55 @@ namespace Survivebest.Catalog
             supplies.Add(new SupplyItem { Name = name, Group = group });
         }
 
+        private static SupplyItem CreateAnimal(string species)
+        {
+            return new SupplyItem
+            {
+                Name = species,
+                Group = SupplyGroup.Animal,
+                Species = species
+            };
+        }
+
+        private static SupplyItem CreateAnimalBreed(string species, string breed)
+        {
+            return new SupplyItem
+            {
+                Name = $"{breed} {species}",
+                Group = SupplyGroup.Animal,
+                Species = species,
+                Breed = breed
+            };
+        }
+
         public IReadOnlyList<SupplyItem> Supplies => supplies;
 
         public List<SupplyItem> GetByGroup(SupplyGroup group)
         {
             return supplies.FindAll(s => s.Group == group);
+        }
+
+        public List<SupplyItem> GetAnimalsBySpecies(string species)
+        {
+            if (string.IsNullOrWhiteSpace(species))
+            {
+                return new List<SupplyItem>();
+            }
+
+            return supplies.FindAll(s => s != null && s.Group == SupplyGroup.Animal &&
+                string.Equals(s.SpeciesOrName, species, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public SupplyItem GetAnimalBreed(string species, string breed)
+        {
+            if (string.IsNullOrWhiteSpace(species) || string.IsNullOrWhiteSpace(breed))
+            {
+                return null;
+            }
+
+            return supplies.Find(s => s != null && s.Group == SupplyGroup.Animal &&
+                string.Equals(s.SpeciesOrName, species, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(s.Breed, breed, StringComparison.OrdinalIgnoreCase));
         }
 
         public SupplyItem GetRandomByGroup(SupplyGroup group)
@@ -446,6 +590,88 @@ namespace Survivebest.Catalog
             }
 
             return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
+
+        public List<SupplyGroup> GetPriorityGroupsForCharacter(CharacterCore character)
+        {
+            List<SupplyGroup> groups = new();
+            if (character == null)
+            {
+                return groups;
+            }
+
+            AddGroupIfMissing(groups, SupplyGroup.Hygiene);
+            AddGroupIfMissing(groups, SupplyGroup.Consumable);
+            AddGroupIfMissing(groups, character.CurrentLifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler or LifeStage.Child ? SupplyGroup.Toy : SupplyGroup.Accessory);
+            AddGroupIfMissing(groups, character.CurrentLifeStage is LifeStage.Teen or LifeStage.YoungAdult or LifeStage.Adult ? SupplyGroup.Electronics : SupplyGroup.Household);
+
+            switch (character.ClothingStyle)
+            {
+                case ClothingStyleType.Work:
+                case ClothingStyleType.Formal:
+                case ClothingStyleType.Medical:
+                    AddGroupIfMissing(groups, SupplyGroup.Clothing);
+                    AddGroupIfMissing(groups, SupplyGroup.Tool);
+                    break;
+                case ClothingStyleType.Streetwear:
+                case ClothingStyleType.Festival:
+                    AddGroupIfMissing(groups, SupplyGroup.Accessory);
+                    AddGroupIfMissing(groups, SupplyGroup.Trinket);
+                    break;
+                case ClothingStyleType.Utility:
+                case ClothingStyleType.Outdoor:
+                    AddGroupIfMissing(groups, SupplyGroup.Tool);
+                    AddGroupIfMissing(groups, SupplyGroup.Household);
+                    break;
+            }
+
+            if (character.Talents != null)
+            {
+                if (character.Talents.Contains(CharacterTalent.Technical))
+                {
+                    AddGroupIfMissing(groups, SupplyGroup.Electronics);
+                }
+
+                if (character.Talents.Contains(CharacterTalent.Caregiving))
+                {
+                    AddGroupIfMissing(groups, SupplyGroup.Medicine);
+                    AddGroupIfMissing(groups, SupplyGroup.Hygiene);
+                }
+
+                if (character.Talents.Contains(CharacterTalent.Athletic))
+                {
+                    AddGroupIfMissing(groups, SupplyGroup.Toy);
+                }
+            }
+
+            return groups;
+        }
+
+        public List<SupplyItem> GetSuggestedSuppliesForCharacter(CharacterCore character, int maxItems = 6)
+        {
+            List<SupplyItem> suggestions = new();
+            List<SupplyGroup> groups = GetPriorityGroupsForCharacter(character);
+            for (int i = 0; i < groups.Count && suggestions.Count < maxItems; i++)
+            {
+                List<SupplyItem> candidates = GetByGroup(groups[i]);
+                if (candidates == null || candidates.Count == 0)
+                {
+                    continue;
+                }
+
+                int index = Mathf.Abs((character.CharacterId?.GetHashCode() ?? 0) + (i * 17)) % candidates.Count;
+                suggestions.Add(candidates[index]);
+            }
+
+            return suggestions;
+        }
+
+        private static void AddGroupIfMissing(List<SupplyGroup> groups, SupplyGroup group)
+        {
+            if (!groups.Contains(group))
+            {
+                groups.Add(group);
+            }
         }
     }
 }
