@@ -241,6 +241,159 @@ namespace Survivebest.Core
         public string VampireTheology = "Unexamined";
     }
 
+
+    [Serializable]
+    public class VampireBloodEconomyProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float BloodHunger = 0.35f;
+        public string HungerTier = "Sated";
+        public List<string> PreferredSources = new();
+        [Range(0f, 1f)] public float ConsensualFeedingPreference = 0.5f;
+        [Range(0f, 1f)] public float BlackMarketBloodPackReliance = 0f;
+        [Range(0f, 1f)] public float HospitalTheftRisk = 0f;
+        [Range(0f, 1f)] public float AnimalBloodFallbackTolerance = 0.5f;
+        [Range(0f, 1f)] public float BloodQualitySensitivity = 0.5f;
+        public string FavoriteDonorId;
+        [Range(0f, 1f)] public float FavoriteDonorAddiction = 0f;
+        [Range(0f, 1f)] public float StoredBloodUnits = 0f;
+        [Range(0f, 1f)] public float BloodSpoilageRisk = 0f;
+        public string RareBloodTypeNeed = "None";
+        [Range(0f, 1f)] public float FeedingEtiquette = 0.5f;
+        [Range(0f, 1f)] public float OverfeedingRisk = 0f;
+        [Range(0f, 1f)] public float RepeatedFeedingBond = 0f;
+    }
+
+    [Serializable]
+    public class VampireMasqueradeProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float Suspicion = 0f;
+        [Range(0f, 1f)] public float WitnessCleanupReadiness = 0.5f;
+        public List<string> CoverStories = new();
+        [Range(0f, 1f)] public float FakeIdentityStrength = 0.5f;
+        [Range(0f, 1f)] public float AgeInconsistencyRisk = 0f;
+        [Range(0f, 1f)] public float CameraAnomalyRisk = 0f;
+        [Range(0f, 1f)] public float SocialMediaExposure = 0f;
+        [Range(0f, 1f)] public float LawEnforcementScrutiny = 0f;
+        [Range(0f, 1f)] public float HunterAttention = 0f;
+        [Range(0f, 1f)] public float NeighborhoodRumorHeat = 0f;
+        [Range(0f, 1f)] public float MedicalExamAvoidance = 0.5f;
+        [Range(0f, 1f)] public float FakeSleepDiscipline = 0.5f;
+        [Range(0f, 1f)] public float EmergencyDisappearanceReadiness = 0.5f;
+    }
+
+    [Serializable]
+    public class VampireSocietyProfile
+    {
+        public string CharacterId;
+        public string Clan = "Unaligned";
+        public string SireId;
+        public List<string> ProgenyIds = new();
+        [Range(0f, 1f)] public float BloodlinePrestige = 0.2f;
+        public List<string> FeedingTerritories = new();
+        [Range(0f, 1f)] public float AncientLawObedience = 0.5f;
+        [Range(0f, 1f)] public float CourtInfluence = 0f;
+        [Range(0f, 1f)] public float TurningLicenseStanding = 0.5f;
+        public bool IsExiled;
+        [Range(0f, 1f)] public float BloodDebtLoad = 0f;
+        [Range(0f, 1f)] public float ElderPressure = 0f;
+        public string AllianceStatus = "Independent";
+        [Range(0f, 1f)] public float NightlifeEconomyControl = 0f;
+        [Range(0f, 1f)] public float CriminalNetworkExposure = 0f;
+        public string Ideology = "Coexistence";
+    }
+
+    [Serializable]
+    public class VampireTurningProfile
+    {
+        public string CharacterId;
+        public string TriggerEvent = "None";
+        [Range(0f, 1f)] public float ConsentClarity = 0.5f;
+        [Range(0f, 1f)] public float DeathThresholdTrauma = 0f;
+        [Range(0f, 1f)] public float RebirthShock = 0f;
+        [Range(0f, 1f)] public float HumanityGrief = 0f;
+        [Range(0f, 1f)] public float FirstHungerIntensity = 0f;
+        [Range(0f, 1f)] public float FirstKillRisk = 0f;
+        [Range(0f, 1f)] public float ControlTrainingProgress = 0f;
+        [Range(0f, 1f)] public float FamilySeverance = 0f;
+        [Range(0f, 1f)] public float LegalIdentityInstability = 0f;
+        [Range(0f, 1f)] public float SireResponsibility = 0.5f;
+        public string FailureState = "Stable";
+        public string HybridEdgeCase = "None";
+    }
+
+    [Serializable]
+    public class VampireImmortalityProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float TimeDetachment = 0f;
+        [Range(0f, 1f)] public float CenturyBoredom = 0f;
+        [Range(0f, 1f)] public float AttachmentAvoidance = 0f;
+        [Range(0f, 1f)] public float RepeatedGrief = 0f;
+        [Range(0f, 1f)] public float IdentityReinventionDrive = 0f;
+        [Range(0f, 1f)] public float MemoryOverload = 0f;
+        [Range(0f, 1f)] public float LongTermGuilt = 0f;
+        [Range(0f, 1f)] public float TraumaCalcification = 0f;
+        [Range(0f, 1f)] public float LanguageDrift = 0f;
+        [Range(0f, 1f)] public float NostalgiaCycles = 0f;
+        [Range(0f, 1f)] public float MortalDisconnect = 0f;
+        [Range(0f, 1f)] public float IntimacyFear = 0f;
+    }
+
+    [Serializable]
+    public class VampireConditionProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float HealingRate = 0.5f;
+        [Range(0f, 1f)] public float BloodPoweredRegeneration = 0.5f;
+        [Range(0f, 1f)] public float StarvationVisualSeverity = 0f;
+        [Range(0f, 1f)] public float Pallor = 0.5f;
+        [Range(0f, 1f)] public float EyeGlow = 0f;
+        [Range(0f, 1f)] public float FangRevealRate = 0f;
+        [Range(0f, 1f)] public float ScentSensitivity = 0.5f;
+        [Range(0f, 1f)] public float HearingSensitivity = 0.5f;
+        [Range(0f, 1f)] public float CorpseSleepDepth = 0.5f;
+        [Range(0f, 1f)] public float StrengthSurgeFrequency = 0f;
+        [Range(0f, 1f)] public float FrenzyRisk = 0f;
+        [Range(0f, 1f)] public float VenomPotency = 0f;
+        [Range(0f, 1f)] public float SunFireSilverInjurySensitivity = 0.5f;
+    }
+
+    [Serializable]
+    public class VampireNightWorldProfile
+    {
+        public string CharacterId;
+        public List<string> NightBusinesses = new();
+        public List<string> UndergroundMarkets = new();
+        [Range(0f, 1f)] public float AfterDarkPoliticalPull = 0f;
+        [Range(0f, 1f)] public float NightlifeOverlap = 0f;
+        [Range(0f, 1f)] public float DayShelterSecurity = 0.5f;
+        [Range(0f, 1f)] public float BlackoutCurtainQuality = 0.5f;
+        [Range(0f, 1f)] public float GhoulSupport = 0f;
+        [Range(0f, 1f)] public float DawnTransportRisk = 0f;
+        [Range(0f, 1f)] public float SunrisePanic = 0f;
+        [Range(0f, 1f)] public float NightWeatherSensitivity = 0.5f;
+    }
+
+    [Serializable]
+    public class HumanVampireRelationshipProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float WillingDonorStability = 0f;
+        [Range(0f, 1f)] public float EnthrallmentRisk = 0f;
+        [Range(0f, 1f)] public float RomanceSecrecyStrain = 0f;
+        [Range(0f, 1f)] public float CompulsionMoralityConflict = 0f;
+        [Range(0f, 1f)] public float PredatorGuilt = 0f;
+        [Range(0f, 1f)] public float SocialTabooPressure = 0f;
+        [Range(0f, 1f)] public float HumanAgingGrief = 0f;
+        [Range(0f, 1f)] public float TurningDilemma = 0f;
+        [Range(0f, 1f)] public float FamilyExposureDanger = 0f;
+        [Range(0f, 1f)] public float ParentingEthics = 0f;
+        [Range(0f, 1f)] public float RoommateLogistics = 0f;
+        [Range(0f, 1f)] public float TruthRevealStrain = 0f;
+    }
+
     public enum LifeReflectionType
     {
         Gratitude,
@@ -286,6 +439,14 @@ namespace Survivebest.Core
         [SerializeField] private List<EducationJourneyProfile> educationProfiles = new();
         [SerializeField] private List<DigitalLifeProfile> digitalProfiles = new();
         [SerializeField] private List<BeliefPhilosophyProfile> beliefProfiles = new();
+        [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
+        [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
+        [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
+        [SerializeField] private List<VampireTurningProfile> vampireTurningProfiles = new();
+        [SerializeField] private List<VampireImmortalityProfile> vampireImmortalityProfiles = new();
+        [SerializeField] private List<VampireConditionProfile> vampireConditionProfiles = new();
+        [SerializeField] private List<VampireNightWorldProfile> vampireNightWorldProfiles = new();
+        [SerializeField] private List<HumanVampireRelationshipProfile> humanVampireRelationshipProfiles = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
         [SerializeField, Min(10)] private int maxMoments = 300;
         [SerializeField, Min(10)] private int maxTimelineEntries = 500;
@@ -304,6 +465,14 @@ namespace Survivebest.Core
         public IReadOnlyList<EducationJourneyProfile> EducationProfiles => educationProfiles;
         public IReadOnlyList<DigitalLifeProfile> DigitalProfiles => digitalProfiles;
         public IReadOnlyList<BeliefPhilosophyProfile> BeliefProfiles => beliefProfiles;
+        public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
+        public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
+        public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
+        public IReadOnlyList<VampireTurningProfile> VampireTurningProfiles => vampireTurningProfiles;
+        public IReadOnlyList<VampireImmortalityProfile> VampireImmortalityProfiles => vampireImmortalityProfiles;
+        public IReadOnlyList<VampireConditionProfile> VampireConditionProfiles => vampireConditionProfiles;
+        public IReadOnlyList<VampireNightWorldProfile> VampireNightWorldProfiles => vampireNightWorldProfiles;
+        public IReadOnlyList<HumanVampireRelationshipProfile> HumanVampireRelationshipProfiles => humanVampireRelationshipProfiles;
         public IReadOnlyList<MemoryMeaningRecord> MemoryMeaningRecords => memoryMeaningRecords;
         public IReadOnlyList<DomesticIntimacyMoment> DomesticIntimacyMoments => domesticIntimacyMoments;
 
@@ -557,6 +726,176 @@ namespace Survivebest.Core
             return UpsertProfile(actor, profile, beliefProfiles, () => new BeliefPhilosophyProfile());
         }
 
+        public VampireBloodEconomyProfile SetVampireBloodEconomyProfile(CharacterCore actor, VampireBloodEconomyProfile profile)
+        {
+            VampireBloodEconomyProfile stored = UpsertProfile(actor, profile, vampireBloodProfiles, () => new VampireBloodEconomyProfile());
+            if (stored != null && stored.BloodHunger > 0.65f)
+            {
+                AppendThought(actor, "vampire_blood", $"Hunger sits at the {stored.HungerTier.ToLowerInvariant()} tier and makes every pulse nearby distracting.", stored.BloodHunger, null);
+            }
+
+            return stored;
+        }
+
+        public VampireMasqueradeProfile SetVampireMasqueradeProfile(CharacterCore actor, VampireMasqueradeProfile profile)
+        {
+            VampireMasqueradeProfile stored = UpsertProfile(actor, profile, vampireMasqueradeProfiles, () => new VampireMasqueradeProfile());
+            if (stored != null && stored.Suspicion > 0.5f)
+            {
+                AppendThought(actor, "masquerade", "Too many eyes are lingering on details that should have stayed invisible.", stored.Suspicion, null);
+            }
+
+            return stored;
+        }
+
+        public VampireSocietyProfile SetVampireSocietyProfile(CharacterCore actor, VampireSocietyProfile profile)
+        {
+            return UpsertProfile(actor, profile, vampireSocietyProfiles, () => new VampireSocietyProfile());
+        }
+
+        public VampireTurningProfile SetVampireTurningProfile(CharacterCore actor, VampireTurningProfile profile)
+        {
+            return UpsertProfile(actor, profile, vampireTurningProfiles, () => new VampireTurningProfile());
+        }
+
+        public VampireImmortalityProfile SetVampireImmortalityProfile(CharacterCore actor, VampireImmortalityProfile profile)
+        {
+            return UpsertProfile(actor, profile, vampireImmortalityProfiles, () => new VampireImmortalityProfile());
+        }
+
+        public VampireConditionProfile SetVampireConditionProfile(CharacterCore actor, VampireConditionProfile profile)
+        {
+            return UpsertProfile(actor, profile, vampireConditionProfiles, () => new VampireConditionProfile());
+        }
+
+        public VampireNightWorldProfile SetVampireNightWorldProfile(CharacterCore actor, VampireNightWorldProfile profile)
+        {
+            return UpsertProfile(actor, profile, vampireNightWorldProfiles, () => new VampireNightWorldProfile());
+        }
+
+        public HumanVampireRelationshipProfile SetHumanVampireRelationshipProfile(CharacterCore actor, HumanVampireRelationshipProfile profile)
+        {
+            return UpsertProfile(actor, profile, humanVampireRelationshipProfiles, () => new HumanVampireRelationshipProfile());
+        }
+
+        public string BuildVampireLifeLoopSummary(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No vampire life loop available.";
+            }
+
+            List<string> parts = new();
+            VampireBloodEconomyProfile blood = FindProfile(characterId, vampireBloodProfiles);
+            VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
+            VampireSocietyProfile society = FindProfile(characterId, vampireSocietyProfiles);
+            VampireImmortalityProfile immortality = FindProfile(characterId, vampireImmortalityProfiles);
+            VampireNightWorldProfile nightWorld = FindProfile(characterId, vampireNightWorldProfiles);
+            HumanVampireRelationshipProfile relationships = FindProfile(characterId, humanVampireRelationshipProfiles);
+
+            if (blood != null)
+            {
+                string source = blood.PreferredSources.Count > 0 ? blood.PreferredSources[0] : "mixed sources";
+                parts.Add($"Blood economy: {blood.HungerTier} hunger via {source}");
+            }
+
+            if (masquerade != null)
+            {
+                parts.Add($"Masquerade heat: suspicion {masquerade.Suspicion:0.00}");
+            }
+
+            if (society != null)
+            {
+                parts.Add($"Society: {society.Clan} / {society.Ideology}");
+            }
+
+            if (immortality != null && immortality.TimeDetachment > 0.2f)
+            {
+                parts.Add($"Immortality drift: detachment {immortality.TimeDetachment:0.00}");
+            }
+
+            if (nightWorld != null)
+            {
+                parts.Add($"Night shelter: security {nightWorld.DayShelterSecurity:0.00}");
+            }
+
+            if (relationships != null && relationships.WillingDonorStability > 0.2f)
+            {
+                parts.Add($"Human ties: donor stability {relationships.WillingDonorStability:0.00}");
+            }
+
+            return parts.Count > 0 ? string.Join(" | ", parts) : "Vampire systems are still dormant.";
+        }
+
+        public string SimulateVampireNightPulse(CharacterCore actor, int hour, int seed)
+        {
+            if (actor == null || !actor.IsVampire)
+            {
+                return "No vampire actor available for night pulse.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            List<string> observations = new();
+            VampireBloodEconomyProfile blood = FindProfile(actor.CharacterId, vampireBloodProfiles);
+            VampireMasqueradeProfile masquerade = FindProfile(actor.CharacterId, vampireMasqueradeProfiles);
+            VampireSocietyProfile society = FindProfile(actor.CharacterId, vampireSocietyProfiles);
+            VampireTurningProfile turning = FindProfile(actor.CharacterId, vampireTurningProfiles);
+            VampireImmortalityProfile immortality = FindProfile(actor.CharacterId, vampireImmortalityProfiles);
+            VampireConditionProfile condition = FindProfile(actor.CharacterId, vampireConditionProfiles);
+            VampireNightWorldProfile nightWorld = FindProfile(actor.CharacterId, vampireNightWorldProfiles);
+            HumanVampireRelationshipProfile relationships = FindProfile(actor.CharacterId, humanVampireRelationshipProfiles);
+
+            if (blood != null && blood.BloodHunger > 0.45f)
+            {
+                observations.Add($"Your {blood.HungerTier.ToLowerInvariant()} hunger keeps pulling attention toward {DescribePreferredSource(blood)}.");
+            }
+
+            if (masquerade != null && (masquerade.Suspicion > 0.45f || masquerade.HunterAttention > 0.45f || masquerade.SocialMediaExposure > 0.45f))
+            {
+                observations.Add("The masquerade feels thin tonight, and every witness could become tomorrow's problem.");
+            }
+
+            if (society != null && (society.BloodDebtLoad > 0.4f || society.ElderPressure > 0.4f || society.CourtInfluence > 0.4f))
+            {
+                observations.Add($"{society.Clan} politics keep pressing on your route through the city.");
+            }
+
+            if (turning != null && (turning.HumanityGrief > 0.45f || turning.FirstKillRisk > 0.45f || turning.RebirthShock > 0.45f))
+            {
+                observations.Add("Part of the night is still haunted by the violence and grief of becoming this creature.");
+            }
+
+            if (immortality != null && (immortality.MemoryOverload > 0.45f || immortality.RepeatedGrief > 0.45f || immortality.MortalDisconnect > 0.45f))
+            {
+                observations.Add("Centuries compress into a blur, making today's mortals feel heartbreakingly brief.");
+            }
+
+            if (condition != null && (condition.FrenzyRisk > 0.45f || condition.StarvationVisualSeverity > 0.45f || condition.StrengthSurgeFrequency > 0.45f))
+            {
+                observations.Add("Your body keeps threatening to reveal the monster behind the mask.");
+            }
+
+            if (nightWorld != null && (nightWorld.SunrisePanic > 0.45f || nightWorld.DawnTransportRisk > 0.45f || nightWorld.DayShelterSecurity < 0.4f))
+            {
+                observations.Add("Dawn logistics shape every decision more than desire does.");
+            }
+
+            if (relationships != null && (relationships.EnthrallmentRisk > 0.45f || relationships.HumanAgingGrief > 0.45f || relationships.TruthRevealStrain > 0.45f))
+            {
+                observations.Add("Your human relationships are balancing on need, secrecy, and unequal time.");
+            }
+
+            if (observations.Count == 0)
+            {
+                observations.Add("The night opens cleanly: hunger is managed, shelter is secure, and your secrets hold.");
+            }
+
+            string message = observations[rng.Next(observations.Count)];
+            AppendThought(actor, "vampire_night_pulse", message, 0.5f + rng.Next(30) / 100f, null);
+            RecordLifeTimelineEvent(actor, $"Night pulse {hour:00}:00", message, "vampire_night_pulse");
+            return message;
+        }
+
         public T GetProfile<T>(string characterId) where T : class
         {
             if (typeof(T) == typeof(SensoryLifeProfile))
@@ -597,6 +936,46 @@ namespace Survivebest.Core
             if (typeof(T) == typeof(BeliefPhilosophyProfile))
             {
                 return FindProfile(characterId, beliefProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireBloodEconomyProfile))
+            {
+                return FindProfile(characterId, vampireBloodProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireMasqueradeProfile))
+            {
+                return FindProfile(characterId, vampireMasqueradeProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireSocietyProfile))
+            {
+                return FindProfile(characterId, vampireSocietyProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireTurningProfile))
+            {
+                return FindProfile(characterId, vampireTurningProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireImmortalityProfile))
+            {
+                return FindProfile(characterId, vampireImmortalityProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireConditionProfile))
+            {
+                return FindProfile(characterId, vampireConditionProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(VampireNightWorldProfile))
+            {
+                return FindProfile(characterId, vampireNightWorldProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(HumanVampireRelationshipProfile))
+            {
+                return FindProfile(characterId, humanVampireRelationshipProfiles) as T;
             }
 
             return null;
@@ -678,6 +1057,7 @@ namespace Survivebest.Core
             SocialRoleBurdenProfile burden = FindProfile(characterId, socialRoleBurdenProfiles);
             DigitalLifeProfile digital = FindProfile(characterId, digitalProfiles);
             BeliefPhilosophyProfile belief = FindProfile(characterId, beliefProfiles);
+            VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
 
             List<string> parts = new();
             if (sensory != null)
@@ -704,6 +1084,11 @@ namespace Survivebest.Core
             if (belief != null && belief.MeaningCrisis > 0.2f)
             {
                 parts.Add($"Belief weather: meaning crisis {belief.MeaningCrisis:0.00}");
+            }
+
+            if (masquerade != null && masquerade.Suspicion > 0.2f)
+            {
+                parts.Add($"Masquerade tension: suspicion {masquerade.Suspicion:0.00}");
             }
 
             return parts.Count > 0 ? string.Join(" | ", parts) : "Life texture is still being discovered.";
@@ -1095,7 +1480,22 @@ namespace Survivebest.Core
                 headline += " A small part of you worries the moment could leave a trace online.";
             }
 
+            if (blood != null && blood.BloodHunger > 0.7f && actor.IsVampire)
+            {
+                headline += " Hunger keeps reframing the scene in terms of veins, restraint, and risk.";
+            }
+
             return headline;
+        }
+
+        private static string DescribePreferredSource(VampireBloodEconomyProfile blood)
+        {
+            if (blood == null || blood.PreferredSources == null || blood.PreferredSources.Count == 0)
+            {
+                return "whatever blood is safely available";
+            }
+
+            return blood.PreferredSources[0].ToLowerInvariant();
         }
 
         private static bool ContainsIgnoreCase(List<string> values, string value)
