@@ -1001,7 +1001,7 @@ namespace Survivebest.UI
             needs?.ModifyMood(6f);
             needs?.ModifyGrooming(4f);
 
-            string style = LifeActivityCatalog.PickRandomOutfitStyle();
+            string style = LifeActivityCatalog.PickRandomOutfitStyle(active.CurrentLifeStage);
             return $"Bought a {style} outfit and updated your closet.";
         }
 
