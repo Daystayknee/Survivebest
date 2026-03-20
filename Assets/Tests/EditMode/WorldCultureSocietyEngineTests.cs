@@ -59,5 +59,28 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(doctor, criminal);
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void NeighborhoodMicroCulture_CreatesDistrictSpecificLifeSnapshotAndVisitFit()
+        {
+            GameObject go = new GameObject("CultureNeighborhood");
+            WorldCultureSocietyEngine engine = go.AddComponent<WorldCultureSocietyEngine>();
+            RelationshipMemorySystem memory = go.AddComponent<RelationshipMemorySystem>();
+            typeof(WorldCultureSocietyEngine)
+                .GetField("relationshipMemorySystem", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(engine, memory);
+
+            NeighborhoodMicroCultureProfile profile = engine.GetOrCreateMicroCulture("night_district_vamp");
+            float fit = engine.RegisterNeighborhoodVisit("char_night", "night_district_vamp");
+            string snapshot = engine.BuildNeighborhoodLifeSnapshot("night_district_vamp");
+
+            Assert.AreEqual("night_district_vamp", profile.DistrictId);
+            Assert.Greater(profile.VampireAwareness, 0f);
+            Assert.GreaterOrEqual(fit, 0f);
+            StringAssert.Contains("Vampire awareness", snapshot);
+
+            Object.DestroyImmediate(go);
+        }
+
     }
 }

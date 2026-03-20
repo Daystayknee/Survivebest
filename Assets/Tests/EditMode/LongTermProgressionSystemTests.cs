@@ -51,5 +51,28 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(hubObject);
         }
+
+        [Test]
+        public void GoalDrift_PullsBackIdleProgress()
+        {
+            GameObject go = new GameObject("ProgressionDriftTest");
+            LongTermProgressionSystem system = go.AddComponent<LongTermProgressionSystem>();
+
+            List<AspirationGoal> goals = new List<AspirationGoal>
+            {
+                new AspirationGoal { GoalId = "goal_drift", Title = "Drift Goal", TargetAmount = 5, CurrentAmount = 3 }
+            };
+
+            typeof(LongTermProgressionSystem).GetField("goals", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(system, goals);
+
+            List<GoalDriftSnapshot> snapshots = system.ApplyGoalDrift(1.5f);
+
+            Assert.AreEqual(2, goals[0].CurrentAmount);
+            Assert.AreEqual("goal_drift", snapshots[0].GoalId);
+            Assert.Less(snapshots[0].ProgressDelta, 0f);
+
+            Object.DestroyImmediate(go);
+        }
+
     }
 }
