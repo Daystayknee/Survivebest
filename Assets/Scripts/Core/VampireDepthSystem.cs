@@ -76,6 +76,7 @@ namespace Survivebest.Core
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private PaperTrailSystem paperTrailSystem;
+        [SerializeField] private SimulationCohesionSystem simulationCohesionSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<BloodBondProfile> bloodBonds = new();
         [SerializeField] private List<FrenzyState> frenzyStates = new();
@@ -138,7 +139,12 @@ namespace Survivebest.Core
             VampireBloodEconomyProfile blood = humanLifeExperienceLayerSystem != null ? humanLifeExperienceLayerSystem.GetProfile<VampireBloodEconomyProfile>(vampire.CharacterId) : null;
             float hunger = blood != null ? blood.BloodHunger * 100f : frenzy.HungerPressure;
             frenzy.HungerPressure = Mathf.Clamp(hunger, 0f, 100f);
-            frenzy.LossOfControlRisk = Mathf.Clamp((frenzy.HungerPressure * 0.65f) + externalStress * 20f, 0f, 100f);
+            VampireMasqueradeProfile masquerade = humanLifeExperienceLayerSystem != null ? humanLifeExperienceLayerSystem.GetProfile<VampireMasqueradeProfile>(vampire.CharacterId) : null;
+            float suspicion = masquerade != null ? masquerade.Suspicion : 0f;
+            float donorFixation = blood != null ? blood.FavoriteDonorAddiction : 0f;
+            float selfControl = blood != null ? 1f - blood.OverfeedingRisk : 0.5f;
+            simulationCohesionSystem?.EvaluateVampireHungerChain(vampire, frenzy.HungerPressure / 100f, selfControl, suspicion, donorFixation);
+            frenzy.LossOfControlRisk = Mathf.Clamp((frenzy.HungerPressure * 0.65f) + externalStress * 20f + suspicion * 12f + donorFixation * 8f, 0f, 100f);
             frenzy.ViolenceRisk = Mathf.Clamp((frenzy.HungerPressure * 0.55f) + (blood != null ? blood.OverfeedingRisk * 30f : 0f), 0f, 100f);
             frenzy.SocialConsequenceRisk = Mathf.Clamp((frenzy.LossOfControlRisk * 0.5f) + frenzy.ViolenceRisk * 0.35f, 0f, 100f);
             frenzy.MemoryGapSeverity = Mathf.Clamp((frenzy.LossOfControlRisk - 45f) * 0.8f, 0f, 100f);

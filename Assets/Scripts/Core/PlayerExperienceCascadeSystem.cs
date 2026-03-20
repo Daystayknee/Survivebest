@@ -65,6 +65,7 @@ namespace Survivebest.Core
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
         [SerializeField] private LongTermProgressionSystem longTermProgressionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private SimulationCohesionSystem simulationCohesionSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<LifeDirectionState> directionStates = new();
         [SerializeField] private List<RegretEntry> regrets = new();
@@ -230,6 +231,7 @@ namespace Survivebest.Core
             }
 
             MeaningProfile meaning = RecalculateMeaningProfile(characterId);
+            string cohesionSummary = simulationCohesionSystem != null ? simulationCohesionSystem.BuildCohesionSummary(characterId) : string.Empty;
             List<LifeTimelineEntry> timeline = humanLifeExperienceLayerSystem != null
                 ? humanLifeExperienceLayerSystem.GetTimelineForCharacter(characterId, 6)
                 : new List<LifeTimelineEntry>();
@@ -241,6 +243,15 @@ namespace Survivebest.Core
                 if (entry != null)
                 {
                     snapshot.SupportingLines.Add(entry.Title);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(cohesionSummary))
+            {
+                string[] cohesionLines = cohesionSummary.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < cohesionLines.Length; i++)
+                {
+                    snapshot.SupportingLines.Add(cohesionLines[i]);
                 }
             }
 
