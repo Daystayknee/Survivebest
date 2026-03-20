@@ -76,6 +76,25 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void SupplyCatalog_BreedDisplayLabel_UsesSpeciesAndBreedFormatting()
+        {
+            GameObject go = new GameObject("SupplyCatalogBreedLabel");
+            SupplyCatalog catalog = go.AddComponent<SupplyCatalog>();
+
+            MethodInfo awake = typeof(SupplyCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            SupplyItem boerGoat = catalog.GetAnimalBreed("Goat", "Boer");
+
+            Assert.IsNotNull(boerGoat);
+            Assert.AreEqual("Boer Goat", boerGoat.Name);
+            Assert.AreEqual("Goat (Boer)", boerGoat.DisplayLabel);
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void InventoryManager_Awake_SeedsCoreContainersAndConsumables()
         {
