@@ -1,0 +1,67 @@
+# Skills Reference
+
+This document lists every seeded skill in `SkillSystem` and the broad design niche implied by each name. Skill values are stored as raw points, while displayed levels are derived from `pointsPerLevel`.
+
+## Seeded skill list (62 skills)
+- **Cooking** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Gardening** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Hunting** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Fishing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Farming** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Foraging** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Carpentry** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Blacksmithing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Sewing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Tailoring** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Leatherworking** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Pottery** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Painting** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Drawing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Sculpting** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Writing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Storytelling** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Programming** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Game design** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **UI/UX design** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Photography** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Videography** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Music composition** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Singing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Instrument playing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Negotiation** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Leadership** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Public speaking** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **First aid** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Survival skills** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Navigation** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Animal care** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Herbal medicine** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Chemistry** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Engineering** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Driving** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Customer service** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Office administration** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Bookkeeping** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Sales** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Healthcare support** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Teaching** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Electrical repair** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Plumbing** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **HVAC maintenance** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Welding** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Logistics** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Forklift operation** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Project management** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Data analysis** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Childcare** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Elder care** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Home organization** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Meditation** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Fitness coaching** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Content creation** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Entrepreneurship** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Robotics** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Cybersecurity** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Language learning** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Conflict mediation** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.
+- **Event planning** — seeded skill track available for progression, gating, authored content hooks, or future content expansion.

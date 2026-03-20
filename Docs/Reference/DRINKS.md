@@ -1,0 +1,65 @@
+# Drinks Reference
+
+This document lists every seeded drink entry in `DrinkDatabase`, grouped only by the runtime data itself.
+
+## Drink roster (60 seeded drinks)
+- **Water** — category `Water`; hydration `30`; energy `0`; mood `0`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Sparkling Water** — category `Water`; hydration `26`; energy `0`; mood `1`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Electrolyte Water** — category `Water`; hydration `32`; energy `2`; mood `1`; hygiene `0`; vitality `4`; alcoholic: `false`.
+- **Mineral Water** — category `Water`; hydration `28`; energy `0`; mood `0`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Coconut Water** — category `Water`; hydration `24`; energy `3`; mood `2`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Alkaline Water** — category `Water`; hydration `27`; energy `1`; mood `0`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Cucumber Water** — category `Water`; hydration `23`; energy `1`; mood `1`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Berry Infused Water** — category `Water`; hydration `22`; energy `2`; mood `2`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Orange Juice** — category `Juice`; hydration `22`; energy `4`; mood `3`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Apple Juice** — category `Juice`; hydration `21`; energy `3`; mood `2`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Lemonade** — category `Juice`; hydration `18`; energy `4`; mood `4`; hygiene `0`; vitality `0`; alcoholic: `false`.
+- **Grape Juice** — category `Juice`; hydration `20`; energy `4`; mood `3`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Cranberry Juice** — category `Juice`; hydration `19`; energy `3`; mood `2`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Pineapple Juice** — category `Juice`; hydration `20`; energy `5`; mood `3`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Mango Juice** — category `Juice`; hydration `21`; energy `5`; mood `4`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Carrot Juice** — category `Juice`; hydration `18`; energy `3`; mood `1`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Tomato Juice** — category `Juice`; hydration `17`; energy `2`; mood `1`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Pomegranate Juice** — category `Juice`; hydration `20`; energy `4`; mood `3`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Cola** — category `Soda`; hydration `15`; energy `8`; mood `5`; hygiene `-1`; vitality `-2`; alcoholic: `false`.
+- **Ginger Soda** — category `Soda`; hydration `14`; energy `6`; mood `4`; hygiene `-1`; vitality `-1`; alcoholic: `false`.
+- **Energy Drink** — category `Soda`; hydration `8`; energy `20`; mood `5`; hygiene `-2`; vitality `-4`; alcoholic: `false`.
+- **Root Beer** — category `Soda`; hydration `13`; energy `7`; mood `4`; hygiene `-1`; vitality `-2`; alcoholic: `false`.
+- **Lemon-Lime Soda** — category `Soda`; hydration `14`; energy `7`; mood `4`; hygiene `-1`; vitality `-2`; alcoholic: `false`.
+- **Cream Soda** — category `Soda`; hydration `12`; energy `7`; mood `5`; hygiene `-1`; vitality `-2`; alcoholic: `false`.
+- **Orange Soda** — category `Soda`; hydration `13`; energy `8`; mood `5`; hygiene `-1`; vitality `-2`; alcoholic: `false`.
+- **Cherry Cola** — category `Soda`; hydration `13`; energy `9`; mood `5`; hygiene `-1`; vitality `-2`; alcoholic: `false`.
+- **Tonic Water** — category `Soda`; hydration `11`; energy `2`; mood `1`; hygiene `0`; vitality `0`; alcoholic: `false`.
+- **Espresso** — category `Coffee`; hydration `5`; energy `12`; mood `3`; hygiene `0`; vitality `-1`; alcoholic: `false`.
+- **Latte** — category `Coffee`; hydration `10`; energy `10`; mood `4`; hygiene `0`; vitality `0`; alcoholic: `false`.
+- **Cold Brew** — category `Coffee`; hydration `7`; energy `14`; mood `3`; hygiene `0`; vitality `-1`; alcoholic: `false`.
+- **Cappuccino** — category `Coffee`; hydration `9`; energy `11`; mood `4`; hygiene `0`; vitality `0`; alcoholic: `false`.
+- **Americano** — category `Coffee`; hydration `8`; energy `10`; mood `2`; hygiene `0`; vitality `0`; alcoholic: `false`.
+- **Mocha** — category `Coffee`; hydration `8`; energy `12`; mood `6`; hygiene `0`; vitality `-1`; alcoholic: `false`.
+- **Iced Coffee** — category `Coffee`; hydration `10`; energy `11`; mood `3`; hygiene `0`; vitality `-1`; alcoholic: `false`.
+- **Macchiato** — category `Coffee`; hydration `6`; energy `13`; mood `3`; hygiene `0`; vitality `-1`; alcoholic: `false`.
+- **Green Tea** — category `Tea`; hydration `12`; energy `5`; mood `2`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Chamomile Tea** — category `Tea`; hydration `14`; energy `-2`; mood `4`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Black Tea** — category `Tea`; hydration `10`; energy `6`; mood `2`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Earl Grey** — category `Tea`; hydration `10`; energy `6`; mood `3`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Jasmine Tea** — category `Tea`; hydration `11`; energy `4`; mood `3`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Mint Tea** — category `Tea`; hydration `12`; energy `3`; mood `3`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Chai Tea** — category `Tea`; hydration `9`; energy `5`; mood `4`; hygiene `0`; vitality `1`; alcoholic: `false`.
+- **Oolong Tea** — category `Tea`; hydration `11`; energy `5`; mood `2`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Berry Smoothie** — category `Smoothie`; hydration `20`; energy `6`; mood `4`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Mango Smoothie** — category `Smoothie`; hydration `19`; energy `7`; mood `4`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Protein Smoothie** — category `Smoothie`; hydration `16`; energy `9`; mood `2`; hygiene `0`; vitality `4`; alcoholic: `false`.
+- **Banana Smoothie** — category `Smoothie`; hydration `18`; energy `8`; mood `3`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Peanut Smoothie** — category `Smoothie`; hydration `14`; energy `10`; mood `3`; hygiene `0`; vitality `2`; alcoholic: `false`.
+- **Green Smoothie** — category `Smoothie`; hydration `21`; energy `6`; mood `2`; hygiene `0`; vitality `4`; alcoholic: `false`.
+- **Tropical Smoothie** — category `Smoothie`; hydration `20`; energy `7`; mood `5`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Yogurt Smoothie** — category `Smoothie`; hydration `17`; energy `6`; mood `3`; hygiene `0`; vitality `3`; alcoholic: `false`.
+- **Red Wine** — category `Alcohol`; hydration `2`; energy `-2`; mood `6`; hygiene `0`; vitality `-2`; alcoholic: `true`.
+- **Beer** — category `Alcohol`; hydration `3`; energy `-1`; mood `5`; hygiene `0`; vitality `-2`; alcoholic: `true`.
+- **Whiskey** — category `Alcohol`; hydration `1`; energy `-3`; mood `7`; hygiene `0`; vitality `-4`; alcoholic: `true`.
+- **Vodka Soda** — category `Alcohol`; hydration `2`; energy `-2`; mood `6`; hygiene `0`; vitality `-3`; alcoholic: `true`.
+- **Rum Cola** — category `Alcohol`; hydration `2`; energy `-1`; mood `7`; hygiene `0`; vitality `-3`; alcoholic: `true`.
+- **Gin Tonic** — category `Alcohol`; hydration `2`; energy `-2`; mood `6`; hygiene `0`; vitality `-3`; alcoholic: `true`.
+- **Craft Cider** — category `Alcohol`; hydration `3`; energy `-1`; mood `5`; hygiene `0`; vitality `-2`; alcoholic: `true`.
+- **Sake** — category `Alcohol`; hydration `2`; energy `-1`; mood `6`; hygiene `0`; vitality `-2`; alcoholic: `true`.
+- **Hard Seltzer** — category `Alcohol`; hydration `3`; energy `-1`; mood `5`; hygiene `0`; vitality `-2`; alcoholic: `true`.
