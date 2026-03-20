@@ -121,6 +121,112 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void ConflictSystem_BuildCombatActionCatalog_ProducesThousandsOfCombatActions()
+        {
+            GameObject go = new GameObject("CombatCatalog");
+            ConflictSystem conflict = go.AddComponent<ConflictSystem>();
+
+            var catalog = conflict.BuildCombatActionCatalog();
+
+            Assert.GreaterOrEqual(catalog.Count, 1000);
+            Assert.IsTrue(catalog.Exists(entry => entry.Contains("weapon strike") || entry.Contains("bite") || entry.Contains("web shot")));
+            Assert.IsTrue(catalog.Exists(entry => entry.Contains("eyes") || entry.Contains("thorax")));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void ConflictSystem_ResolveCombatRound_ReportsHitMissDodgeAndDeflectPercentages()
+        {
+            Random.InitState(12345);
+            GameObject ownerGo = new GameObject("OwnerPercentages");
+            GameObject targetGo = new GameObject("TargetPercentages");
+            GameObject systemsGo = new GameObject("ConflictPercentages");
+
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner", "Owner", LifeStage.Adult);
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target", "Target", LifeStage.Adult, CharacterSpecies.Vampire);
+
+            ConflictSystem conflict = systemsGo.AddComponent<ConflictSystem>();
+            EmotionSystem emotion = systemsGo.AddComponent<EmotionSystem>();
+            SocialSystem social = systemsGo.AddComponent<SocialSystem>();
+            HealthSystem ownerHealth = systemsGo.AddComponent<HealthSystem>();
+            HealthSystem targetHealth = targetGo.AddComponent<HealthSystem>();
+
+            typeof(ConflictSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, owner);
+            typeof(ConflictSystem).GetField("emotionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, emotion);
+            typeof(ConflictSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, social);
+            typeof(ConflictSystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, ownerHealth);
+
+            CombatRoundResult result = conflict.ResolveCombatRound(target, targetHealth, CombatOption.CounterStrike, CombatOption.Deflect);
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.OwnerHitChance >= 15f && result.OwnerHitChance <= 93f);
+            Assert.IsTrue(result.TargetHitChance >= 15f && result.TargetHitChance <= 93f);
+            Assert.IsTrue(result.OwnerDodgeChance >= 2f && result.OwnerDodgeChance <= 48f);
+            Assert.IsTrue(result.TargetDeflectChance >= 1f && result.TargetDeflectChance <= 52f);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerTargetBodyPart));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerActionLabel));
+            Assert.IsTrue(result.OwnerInjuryLocation != BodyLocation.Unknown || result.TargetInjuryLocation != BodyLocation.Unknown);
+            StringAssert.Contains("Combat round resolved:", result.Summary);
+
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(systemsGo);
+        }
+
+        [Test]
+        public void ConflictSystem_ResolveCombatRound_CapturesDetailedWoundMetadata()
+        {
+            Random.InitState(999);
+            GameObject ownerGo = new GameObject("OwnerWounds");
+            GameObject targetGo = new GameObject("TargetWounds");
+            GameObject systemsGo = new GameObject("ConflictWounds");
+
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner", "Owner", LifeStage.Adult);
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target", "Target", LifeStage.Adult);
+
+            ConflictSystem conflict = systemsGo.AddComponent<ConflictSystem>();
+            EmotionSystem emotion = systemsGo.AddComponent<EmotionSystem>();
+            SocialSystem social = systemsGo.AddComponent<SocialSystem>();
+            HealthSystem ownerHealth = systemsGo.AddComponent<HealthSystem>();
+            InjuryRecoverySystem injuryRecovery = systemsGo.AddComponent<InjuryRecoverySystem>();
+            MedicalConditionSystem medical = systemsGo.AddComponent<MedicalConditionSystem>();
+            HealthSystem targetHealth = targetGo.AddComponent<HealthSystem>();
+
+            typeof(ConflictSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, owner);
+            typeof(ConflictSystem).GetField("emotionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, emotion);
+            typeof(ConflictSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, social);
+            typeof(ConflictSystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, ownerHealth);
+            typeof(ConflictSystem).GetField("injuryRecoverySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, injuryRecovery);
+            typeof(ConflictSystem).GetField("medicalConditionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, medical);
+            typeof(InjuryRecoverySystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(injuryRecovery, ownerHealth);
+            typeof(InjuryRecoverySystem).GetField("needsSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(injuryRecovery, systemsGo.AddComponent<NeedsSystem>());
+
+            CombatRoundResult result = conflict.ResolveCombatRound(target, targetHealth, CombatOption.Guard, CombatOption.WeaponStrike);
+
+            MedicalCondition ownerCondition = medical.ActiveConditions.First(c => !c.IsIllness);
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(ownerCondition);
+            Assert.AreEqual(result.OwnerInjury, ownerCondition.InjuryType);
+            Assert.AreEqual(result.OwnerInjuryLocation, ownerCondition.BodyLocation);
+            Assert.AreEqual(result.OwnerWoundType, ownerCondition.WoundType);
+            Assert.AreEqual(result.OwnerFractureType, ownerCondition.FractureType);
+            Assert.IsTrue(ownerCondition.BleedingRate >= 0f);
+            Assert.IsTrue(ownerCondition.MobilityPenalty >= 0f);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(ownerCondition.DetailSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerWoundDescription));
+
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(systemsGo);
+        }
+
         [Test]
         public void ConflictSystem_ResolveCombatRound_CreatesInjuryForOwnerWhenHitHard()
         {
@@ -160,6 +266,62 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(ownerGo);
             Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(systemsGo);
+        }
+
+        [Test]
+        public void HealthcareGameplaySystem_BuildPlan_ForFractureIncludesCastingMedicationAndFollowUp()
+        {
+            GameObject go = new GameObject("HealthcarePlan");
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+
+            Assert.IsTrue(medical.AddDetailedInjury(
+                InjuryType.Fracture,
+                ConditionSeverity.Severe,
+                BodyLocation.Forearm,
+                WoundType.BoneBreak,
+                FractureType.Open,
+                detailSummary: "severe open fracture at Forearm, bleeding 35%, mobility loss 80%"));
+
+            MedicalCondition condition = medical.ActiveConditions.First(c => !c.IsIllness);
+            HealthcareEncounterPlan plan = healthcare.BuildPlan(condition);
+
+            Assert.IsNotNull(plan);
+            Assert.AreEqual(TriagePriority.Critical, plan.TriagePriority);
+            Assert.IsTrue(plan.NeedsHospitalization);
+            Assert.IsTrue(plan.NeedsSurgery);
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Triage));
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Casting));
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
+            Assert.AreEqual(TissueLayerDepth.Bone, condition.TissueDepth);
+            Assert.IsTrue(condition.RequiresImaging);
+            Assert.IsTrue(condition.RequiresCast);
+            Assert.IsTrue(condition.RequiresSurgeryConsult);
+            Assert.Greater(condition.InternalBleedingRisk, 0f);
+            StringAssert.Contains("sterile", plan.ReprocessingSummary.ToLowerInvariant());
+            StringAssert.Contains("Medication lane", plan.MedicationSummary);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void HealthcareGameplaySystem_BuildPlan_ForSkinConditionRoutesToDermatology()
+        {
+            GameObject go = new GameObject("DermPlan");
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+
+            Assert.IsTrue(medical.AddIllness(IllnessType.SevereAcneFlare, ConditionSeverity.Moderate));
+            MedicalCondition condition = medical.ActiveConditions.First(c => c.IsIllness);
+
+            HealthcareEncounterPlan plan = healthcare.BuildPlan(condition);
+
+            Assert.IsNotNull(plan);
+            Assert.AreEqual(SkinConditionType.CysticAcne, condition.SkinConditionType);
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Dermatology));
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
+
+            Object.DestroyImmediate(go);
         }
     }
 }

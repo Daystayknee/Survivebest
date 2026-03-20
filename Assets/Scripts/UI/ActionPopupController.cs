@@ -50,6 +50,7 @@ namespace Survivebest.UI
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
         [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
+        [SerializeField] private HealthcareGameplaySystem healthcareGameplaySystem;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -184,8 +185,8 @@ namespace Survivebest.UI
                     magnitude = 4f;
                     break;
                 case "see_doctor":
-                    reason = "Doctor consult completed. Recovery plan added.";
-                    magnitude = 3f;
+                    reason = DoSeeDoctor(active);
+                    magnitude = 4f;
                     break;
                 case "forage":
                     reason = DoForage();
@@ -365,8 +366,8 @@ namespace Survivebest.UI
                 "buy" => "Purchase food/supplies and add them to your pantry.",
                 "sell" => "Sell selected pantry goods for money.",
                 "trade" => "Exchange goods/social favor with NPC vendors.",
-                "get_meds" => "Apply medicine effects and stabilize condition severity.",
-                "see_doctor" => "Schedule a doctor consultation for diagnostics.",
+                "get_meds" => "Apply the right medicine, dressing, and at-home care loop based on the exact condition.",
+                "see_doctor" => "Run a fuller clinic workflow with triage, wound care, casting, surgery prep, dermatology, or animal-care follow-up.",
                 "forage" => "Explore wild zones and gather random ingredients.",
                 "fish" => "Cast lines in rivers/lakes and bring home fish for meals or sale.",
                 "camp" => "Set camp to restore comfort and safety overnight.",
@@ -432,6 +433,10 @@ namespace Survivebest.UI
                     break;
                 case "animal_sight":
                     AppendAnimalSightingPreview(builder);
+                    break;
+                case "get_meds":
+                case "see_doctor":
+                    AppendMedicalPreview(builder, actionKey);
                     break;
                 case "accept_local_opportunity":
                 case "continue_local_opportunity":
@@ -1026,11 +1031,75 @@ namespace Survivebest.UI
             MedicalConditionSystem med = active.GetComponent<MedicalConditionSystem>();
             if (med != null && med.ActiveConditions.Count > 0)
             {
-                med.HealCondition(med.ActiveConditions[0].Id, 8);
-                return "Applied medication and reduced ailment duration.";
+                MedicalCondition condition = med.ActiveConditions[0];
+                med.AdministerMedication(condition.RecommendedMedication);
+                med.HealCondition(condition.Id, 8);
+                return $"Applied {condition.RecommendedMedication} support for {condition.DisplayName}.";
             }
 
             return "Applied preventive medicine. No active ailment found.";
+        }
+
+        private string DoSeeDoctor(CharacterCore active)
+        {
+            if (active == null)
+            {
+                return "No active character for doctor visit.";
+            }
+
+            MedicalConditionSystem med = active.GetComponent<MedicalConditionSystem>();
+            if (med == null || med.ActiveConditions.Count == 0)
+            {
+                minigameManager?.StartMinigame(MinigameType.Triage, active, _ => { });
+                return "Doctor visit completed with preventive triage and baseline wellness advice.";
+            }
+
+            MedicalCondition primary = med.ActiveConditions[0];
+            HealthcareEncounterPlan plan = healthcareGameplaySystem != null ? healthcareGameplaySystem.BuildPlan(primary) : null;
+            if (plan != null && plan.Directives.Count > 0)
+            {
+                minigameManager?.StartMinigame(plan.Directives[0].InteractiveMinigame, active, _ => { });
+            }
+
+            med.HealCondition(primary.Id, plan != null && plan.NeedsHospitalization ? 6 : 10);
+            return plan != null
+                ? $"Doctor visit completed: {plan.Directives[0].Title}. {plan.FollowUpSummary}"
+                : $"Doctor consult completed for {primary.DisplayName}.";
+        }
+
+        private void AppendMedicalPreview(StringBuilder stringBuilder, string actionKey)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            MedicalConditionSystem medical = active != null ? active.GetComponent<MedicalConditionSystem>() : null;
+            if (medical == null || medical.ActiveConditions.Count == 0)
+            {
+                stringBuilder.AppendLine("No active conditions. Preventive care only.");
+                return;
+            }
+
+            MedicalCondition primary = medical.ActiveConditions[0];
+            HealthcareEncounterPlan plan = healthcareGameplaySystem != null ? healthcareGameplaySystem.BuildPlan(primary) : null;
+            stringBuilder.AppendLine($"Primary case: {primary.DisplayName}");
+            stringBuilder.AppendLine(primary.DetailSummary);
+
+            if (plan == null)
+            {
+                stringBuilder.AppendLine("No healthcare plan system connected.");
+                return;
+            }
+
+            stringBuilder.AppendLine($"Triage: {plan.TriagePriority}");
+            stringBuilder.AppendLine(plan.MedicationSummary);
+            stringBuilder.AppendLine(plan.ReprocessingSummary);
+            if (actionKey == "see_doctor")
+            {
+                stringBuilder.AppendLine(healthcareGameplaySystem.BuildProviderCoverageSummary(false));
+                for (int i = 0; i < Mathf.Min(3, plan.Directives.Count); i++)
+                {
+                    TreatmentDirective directive = plan.Directives[i];
+                    stringBuilder.AppendLine($"• {directive.Title} [{directive.InteractiveMinigame}]");
+                }
+            }
         }
 
         private static string PracticeSkill(CharacterCore active, string skillName, float xp)
