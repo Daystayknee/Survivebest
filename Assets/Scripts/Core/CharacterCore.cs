@@ -252,11 +252,17 @@ namespace Survivebest.Core
 
         public bool HasNightAdvantage() => species == CharacterSpecies.Vampire;
 
+        public bool NeedsDayShelter() => species == CharacterSpecies.Vampire;
+
+        public bool RequiresMasqueradeMaintenance() => species == CharacterSpecies.Vampire;
+
+        public bool ParticipatesInBloodEconomy() => species == CharacterSpecies.Vampire;
+
         public string GetSpeciesTraitSummary()
         {
             return species switch
             {
-                CharacterSpecies.Vampire => "Night-active, blood-feeding, sunlight-vulnerable, and slow-aging after maturity.",
+                CharacterSpecies.Vampire => "Night-active, blood-feeding, sunlight-vulnerable, slow-aging after maturity, and shaped by hunger, secrecy, and nocturnal social hierarchies.",
                 _ => "Day-active human baseline with standard aging and illness rules."
             };
         }
