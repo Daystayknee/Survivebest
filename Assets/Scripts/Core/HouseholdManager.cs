@@ -26,6 +26,7 @@ namespace Survivebest.Core
         public string PetId;
         public string Name;
         public string Species;
+        public string Breed;
         [Range(0f, 100f)] public float BondLevel = 45f;
         [Range(0f, 100f)] public float Hunger = 20f;
         [Range(0f, 100f)] public float Happiness = 55f;
@@ -198,6 +199,11 @@ namespace Survivebest.Core
 
         public void RegisterPet(string petId, string petName, string species)
         {
+            RegisterPet(petId, petName, species, null);
+        }
+
+        public void RegisterPet(string petId, string petName, string species, string breed)
+        {
             if (string.IsNullOrWhiteSpace(petId) || pets.Exists(p => p != null && string.Equals(p.PetId, petId, StringComparison.OrdinalIgnoreCase)))
             {
                 return;
@@ -207,7 +213,8 @@ namespace Survivebest.Core
             {
                 PetId = petId,
                 Name = string.IsNullOrWhiteSpace(petName) ? petId : petName,
-                Species = string.IsNullOrWhiteSpace(species) ? "Unknown" : species
+                Species = string.IsNullOrWhiteSpace(species) ? "Unknown" : species,
+                Breed = string.IsNullOrWhiteSpace(breed) ? null : breed
             });
         }
 

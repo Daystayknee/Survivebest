@@ -41,6 +41,7 @@ namespace Survivebest.Story
         [Min(0f)] public float MaximumTension = 100f;
         public string PreferredDistrictId;
         public string TriggerOpportunityId;
+        public List<GameplayEffectDefinition> Effects = new();
     }
 
     [Serializable]
@@ -226,7 +227,8 @@ namespace Survivebest.Story
                     _ => "Neighborhood Disturbance"
                 },
                 Description = "An autonomous incident emerged from simulation pressure.",
-                Weight = 1f
+                Weight = 1f,
+                Effects = BuildFallbackEffects(type)
             };
         }
 
@@ -266,6 +268,55 @@ namespace Survivebest.Story
             };
         }
 
+        private static List<GameplayEffectDefinition> BuildFallbackEffects(StoryIncidentType type)
+        {
+            List<GameplayEffectDefinition> effects = new()
+            {
+                new GameplayEffectDefinition
+                {
+                    EffectType = GameplayEffectType.StoryImpact,
+                    Magnitude = 6f
+                }
+            };
+
+            switch (type)
+            {
+                case StoryIncidentType.RelationshipDrama:
+                    effects.Add(new GameplayEffectDefinition
+                    {
+                        EffectType = GameplayEffectType.RelationshipMemory,
+                        TargetScope = "district",
+                        Magnitude = -4f
+                    });
+                    effects.Add(new GameplayEffectDefinition
+                    {
+                        EffectType = GameplayEffectType.SocialRumor,
+                        Payload = "relationship_drama",
+                        Magnitude = 0.55f,
+                        ClampToUnitInterval = true
+                    });
+                    break;
+                case StoryIncidentType.HouseholdCrisis:
+                case StoryIncidentType.EconomicShock:
+                    effects.Add(new GameplayEffectDefinition
+                    {
+                        EffectType = GameplayEffectType.TownPressure,
+                        Magnitude = 5f
+                    });
+                    break;
+                case StoryIncidentType.NeighborhoodEvent:
+                case StoryIncidentType.SeasonalFestival:
+                    effects.Add(new GameplayEffectDefinition
+                    {
+                        EffectType = GameplayEffectType.DistrictActivity,
+                        Magnitude = 8f
+                    });
+                    break;
+            }
+
+            return effects;
+        }
+
         private float GetDynamicWeight(StoryIncidentDefinition candidate)
         {
             if (candidate == null)
@@ -289,6 +340,7 @@ namespace Survivebest.Story
         private StoryIncidentRecord EmitIncident(StoryIncidentDefinition definition)
         {
             string district = ResolveDistrictId(definition.PreferredDistrictId);
+            float baseImpact = UnityEngine.Random.Range(3f, 15f);
             StoryIncidentRecord record = new StoryIncidentRecord
             {
                 IncidentId = string.IsNullOrWhiteSpace(definition.IncidentId) ? Guid.NewGuid().ToString("N") : definition.IncidentId,
@@ -297,7 +349,7 @@ namespace Survivebest.Story
                 Description = definition.Description,
                 DistrictId = district,
                 TriggeredAtHour = GetAbsoluteHour(),
-                StoryImpact = UnityEngine.Random.Range(3f, 15f)
+                StoryImpact = baseImpact
             };
 
             recentIncidents.Add(record);
@@ -319,30 +371,124 @@ namespace Survivebest.Story
                 localNewsFeed.RemoveAt(0);
             }
 
-            if (!string.IsNullOrWhiteSpace(definition.TriggerOpportunityId))
-            {
-                questOpportunitySystem?.PublishOpportunity(definition.TriggerOpportunityId);
-            }
-
-            if (definition.Type == StoryIncidentType.RelationshipDrama)
-            {
-                BoostRelationshipMemoryPulse(district);
-            }
+            ApplyConfiguredEffects(definition, record);
 
             OnIncidentGenerated?.Invoke(record);
             PublishStoryEvent(record);
             return record;
         }
 
-        private void BoostRelationshipMemoryPulse(string district)
+        private void ApplyConfiguredEffects(StoryIncidentDefinition definition, StoryIncidentRecord record)
         {
-            if (relationshipMemorySystem == null || householdManager == null || householdManager.ActiveCharacter == null)
+            if (definition == null || record == null)
             {
                 return;
             }
 
-            string actorId = householdManager.ActiveCharacter.CharacterId;
-            relationshipMemorySystem.AdjustReputation(actorId, ReputationScope.District, district, -4);
+            List<GameplayEffectDefinition> effects = definition.Effects != null && definition.Effects.Count > 0
+                ? definition.Effects
+                : BuildFallbackEffects(definition.Type);
+
+            GameplayEffectContext context = new(
+                nameof(AutonomousStoryGenerator),
+                householdManager != null && householdManager.ActiveCharacter != null ? householdManager.ActiveCharacter.CharacterId : null,
+                record.DistrictId,
+                record.DistrictId);
+
+            List<GameplayEffectResult> results = GameplayEffectPipeline.ApplyEffects(effects, context, ResolveEffectHandler);
+            for (int i = 0; i < results.Count; i++)
+            {
+                GameplayEffectResult result = results[i];
+                if (!result.Applied || result.Definition == null)
+                {
+                    continue;
+                }
+
+                if (result.Definition.EffectType == GameplayEffectType.StoryImpact)
+                {
+                    record.StoryImpact += result.AppliedMagnitude;
+                }
+            }
+        }
+
+        private GameplayEffectPipeline.GameplayEffectHandler ResolveEffectHandler(GameplayEffectDefinition effect)
+        {
+            return effect?.EffectType switch
+            {
+                GameplayEffectType.StoryImpact => ApplyStoryImpactEffect,
+                GameplayEffectType.TownPressure => ApplyTownPressureEffect,
+                GameplayEffectType.DistrictActivity => ApplyDistrictActivityEffect,
+                GameplayEffectType.RelationshipMemory => ApplyRelationshipMemoryEffect,
+                GameplayEffectType.TriggerOpportunity => ApplyOpportunityEffect,
+                GameplayEffectType.SocialRumor => ApplySocialRumorEffect,
+                _ => null
+            };
+        }
+
+        private GameplayEffectResult ApplyStoryImpactEffect(GameplayEffectDefinition effect, GameplayEffectContext context, float magnitude)
+            => new(effect, magnitude, true, $"Story impact {magnitude:0.0}");
+
+        private GameplayEffectResult ApplyTownPressureEffect(GameplayEffectDefinition effect, GameplayEffectContext context, float magnitude)
+        {
+            if (townSimulationManager == null)
+            {
+                return new GameplayEffectResult(effect, magnitude, false, "TownSimulationManager unavailable");
+            }
+
+            townSimulationManager.RegisterPressurePulse(magnitude, effect.Payload);
+            return new GameplayEffectResult(effect, magnitude, true, "Pressure pulse registered");
+        }
+
+        private GameplayEffectResult ApplyDistrictActivityEffect(GameplayEffectDefinition effect, GameplayEffectContext context, float magnitude)
+        {
+            if (townSimulationManager == null)
+            {
+                return new GameplayEffectResult(effect, magnitude, false, "TownSimulationManager unavailable");
+            }
+
+            townSimulationManager.ApplyDistrictActivityPulse(context.DistrictId, magnitude, effect.Payload);
+            return new GameplayEffectResult(effect, magnitude, true, "District activity pulse registered");
+        }
+
+        private GameplayEffectResult ApplyRelationshipMemoryEffect(GameplayEffectDefinition effect, GameplayEffectContext context, float magnitude)
+        {
+            if (relationshipMemorySystem == null || string.IsNullOrWhiteSpace(context.ActorId) || string.IsNullOrWhiteSpace(context.DistrictId))
+            {
+                return new GameplayEffectResult(effect, magnitude, false, "Relationship memory context unavailable");
+            }
+
+            relationshipMemorySystem.AdjustReputation(context.ActorId, ReputationScope.District, context.DistrictId, Mathf.RoundToInt(magnitude));
+            return new GameplayEffectResult(effect, magnitude, true, "District reputation adjusted");
+        }
+
+        private GameplayEffectResult ApplyOpportunityEffect(GameplayEffectDefinition effect, GameplayEffectContext context, float magnitude)
+        {
+            string opportunityId = !string.IsNullOrWhiteSpace(effect.TargetId) ? effect.TargetId : definitionFallback(effect, context);
+            if (string.IsNullOrWhiteSpace(opportunityId) || questOpportunitySystem == null)
+            {
+                return new GameplayEffectResult(effect, magnitude, false, "Opportunity unavailable");
+            }
+
+            questOpportunitySystem.PublishOpportunity(opportunityId);
+            return new GameplayEffectResult(effect, magnitude, true, "Opportunity published");
+        }
+
+        private string definitionFallback(GameplayEffectDefinition effect, GameplayEffectContext context)
+        {
+            return !string.IsNullOrWhiteSpace(effect.Payload) ? effect.Payload : null;
+        }
+
+        private GameplayEffectResult ApplySocialRumorEffect(GameplayEffectDefinition effect, GameplayEffectContext context, float magnitude)
+        {
+            SocialDramaEngine socialDramaEngine = FindObjectOfType<SocialDramaEngine>();
+            if (socialDramaEngine == null)
+            {
+                return new GameplayEffectResult(effect, magnitude, false, "SocialDramaEngine unavailable");
+            }
+
+            string actor = !string.IsNullOrWhiteSpace(context.ActorId) ? context.ActorId : "town";
+            socialDramaEngine.SpreadRumor(actor, actor, string.IsNullOrWhiteSpace(effect.Payload) ? "incident ripple" : effect.Payload, 0.8f, Mathf.Clamp01(magnitude));
+            return new GameplayEffectResult(effect, magnitude, true, "Rumor seeded");
         }
 
         private void PublishStoryEvent(StoryIncidentRecord record)

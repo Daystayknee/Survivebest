@@ -9,6 +9,46 @@ namespace Survivebest.Tests.EditMode
 {
     public class TownSimulationManagerTests
     {
+
+        [Test]
+        public void BuildDistrictOverlayEntries_FiltersByHighlightAndTags()
+        {
+            GameObject townGo = new GameObject("TownOverlaySystem");
+            TownSimulationSystem townSystem = townGo.AddComponent<TownSimulationSystem>();
+            typeof(TownSimulationSystem).GetField("districts", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(townSystem, new List<DistrictDefinition>
+                {
+                    new DistrictDefinition { DistrictId = "d1", DisplayName = "Downtown", Safety = 0.3f, Wealth = 0.8f },
+                    new DistrictDefinition { DistrictId = "d2", DisplayName = "Midtown", Safety = 0.8f, Wealth = 0.4f }
+                });
+
+            GameObject mgrGo = new GameObject("TownOverlayMgr");
+            TownSimulationManager manager = mgrGo.AddComponent<TownSimulationManager>();
+            typeof(TownSimulationManager).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(manager, townSystem);
+            typeof(TownSimulationManager).GetField("districtActivity", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(manager, new List<DistrictActivitySnapshot>
+            {
+                new DistrictActivitySnapshot { DistrictId = "d1", Population = 30, ActivityScore = 78f },
+                new DistrictActivitySnapshot { DistrictId = "d2", Population = 8, ActivityScore = 20f }
+            });
+            typeof(TownSimulationManager).GetField("recentCommunityEvents", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(manager, new List<CommunityEventRecord>
+            {
+                new CommunityEventRecord { EventId = "event_1", DistrictId = "d1", Label = "Festival", TriggeredDay = 2 }
+            });
+
+            var filtered = manager.BuildDistrictOverlayEntries(new Survivebest.UI.SimulationOverlayFilterState
+            {
+                Metric = Survivebest.UI.SimulationOverlayMetric.Activity,
+                HighlightOnly = true,
+                RequiredTags = new List<string> { "event" }
+            });
+
+            Assert.AreEqual(1, filtered.Count);
+            Assert.AreEqual("d1", filtered[0].EntryId);
+
+            Object.DestroyImmediate(mgrGo);
+            Object.DestroyImmediate(townGo);
+        }
+
         [Test]
         public void RecomputeTownState_BuildsLotPopulationSnapshots()
         {

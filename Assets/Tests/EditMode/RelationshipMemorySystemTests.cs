@@ -21,6 +21,26 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void RecordEventDetailed_PopulatesInterpretiveMemoryMetadata()
+        {
+            GameObject go = new GameObject("InterpretiveMemoryTest");
+            RelationshipMemorySystem system = go.AddComponent<RelationshipMemorySystem>();
+
+            RelationshipMemory memory = system.RecordEventDetailed("char_a", "char_b", "old song from home", 55, false, "lot_pier", new List<string> { "music", "scent" }, suppressedMemory: true);
+            string insight = system.BuildMemoryInsight("char_a", "music");
+
+            Assert.NotNull(memory);
+            Assert.Greater(memory.Importance, 0f);
+            Assert.IsTrue(memory.TriggerAssociations.Contains("music"));
+            Assert.IsTrue(memory.SuppressedMemory);
+            Assert.Greater(memory.NostalgiaScore, 0f);
+            StringAssert.Contains("old song from home", insight);
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void LayeredReputationImpact_TracksDifferentScopesIndependently()
         {
