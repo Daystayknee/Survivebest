@@ -198,5 +198,54 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(interactableGo);
         }
 
+
+        [Test]
+        public void DialogueReplyOptions_ExpandForDistortionsAndAttachmentStyles()
+        {
+            GameObject root = new GameObject("RootReplyOptions");
+            DialogueSystem dialogue = root.AddComponent<DialogueSystem>();
+            SocialSystem social = root.AddComponent<SocialSystem>();
+            HumanLifeExperienceLayerSystem life = root.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject actorGo = new GameObject("ActorReply");
+            CharacterCore actor = actorGo.AddComponent<CharacterCore>();
+            actor.Initialize("actor_reply", "Actor", LifeStage.Adult);
+            GameObject targetGo = new GameObject("TargetReply");
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target_reply", "Target", LifeStage.Adult);
+
+            life.SetCognitiveDistortionProfile(actor, new CognitiveDistortionProfile
+            {
+                DominantDistortion = CognitiveDistortionType.MindReading,
+                MindReading = 0.81f,
+                ImposterSyndrome = 0.72f
+            });
+            life.SetInnerMonologueProfile(actor, new InnerMonologueProfile
+            {
+                HarshSelfTalk = 0.9f,
+                KindSelfTalk = 0.1f
+            });
+            life.SetAttachmentStyleProfile(actor, new AttachmentStyleProfile
+            {
+                AttachmentStyle = AttachmentStyle.Anxious,
+                TextingDependence = 0.8f
+            });
+
+            typeof(DialogueSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, actor);
+            typeof(DialogueSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, social);
+            typeof(DialogueSystem).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, life);
+
+            var options = dialogue.BuildReplyOptions(target, DialogueIntent.SmallTalk);
+
+            Assert.IsTrue(options.Exists(option => option.ReplyId == "reply_mind_reading"));
+            Assert.IsTrue(options.Exists(option => option.ReplyId == "reply_imposter"));
+            Assert.IsTrue(options.Exists(option => option.ReplyId == "reply_attachment_anxious"));
+            Assert.IsTrue(options.Exists(option => option.ReplyId == "reply_warm" && option.Label.Contains("inner critic")));
+
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(actorGo);
+            Object.DestroyImmediate(targetGo);
+        }
+
     }
 }

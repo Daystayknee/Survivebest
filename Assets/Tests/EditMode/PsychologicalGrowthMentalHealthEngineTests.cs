@@ -108,5 +108,67 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void DeepComplexityProfiles_ReduceDecisionClarity_AndShapeRelationshipStability()
+        {
+            GameObject go = new GameObject("MentalDeepComplexity");
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PsychologicalGrowthMentalHealthEngine engine = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+
+            typeof(PsychologicalGrowthMentalHealthEngine)
+                .GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(engine, life);
+
+            const string grounded = "char_grounded";
+            const string fragmented = "char_fragmented";
+
+            GameObject groundedGo = new GameObject("Grounded");
+            CharacterCore groundedCharacter = groundedGo.AddComponent<CharacterCore>();
+            groundedCharacter.Initialize(grounded, "Grounded", LifeStage.Adult);
+            life.SetCognitiveDistortionProfile(groundedCharacter, new CognitiveDistortionProfile
+            {
+                DominantDistortion = CognitiveDistortionType.None,
+                IntuitionTrust = 0.2f
+            });
+            life.SetAttachmentStyleProfile(groundedCharacter, new AttachmentStyleProfile
+            {
+                AttachmentStyle = AttachmentStyle.Secure,
+                ReconciliationReadiness = 0.8f
+            });
+
+            GameObject fragGo = new GameObject("Fragmented");
+            CharacterCore fragmentedCharacter = fragGo.AddComponent<CharacterCore>();
+            fragmentedCharacter.Initialize(fragmented, "Fragmented", LifeStage.Adult);
+            life.SetCognitiveDistortionProfile(fragmentedCharacter, new CognitiveDistortionProfile
+            {
+                DominantDistortion = CognitiveDistortionType.Catastrophizing,
+                Catastrophizing = 0.88f
+            });
+            life.SetIdentityFragmentProfile(fragmentedCharacter, new IdentityFragmentProfile
+            {
+                IdentityConflictStress = 0.8f,
+                MaskingLoad = 0.7f
+            });
+            life.SetAttachmentStyleProfile(fragmentedCharacter, new AttachmentStyleProfile
+            {
+                AttachmentStyle = AttachmentStyle.Avoidant,
+                DistanceNeed = 0.8f,
+                ConflictAvoidance = 0.7f
+            });
+
+            float groundedDecision = engine.GetDecisionMakingModifier(grounded);
+            float fragmentedDecision = engine.GetDecisionMakingModifier(fragmented);
+            float groundedRelationship = engine.GetRelationshipStabilityModifier(grounded);
+            float fragmentedRelationship = engine.GetRelationshipStabilityModifier(fragmented);
+
+            Assert.Greater(groundedDecision, fragmentedDecision);
+            Assert.Greater(groundedRelationship, fragmentedRelationship);
+
+            Object.DestroyImmediate(groundedGo);
+            Object.DestroyImmediate(fragGo);
+            Object.DestroyImmediate(go);
+        }
+
     }
 }
