@@ -77,6 +77,7 @@ namespace Survivebest.Needs
         [SerializeField] private BurnoutStage burnoutStage;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
+        [SerializeField] private SimulationCohesionSystem simulationCohesionSystem;
 
         [Header("Decay")]
         [SerializeField, Min(0f)] private float bladderGainPerMinute = 2f;
@@ -351,6 +352,11 @@ namespace Survivebest.Needs
             if (activeCraving == CravingType.None && UnityEngine.Random.value < 0.08f)
             {
                 activeCraving = (CravingType)UnityEngine.Random.Range(1, Enum.GetValues(typeof(CravingType)).Length);
+            }
+
+            if (owner != null && simulationCohesionSystem != null)
+            {
+                simulationCohesionSystem.EvaluateBadSleepChain(owner, CaptureSnapshot());
             }
         }
 
