@@ -13,11 +13,11 @@ Total documented entries in this file: **117**. Implemented items are mixed with
 8. **Animal / Dog** — already represented by the supply catalog and available as a concrete fauna token.
 9. **Animal / Cat** — already represented by the supply catalog and available as a concrete fauna token.
 10. **Animal / Horse** — already represented by the supply catalog and available as a concrete fauna token.
-11. **Animal / Cow** — already represented by the supply catalog and available as a concrete fauna token.
-12. **Animal / Pig** — already represented by the supply catalog and available as a concrete fauna token.
-13. **Animal / Sheep** — already represented by the supply catalog and available as a concrete fauna token.
-14. **Animal / Goat** — already represented by the supply catalog and available as a concrete fauna token.
-15. **Animal / Rabbit** — already represented by the supply catalog and available as a concrete fauna token.
+11. **Animal / Cow** — represented by the supply catalog as a base species token plus breed variants including Holstein, Jersey, Angus, and Highland cattle.
+12. **Animal / Pig** — represented by the supply catalog as a base species token plus Yorkshire and Berkshire breed variants.
+13. **Animal / Sheep** — represented by the supply catalog as a base species token plus Merino and Suffolk breed variants.
+14. **Animal / Goat** — represented by the supply catalog as a base species token plus Nubian and Boer breed variants.
+15. **Animal / Rabbit** — represented by the supply catalog as a base species token plus Holland Lop and Flemish Giant breed variants.
 16. **Animal / Rat** — already represented by the supply catalog and available as a concrete fauna token.
 17. **Animal / Mouse** — already represented by the supply catalog and available as a concrete fauna token.
 18. **Animal / Squirrel** — already represented by the supply catalog and available as a concrete fauna token.

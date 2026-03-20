@@ -78,6 +78,16 @@ namespace Survivebest.Quest
         public IReadOnlyList<ActiveOpportunity> ActiveOpportunities => activeOpportunities;
         public IReadOnlyList<OpportunityDefinition> Definitions => definitions;
 
+        public List<ActiveOpportunity> CaptureRuntimeState()
+        {
+            return new List<ActiveOpportunity>(activeOpportunities);
+        }
+
+        public void ApplyRuntimeState(List<ActiveOpportunity> savedActiveOpportunities)
+        {
+            activeOpportunities = savedActiveOpportunities != null ? new List<ActiveOpportunity>(savedActiveOpportunities) : new List<ActiveOpportunity>();
+        }
+
         public IReadOnlyList<ActiveOpportunity> GetAvailableOpportunitiesForLocation(string locationId)
         {
             return GetOpportunitiesForLocation(locationId, OpportunityState.Available);
