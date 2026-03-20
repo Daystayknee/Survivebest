@@ -26,6 +26,7 @@ namespace Survivebest.World
         public int MasterSeed;
         public string RegionId = "global";
         public string SettlementDensity = "Town";
+        public string WorldFootprint = "Neighborhood";
         public string EconomyFocus = "Balanced";
         public string GovernmentStyle = "Balanced";
         public int TotalAreas;
@@ -35,12 +36,26 @@ namespace Survivebest.World
         public int NatureAreas;
         public int StoreAreas;
         public int HospitalAreas;
+        public int DistrictCount;
+        public int RouteCount;
     }
 
     public class WorldCreatorManager : MonoBehaviour
     {
+        private struct WorldSizeProfile
+        {
+            public int MinResidentialAreas;
+            public int MinStoreAreas;
+            public int MinCivicAreas;
+            public int MinNatureAreas;
+            public int MinWorkplaceAreas;
+            public int MinHospitalAreas;
+            public int MinSchoolAreas;
+        }
+
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private HousingPropertySystem housingPropertySystem;
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<WorldAreaTemplate> areaTemplates = new();
@@ -87,6 +102,8 @@ namespace Survivebest.World
                 return;
             }
 
+            List<WorldAreaTemplate> normalizedTemplates = PrepareTemplatesForWorldBuild(templates);
+
             List<AreaLawProfile> profiles = new();
             List<Room> rooms = new();
             WorldGenerationSummary summary = new WorldGenerationSummary
@@ -95,13 +112,14 @@ namespace Survivebest.World
                 MasterSeed = lastGeneratedSummary.MasterSeed,
                 RegionId = lastGeneratedSummary.RegionId,
                 SettlementDensity = lastGeneratedSummary.SettlementDensity,
+                WorldFootprint = ResolveWorldFootprint(normalizedTemplates.Count),
                 EconomyFocus = lastGeneratedSummary.EconomyFocus,
                 GovernmentStyle = lastGeneratedSummary.GovernmentStyle
             };
 
-            for (int i = 0; i < templates.Count; i++)
+            for (int i = 0; i < normalizedTemplates.Count; i++)
             {
-                WorldAreaTemplate template = templates[i];
+                WorldAreaTemplate template = normalizedTemplates[i];
                 if (template == null || string.IsNullOrWhiteSpace(template.AreaName))
                 {
                     continue;
@@ -145,7 +163,7 @@ namespace Survivebest.World
 
             lawSystem?.SetAreaProfiles(profiles);
             locationManager?.SetRooms(rooms);
-            BuildTownLayout(templates);
+            BuildTownLayout(normalizedTemplates);
 
             OnWorldGenerated?.Invoke(rooms.Count);
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
@@ -255,6 +273,83 @@ namespace Survivebest.World
 
             BuildRoutes(lots, routes, anchorLotIds, homeLotIds, transitHubLotId, layoutRandom);
             townSimulationSystem.SetTownLayout(districts, lots, routes);
+            housingPropertySystem?.SyncPropertiesFromTownLayout(lastGeneratedSummary.MasterSeed);
+            lastGeneratedSummary.DistrictCount = districts.Count;
+            lastGeneratedSummary.RouteCount = routes.Count;
+        }
+
+        private List<WorldAreaTemplate> PrepareTemplatesForWorldBuild(List<WorldAreaTemplate> templates)
+        {
+            List<WorldAreaTemplate> prepared = new();
+            HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < templates.Count; i++)
+            {
+                WorldAreaTemplate template = templates[i];
+                if (template == null || string.IsNullOrWhiteSpace(template.AreaName) || !names.Add(template.AreaName))
+                {
+                    continue;
+                }
+
+                prepared.Add(CloneTemplate(template));
+            }
+
+            EnsureMinimumPlaces(prepared);
+            return prepared;
+        }
+
+        private void EnsureMinimumPlaces(List<WorldAreaTemplate> templates)
+        {
+            if (templates == null)
+            {
+                return;
+            }
+
+            System.Random random = BuildLayoutRandom();
+            WorldSizeProfile size = ResolveWorldSizeProfile();
+            float baseTheft = ResolveAverageValue(templates, template => template.TheftEnforcement, 0.55f);
+            float baseViolence = ResolveAverageValue(templates, template => template.ViolenceEnforcement, 0.72f);
+            float basePolice = ResolveAverageValue(templates, template => template.PoliceFunding, 0.56f);
+            float baseReform = ResolveAverageValue(templates, template => template.PrisonReform, 0.46f);
+            float baseHealthcare = ResolveAverageValue(templates, template => template.HealthcareCoverage, 0.56f);
+
+            EnsurePlaceCount(templates, LocationTheme.Residential, size.MinResidentialAreas, BuildResidentialAreaNames(), random, baseTheft * 0.82f, baseViolence * 0.64f, basePolice * 0.95f, baseReform, baseHealthcare);
+            EnsurePlaceCount(templates, LocationTheme.StoreInterior, size.MinStoreAreas, BuildStoreAreaNames(), random, baseTheft * 0.92f, baseViolence * 0.78f, basePolice, baseReform, baseHealthcare * 0.92f);
+            EnsurePlaceCount(templates, LocationTheme.Civic, size.MinCivicAreas, BuildCivicAreaNames(), random, baseTheft * 0.9f, baseViolence * 0.84f, basePolice, baseReform, baseHealthcare);
+            EnsurePlaceCount(templates, LocationTheme.Nature, size.MinNatureAreas, BuildNatureAreaNames(), random, baseTheft * 0.45f, baseViolence * 0.52f, basePolice * 0.74f, baseReform, baseHealthcare * 0.78f);
+            EnsurePlaceCount(templates, LocationTheme.Workplace, size.MinWorkplaceAreas, BuildWorkplaceAreaNames(), random, baseTheft * 0.84f, baseViolence * 0.82f, basePolice, baseReform * 0.92f, baseHealthcare * 0.84f);
+            EnsurePlaceCount(templates, LocationTheme.Hospital, size.MinHospitalAreas, BuildHospitalAreaNames(), random, Mathf.Max(baseTheft, 0.72f), Mathf.Max(baseViolence, 0.84f), basePolice * 0.88f, baseReform, Mathf.Max(baseHealthcare, 0.72f));
+
+            EnsureSchoolPresence(templates, random, baseTheft, baseViolence, basePolice, baseReform, baseHealthcare);
+        }
+
+        private void EnsureSchoolPresence(List<WorldAreaTemplate> templates, System.Random random, float theft, float violence, float policeFunding, float prisonReform, float healthcare)
+        {
+            int schoolCount = CountMatchingAreas(templates, "school", "college", "academy");
+            int minimumSchools = ResolveWorldSizeProfile().MinSchoolAreas;
+            string[] schoolNames =
+            {
+                "Town School",
+                "Central High School",
+                "Community College",
+                "Northside Elementary",
+                "West Ridge Academy"
+            };
+
+            for (int i = schoolCount; i < minimumSchools; i++)
+            {
+                string name = DrawUniqueAreaName(templates, schoolNames, random, schoolNames[Mathf.Clamp(i, 0, schoolNames.Length - 1)]);
+                templates.Add(new WorldAreaTemplate
+                {
+                    AreaName = name,
+                    Theme = LocationTheme.Civic,
+                    TheftEnforcement = Mathf.Clamp01(theft * 0.92f),
+                    ViolenceEnforcement = Mathf.Clamp01(violence * 0.86f),
+                    PoliceFunding = Mathf.Clamp01(policeFunding),
+                    PrisonReform = Mathf.Clamp01(prisonReform),
+                    HealthcareCoverage = Mathf.Clamp01(healthcare)
+                });
+            }
         }
 
         private static void BuildRoutes(List<LotDefinition> lots, List<RouteEdge> routes, List<string> anchorLotIds, List<string> homeLotIds, string transitHubLotId, System.Random layoutRandom)
@@ -617,6 +712,225 @@ namespace Survivebest.World
             if (fromZone == ZoneType.Medical || toZone == ZoneType.Medical) return 0.2f;
             return 0.35f;
         }
+
+        private WorldSizeProfile ResolveWorldSizeProfile()
+        {
+            string density = lastGeneratedSummary.SettlementDensity ?? "Town";
+            if (string.Equals(density, "Hamlet", StringComparison.OrdinalIgnoreCase))
+            {
+                return new WorldSizeProfile
+                {
+                    MinResidentialAreas = 2,
+                    MinStoreAreas = 2,
+                    MinCivicAreas = 2,
+                    MinNatureAreas = 1,
+                    MinWorkplaceAreas = 1,
+                    MinHospitalAreas = 1,
+                    MinSchoolAreas = 1
+                };
+            }
+
+            if (string.Equals(density, "City", StringComparison.OrdinalIgnoreCase))
+            {
+                return new WorldSizeProfile
+                {
+                    MinResidentialAreas = 5,
+                    MinStoreAreas = 4,
+                    MinCivicAreas = 4,
+                    MinNatureAreas = 2,
+                    MinWorkplaceAreas = 3,
+                    MinHospitalAreas = 2,
+                    MinSchoolAreas = 2
+                };
+            }
+
+            return new WorldSizeProfile
+            {
+                MinResidentialAreas = 3,
+                MinStoreAreas = 3,
+                MinCivicAreas = 3,
+                MinNatureAreas = 2,
+                MinWorkplaceAreas = 2,
+                MinHospitalAreas = 1,
+                MinSchoolAreas = 1
+            };
+        }
+
+        private static string ResolveWorldFootprint(int totalAreas)
+        {
+            if (totalAreas >= 18) return "Metro";
+            if (totalAreas >= 12) return "Township";
+            return "Neighborhood";
+        }
+
+        private static WorldAreaTemplate CloneTemplate(WorldAreaTemplate template)
+        {
+            return new WorldAreaTemplate
+            {
+                AreaName = template.AreaName,
+                Theme = template.Theme,
+                TheftEnforcement = template.TheftEnforcement,
+                ViolenceEnforcement = template.ViolenceEnforcement,
+                PoliceFunding = template.PoliceFunding,
+                PrisonReform = template.PrisonReform,
+                HealthcareCoverage = template.HealthcareCoverage
+            };
+        }
+
+        private static float ResolveAverageValue(List<WorldAreaTemplate> templates, Func<WorldAreaTemplate, float> selector, float fallback)
+        {
+            if (templates == null || templates.Count == 0)
+            {
+                return fallback;
+            }
+
+            float total = 0f;
+            int count = 0;
+            for (int i = 0; i < templates.Count; i++)
+            {
+                WorldAreaTemplate template = templates[i];
+                if (template == null)
+                {
+                    continue;
+                }
+
+                total += selector(template);
+                count++;
+            }
+
+            return count > 0 ? total / count : fallback;
+        }
+
+        private static int CountTheme(List<WorldAreaTemplate> templates, LocationTheme theme)
+        {
+            int count = 0;
+            for (int i = 0; i < templates.Count; i++)
+            {
+                if (templates[i] != null && templates[i].Theme == theme)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountMatchingAreas(List<WorldAreaTemplate> templates, params string[] fragments)
+        {
+            int count = 0;
+            for (int i = 0; i < templates.Count; i++)
+            {
+                WorldAreaTemplate template = templates[i];
+                if (template == null || string.IsNullOrWhiteSpace(template.AreaName))
+                {
+                    continue;
+                }
+
+                for (int f = 0; f < fragments.Length; f++)
+                {
+                    if (template.AreaName.IndexOf(fragments[f], StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        count++;
+                        break;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static void EnsurePlaceCount(List<WorldAreaTemplate> templates, LocationTheme theme, int minimumCount, string[] namePool, System.Random random, float theft, float violence, float policeFunding, float prisonReform, float healthcare)
+        {
+            int currentCount = CountTheme(templates, theme);
+            for (int i = currentCount; i < minimumCount; i++)
+            {
+                string preferred = namePool[Mathf.Clamp(i, 0, namePool.Length - 1)];
+                string name = DrawUniqueAreaName(templates, namePool, random, preferred);
+                templates.Add(new WorldAreaTemplate
+                {
+                    AreaName = name,
+                    Theme = theme,
+                    TheftEnforcement = Mathf.Clamp01(theft),
+                    ViolenceEnforcement = Mathf.Clamp01(violence),
+                    PoliceFunding = Mathf.Clamp01(policeFunding),
+                    PrisonReform = Mathf.Clamp01(prisonReform),
+                    HealthcareCoverage = Mathf.Clamp01(healthcare)
+                });
+            }
+        }
+
+        private static string DrawUniqueAreaName(List<WorldAreaTemplate> templates, string[] namePool, System.Random random, string preferred)
+        {
+            if (!ContainsExactArea(templates, preferred))
+            {
+                return preferred;
+            }
+
+            for (int attempt = 0; attempt < namePool.Length * 2; attempt++)
+            {
+                string candidate = namePool[random.Next(namePool.Length)];
+                if (!ContainsExactArea(templates, candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return $"{preferred} Annex {templates.Count + 1}";
+        }
+
+        private static string[] BuildResidentialAreaNames() => new[]
+        {
+            "Starter Ranch Homes",
+            "Garden Apartments",
+            "Maple Townhouses",
+            "Hillview Condos",
+            "River Quarter Homes",
+            "Harborview Apartments"
+        };
+
+        private static string[] BuildStoreAreaNames() => new[]
+        {
+            "Corner Grocery",
+            "Family Pharmacy",
+            "Main Street Shops",
+            "Hardware Depot",
+            "Fresh Market Hall",
+            "Night Market Row"
+        };
+
+        private static string[] BuildCivicAreaNames() => new[]
+        {
+            "Public Library",
+            "City Hall",
+            "Fire Station",
+            "Post Office",
+            "Founders Square",
+            "Community Services Center"
+        };
+
+        private static string[] BuildNatureAreaNames() => new[]
+        {
+            "Community Park",
+            "Riverside Park",
+            "Oak Preserve",
+            "Playground Commons"
+        };
+
+        private static string[] BuildWorkplaceAreaNames() => new[]
+        {
+            "Office Plaza",
+            "Warehouse Hub",
+            "Auto Garage",
+            "Factory Row",
+            "Business Center"
+        };
+
+        private static string[] BuildHospitalAreaNames() => new[]
+        {
+            "General Hospital",
+            "Urgent Care Clinic",
+            "St. Mercy Hospital"
+        };
 
         private static List<WorldAreaTemplate> BuildSensibleDefaultAreas()
         {
