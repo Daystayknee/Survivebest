@@ -51,6 +51,31 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void SupplyCatalog_AnimalSpeciesEntries_CanExposeBreedVariants()
+        {
+            GameObject go = new GameObject("SupplyCatalogAnimalBreeds");
+            SupplyCatalog catalog = go.AddComponent<SupplyCatalog>();
+
+            MethodInfo awake = typeof(SupplyCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            var cows = catalog.GetAnimalsBySpecies("Cow");
+            SupplyItem holstein = catalog.GetAnimalBreed("Cow", "Holstein");
+            SupplyItem jersey = catalog.GetAnimalBreed("Cow", "Jersey");
+
+            Assert.GreaterOrEqual(cows.Count, 5);
+            Assert.IsNotNull(holstein);
+            Assert.IsTrue(holstein.HasBreed);
+            Assert.AreEqual("Cow", holstein.Species);
+            Assert.AreEqual("Holstein", holstein.Breed);
+            Assert.AreEqual("Cow (Holstein)", holstein.DisplayLabel);
+            Assert.IsNotNull(jersey);
+
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void InventoryManager_Awake_SeedsCoreContainersAndConsumables()
         {

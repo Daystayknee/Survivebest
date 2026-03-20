@@ -37,6 +37,12 @@ namespace Survivebest.Catalog
     {
         public string Name;
         public SupplyGroup Group;
+        public string Species;
+        public string Breed;
+
+        public string SpeciesOrName => string.IsNullOrWhiteSpace(Species) ? Name : Species;
+        public bool HasBreed => !string.IsNullOrWhiteSpace(Breed);
+        public string DisplayLabel => HasBreed ? $"{SpeciesOrName} ({Breed})" : Name;
     }
 
     public class SupplyCatalog : MonoBehaviour
@@ -266,42 +272,54 @@ namespace Survivebest.Catalog
             new SupplyItem { Name = "Zinc supplements", Group = SupplyGroup.Medicine },
             new SupplyItem { Name = "Vitamin C", Group = SupplyGroup.Medicine },
 
-            // Animals (35)
-            new SupplyItem { Name = "Dog", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Cat", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Horse", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Cow", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Pig", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Sheep", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Goat", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Rabbit", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Rat", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Mouse", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Squirrel", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Deer", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Bear", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Wolf", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Fox", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Lion", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Tiger", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Elephant", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Giraffe", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Zebra", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Kangaroo", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Koala", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Panda", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Monkey", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Gorilla", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Chimpanzee", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Dolphin", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Whale", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Shark", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Eagle", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Owl", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Hawk", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Falcon", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Penguin", Group = SupplyGroup.Animal },
-            new SupplyItem { Name = "Flamingo", Group = SupplyGroup.Animal },
+            // Animals (species + breed variants)
+            CreateAnimal("Dog"),
+            CreateAnimal("Cat"),
+            CreateAnimal("Horse"),
+            CreateAnimal("Cow"),
+            CreateAnimalBreed("Cow", "Holstein"),
+            CreateAnimalBreed("Cow", "Jersey"),
+            CreateAnimalBreed("Cow", "Angus"),
+            CreateAnimalBreed("Cow", "Highland"),
+            CreateAnimal("Pig"),
+            CreateAnimalBreed("Pig", "Yorkshire"),
+            CreateAnimalBreed("Pig", "Berkshire"),
+            CreateAnimal("Sheep"),
+            CreateAnimalBreed("Sheep", "Merino"),
+            CreateAnimalBreed("Sheep", "Suffolk"),
+            CreateAnimal("Goat"),
+            CreateAnimalBreed("Goat", "Nubian"),
+            CreateAnimalBreed("Goat", "Boer"),
+            CreateAnimal("Rabbit"),
+            CreateAnimalBreed("Rabbit", "Holland Lop"),
+            CreateAnimalBreed("Rabbit", "Flemish Giant"),
+            CreateAnimal("Rat"),
+            CreateAnimal("Mouse"),
+            CreateAnimal("Squirrel"),
+            CreateAnimal("Deer"),
+            CreateAnimal("Bear"),
+            CreateAnimal("Wolf"),
+            CreateAnimal("Fox"),
+            CreateAnimal("Lion"),
+            CreateAnimal("Tiger"),
+            CreateAnimal("Elephant"),
+            CreateAnimal("Giraffe"),
+            CreateAnimal("Zebra"),
+            CreateAnimal("Kangaroo"),
+            CreateAnimal("Koala"),
+            CreateAnimal("Panda"),
+            CreateAnimal("Monkey"),
+            CreateAnimal("Gorilla"),
+            CreateAnimal("Chimpanzee"),
+            CreateAnimal("Dolphin"),
+            CreateAnimal("Whale"),
+            CreateAnimal("Shark"),
+            CreateAnimal("Eagle"),
+            CreateAnimal("Owl"),
+            CreateAnimal("Hawk"),
+            CreateAnimal("Falcon"),
+            CreateAnimal("Penguin"),
+            CreateAnimal("Flamingo"),
 
             // Skills (35)
             new SupplyItem { Name = "Cooking", Group = SupplyGroup.Skill },
@@ -512,11 +530,55 @@ namespace Survivebest.Catalog
             supplies.Add(new SupplyItem { Name = name, Group = group });
         }
 
+        private static SupplyItem CreateAnimal(string species)
+        {
+            return new SupplyItem
+            {
+                Name = species,
+                Group = SupplyGroup.Animal,
+                Species = species
+            };
+        }
+
+        private static SupplyItem CreateAnimalBreed(string species, string breed)
+        {
+            return new SupplyItem
+            {
+                Name = $"{breed} {species}",
+                Group = SupplyGroup.Animal,
+                Species = species,
+                Breed = breed
+            };
+        }
+
         public IReadOnlyList<SupplyItem> Supplies => supplies;
 
         public List<SupplyItem> GetByGroup(SupplyGroup group)
         {
             return supplies.FindAll(s => s.Group == group);
+        }
+
+        public List<SupplyItem> GetAnimalsBySpecies(string species)
+        {
+            if (string.IsNullOrWhiteSpace(species))
+            {
+                return new List<SupplyItem>();
+            }
+
+            return supplies.FindAll(s => s != null && s.Group == SupplyGroup.Animal &&
+                string.Equals(s.SpeciesOrName, species, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public SupplyItem GetAnimalBreed(string species, string breed)
+        {
+            if (string.IsNullOrWhiteSpace(species) || string.IsNullOrWhiteSpace(breed))
+            {
+                return null;
+            }
+
+            return supplies.Find(s => s != null && s.Group == SupplyGroup.Animal &&
+                string.Equals(s.SpeciesOrName, species, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(s.Breed, breed, StringComparison.OrdinalIgnoreCase));
         }
 
         public SupplyItem GetRandomByGroup(SupplyGroup group)
