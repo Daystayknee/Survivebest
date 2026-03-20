@@ -124,6 +124,7 @@ namespace Survivebest.Core
         [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
         [SerializeField] private PlayerExperienceCascadeSystem playerExperienceCascadeSystem;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private SimulationRestoreCoordinator simulationRestoreCoordinator;
 
         public bool SaveToSlot(int slotIndex, string worldName)
         {
@@ -336,113 +337,188 @@ namespace Survivebest.Core
                 return;
             }
 
-            if (worldClock != null && payload.World != null)
-            {
-                worldClock.SetDateTime(payload.World.Year, payload.World.Month, payload.World.Day, payload.World.Hour, payload.World.Minute);
-            }
-
-            if (locationManager != null && !string.IsNullOrWhiteSpace(payload.ActiveRoomName))
-            {
-                locationManager.NavigateToRoom(payload.ActiveRoomName);
-            }
-
-            economyInventorySystem?.ApplySnapshot(payload.Economy);
-
             CharacterCore activeToSet = null;
-            if (householdManager != null && householdManager.Members != null && payload.HouseholdCharacters != null)
+            SimulationRestoreOperationSet operations = new SimulationRestoreOperationSet
             {
-                for (int i = 0; i < householdManager.Members.Count; i++)
+                PreLoadReset = () =>
                 {
-                    CharacterCore member = householdManager.Members[i];
-                    if (member == null)
+                    // Reserved for transient-session cleanup and event silencing before restore widens.
+                },
+                WorldBootstrap = () =>
+                {
+                    if (worldClock != null && payload.World != null)
                     {
-                        continue;
+                        worldClock.SetDateTime(payload.World.Year, payload.World.Month, payload.World.Day, payload.World.Hour, payload.World.Minute);
                     }
 
-                    CharacterSnapshot snapshot = payload.HouseholdCharacters.Find(c => c.CharacterId == member.CharacterId || c.DisplayName == member.DisplayName);
-                    if (snapshot == null)
+                    if (locationManager != null && !string.IsNullOrWhiteSpace(payload.ActiveRoomName))
                     {
-                        continue;
+                        locationManager.NavigateToRoom(payload.ActiveRoomName);
+                    }
+                },
+                StaticContentRegistration = () =>
+                {
+                    // Catalog/database registration belongs here once more content systems expose explicit sync hooks.
+                },
+                CharacterRegistryRestore = () =>
+                {
+                    activeToSet = ApplyCharacterPayload(payload.HouseholdCharacters);
+                },
+                HouseholdRestore = () =>
+                {
+                    if (payload.Systems != null)
+                    {
+                        householdManager?.ApplyRuntimeState(payload.Systems.HouseholdControlMode, payload.Systems.HouseholdAutonomyNotes, payload.Systems.HouseholdPets);
+                    }
+                },
+                EconomyInventoryRestore = () =>
+                {
+                    economyInventorySystem?.ApplySnapshot(payload.Economy);
+                    if (payload.Systems != null)
+                    {
+                        orderingSystem?.ApplyRuntimeState(payload.Systems.Ordering, householdManager != null ? householdManager.Members : null);
+                    }
+                },
+                RelationshipSocialRestore = () =>
+                {
+                    if (payload.Systems != null)
+                    {
+                        humanLifeExperienceLayerSystem?.ApplyRuntimeState(payload.Systems.HumanLife);
+                        worldCultureSocietyEngine?.ApplyRuntimeState(payload.Systems.Cultures, payload.Systems.CulturalIdentities, payload.Systems.NeighborhoodMicroCultures);
+                        playerExperienceCascadeSystem?.ApplyRuntimeState(payload.Systems.LifeDirections, payload.Systems.Regrets, payload.Systems.MeaningProfiles, payload.Systems.LifeStories);
+                    }
+                },
+                TownNpcRestore = () =>
+                {
+                    if (payload.Systems != null)
+                    {
+                        npcScheduleSystem?.ApplyRuntimeState(payload.Systems.Npcs);
+                        townSimulationSystem?.ApplyRuntimeState(payload.Systems.Districts, payload.Systems.Lots, payload.Systems.Routes);
+                        worldPersistenceCullingSystem?.ApplyRuntimeState(payload.Systems.LotStates, payload.Systems.RemoteNpcSnapshots);
+                        aiDirectorDramaManager?.ApplyRuntimeState(payload.Systems.Director);
+                        autonomousStoryGenerator?.ApplyRuntimeState(payload.Systems.Story);
+                    }
+                },
+                LawJusticeRestore = () =>
+                {
+                    if (payload.Systems != null)
+                    {
+                        justiceSystem?.ApplyRuntimeState(payload.Systems.ActiveSentences, householdManager != null ? householdManager.Members : null);
+                        prisonRoutineSystem?.ApplyRuntimeState(payload.Systems.InmateStates);
+                    }
+                },
+                ActivityTaskRestore = () =>
+                {
+                    if (payload.Systems != null)
+                    {
+                        contractBoardSystem?.ApplyRuntimeState(payload.Systems.Contracts);
+                        householdChoreSystem?.ApplyRuntimeState(payload.Systems.HouseholdChores);
+                    }
+                },
+                FinalPresentationSync = () =>
+                {
+                    if (activeToSet != null)
+                    {
+                        householdManager.SetActiveCharacter(activeToSet);
+                    }
+                },
+                PostLoadValidation = () =>
+                {
+                    // Reserved for parity checks, catch-up sim, and rebinding validation.
+                }
+            };
+
+            (simulationRestoreCoordinator != null ? simulationRestoreCoordinator : GetComponent<SimulationRestoreCoordinator>())?.RunPhasedRestore(operations);
+            if (simulationRestoreCoordinator == null && GetComponent<SimulationRestoreCoordinator>() == null)
+            {
+                operations.PreLoadReset?.Invoke();
+                operations.WorldBootstrap?.Invoke();
+                operations.StaticContentRegistration?.Invoke();
+                operations.CharacterRegistryRestore?.Invoke();
+                operations.HouseholdRestore?.Invoke();
+                operations.EconomyInventoryRestore?.Invoke();
+                operations.RelationshipSocialRestore?.Invoke();
+                operations.TownNpcRestore?.Invoke();
+                operations.LawJusticeRestore?.Invoke();
+                operations.ActivityTaskRestore?.Invoke();
+                operations.FinalPresentationSync?.Invoke();
+                operations.PostLoadValidation?.Invoke();
+            }
+        }
+
+        private CharacterCore ApplyCharacterPayload(List<CharacterSnapshot> snapshots)
+        {
+            CharacterCore activeToSet = null;
+            if (householdManager == null || householdManager.Members == null || snapshots == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                CharacterSnapshot snapshot = snapshots.Find(c => c.CharacterId == member.CharacterId || c.DisplayName == member.DisplayName);
+                if (snapshot == null)
+                {
+                    continue;
+                }
+
+                member.SetLifeStage(snapshot.LifeStage);
+
+                GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
+                if (genetics != null && snapshot.Genetics != null)
+                {
+                    genetics.OverrideGenetics(snapshot.Genetics, false);
+                }
+
+                NeedsSystem needs = member.GetComponent<NeedsSystem>();
+                needs?.ApplySnapshot(snapshot.Needs);
+
+                if (genetics != null)
+                {
+                    genetics.ApplyGeneticsToSystems();
+                }
+
+                AppearanceManager appearance = member.GetComponent<AppearanceManager>();
+                if (appearance != null && snapshot.HasAppearanceCustomization)
+                {
+                    if (snapshot.Appearance != null)
+                    {
+                        appearance.ApplyAppearance(CloneAppearance(snapshot.Appearance));
                     }
 
-                    member.SetLifeStage(snapshot.LifeStage);
+                    appearance.SetHairProfile(CloneHair(snapshot.Hair));
+                    appearance.SetFacialHairProfile(CloneFacialHair(snapshot.FacialHair));
+                    appearance.SetBodyHairProfile(CloneBodyHair(snapshot.BodyHair));
+                    member.SyncPortraitDataFromAppearance(appearance);
+                }
 
-                    GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
-                    if (genetics != null && snapshot.Genetics != null)
-                    {
-                        genetics.OverrideGenetics(snapshot.Genetics, false);
-                    }
+                HealthSystem health = member.GetComponent<HealthSystem>();
+                health?.ApplyVitality(snapshot.Vitality);
 
-                    NeedsSystem needs = member.GetComponent<NeedsSystem>();
-                    needs?.ApplySnapshot(snapshot.Needs);
+                SkillSystem skills = member.GetComponent<SkillSystem>();
+                skills?.ApplySnapshot(snapshot.Skills);
 
-                    if (genetics != null)
-                    {
-                        genetics.ApplyGeneticsToSystems();
-                    }
+                StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
+                status?.ApplySnapshot(snapshot.Statuses);
+                member.GetComponent<ActivitySystem>()?.ApplyRuntimeState(snapshot.ActivityState);
+                member.GetComponent<RehabilitationSystem>()?.ApplyRuntimeState(snapshot.RehabilitationState);
 
-                    AppearanceManager appearance = member.GetComponent<AppearanceManager>();
-                    if (appearance != null && snapshot.HasAppearanceCustomization)
-                    {
-                        if (snapshot.Appearance != null)
-                        {
-                            appearance.ApplyAppearance(CloneAppearance(snapshot.Appearance));
-                        }
-
-                        appearance.SetHairProfile(CloneHair(snapshot.Hair));
-                        appearance.SetFacialHairProfile(CloneFacialHair(snapshot.FacialHair));
-                        appearance.SetBodyHairProfile(CloneBodyHair(snapshot.BodyHair));
-                        member.SyncPortraitDataFromAppearance(appearance);
-                    }
-
-                    HealthSystem health = member.GetComponent<HealthSystem>();
-                    health?.ApplyVitality(snapshot.Vitality);
-
-                    SkillSystem skills = member.GetComponent<SkillSystem>();
-                    skills?.ApplySnapshot(snapshot.Skills);
-
-                    StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
-                    status?.ApplySnapshot(snapshot.Statuses);
-                    member.GetComponent<ActivitySystem>()?.ApplyRuntimeState(snapshot.ActivityState);
-                    member.GetComponent<RehabilitationSystem>()?.ApplyRuntimeState(snapshot.RehabilitationState);
-
-                    if (snapshot.IsActive)
-                    {
-                        activeToSet = member;
-                    }
+                if (snapshot.IsActive)
+                {
+                    activeToSet = member;
                 }
             }
 
-            ApplySystemsPayload(payload.Systems);
-
-            if (activeToSet != null)
-            {
-                householdManager.SetActiveCharacter(activeToSet);
-            }
+            return activeToSet;
         }
 
-        private void ApplySystemsPayload(WorldSystemsSnapshot systems)
-        {
-            if (systems == null)
-            {
-                return;
-            }
 
-            householdManager?.ApplyRuntimeState(systems.HouseholdControlMode, systems.HouseholdAutonomyNotes, systems.HouseholdPets);
-            justiceSystem?.ApplyRuntimeState(systems.ActiveSentences, householdManager != null ? householdManager.Members : null);
-            prisonRoutineSystem?.ApplyRuntimeState(systems.InmateStates);
-            orderingSystem?.ApplyRuntimeState(systems.Ordering, householdManager != null ? householdManager.Members : null);
-            contractBoardSystem?.ApplyRuntimeState(systems.Contracts);
-            householdChoreSystem?.ApplyRuntimeState(systems.HouseholdChores);
-            npcScheduleSystem?.ApplyRuntimeState(systems.Npcs);
-            townSimulationSystem?.ApplyRuntimeState(systems.Districts, systems.Lots, systems.Routes);
-            worldPersistenceCullingSystem?.ApplyRuntimeState(systems.LotStates, systems.RemoteNpcSnapshots);
-            aiDirectorDramaManager?.ApplyRuntimeState(systems.Director);
-            autonomousStoryGenerator?.ApplyRuntimeState(systems.Story);
-            worldCultureSocietyEngine?.ApplyRuntimeState(systems.Cultures, systems.CulturalIdentities, systems.NeighborhoodMicroCultures);
-            playerExperienceCascadeSystem?.ApplyRuntimeState(systems.LifeDirections, systems.Regrets, systems.MeaningProfiles, systems.LifeStories);
-            humanLifeExperienceLayerSystem?.ApplyRuntimeState(systems.HumanLife);
-        }
 
 
         private void ValidatePayload(SaveSlotPayload payload)
