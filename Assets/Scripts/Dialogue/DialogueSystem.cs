@@ -101,6 +101,7 @@ namespace Survivebest.Dialogue
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private EmotionSystem emotionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private List<DialogueLine> dialogueLines = new();
         [SerializeField] private List<DialogueGeneratedLine> generatedLines = new();
         [SerializeField, Min(12)] private int minimumLinesPerBucket = 24;
@@ -137,8 +138,15 @@ namespace Survivebest.Dialogue
             float relationshipBonus = relationship > 50f ? 0.08f : 0f;
             float memoryBonus = ResolveSharedHistoryBonus(target.CharacterId);
             float conflictPenalty = ResolveConflictPressure(target.CharacterId);
+            float attachmentModifier = humanLifeExperienceLayerSystem != null ? humanLifeExperienceLayerSystem.GetRelationshipAttachmentModifier(owner != null ? owner.CharacterId : null) : 1f;
+            float distortionPenalty = 0f;
+            if (humanLifeExperienceLayerSystem != null && owner != null)
+            {
+                CognitiveDistortionProfile distortion = humanLifeExperienceLayerSystem.GetProfile<CognitiveDistortionProfile>(owner.CharacterId);
+                distortionPenalty = distortion != null ? distortion.GetDominantIntensity() * 0.12f : 0f;
+            }
 
-            float successChance = Mathf.Clamp01(0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty);
+            float successChance = Mathf.Clamp01(0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty - distortionPenalty + ((attachmentModifier - 1f) * 0.2f));
             bool success = UnityEngine.Random.value <= successChance;
 
             int finalDelta = success ? baseRelationshipDelta : -Mathf.Max(1, Mathf.Abs(baseRelationshipDelta));
@@ -233,6 +241,77 @@ namespace Survivebest.Dialogue
                 MemoryTopic = "legacy reply",
                 LegacyTag = "legacy"
             });
+
+            if (humanLifeExperienceLayerSystem != null && owner != null)
+            {
+                CognitiveDistortionProfile distortion = humanLifeExperienceLayerSystem.GetProfile<CognitiveDistortionProfile>(owner.CharacterId);
+                AttachmentStyleProfile attachment = humanLifeExperienceLayerSystem.GetProfile<AttachmentStyleProfile>(owner.CharacterId);
+                InnerMonologueProfile monologue = humanLifeExperienceLayerSystem.GetProfile<InnerMonologueProfile>(owner.CharacterId);
+
+                if (distortion != null && distortion.MindReading > 0.55f)
+                {
+                    options.Add(new DialogueReplyOption
+                    {
+                        ReplyId = "reply_mind_reading",
+                        Label = "Second-guess what they really mean",
+                        Tone = DialogueReplyTone.Defensive,
+                        FollowupIntent = DialogueIntent.SmallTalk,
+                        RelationshipDelta = -2,
+                        MemoryTopic = "mind reading spiral",
+                        LegacyTag = "distortion"
+                    });
+                }
+
+                if (distortion != null && distortion.ImposterSyndrome > 0.55f)
+                {
+                    options.Add(new DialogueReplyOption
+                    {
+                        ReplyId = "reply_imposter",
+                        Label = "Downplay your own worth",
+                        Tone = DialogueReplyTone.Defensive,
+                        FollowupIntent = DialogueIntent.Apologize,
+                        RelationshipDelta = -1,
+                        MemoryTopic = "imposter response",
+                        LegacyTag = "self_doubt"
+                    });
+                }
+
+                if (attachment != null && attachment.AttachmentStyle == AttachmentStyle.Anxious)
+                {
+                    options.Add(new DialogueReplyOption
+                    {
+                        ReplyId = "reply_attachment_anxious",
+                        Label = "Ask for reassurance right now",
+                        Tone = DialogueReplyTone.Curious,
+                        FollowupIntent = DialogueIntent.Comfort,
+                        RelationshipDelta = 2,
+                        MemoryTopic = "reassurance seeking",
+                        LegacyTag = "attachment"
+                    });
+                }
+                else if (attachment != null && attachment.AttachmentStyle == AttachmentStyle.Avoidant)
+                {
+                    options.Add(new DialogueReplyOption
+                    {
+                        ReplyId = "reply_attachment_avoidant",
+                        Label = "Keep it distant and controlled",
+                        Tone = DialogueReplyTone.Defensive,
+                        FollowupIntent = DialogueIntent.SmallTalk,
+                        RelationshipDelta = -1,
+                        MemoryTopic = "avoidant distance",
+                        LegacyTag = "attachment"
+                    });
+                }
+
+                if (monologue != null && monologue.HarshSelfTalk > 0.6f)
+                {
+                    DialogueReplyOption warm = options.Find(option => option.ReplyId == "reply_warm");
+                    if (warm != null)
+                    {
+                        warm.Label = "Try to answer gently despite your inner critic";
+                    }
+                }
+            }
 
             if (owner != null && owner.IsVampire)
             {
