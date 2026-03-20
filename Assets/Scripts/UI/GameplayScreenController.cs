@@ -565,6 +565,15 @@ namespace Survivebest.UI
                 if (localDanger > 0.55f) actions.Add("Choose a safer lot or travel in daylight");
             }
 
+            if (humanLifeExperienceLayerSystem != null)
+            {
+                List<string> lifeSuggestions = humanLifeExperienceLayerSystem.BuildEverydayLifeSuggestions(currentCharacter.CharacterId, 3);
+                for (int i = 0; i < lifeSuggestions.Count; i++)
+                {
+                    actions.Add(lifeSuggestions[i]);
+                }
+            }
+
             actions.Add("Open map and click a district to travel");
 
             if (actions.Count == 0)
@@ -598,6 +607,12 @@ namespace Survivebest.UI
                 if (!string.IsNullOrWhiteSpace(summary))
                 {
                     builder.AppendLine($"• Thought: {summary}");
+                }
+
+                string texture = humanLifeExperienceLayerSystem.BuildHumanTextureSummary(currentCharacter.CharacterId);
+                if (!string.IsNullOrWhiteSpace(texture) && texture != "Life texture is still being discovered." && texture != "No human texture available.")
+                {
+                    builder.AppendLine($"• Texture: {texture}");
                 }
             }
 

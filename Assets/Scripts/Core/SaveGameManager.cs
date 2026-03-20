@@ -6,6 +6,7 @@ using Survivebest.Health;
 using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Status;
+using Survivebest.Appearance;
 using Survivebest.World;
 using Survivebest.Economy;
 using Survivebest.Activity;
@@ -52,6 +53,11 @@ namespace Survivebest.Core
         public List<ActiveStatusEffect> Statuses = new();
         public ActivitySystem.ActivityRuntimeState ActivityState;
         public RehabilitationSystem.RehabilitationRuntimeState RehabilitationState;
+        public bool HasAppearanceCustomization;
+        public AppearanceProfile Appearance;
+        public HairProfile Hair = new();
+        public FacialHairProfile FacialHair = new();
+        public BodyHairProfile BodyHair = new();
     }
 
     [Serializable]
@@ -80,6 +86,7 @@ namespace Survivebest.Core
         public List<RegretEntry> Regrets = new();
         public List<MeaningProfile> MeaningProfiles = new();
         public List<LifeStorySnapshot> LifeStories = new();
+        public HumanLifeRuntimeState HumanLife;
     }
 
     [Serializable]
@@ -96,7 +103,7 @@ namespace Survivebest.Core
 
     public class SaveGameManager : MonoBehaviour
     {
-        private const int CurrentSchemaVersion = 5;
+        private const int CurrentSchemaVersion = 6;
         private const int LegacySchemaVersion = 1;
 
         [SerializeField] private WorldClock worldClock;
@@ -116,6 +123,7 @@ namespace Survivebest.Core
         [SerializeField] private AutonomousStoryGenerator autonomousStoryGenerator;
         [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
         [SerializeField] private PlayerExperienceCascadeSystem playerExperienceCascadeSystem;
+        [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
 
         public bool SaveToSlot(int slotIndex, string worldName)
         {
@@ -256,7 +264,7 @@ namespace Survivebest.Core
                     HealthSystem health = member.GetComponent<HealthSystem>();
                     SkillSystem skills = member.GetComponent<SkillSystem>();
                     StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
-
+                    AppearanceManager appearance = member.GetComponent<AppearanceManager>();
                     GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
 
                     payload.HouseholdCharacters.Add(new CharacterSnapshot
@@ -272,7 +280,12 @@ namespace Survivebest.Core
                         Skills = skills != null ? skills.CaptureSnapshot() : new List<SkillEntry>(),
                         Statuses = status != null ? status.CaptureSnapshot() : new List<ActiveStatusEffect>(),
                         ActivityState = member.GetComponent<ActivitySystem>()?.CaptureRuntimeState(),
-                        RehabilitationState = member.GetComponent<RehabilitationSystem>()?.CaptureRuntimeState()
+                        RehabilitationState = member.GetComponent<RehabilitationSystem>()?.CaptureRuntimeState(),
+                        HasAppearanceCustomization = appearance != null,
+                        Appearance = appearance != null && appearance.CurrentProfile != null ? CloneAppearance(appearance.CurrentProfile) : null,
+                        Hair = appearance != null ? CloneHair(appearance.ScalpHairProfile) : new HairProfile(),
+                        FacialHair = appearance != null ? CloneFacialHair(appearance.FacialHairProfile) : new FacialHairProfile(),
+                        BodyHair = appearance != null ? CloneBodyHair(appearance.BodyHairProfile) : new BodyHairProfile()
                     });
                 }
             }
@@ -312,6 +325,7 @@ namespace Survivebest.Core
             snapshot.Regrets = playerExperienceCascadeSystem != null ? new List<RegretEntry>(playerExperienceCascadeSystem.Regrets) : new List<RegretEntry>();
             snapshot.MeaningProfiles = playerExperienceCascadeSystem != null ? new List<MeaningProfile>(playerExperienceCascadeSystem.MeaningProfiles) : new List<MeaningProfile>();
             snapshot.LifeStories = playerExperienceCascadeSystem != null ? new List<LifeStorySnapshot>(playerExperienceCascadeSystem.StorySnapshots) : new List<LifeStorySnapshot>();
+            snapshot.HumanLife = humanLifeExperienceLayerSystem != null ? humanLifeExperienceLayerSystem.CaptureRuntimeState() : null;
             return snapshot;
         }
 
@@ -367,6 +381,20 @@ namespace Survivebest.Core
                         genetics.ApplyGeneticsToSystems();
                     }
 
+                    AppearanceManager appearance = member.GetComponent<AppearanceManager>();
+                    if (appearance != null && snapshot.HasAppearanceCustomization)
+                    {
+                        if (snapshot.Appearance != null)
+                        {
+                            appearance.ApplyAppearance(CloneAppearance(snapshot.Appearance));
+                        }
+
+                        appearance.SetHairProfile(CloneHair(snapshot.Hair));
+                        appearance.SetFacialHairProfile(CloneFacialHair(snapshot.FacialHair));
+                        appearance.SetBodyHairProfile(CloneBodyHair(snapshot.BodyHair));
+                        member.SyncPortraitDataFromAppearance(appearance);
+                    }
+
                     HealthSystem health = member.GetComponent<HealthSystem>();
                     health?.ApplyVitality(snapshot.Vitality);
 
@@ -413,6 +441,7 @@ namespace Survivebest.Core
             autonomousStoryGenerator?.ApplyRuntimeState(systems.Story);
             worldCultureSocietyEngine?.ApplyRuntimeState(systems.Cultures, systems.CulturalIdentities, systems.NeighborhoodMicroCultures);
             playerExperienceCascadeSystem?.ApplyRuntimeState(systems.LifeDirections, systems.Regrets, systems.MeaningProfiles, systems.LifeStories);
+            humanLifeExperienceLayerSystem?.ApplyRuntimeState(systems.HumanLife);
         }
 
 
@@ -459,6 +488,7 @@ namespace Survivebest.Core
             payload.Systems.Regrets ??= new List<RegretEntry>();
             payload.Systems.MeaningProfiles ??= new List<MeaningProfile>();
             payload.Systems.LifeStories ??= new List<LifeStorySnapshot>();
+            payload.Systems.HumanLife ??= new HumanLifeRuntimeState();
 
             HashSet<string> seenIds = new HashSet<string>();
             for (int i = payload.HouseholdCharacters.Count - 1; i >= 0; i--)
@@ -485,6 +515,13 @@ namespace Survivebest.Core
                 character.Needs ??= new NeedsSnapshot();
                 character.ActivityState ??= new ActivitySystem.ActivityRuntimeState();
                 character.RehabilitationState ??= new RehabilitationSystem.RehabilitationRuntimeState();
+                if (character.HasAppearanceCustomization)
+                {
+                    character.Appearance ??= new AppearanceProfile();
+                    character.Hair ??= new HairProfile();
+                    character.FacialHair ??= new FacialHairProfile();
+                    character.BodyHair ??= new BodyHairProfile();
+                }
             }
         }
 
@@ -525,6 +562,13 @@ namespace Survivebest.Core
             if (payload.SchemaVersion == 4)
             {
                 payload.Systems ??= new WorldSystemsSnapshot();
+                payload.SchemaVersion = 5;
+            }
+
+            if (payload.SchemaVersion == 5)
+            {
+                payload.Systems ??= new WorldSystemsSnapshot();
+                payload.Systems.HumanLife ??= new HumanLifeRuntimeState();
                 payload.SchemaVersion = CurrentSchemaVersion;
                 return payload;
             }
@@ -546,6 +590,58 @@ namespace Survivebest.Core
                 Reason = $"{eventType} for {worldName}",
                 Magnitude = slotIndex
             });
+        }
+
+        private static AppearanceProfile CloneAppearance(AppearanceProfile profile)
+        {
+            if (profile == null)
+            {
+                return null;
+            }
+
+            return new AppearanceProfile
+            {
+                HairStyle = profile.HairStyle,
+                HairColor = profile.HairColor,
+                EyeColor = profile.EyeColor,
+                SkinTone = profile.SkinTone,
+                SkinIssue = profile.SkinIssue,
+                HasBeautyMark = profile.HasBeautyMark,
+                FeminineExpression = profile.FeminineExpression,
+                MasculineExpression = profile.MasculineExpression,
+                AndrogynyExpression = profile.AndrogynyExpression,
+                MakeupColor = profile.MakeupColor
+            };
+        }
+
+        private static HairProfile CloneHair(HairProfile profile)
+        {
+            if (profile == null)
+            {
+                return new HairProfile();
+            }
+
+            return JsonUtility.FromJson<HairProfile>(JsonUtility.ToJson(profile));
+        }
+
+        private static FacialHairProfile CloneFacialHair(FacialHairProfile profile)
+        {
+            if (profile == null)
+            {
+                return new FacialHairProfile();
+            }
+
+            return JsonUtility.FromJson<FacialHairProfile>(JsonUtility.ToJson(profile));
+        }
+
+        private static BodyHairProfile CloneBodyHair(BodyHairProfile profile)
+        {
+            if (profile == null)
+            {
+                return new BodyHairProfile();
+            }
+
+            return JsonUtility.FromJson<BodyHairProfile>(JsonUtility.ToJson(profile));
         }
 
         private static string GetPrefix(int slotIndex) => $"SaveSlot{slotIndex}";

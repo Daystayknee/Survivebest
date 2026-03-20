@@ -372,6 +372,16 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class HumanLifeRuntimeState
+    {
+        public List<ThoughtMessage> RecentThoughts = new();
+        public List<ProceduralLifeMoment> RecentMoments = new();
+        public List<LifeTimelineEntry> RecentTimeline = new();
+        public List<MundaneEarthLifeProfile> MundaneEarthProfiles = new();
+        public List<CollectionIdentityProfile> CollectionIdentityProfiles = new();
+    }
+
+    [Serializable]
     public class CollectionIdentityProfile
     {
         public string CharacterId;
@@ -1749,6 +1759,67 @@ namespace Survivebest.Core
             }
 
             return list;
+        }
+
+        public HumanLifeRuntimeState CaptureRuntimeState()
+        {
+            return new HumanLifeRuntimeState
+            {
+                RecentThoughts = new List<ThoughtMessage>(recentThoughts),
+                RecentMoments = new List<ProceduralLifeMoment>(recentMoments),
+                RecentTimeline = new List<LifeTimelineEntry>(recentTimeline),
+                MundaneEarthProfiles = new List<MundaneEarthLifeProfile>(mundaneEarthLifeProfiles),
+                CollectionIdentityProfiles = new List<CollectionIdentityProfile>(collectionIdentityProfiles)
+            };
+        }
+
+        public void ApplyRuntimeState(HumanLifeRuntimeState runtimeState)
+        {
+            recentThoughts = runtimeState?.RecentThoughts != null ? new List<ThoughtMessage>(runtimeState.RecentThoughts) : new List<ThoughtMessage>();
+            recentMoments = runtimeState?.RecentMoments != null ? new List<ProceduralLifeMoment>(runtimeState.RecentMoments) : new List<ProceduralLifeMoment>();
+            recentTimeline = runtimeState?.RecentTimeline != null ? new List<LifeTimelineEntry>(runtimeState.RecentTimeline) : new List<LifeTimelineEntry>();
+            mundaneEarthLifeProfiles = runtimeState?.MundaneEarthProfiles != null ? new List<MundaneEarthLifeProfile>(runtimeState.MundaneEarthProfiles) : new List<MundaneEarthLifeProfile>();
+            collectionIdentityProfiles = runtimeState?.CollectionIdentityProfiles != null ? new List<CollectionIdentityProfile>(runtimeState.CollectionIdentityProfiles) : new List<CollectionIdentityProfile>();
+        }
+
+        public List<string> BuildEverydayLifeSuggestions(string characterId, int max = 3)
+        {
+            List<string> suggestions = new();
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return suggestions;
+            }
+
+            MundaneEarthLifeProfile mundane = FindProfile(characterId, mundaneEarthLifeProfiles);
+            if (mundane != null)
+            {
+                if (mundane.LaundryBacklog > 0.55f) suggestions.Add("Do a laundry reset before the backlog gets mean.");
+                if (mundane.SinkDishPileup > 0.55f) suggestions.Add("Clear the sink and buy yourself a calmer kitchen.");
+                if (mundane.PhoneBatteryAnxiety > 0.55f) suggestions.Add("Top up your phone and stash a charger before leaving.");
+                if (mundane.FridgeChaos > 0.55f) suggestions.Add("Do a fast fridge check and plan a real grocery run.");
+                if (mundane.SmallPleasures.Count > 0) suggestions.Add($"Make time for {mundane.SmallPleasures[0].ToLowerInvariant()} as a small reset.");
+            }
+
+            CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
+            if (collection != null)
+            {
+                string focus = collection.CollectionFocuses.Count > 0 ? collection.CollectionFocuses[0] : LifeActivityCatalog.PickCollectibleHobby();
+                if (collection.CollectorDrive > 0.5f) suggestions.Add($"Check for {focus.ToLowerInvariant()} while you're already out running errands.");
+                if (!string.IsNullOrWhiteSpace(collection.EverydayCarryItem)) suggestions.Add($"Make sure your {collection.EverydayCarryItem} is packed before heading out.");
+                if (collection.WishlistItems.Count > 0) suggestions.Add($"Keep an eye out for {collection.WishlistItems[0].ToLowerInvariant()}.");
+            }
+
+            if (suggestions.Count == 0)
+            {
+                suggestions.Add($"Lean into a small human moment: {LifeActivityCatalog.PickHumanExperienceMoment()}.");
+            }
+
+            if (suggestions.Count > max)
+            {
+                suggestions.RemoveRange(max, suggestions.Count - max);
+            }
+
+            return suggestions;
         }
 
         public void SimulateDailyLifeLoop(CharacterCore actor, int seed, int hours = 16)

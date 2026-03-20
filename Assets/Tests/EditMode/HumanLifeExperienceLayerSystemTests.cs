@@ -389,5 +389,38 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void EverydayLifeSuggestions_ReflectMundaneAndCollectionProfiles()
+        {
+            GameObject go = new GameObject("LifeSuggestions");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharSuggestions");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_suggestions", "Suggestions", LifeStage.Adult);
+
+            system.SetMundaneEarthLifeProfile(character, new MundaneEarthLifeProfile
+            {
+                LaundryBacklog = 0.8f,
+                PhoneBatteryAnxiety = 0.9f,
+                SmallPleasures = new System.Collections.Generic.List<string> { "iced coffee" }
+            });
+            system.SetCollectionIdentityProfile(character, new CollectionIdentityProfile
+            {
+                CollectionFocuses = new System.Collections.Generic.List<string> { "vinyl collecting" },
+                EverydayCarryItem = "phone charger",
+                WishlistItems = new System.Collections.Generic.List<string> { "limited pressing" },
+                CollectorDrive = 0.8f
+            });
+
+            System.Collections.Generic.List<string> suggestions = system.BuildEverydayLifeSuggestions(character.CharacterId, 4);
+            string combined = string.Join(" | ", suggestions);
+
+            Assert.IsTrue(combined.Contains("laundry") || combined.Contains("charger") || combined.Contains("vinyl"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }
