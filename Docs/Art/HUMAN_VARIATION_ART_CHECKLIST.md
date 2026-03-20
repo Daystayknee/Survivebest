@@ -60,6 +60,7 @@ This file expands the art-facing human-variation set so character presentation f
 - NarrowAngular
 
 ## Body type coverage
+### Frame / silhouette coverage
 - Petite
 - Slim
 - Lean
@@ -72,6 +73,65 @@ This file expands the art-facing human-variation set so character presentation f
 - TallLean
 - PlusSize
 - Heavy
+- NarrowStraight
+- SoftRectangle
+- Pear
+- Spoon
+- Hourglass
+- TopHeavy
+- SoftAthletic
+- BroadCurvy
+- CompactCurvy
+- Lanky
+- Stocky
+- PlusSizePear
+- PlusSizeHourglass
+- PlusSizeApple
+- ElderSoftened
+- Postpartum
+- TonedSlender
+- MuscularBroad
+
+### Body allocation / distribution coverage
+- NarrowShoulders
+- BroadShoulders
+- ShortTorso
+- LongTorso
+- ShortLegs
+- LongLegs
+- HighWaist
+- LowWaist
+- FullBust
+- FlatChest
+- BarrelChest
+- SoftMidsection
+- DefinedWaist
+- HipHeavy
+- SeatHeavy
+- ThickThighs
+- SlimThighs
+- StrongCalves
+- SlimCalves
+- ThickArms
+- SlimArms
+- LargeHands
+- SmallHands
+- LargeFeet
+- SmallFeet
+
+### Life-stage-specific body presentation
+- InfantBundle
+- ToddlerProportions
+- ChildProportions
+- PreteenStretch
+- TeenEarlyBloom
+- TeenLateBloom
+- AdultBaseline
+- PregnantEarly
+- PregnantLate
+- PostpartumRecovery
+- ElderStooped
+- ElderSoftened
 
 ## Nose shape coverage
 - Petite
@@ -99,6 +159,7 @@ This file expands the art-facing human-variation set so character presentation f
 - SoftRound
 
 ## Skin issue / micro-detail coverage
+### Surface and pigment detail
 - Freckles
 - Acne
 - Rosacea
@@ -108,6 +169,37 @@ This file expands the art-facing human-variation set so character presentation f
 - UnderEyeDarkness
 - Wrinkles
 - AcneScarring
+- Birthmarks
+- StretchMarks
+- Cellulite
+- KeratosisPilaris
+- Eczema
+- Psoriasis
+- DrySkin
+- OilySkin
+- BodyHairDensity
+- TanLines
+
+### Injury / condition coverage from outside to inside
+- Bruises
+- Scrapes
+- Cuts
+- Burns
+- Bites
+- Rashes
+- Swelling
+- Stitches
+- Casts
+- Splints
+- Bandages
+- Scars
+- MissingTooth
+- BlackEye
+- Nosebleed
+- ConcussionRead
+- OrganPainRead
+- RibInjuryRead
+- AbdominalPainRead
 
 ## Reminder
 Every type above should be represented in:

@@ -180,7 +180,9 @@ Even where a direct layer key is not yet emitted for each one, the phenotype pro
 - tan lines
 
 ### 1.6 Body silhouette sets
-The resolver currently names these silhouette archetypes, so art should support each with a compatible torso / hips / limb read:
+The resolver currently names these silhouette archetypes, so art should support each with a compatible torso / hips / limb read. For paper-doll production, separate these into reusable silhouette packs instead of treating “body type” as one flat bucket.
+
+#### Core silhouette families
 - `NarrowStraight`
 - `SoftRectangle`
 - `Pear`
@@ -201,36 +203,302 @@ The resolver currently names these silhouette archetypes, so art should support 
 - `TonedSlender`
 - `MuscularBroad`
 
-### 1.7 Life-stage presentation sets
-The art stack also needs life-stage-specific bodies, overlays, and outfit support.
+#### Body allocation / proportion packs
+Each silhouette should be splittable into sub-reads so the same archetype can still present differently. Think of this like The Sims 4-style weight/muscle/proportion variety, but resolved as 2D paper-doll silhouettes and swap layers.
+
+##### Upper-body allocations
+- narrow shoulders
+- broad shoulders
+- sloped shoulders
+- square shoulders
+- short neck
+- long neck
+- flat chest
+- small bust
+- full bust
+- broad ribcage
+- barrel chest
+- thick upper arms
+- slim upper arms
+- thick forearms
+- slim forearms
+- large hands
+- small hands
+
+##### Mid-body allocations
+- short torso
+- long torso
+- high waist
+- low waist
+- straight waist
+- defined waist
+- soft midsection
+- firm midsection
+- abdominal separation
+- postpartum abdomen
+- pregnancy-first-trimester
+- pregnancy-second-trimester
+- pregnancy-third-trimester
+
+##### Lower-body allocations
+- narrow hips
+- broad hips
+- high hip shelf
+- low hip shelf
+- flat seat
+- full seat
+- long rise
+- short rise
+- thick thighs
+- slim thighs
+- knock-kneed read
+- bow-legged read
+- strong calves
+- slim calves
+- large feet
+- small feet
+
+##### Full-body read modifiers
+- short overall proportions
+- average overall proportions
+- tall overall proportions
+- leg-length dominant
+- torso-length dominant
+- low muscle definition
+- medium muscle definition
+- high muscle definition
+- low body-fat read
+- medium body-fat read
+- high body-fat read
+- mobility-aid-compatible stance
+- stooped elder posture
+- upright confident posture
+
+### 1.7 Full body region separation for 2D paper dolls
+To make injuries, clothing, accessories, and age changes work “anywhere on the body,” split the doll into more explicit regions than just head / chest / hips / limbs.
+
+#### Head and face regions
+- scalp
+- hairline
+- forehead
+- temple left / right
+- eyebrow left / right
+- eyelid upper / lower
+- eye left / right
+- under-eye left / right
+- ear left / right
+- nose bridge
+- nostril left / right
+- cheek left / right
+- jaw left / right
+- lips upper / lower
+- teeth / gums read
+- chin
+- neck front / side / back
+
+#### Torso regions
+- collarbone left / right
+- shoulder cap left / right
+- chest left / right
+- sternum
+- ribs left / right
+- upper back
+- mid back
+- lower back
+- waist front / side / back
+- abdomen upper / lower
+- navel region
+- pelvis / groin read
+- buttock left / right
+
+#### Arm and hand regions
+- upper arm left / right
+- elbow left / right
+- forearm left / right
+- wrist left / right
+- palm left / right
+- hand back left / right
+- thumb left / right
+- index / middle / ring / little finger on each hand
+
+#### Leg and foot regions
+- hip joint left / right
+- thigh front / inner / outer left / right
+- knee left / right
+- shin left / right
+- calf left / right
+- ankle left / right
+- heel left / right
+- top of foot left / right
+- sole left / right
+- toes on each foot
+
+#### Internal body reads for gameplay-facing overlays
+Paper dolls cannot literally show organs, but they should still support readable “inside the body” states through pain posture, swelling, discoloration, support gear, and UI overlays.
+- skull / brain trauma read
+- eye irritation / vision impairment read
+- sinus / nose pressure read
+- dental pain read
+- throat / airway irritation read
+- lung / breathing distress read
+- heart / chest pain read
+- rib injury read
+- stomach / abdominal pain read
+- intestinal illness read
+- kidney / flank pain read
+- bladder / pelvic pain read
+- reproductive pain / pregnancy status read
+- joint inflammation read
+- nerve pain / numbness read
+
+### 1.8 Life-stage presentation sets
+The art stack also needs life-stage-specific bodies, overlays, and outfit support, separated by both age group and body allocation.
 
 #### Life-stage art modes
 - `BundlePortrait` for baby / infant
 - `ToddlerCrawl`
 - `ChildSimpleRig`
+- `PreteenRig`
 - `TeenRig`
+- `YoungAdultRig`
 - `AdultRig`
 - `ElderRig`
 
 #### Life-stage support assets
 - bundled infant body
+- newborn swaddle outfit
+- infant onesie layer
+- toddler diaper / training outfit set
 - toddler crawl pose set
-- youth outfit set
+- child playwear set
+- child schoolwear set
+- preteen casual set
 - teen outfit set
+- young-adult outfit set
 - adult outfit set
-- swaddle outfit
-- onesie layer
+- elder comfort set
+- pregnancy-compatible outfit cuts
+- postpartum recovery outfit cuts
+- mobility-aid-compatible outfit cuts
+
+#### Outfit categories by age group
+Every age group should have multiple outfit families, not just one generic key, and each family should allow alternate fits for petite / tall / slim / broad / plus-size / pregnant / postpartum / elder-softened allocations where appropriate.
+
+##### Baby / infant
+- swaddles
+- sleep sacks
+- onesies
+- footed pajamas
+- warm-weather rompers
+- cold-weather layers
+- ceremonial / photo outfits
+
+##### Toddler / child
+- diapers / pull-ups
+- playwear
+- sleepwear
+- schoolwear
+- partywear
+- outerwear
+- rainwear
+- swimwear
+- cultural / formalwear
+
+##### Preteen / teen
+- casual basics
+- school uniforms
+- sportswear
+- sleepwear
+- seasonal outerwear
+- trend-driven fashion
+- formalwear
+- work-uniform starter looks
+- subculture / identity outfits
+
+##### Young adult / adult / elder
+- lounge / sleepwear
+- casual wear
+- workwear
+- uniforms
+- fitness wear
+- maternity wear
+- postpartum wear
+- adaptive clothing
+- formalwear
+- outerwear
+- seasonal weatherwear
+- swimwear
+- cultural / religious dress
+- medical / recovery garments
 
 #### Current named life-stage keys
 - `outfit_swaddle`
 - `outfit_onesie`
 - `outfit_youth`
+- `outfit_preteen`
 - `outfit_teen`
+- `outfit_young_adult`
 - `outfit_adult`
+- `outfit_elder`
+- `outfit_maternity`
+- `outfit_postpartum`
+- `outfit_adaptive`
 - `onesie_default`
 - `pose_crawl_set_a`
 
-### 1.8 Background / context support
+### 1.9 Injury and condition coverage from outside to inside
+To support “injuries can happen anywhere,” production should separate visible surface overlays, structural supports, and internal-pain reads. These should be available across the full body region map above.
+
+#### Surface overlays
+- bruises
+- abrasions / scrapes
+- shallow cuts
+- deep cuts
+- punctures
+- bites
+- burns
+- blisters
+- swelling
+- redness / irritation
+- rash / hives
+- dried blood
+- fresh blood
+- dirt / grime
+- stitches
+- healed scars
+- keloid scars
+- surgical scars
+
+#### Support / treatment layers
+- adhesive bandages
+- gauze wraps
+- compression wraps
+- splints
+- casts
+- slings
+- neck brace
+- back brace
+- knee brace
+- ankle brace
+- finger splint
+- eye patch
+- dental bandage / missing-tooth read
+- crutch / cane / walker compatibility
+
+#### Internal / systemic read layers
+- concussion / dazed portrait state
+- labored breathing state
+- chest guarding pose
+- rib pain posture
+- abdominal cramp posture
+- fever / chills overlay
+- nausea / pallor overlay
+- dehydration read
+- nerve pain / numb limb read
+- infection progression read
+- fatigue / recovery slump
+
+### 1.10 Background / context support
 These are not necessarily character sprites, but the phenotype system already resolves these presentation dimensions and art direction should support them:
 - regional background variants
 - culture presentation motifs
@@ -730,10 +998,11 @@ The underlying system already distinguishes these modeling styles:
 ## 4. Recommended way to hand this to artists
 
 For production, split the work into four Jira / task-board buckets:
-1. **Portrait modular parts**: head, eyes, nose, mouth, brow, ear, hair.
-2. **Body silhouette packs**: torso and limb silhouettes across life stages.
-3. **Condition and aging overlays**: health, age, stress, dirt, injury, skin conditions.
-4. **Behavior and state packs**: expressions, posture presets, idle/habit portrait sets.
+1. **Portrait modular parts**: head, eyes, nose, mouth, brow, ear, hair, teeth, eyelids, under-eye, and neck variants.
+2. **Body silhouette packs**: upper-body, mid-body, lower-body, and full-height allocation packs across life stages.
+3. **Outfit families by age and fit**: age-group wardrobes with petite / tall / broad / plus-size / pregnant / postpartum / adaptive fit variants.
+4. **Condition and aging overlays**: health, age, stress, dirt, injury, skin conditions, support gear, and internal-pain reads.
+5. **Behavior and state packs**: expressions, posture presets, idle/habit portrait sets, guarding poses, and recovery states.
 
 If you want, the next step can be a stricter spreadsheet-style deliverable with one row per asset key
 (e.g. `head_soft`, `nose_sharp`, `health_overlay_tense`, `outfit_teen`, etc.) and columns for
