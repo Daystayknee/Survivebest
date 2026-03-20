@@ -180,7 +180,7 @@ namespace Survivebest.Crime
 
             SubstanceProfile profile = GetProfile(substanceType);
             string label = profile != null ? profile.DisplayName : substanceType.ToString();
-            PublishSubstanceEvent("SubstanceUsed", $"Used {label}", legalRisk, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
+            PublishSubstanceEvent(substanceType, "Used", $"Used {label}", legalRisk, illegal ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info);
             OnSubstanceUsed?.Invoke(substanceType, illegal);
         }
 
@@ -370,7 +370,7 @@ namespace Survivebest.Crime
                 activeEffects.RemoveAt(i);
                 ApplyCrashOrWithdrawal(endedType);
                 OnSubstanceEffectEnded?.Invoke(endedType);
-                PublishSubstanceEvent("SubstanceEnded", $"{endedType} effect ended", dependencyLevel, SimulationEventSeverity.Info);
+                PublishSubstanceEvent(endedType, "Ended", $"{endedType} effect ended", dependencyLevel, SimulationEventSeverity.Info);
             }
 
             if (activeEffects.Count == 0)
@@ -531,7 +531,7 @@ namespace Survivebest.Crime
                     break;
             }
 
-            PublishSubstanceEvent("Withdrawal", $"Withdrawal/crash from {substanceType}", crashScale, SimulationEventSeverity.Warning);
+            PublishSubstanceEvent(substanceType, "Withdrawal", $"Withdrawal/crash from {substanceType}", crashScale, SimulationEventSeverity.Warning);
         }
 
         private float BuildLegalRisk(SubstanceType substanceType, bool inPublic, bool whileDriving, bool distributionIntent, bool illegal)
@@ -635,15 +635,15 @@ namespace Survivebest.Crime
             };
         }
 
-        private void PublishSubstanceEvent(string key, string reason, float magnitude, SimulationEventSeverity severity)
+        private void PublishSubstanceEvent(SubstanceType substanceType, string key, string reason, float magnitude, SimulationEventSeverity severity)
         {
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
-                Type = SimulationEventType.ActivityCompleted,
+                Type = SimulationEventType.SubstanceStateChanged,
                 Severity = severity,
                 SystemName = nameof(SubstanceSystem),
                 SourceCharacterId = owner != null ? owner.CharacterId : null,
-                ChangeKey = key,
+                ChangeKey = $"{substanceType}:{key}",
                 Reason = reason,
                 Magnitude = magnitude
             });

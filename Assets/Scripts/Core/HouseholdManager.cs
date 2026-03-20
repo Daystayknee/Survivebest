@@ -224,6 +224,13 @@ namespace Survivebest.Core
             pet.Happiness = Mathf.Clamp(pet.Happiness + happinessDelta, 0f, 100f);
         }
 
+        public void ApplyRuntimeState(HouseholdControlMode mode, List<HouseholdAutonomyNote> savedAutonomyNotes, List<HouseholdPetProfile> savedPets)
+        {
+            controlMode = mode;
+            autonomyNotes = savedAutonomyNotes != null ? new List<HouseholdAutonomyNote>(savedAutonomyNotes) : new List<HouseholdAutonomyNote>();
+            pets = savedPets != null ? new List<HouseholdPetProfile>(savedPets) : new List<HouseholdPetProfile>();
+        }
+
         private void HandleHourPassed(int _)
         {
             TickPetNeeds();

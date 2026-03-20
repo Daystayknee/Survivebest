@@ -88,6 +88,38 @@ namespace Survivebest.Story
 
         public event Action<StoryIncidentRecord> OnIncidentGenerated;
 
+        [Serializable]
+        public class StoryRuntimeState
+        {
+            public StoryVibePreset VibePreset;
+            public List<StoryIncidentRecord> RecentIncidents = new();
+            public List<LocalNewsEntry> LocalNewsFeed = new();
+        }
+
+        public StoryRuntimeState CaptureRuntimeState()
+        {
+            return new StoryRuntimeState
+            {
+                VibePreset = vibePreset,
+                RecentIncidents = new List<StoryIncidentRecord>(recentIncidents),
+                LocalNewsFeed = new List<LocalNewsEntry>(localNewsFeed)
+            };
+        }
+
+        public void ApplyRuntimeState(StoryRuntimeState state)
+        {
+            if (state == null)
+            {
+                recentIncidents = new List<StoryIncidentRecord>();
+                localNewsFeed = new List<LocalNewsEntry>();
+                return;
+            }
+
+            vibePreset = state.VibePreset;
+            recentIncidents = state.RecentIncidents != null ? new List<StoryIncidentRecord>(state.RecentIncidents) : new List<StoryIncidentRecord>();
+            localNewsFeed = state.LocalNewsFeed != null ? new List<LocalNewsEntry>(state.LocalNewsFeed) : new List<LocalNewsEntry>();
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)

@@ -56,6 +56,19 @@ namespace Survivebest.Crime
 
     public class JusticeSystem : MonoBehaviour
     {
+        [Serializable]
+        public class ActiveSentenceRecord
+        {
+            public string OffenderCharacterId;
+            public string CrimeType;
+            public int RemainingJailHours;
+            public int OutstandingFine;
+            public int RemainingProbationHours;
+            public int RemainingCommunityServiceHours;
+            public int RemainingHouseArrestHours;
+            public LegalProcessStage Stage;
+        }
+
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private OrderingSystem orderingSystem;
@@ -137,6 +150,79 @@ namespace Survivebest.Crime
             OnJusticeApplied?.Invoke(offender, crimeType, outcome);
             OnSentenceUpdated?.Invoke(offender, sentence);
             PublishJusticeEvent(offender, crimeType, outcome, "Sentence applied");
+        }
+
+        public List<ActiveSentenceRecord> CaptureRuntimeState()
+        {
+            List<ActiveSentenceRecord> records = new();
+            for (int i = 0; i < activeSentences.Count; i++)
+            {
+                ActiveSentence sentence = activeSentences[i];
+                if (sentence?.Offender == null)
+                {
+                    continue;
+                }
+
+                records.Add(new ActiveSentenceRecord
+                {
+                    OffenderCharacterId = sentence.Offender.CharacterId,
+                    CrimeType = sentence.CrimeType,
+                    RemainingJailHours = sentence.RemainingJailHours,
+                    OutstandingFine = sentence.OutstandingFine,
+                    RemainingProbationHours = sentence.RemainingProbationHours,
+                    RemainingCommunityServiceHours = sentence.RemainingCommunityServiceHours,
+                    RemainingHouseArrestHours = sentence.RemainingHouseArrestHours,
+                    Stage = sentence.Stage
+                });
+            }
+
+            return records;
+        }
+
+        public void ApplyRuntimeState(List<ActiveSentenceRecord> records, IReadOnlyList<CharacterCore> availableCharacters)
+        {
+            activeSentences.Clear();
+            if (records == null || availableCharacters == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < records.Count; i++)
+            {
+                ActiveSentenceRecord record = records[i];
+                if (record == null || string.IsNullOrWhiteSpace(record.OffenderCharacterId))
+                {
+                    continue;
+                }
+
+                CharacterCore offender = null;
+                for (int j = 0; j < availableCharacters.Count; j++)
+                {
+                    CharacterCore character = availableCharacters[j];
+                    if (character != null && string.Equals(character.CharacterId, record.OffenderCharacterId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        offender = character;
+                        break;
+                    }
+                }
+
+                if (offender == null)
+                {
+                    continue;
+                }
+
+                activeSentences.Add(new ActiveSentence
+                {
+                    Offender = offender,
+                    CrimeType = record.CrimeType,
+                    RemainingJailHours = Mathf.Max(0, record.RemainingJailHours),
+                    OutstandingFine = Mathf.Max(0, record.OutstandingFine),
+                    RemainingProbationHours = Mathf.Max(0, record.RemainingProbationHours),
+                    RemainingCommunityServiceHours = Mathf.Max(0, record.RemainingCommunityServiceHours),
+                    RemainingHouseArrestHours = Mathf.Max(0, record.RemainingHouseArrestHours),
+                    Stage = record.Stage
+                });
+            }
         }
 
         private void ApplyOutcome(CharacterCore offender, string crimeType, JusticeOutcome outcome, ActiveSentence sentence)

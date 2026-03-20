@@ -45,7 +45,9 @@ namespace Survivebest.Events
         SaveLoaded,
         BuildModeChanged,
         HomeHotspotUsed,
-        StatusEffectChanged
+        StatusEffectChanged,
+        ContractStateChanged,
+        SubstanceStateChanged
     }
 
     public enum SimulationEventSeverity

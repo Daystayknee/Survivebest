@@ -190,6 +190,11 @@ namespace Survivebest.Location
             RefreshLotStates(forcePublish: false);
         }
 
+        public void ApplyRuntimeState(List<DistrictDefinition> newDistricts, List<LotDefinition> newLots, List<RouteEdge> newRouteGraph)
+        {
+            SetTownLayout(newDistricts, newLots, newRouteGraph);
+        }
+
         private void HandleHourPassed(int hour)
         {
             RefreshLotStates(forcePublish: true);

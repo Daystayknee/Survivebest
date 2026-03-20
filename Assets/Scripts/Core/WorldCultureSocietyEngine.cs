@@ -130,6 +130,13 @@ namespace Survivebest.Core
         public IReadOnlyList<CulturalIdentityState> Identities => identities;
         public IReadOnlyList<NeighborhoodMicroCultureProfile> MicroCultures => microCultures;
 
+        public void ApplyRuntimeState(List<CultureProfile> savedCultures, List<CulturalIdentityState> savedIdentities, List<NeighborhoodMicroCultureProfile> savedMicroCultures)
+        {
+            cultures = savedCultures != null ? new List<CultureProfile>(savedCultures) : new List<CultureProfile>();
+            identities = savedIdentities != null ? new List<CulturalIdentityState>(savedIdentities) : new List<CulturalIdentityState>();
+            microCultures = savedMicroCultures != null ? new List<NeighborhoodMicroCultureProfile>(savedMicroCultures) : new List<NeighborhoodMicroCultureProfile>();
+        }
+
         private void OnEnable()
         {
             if (lifeMilestonesEngine != null)
