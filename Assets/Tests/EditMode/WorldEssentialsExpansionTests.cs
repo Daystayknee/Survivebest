@@ -201,11 +201,12 @@ namespace Survivebest.Tests.EditMode
             household.AddMember(character);
 
             household.RegisterAutonomyIntent(character.CharacterId, "Cooking dinner while player controls another member");
-            household.RegisterPet("pet_1", "Milo", "Dog");
+            household.RegisterPet("pet_1", "Milo", "Dog", "Corgi");
             household.InteractWithPet("pet_1", 10f, -8f, 12f);
 
             Assert.AreEqual("Cooking dinner while player controls another member", household.GetLatestIntentForCharacter(character.CharacterId));
             Assert.AreEqual(1, household.Pets.Count);
+            Assert.AreEqual("Corgi", household.Pets[0].Breed);
             Assert.Greater(household.Pets[0].BondLevel, 45f);
 
             Object.DestroyImmediate(go);

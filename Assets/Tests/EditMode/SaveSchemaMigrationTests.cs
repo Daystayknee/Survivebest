@@ -120,7 +120,7 @@ namespace Survivebest.Tests.EditMode
             household.ApplyRuntimeState(
                 HouseholdControlMode.AutoRotate,
                 new List<HouseholdAutonomyNote> { new HouseholdAutonomyNote { CharacterId = "char_1", Intention = "Cook dinner", Day = 2, Hour = 18 } },
-                new List<HouseholdPetProfile> { new HouseholdPetProfile { PetId = "pet_1", Name = "Nova", Species = "Dog", BondLevel = 61f } });
+                new List<HouseholdPetProfile> { new HouseholdPetProfile { PetId = "pet_1", Name = "Nova", Species = "Dog", Breed = "Shepherd", BondLevel = 61f } });
             activity.ApplyRuntimeState(new ActivitySystem.ActivityRuntimeState { SameActivityStreak = 3, LastActivityType = ActivityType.Read });
             rehab.ApplyRuntimeState(new RehabilitationSystem.RehabilitationRuntimeState { ActiveProgram = RehabilitationProgramType.Therapy, RemainingProgramDays = 6, ActiveCenterName = "Sunrise Recovery Clinic" });
             justice.ApplyRuntimeState(new List<JusticeSystem.ActiveSentenceRecord>
@@ -246,6 +246,7 @@ namespace Survivebest.Tests.EditMode
 
             Assert.AreEqual(HouseholdControlMode.AutoRotate, household.ControlMode);
             Assert.AreEqual(1, household.AutonomyNotes.Count);
+            Assert.AreEqual("Shepherd", household.Pets[0].Breed);
             Assert.AreEqual(ActivityType.Read, activity.CaptureRuntimeState().LastActivityType);
             Assert.AreEqual(6, rehab.CaptureRuntimeState().RemainingProgramDays);
             Assert.AreEqual(1, justice.ActiveSentences.Count);
