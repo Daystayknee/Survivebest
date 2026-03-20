@@ -48,6 +48,8 @@ _Last updated: current branch state._
 - World simulation depth upgrades: `WorldClock` now supports richer fixed + seasonal holidays with sensory descriptions and household-wide annual `AgeUp()` hooks; `BirthdayManager` publishes celebration events; `WorldEventDirector` schedules ambient town moments so players can see/hear/feel world events; `WeatherManager` supports a simple global season weather mode (`Sunny`/`Rainy`/`Snowy`).
 - Household creator upgrades: expanded tab set (appearance/genetics/style/skills/relationships/household), tab wrapping helpers, multi-asset character preview pivot rotation support, and household-wide genetics validation pass in creator flow.
 - Broad EditMode test coverage across major domains (core/economy/social/story/home-life/food extensions).
+- Event contract cleanup is in progress: contract and substance loops now publish dedicated structured event types instead of masquerading as generic activity completions, improving UI/simulation separation.
+- Added lifecycle-oriented EditMode coverage for weather, day-slice progression, medical conditions, substance effects, justice release, contract expiry, and food-service delivery loops.
 
 ### ⚠️ Partially complete (code ready, Unity wiring/balancing pending)
 - Full scene/prefab assignment for all optional UI references and polish transitions.

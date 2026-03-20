@@ -494,14 +494,14 @@ Always-visible character presence:
 - `WorldCreatorScreenController` should provide tabbed world setup controls and generate templates for `WorldCreatorManager`.
 - `HouseholdMakerScreenController` should support creator tabs and character rotate/zoom controls before game start.
 - `GameplayScreenController` should orchestrate the inspired HUD layout (location navigator, world map labels, environment/ecology/government summaries, resources row, character vitals panel).
-- `DaySliceManager` should resolve each stage into real system actions (needs checks, adaptive activities, pantry/order food pipeline, social/conflict/medical events) instead of placeholder-only event spam.
+- `DaySliceManager` now resolves each stage into real system actions (needs checks, adaptive activities, pantry/order food pipeline, social/conflict/medical events); remaining work is lifecycle validation, balancing, and authored-scene integration.
 - `UIGlassStyleController` can be used to quickly apply cinematic glass + glow styling across panels.
 
 - `ActionPopupController` should provide modal/popup flows for contextual actions (buy, sell, trade, meds, doctor, skill practice/training, animal-sighting encounters) triggered from `SidebarContextMenu`, including rich previews and outcome effects.
 - `JusticeSystem` should enforce persistent consequences (immediate fines/debt, jail timers, hourly penalties, and release events) so crime affects ongoing simulation state.
 - `SubstanceSystem` should track active substance states with durations/tolerance/dependency and apply start/tick/end consequences (including withdrawal) so usage has full lifecycle outcomes.
 - `WeatherEffectSystem` should apply immediate weather-state consequences and hourly weather ticks to needs/health so climate has persistent gameplay impact.
-- `MinigameManager` should resolve outcomes from skill + needs context and publish activity events so gameplay loops feel systemic rather than placeholder-random.
+- `MinigameManager` now resolves outcomes from skill + needs context and publishes activity events; remaining work is content tuning and broader authored-scene validation rather than placeholder replacement.
 - `EconomyInventorySystem` should be the shared authority for wallet + inventory changes so grocery/order/contract systems can avoid fragmented balances.
 - `ContractBoardSystem` should formalize quest/contract loops (available → accepted → completed/failed/expired) with deadlines and rewards tied to world time.
 - `NpcScheduleSystem` should drive hourly job/schedule state transitions for non-household characters to build town-level simulation life.

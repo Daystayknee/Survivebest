@@ -178,12 +178,14 @@ namespace Survivebest.Quest
         {
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
-                Type = SimulationEventType.ActivityCompleted,
+                Type = SimulationEventType.ContractStateChanged,
                 Severity = severity,
                 SystemName = nameof(ContractBoardSystem),
                 SourceCharacterId = contract != null ? contract.AcceptedCharacterId : null,
-                ChangeKey = contract != null ? contract.AnimalName : "Unknown",
-                Reason = reason,
+                ChangeKey = contract != null ? $"{contract.State}:{contract.ContractId}" : "Contract:Unknown",
+                Reason = contract != null
+                    ? $"{reason} | animal={contract.AnimalName} | zone={contract.ZoneName}"
+                    : reason,
                 Magnitude = contract != null ? contract.Reward : 0f
             });
         }
