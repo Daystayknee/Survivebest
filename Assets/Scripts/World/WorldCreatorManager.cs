@@ -953,7 +953,21 @@ namespace Survivebest.World
             "Warehouse Hub",
             "Auto Garage",
             "Factory Row",
-            "Business Center"
+            "Business Center",
+            "Corporate Tower",
+            "Tech Campus",
+            "Distribution Center",
+            "Regional Bus Depot",
+            "Transit Dispatch Center",
+            "Regional Airport",
+            "Union Rail Yard",
+            "Last Mile Depot",
+            "Mall Plaza",
+            "Neighborhood Barbershop",
+            "Downtown Bar",
+            "Velvet Room",
+            "City Newsroom",
+            "Service Trades Depot"
         };
 
         private static string[] BuildHospitalAreaNames() => new[]

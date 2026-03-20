@@ -422,5 +422,45 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void WorkLifeProfile_InfluencesSummaryPulseAndSuggestions()
+        {
+            GameObject go = new GameObject("WorkLifeTexture");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharWorkLife");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_worklife", "WorkLife", LifeStage.Adult);
+
+            system.SetAmericanWorkLifeProfile(character, new AmericanWorkLifeProfile
+            {
+                JobTitle = "Train Conductor",
+                CareerDomain = "transportation",
+                WorkplaceName = "Union Rail Yard",
+                CommuteMode = "train",
+                ShiftWindow = "5-15",
+                WorkStatus = "seniority battle",
+                CoworkerRumors = new System.Collections.Generic.List<string> { "dispatch says a schedule reshuffle is coming" },
+                Certifications = new System.Collections.Generic.List<string> { "rail safety", "hazmat" },
+                JobPrestige = 0.62f,
+                WorkplaceDrama = 0.78f,
+                RumorHeat = 0.74f,
+                Burnout = 0.58f,
+                PromotionPressure = 0.71f
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string pulse = system.SimulateHumanTexturePulse(character, 7, 12);
+            System.Collections.Generic.List<string> suggestions = system.BuildEverydayLifeSuggestions(character.CharacterId, 5);
+            string combined = string.Join(" | ", suggestions);
+
+            StringAssert.Contains("Work life", summary);
+            Assert.IsTrue(pulse.Contains("Train Conductor") || pulse.Contains("Union Rail Yard") || pulse.Contains("train"));
+            Assert.IsTrue(combined.Contains("shift") || combined.Contains("rumor") || combined.Contains("commute"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }

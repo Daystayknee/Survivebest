@@ -372,6 +372,25 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class AmericanWorkLifeProfile
+    {
+        public string CharacterId;
+        public string JobTitle = "office worker";
+        public string CareerDomain = "office";
+        public string WorkplaceName = "Office Plaza";
+        public string CommuteMode = "car";
+        public string ShiftWindow = "9-5";
+        public string WorkStatus = "new hire";
+        public List<string> CoworkerRumors = new();
+        public List<string> Certifications = new();
+        [Range(0f, 1f)] public float JobPrestige = 0.4f;
+        [Range(0f, 1f)] public float WorkplaceDrama = 0.4f;
+        [Range(0f, 1f)] public float RumorHeat = 0.3f;
+        [Range(0f, 1f)] public float Burnout = 0.3f;
+        [Range(0f, 1f)] public float PromotionPressure = 0.3f;
+    }
+
+    [Serializable]
     public class HumanLifeRuntimeState
     {
         public List<ThoughtMessage> RecentThoughts = new();
@@ -379,6 +398,7 @@ namespace Survivebest.Core
         public List<LifeTimelineEntry> RecentTimeline = new();
         public List<MundaneEarthLifeProfile> MundaneEarthProfiles = new();
         public List<CollectionIdentityProfile> CollectionIdentityProfiles = new();
+        public List<AmericanWorkLifeProfile> WorkLifeProfiles = new();
     }
 
     [Serializable]
@@ -600,6 +620,7 @@ namespace Survivebest.Core
         [SerializeField] private List<FriendshipConstellationProfile> friendshipConstellationProfiles = new();
         [SerializeField] private List<MundaneEarthLifeProfile> mundaneEarthLifeProfiles = new();
         [SerializeField] private List<CollectionIdentityProfile> collectionIdentityProfiles = new();
+        [SerializeField] private List<AmericanWorkLifeProfile> workLifeProfiles = new();
         [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
         [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
         [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
@@ -634,6 +655,7 @@ namespace Survivebest.Core
         public IReadOnlyList<FriendshipConstellationProfile> FriendshipConstellationProfiles => friendshipConstellationProfiles;
         public IReadOnlyList<MundaneEarthLifeProfile> MundaneEarthLifeProfiles => mundaneEarthLifeProfiles;
         public IReadOnlyList<CollectionIdentityProfile> CollectionIdentityProfiles => collectionIdentityProfiles;
+        public IReadOnlyList<AmericanWorkLifeProfile> WorkLifeProfiles => workLifeProfiles;
         public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
         public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
         public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
@@ -987,6 +1009,17 @@ namespace Survivebest.Core
             {
                 string collection = stored.CollectionFocuses.Count > 0 ? stored.CollectionFocuses[0] : LifeActivityCatalog.PickCollectibleHobby();
                 AppendThought(actor, "collection_identity", $"You keep clocking {collection.ToLowerInvariant()} like it might be the next thing worth bringing home.", Mathf.Max(stored.CollectorDrive, stored.NostalgiaPull), null);
+            }
+
+            return stored;
+        }
+
+        public AmericanWorkLifeProfile SetAmericanWorkLifeProfile(CharacterCore actor, AmericanWorkLifeProfile profile)
+        {
+            AmericanWorkLifeProfile stored = UpsertProfile(actor, profile, workLifeProfiles, () => new AmericanWorkLifeProfile());
+            if (stored != null && (stored.WorkplaceDrama > 0.45f || stored.RumorHeat > 0.45f || stored.PromotionPressure > 0.45f))
+            {
+                AppendThought(actor, "work_life", $"Work keeps tugging at you through {stored.JobTitle.ToLowerInvariant()} politics, status, and side comments at {stored.WorkplaceName}.", Mathf.Max(stored.WorkplaceDrama, stored.RumorHeat, stored.PromotionPressure), stored.WorkplaceName);
             }
 
             return stored;
@@ -1368,6 +1401,7 @@ namespace Survivebest.Core
             FriendshipConstellationProfile friendships = FindProfile(characterId, friendshipConstellationProfiles);
             MundaneEarthLifeProfile mundane = FindProfile(characterId, mundaneEarthLifeProfiles);
             CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
+            AmericanWorkLifeProfile workLife = FindProfile(characterId, workLifeProfiles);
             VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
 
             List<string> parts = new();
@@ -1444,6 +1478,12 @@ namespace Survivebest.Core
             {
                 string focus = collection.CollectionFocuses.Count > 0 ? collection.CollectionFocuses[0] : collection.FavoriteKeepsake;
                 parts.Add($"Collection life: {focus} / keepsake {collection.FavoriteKeepsake} / carry {collection.EverydayCarryItem}");
+            }
+
+            if (workLife != null)
+            {
+                string rumor = workLife.CoworkerRumors.Count > 0 ? workLife.CoworkerRumors[0] : "status chatter";
+                parts.Add($"Work life: {workLife.JobTitle} at {workLife.WorkplaceName} / {workLife.WorkStatus} / commute {workLife.CommuteMode} / rumor {rumor}");
             }
 
             if (masquerade != null && masquerade.Suspicion > 0.2f)
@@ -1570,6 +1610,13 @@ namespace Survivebest.Core
                 string focus = collection.CollectionFocuses.Count > 0 ? collection.CollectionFocuses[rng.Next(collection.CollectionFocuses.Count)] : LifeActivityCatalog.PickCollectibleHobby();
                 string objectText = string.IsNullOrWhiteSpace(collection.FavoriteKeepsake) ? LifeActivityCatalog.PickSentimentalObject() : collection.FavoriteKeepsake;
                 observations.Add($"A human-scale thrill hits when {focus.ToLowerInvariant()} show up near your {objectText}, like everyday life is quietly curating itself.");
+            }
+
+            AmericanWorkLifeProfile workLife = FindProfile(actor.CharacterId, workLifeProfiles);
+            if (workLife != null && (workLife.WorkplaceDrama > 0.45f || workLife.RumorHeat > 0.45f || workLife.Burnout > 0.45f || workLife.PromotionPressure > 0.45f))
+            {
+                string rumor = workLife.CoworkerRumors.Count > 0 ? workLife.CoworkerRumors[rng.Next(workLife.CoworkerRumors.Count)] : "someone's status in the workplace";
+                observations.Add($"{workLife.JobTitle} life won't stay in its lane: {rumor} is riding your {workLife.CommuteMode} commute home from {workLife.WorkplaceName}.");
             }
 
             if (observations.Count == 0)
@@ -1769,7 +1816,8 @@ namespace Survivebest.Core
                 RecentMoments = new List<ProceduralLifeMoment>(recentMoments),
                 RecentTimeline = new List<LifeTimelineEntry>(recentTimeline),
                 MundaneEarthProfiles = new List<MundaneEarthLifeProfile>(mundaneEarthLifeProfiles),
-                CollectionIdentityProfiles = new List<CollectionIdentityProfile>(collectionIdentityProfiles)
+                CollectionIdentityProfiles = new List<CollectionIdentityProfile>(collectionIdentityProfiles),
+                WorkLifeProfiles = new List<AmericanWorkLifeProfile>(workLifeProfiles)
             };
         }
 
@@ -1780,6 +1828,7 @@ namespace Survivebest.Core
             recentTimeline = runtimeState?.RecentTimeline != null ? new List<LifeTimelineEntry>(runtimeState.RecentTimeline) : new List<LifeTimelineEntry>();
             mundaneEarthLifeProfiles = runtimeState?.MundaneEarthProfiles != null ? new List<MundaneEarthLifeProfile>(runtimeState.MundaneEarthProfiles) : new List<MundaneEarthLifeProfile>();
             collectionIdentityProfiles = runtimeState?.CollectionIdentityProfiles != null ? new List<CollectionIdentityProfile>(runtimeState.CollectionIdentityProfiles) : new List<CollectionIdentityProfile>();
+            workLifeProfiles = runtimeState?.WorkLifeProfiles != null ? new List<AmericanWorkLifeProfile>(runtimeState.WorkLifeProfiles) : new List<AmericanWorkLifeProfile>();
         }
 
         public List<string> BuildEverydayLifeSuggestions(string characterId, int max = 3)
@@ -1807,6 +1856,15 @@ namespace Survivebest.Core
                 if (collection.CollectorDrive > 0.5f) suggestions.Add($"Check for {focus.ToLowerInvariant()} while you're already out running errands.");
                 if (!string.IsNullOrWhiteSpace(collection.EverydayCarryItem)) suggestions.Add($"Make sure your {collection.EverydayCarryItem} is packed before heading out.");
                 if (collection.WishlistItems.Count > 0) suggestions.Add($"Keep an eye out for {collection.WishlistItems[0].ToLowerInvariant()}.");
+            }
+
+            AmericanWorkLifeProfile workLife = FindProfile(characterId, workLifeProfiles);
+            if (workLife != null)
+            {
+                if (workLife.Burnout > 0.55f) suggestions.Add($"Protect recovery before your {workLife.JobTitle.ToLowerInvariant()} shift eats the whole day.");
+                if (workLife.RumorHeat > 0.55f) suggestions.Add($"Decide how to handle the latest workplace rumor at {workLife.WorkplaceName}.");
+                if (workLife.PromotionPressure > 0.55f) suggestions.Add($"Prep for your next {workLife.JobTitle.ToLowerInvariant()} status move or performance check-in.");
+                if (!string.IsNullOrWhiteSpace(workLife.CommuteMode)) suggestions.Add($"Plan around your {workLife.CommuteMode} commute before the {workLife.ShiftWindow} shift.");
             }
 
             if (suggestions.Count == 0)
