@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 
 namespace Survivebest.Catalog
 {
@@ -527,6 +528,88 @@ namespace Survivebest.Catalog
             }
 
             return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
+
+        public List<SupplyGroup> GetPriorityGroupsForCharacter(CharacterCore character)
+        {
+            List<SupplyGroup> groups = new();
+            if (character == null)
+            {
+                return groups;
+            }
+
+            AddGroupIfMissing(groups, SupplyGroup.Hygiene);
+            AddGroupIfMissing(groups, SupplyGroup.Consumable);
+            AddGroupIfMissing(groups, character.CurrentLifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler or LifeStage.Child ? SupplyGroup.Toy : SupplyGroup.Accessory);
+            AddGroupIfMissing(groups, character.CurrentLifeStage is LifeStage.Teen or LifeStage.YoungAdult or LifeStage.Adult ? SupplyGroup.Electronics : SupplyGroup.Household);
+
+            switch (character.ClothingStyle)
+            {
+                case ClothingStyleType.Work:
+                case ClothingStyleType.Formal:
+                case ClothingStyleType.Medical:
+                    AddGroupIfMissing(groups, SupplyGroup.Clothing);
+                    AddGroupIfMissing(groups, SupplyGroup.Tool);
+                    break;
+                case ClothingStyleType.Streetwear:
+                case ClothingStyleType.Festival:
+                    AddGroupIfMissing(groups, SupplyGroup.Accessory);
+                    AddGroupIfMissing(groups, SupplyGroup.Trinket);
+                    break;
+                case ClothingStyleType.Utility:
+                case ClothingStyleType.Outdoor:
+                    AddGroupIfMissing(groups, SupplyGroup.Tool);
+                    AddGroupIfMissing(groups, SupplyGroup.Household);
+                    break;
+            }
+
+            if (character.Talents != null)
+            {
+                if (character.Talents.Contains(CharacterTalent.Technical))
+                {
+                    AddGroupIfMissing(groups, SupplyGroup.Electronics);
+                }
+
+                if (character.Talents.Contains(CharacterTalent.Caregiving))
+                {
+                    AddGroupIfMissing(groups, SupplyGroup.Medicine);
+                    AddGroupIfMissing(groups, SupplyGroup.Hygiene);
+                }
+
+                if (character.Talents.Contains(CharacterTalent.Athletic))
+                {
+                    AddGroupIfMissing(groups, SupplyGroup.Toy);
+                }
+            }
+
+            return groups;
+        }
+
+        public List<SupplyItem> GetSuggestedSuppliesForCharacter(CharacterCore character, int maxItems = 6)
+        {
+            List<SupplyItem> suggestions = new();
+            List<SupplyGroup> groups = GetPriorityGroupsForCharacter(character);
+            for (int i = 0; i < groups.Count && suggestions.Count < maxItems; i++)
+            {
+                List<SupplyItem> candidates = GetByGroup(groups[i]);
+                if (candidates == null || candidates.Count == 0)
+                {
+                    continue;
+                }
+
+                int index = Mathf.Abs((character.CharacterId?.GetHashCode() ?? 0) + (i * 17)) % candidates.Count;
+                suggestions.Add(candidates[index]);
+            }
+
+            return suggestions;
+        }
+
+        private static void AddGroupIfMissing(List<SupplyGroup> groups, SupplyGroup group)
+        {
+            if (!groups.Contains(group))
+            {
+                groups.Add(group);
+            }
         }
     }
 }

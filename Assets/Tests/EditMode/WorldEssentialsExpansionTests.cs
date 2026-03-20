@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Catalog;
 using Survivebest.Core;
 using Survivebest.Economy;
+using Survivebest.World;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -95,6 +96,51 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotNull(handgun);
             Assert.IsTrue(handgun.IsIllegal);
             Assert.IsTrue(handgun.IsEquippable);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void SupplyCatalog_CanBuildCharacterSpecificRetailSuggestions()
+        {
+            GameObject root = new GameObject("CharacterRetailSuggestions");
+            SupplyCatalog catalog = root.AddComponent<SupplyCatalog>();
+            CharacterCore character = root.AddComponent<CharacterCore>();
+            character.Initialize("char_shop", "Jamie", LifeStage.Teen);
+            character.SetTalents(new System.Collections.Generic.List<CharacterTalent> { CharacterTalent.Technical });
+            character.SetPortraitData(FaceShapeType.Oval, EyeShapeType.Almond, BodyType.Average, ClothingStyleType.Streetwear);
+
+            MethodInfo awake = typeof(SupplyCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            var groups = catalog.GetPriorityGroupsForCharacter(character);
+            var items = catalog.GetSuggestedSuppliesForCharacter(character, 4);
+
+            CollectionAssert.Contains(groups, SupplyGroup.Electronics);
+            CollectionAssert.Contains(groups, SupplyGroup.Accessory);
+            Assert.GreaterOrEqual(items.Count, 3);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void WorldCreatorManager_UsesSupplyCatalogStoreNames_ForStoreAreas()
+        {
+            GameObject root = new GameObject("WorldStoreNames");
+            SupplyCatalog catalog = root.AddComponent<SupplyCatalog>();
+            WorldCreatorManager creator = root.AddComponent<WorldCreatorManager>();
+
+            MethodInfo catalogAwake = typeof(SupplyCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            catalogAwake?.Invoke(catalog, null);
+            typeof(WorldCreatorManager).GetField("supplyCatalog", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(creator, catalog);
+
+            MethodInfo buildStoreNames = typeof(WorldCreatorManager).GetMethod("BuildStoreAreaNames", BindingFlags.NonPublic | BindingFlags.Instance);
+            string[] names = buildStoreNames?.Invoke(creator, null) as string[];
+
+            Assert.IsNotNull(names);
+            CollectionAssert.Contains(names, "Electronics Store");
+            CollectionAssert.Contains(names, "Toy Store");
+            CollectionAssert.Contains(names, "Big Box Retailer");
 
             Object.DestroyImmediate(root);
         }
