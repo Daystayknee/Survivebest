@@ -267,5 +267,55 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(systemsGo);
         }
+
+        [Test]
+        public void HealthcareGameplaySystem_BuildPlan_ForFractureIncludesCastingMedicationAndFollowUp()
+        {
+            GameObject go = new GameObject("HealthcarePlan");
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+
+            Assert.IsTrue(medical.AddDetailedInjury(
+                InjuryType.Fracture,
+                ConditionSeverity.Severe,
+                BodyLocation.Forearm,
+                WoundType.BoneBreak,
+                FractureType.Open,
+                detailSummary: "severe open fracture at Forearm, bleeding 35%, mobility loss 80%"));
+
+            MedicalCondition condition = medical.ActiveConditions.First(c => !c.IsIllness);
+            HealthcareEncounterPlan plan = healthcare.BuildPlan(condition);
+
+            Assert.IsNotNull(plan);
+            Assert.AreEqual(TriagePriority.Critical, plan.TriagePriority);
+            Assert.IsTrue(plan.NeedsHospitalization);
+            Assert.IsTrue(plan.NeedsSurgery);
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Triage));
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Casting));
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
+            StringAssert.Contains("sterile", plan.ReprocessingSummary.ToLowerInvariant());
+            StringAssert.Contains("Medication lane", plan.MedicationSummary);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void HealthcareGameplaySystem_BuildPlan_ForSkinConditionRoutesToDermatology()
+        {
+            GameObject go = new GameObject("DermPlan");
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+
+            Assert.IsTrue(medical.AddIllness(IllnessType.SevereAcneFlare, ConditionSeverity.Moderate));
+            MedicalCondition condition = medical.ActiveConditions.First(c => c.IsIllness);
+
+            HealthcareEncounterPlan plan = healthcare.BuildPlan(condition);
+
+            Assert.IsNotNull(plan);
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Dermatology));
+            Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
