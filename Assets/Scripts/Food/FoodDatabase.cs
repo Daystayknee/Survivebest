@@ -271,6 +271,11 @@ namespace Survivebest.Food
         public IReadOnlyList<FoodItem> Foods => foods;
         public IReadOnlyList<FoodRecipeDefinition> RecipeDefinitions => recipeDefinitions;
 
+        private void Awake()
+        {
+            EnsureExpandedGameplayCoverage();
+        }
+
         public FoodItem GetRandomFood()
         {
             if (foods == null || foods.Count == 0)
@@ -312,6 +317,62 @@ namespace Survivebest.Food
             }
 
             return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
+
+        private void EnsureExpandedGameplayCoverage()
+        {
+            // Extra grocery-store and fast-food coverage so broad lists are represented in gameplay systems.
+            AddFoodIfMissing(CreateFood("Apple Slices", FoodCategory.QuickSnack, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 12f, 2f, 1f, 2f, 10f, tags: new List<string> { "fruit", "fresh", "snack" }, calories: 70f, carbs: 19f, hydration: 10f, vitamins: 4f));
+            AddFoodIfMissing(CreateFood("Tropical Fruit Cup", FoodCategory.QuickSnack, CuisineType.Mediterranean, CookingMethod.Assemble, ServingTemperature.Cold, 18f, 3f, 2f, 3f, 12f, tags: new List<string> { "fruit", "fresh", "hydrating" }, calories: 120f, carbs: 28f, hydration: 16f, vitamins: 9f));
+            AddFoodIfMissing(CreateFood("Veggie Tray", FoodCategory.Healthy, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 20f, 2f, 1f, 3f, 18f, tags: new List<string> { "vegetarian", "fresh", "party-food" }, calories: 160f, protein: 5f, carbs: 22f, vitamins: 14f));
+            AddFoodIfMissing(CreateFood("Loaded Salad", FoodCategory.Healthy, CuisineType.Mediterranean, CookingMethod.Assemble, ServingTemperature.Cold, 34f, 4f, 3f, 4f, 30f, tags: new List<string> { "healthy", "vegetable", "lunch" }, calories: 310f, protein: 12f, fat: 15f, carbs: 28f, vitamins: 18f));
+            AddFoodIfMissing(CreateFood("Roast Pork Plate", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Roast, ServingTemperature.Hot, 46f, 6f, 4f, 5f, 74f, tags: new List<string> { "meat", "family-meal", "savory" }, calories: 630f, protein: 33f, fat: 27f, carbs: 42f));
+            AddFoodIfMissing(CreateFood("Ham Sandwich", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 28f, 4f, 2f, 2f, 42f, tags: new List<string> { "lunch", "sandwich", "deli" }, calories: 340f, protein: 18f, fat: 11f, carbs: 34f, salt: 4f));
+            AddFoodIfMissing(CreateFood("Bean Chili Bowl", FoodCategory.Comfort, CuisineType.Mexican, CookingMethod.Boil, ServingTemperature.Hot, 38f, 5f, 4f, 5f, 66f, tags: new List<string> { "legume", "comfort", "batch-cook" }, calories: 430f, protein: 18f, fat: 10f, carbs: 62f, vitamins: 9f));
+            AddFoodIfMissing(CreateFood("Nutty Oat Bowl", FoodCategory.Breakfast, CuisineType.American, CookingMethod.Boil, ServingTemperature.Warm, 24f, 5f, 2f, 3f, 46f, tags: new List<string> { "breakfast", "nuts", "oats" }, calories: 330f, protein: 11f, fat: 14f, carbs: 42f));
+            AddFoodIfMissing(CreateFood("Spiced Rice Pilaf", FoodCategory.HomeCooked, CuisineType.Mediterranean, CookingMethod.Boil, ServingTemperature.Warm, 30f, 4f, 2f, 3f, 44f, tags: new List<string> { "rice", "spiced", "side" }, calories: 290f, protein: 7f, fat: 8f, carbs: 48f));
+            AddFoodIfMissing(CreateFood("Sea Salt Fries", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Fry, ServingTemperature.Hot, 22f, 3f, 2f, 0f, 50f, tags: new List<string> { "fast-food", "salty", "side" }, calories: 380f, fat: 18f, carbs: 48f, salt: 5f));
+            AddFoodIfMissing(CreateFood("Taco Combo", FoodCategory.StreetFood, CuisineType.Mexican, CookingMethod.Grill, ServingTemperature.Hot, 36f, 4f, 4f, 2f, 54f, tags: new List<string> { "takeout", "fast-food", "combo" }, calories: 520f, protein: 24f, fat: 19f, carbs: 54f));
+            AddFoodIfMissing(CreateFood("Hot Dog Basket", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Grill, ServingTemperature.Hot, 34f, 3f, 3f, 0f, 52f, tags: new List<string> { "takeout", "fast-food", "combo" }, calories: 610f, protein: 20f, fat: 34f, carbs: 49f, salt: 6f));
+            AddFoodIfMissing(CreateFood("Chicken Wrap", FoodCategory.StreetFood, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Warm, 32f, 4f, 3f, 2f, 46f, tags: new List<string> { "takeout", "handheld", "quick" }, calories: 470f, protein: 26f, fat: 16f, carbs: 42f));
+            AddFoodIfMissing(CreateFood("Pizza Combo", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Bake, ServingTemperature.Hot, 40f, 4f, 4f, 1f, 58f, tags: new List<string> { "takeout", "fast-food", "pizza" }, calories: 710f, protein: 28f, fat: 29f, carbs: 78f, salt: 6f));
+            AddFoodIfMissing(CreateFood("Smoothie Bowl Deluxe", FoodCategory.Breakfast, CuisineType.Mediterranean, CookingMethod.Blend, ServingTemperature.Cold, 30f, 5f, 4f, 4f, 34f, tags: new List<string> { "breakfast", "fruit", "healthy" }, calories: 360f, protein: 10f, fat: 9f, carbs: 58f, vitamins: 12f, sugar: 22f));
+
+            AddRecipeIfMissing(CreateRecipe("apple_slices", "Apple Slices", new List<string> { "Apple" }, new List<string> { "Wash and slice the apple", "Serve chilled or room temperature" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "fresh", "sweet" }, new List<string> { "fruit", "snack", "quick" }, 70f, 0f, 0f, 19f, hydration: 8f, vitamins: 4f));
+            AddRecipeIfMissing(CreateRecipe("tropical_fruit_cup", "Tropical Fruit Cup", new List<string> { "Pineapple", "Mango", "Grapes" }, new List<string> { "Dice fruit", "Mix in a bowl", "Serve chilled" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 4f, 4, 0, new List<string> { "sweet", "fresh" }, new List<string> { "fruit", "snack", "hydrating" }, 120f, 1f, 0f, 28f, hydration: 14f, vitamins: 9f));
+            AddRecipeIfMissing(CreateRecipe("veggie_tray", "Veggie Tray", new List<string> { "Carrot", "Cucumber", "Bell pepper", "Broccoli" }, new List<string> { "Slice the vegetables", "Arrange on a tray", "Serve fresh" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 5f, 8, 0, new List<string> { "fresh", "crisp" }, new List<string> { "vegetable", "healthy", "party-food" }, 160f, 5f, 2f, 22f, vitamins: 14f));
+            AddRecipeIfMissing(CreateRecipe("loaded_salad", "Loaded Salad", new List<string> { "Romaine", "Tomato", "Cucumber", "Avocado", "Black Pepper", "Sea salt" }, new List<string> { "Chop all produce", "Toss together", "Season and serve" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 8f, 8, 0, new List<string> { "fresh", "bright", "creamy" }, new List<string> { "healthy", "vegetable", "lunch" }, 310f, 6f, 18f, 26f, vitamins: 18f, salt: 2f));
+            AddRecipeIfMissing(CreateRecipe("roast_pork_plate", "Roast Pork Plate", new List<string> { "Pork chops", "Potato", "Rosemary", "Kosher salt", "Black Pepper" }, new List<string> { "Season pork", "Roast pork and potatoes", "Rest and plate" }, CookingMethod.Roast, KitchenEquipment.Oven, CuisineType.American, ServingTemperature.Hot, 24f, 12, 36, new List<string> { "savory", "hearty" }, new List<string> { "family", "meat", "comfort" }, 630f, 33f, 27f, 42f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("ham_sandwich", "Ham Sandwich", new List<string> { "Ham", "Bread", "Tomato", "Lettuce" }, new List<string> { "Layer ham and produce on bread", "Close sandwich", "Serve cold" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 6f, 4, 0, new List<string> { "savory", "fresh" }, new List<string> { "lunch", "sandwich", "deli" }, 340f, 18f, 11f, 34f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("bean_chili_bowl", "Bean Chili Bowl", new List<string> { "Black beans", "Pinto beans", "Tomato", "Onion", "Garlic", "Chili powder", "Sea salt" }, new List<string> { "Cook aromatics", "Simmer beans and tomato", "Season and serve hot" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.Mexican, ServingTemperature.Hot, 16f, 10, 24, new List<string> { "hearty", "spiced" }, new List<string> { "legume", "comfort", "batch-cook" }, 430f, 18f, 10f, 62f, vitamins: 9f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("nutty_oat_bowl", "Nutty Oat Bowl", new List<string> { "Oats", "Milk", "Almond", "Walnut", "Cinnamon" }, new List<string> { "Cook oats in milk", "Top with nuts", "Finish with cinnamon" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Warm, 10f, 4, 8, new List<string> { "warm", "nutty" }, new List<string> { "breakfast", "nuts", "oats" }, 330f, 11f, 14f, 42f, vitamins: 5f));
+            AddRecipeIfMissing(CreateRecipe("spiced_rice_pilaf", "Spiced Rice Pilaf", new List<string> { "Rice", "Onion", "Garlic", "Vegetable stock", "Cumin", "Oregano" }, new List<string> { "Toast rice and aromatics", "Add stock and spices", "Cook until fluffy" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.Mediterranean, ServingTemperature.Warm, 14f, 6, 16, new List<string> { "savory", "spiced" }, new List<string> { "rice", "side", "everyday" }, 290f, 7f, 8f, 48f, salt: 2f));
+            AddRecipeIfMissing(CreateRecipe("sea_salt_fries", "Sea Salt Fries", new List<string> { "Potato", "Sea salt", "Olive oil" }, new List<string> { "Cut potatoes into fries", "Cook until crisp", "Finish with sea salt" }, CookingMethod.Fry, KitchenEquipment.Stove, CuisineType.FastFood, ServingTemperature.Hot, 10f, 4, 12, new List<string> { "salty", "crispy" }, new List<string> { "fast-food", "side", "takeout" }, 380f, 4f, 18f, 48f, salt: 5f));
+            AddRecipeIfMissing(CreateRecipe("taco_combo", "Taco Combo", new List<string> { "Ground beef", "Tortilla", "Tomato", "Lettuce", "Onion", "Chili powder", "Sea salt" }, new List<string> { "Cook the beef with spices", "Warm tortillas", "Assemble tacos and serve" }, CookingMethod.Grill, KitchenEquipment.Stove, CuisineType.Mexican, ServingTemperature.Hot, 14f, 10, 14, new List<string> { "savory", "spiced" }, new List<string> { "takeout", "fast-food", "combo" }, 520f, 24f, 19f, 54f, vitamins: 6f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("hot_dog_basket", "Hot Dog Basket", new List<string> { "Sausage", "Burger bun", "Fries", "Sea salt" }, new List<string> { "Cook sausage", "Warm bun and fries", "Serve as a basket" }, CookingMethod.Grill, KitchenEquipment.Grill, CuisineType.FastFood, ServingTemperature.Hot, 12f, 6, 10, new List<string> { "salty", "savory" }, new List<string> { "takeout", "fast-food", "combo" }, 610f, 20f, 34f, 49f, salt: 6f));
+            AddRecipeIfMissing(CreateRecipe("chicken_wrap", "Chicken Wrap", new List<string> { "Chicken breast", "Tortilla", "Lettuce", "Tomato", "Black Pepper" }, new List<string> { "Cook chicken", "Slice produce", "Wrap together and serve warm" }, CookingMethod.Assemble, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Warm, 10f, 8, 8, new List<string> { "savory", "fresh" }, new List<string> { "takeout", "handheld", "quick" }, 470f, 26f, 16f, 42f, salt: 3f));
+            AddRecipeIfMissing(CreateRecipe("pizza_combo", "Pizza Combo", new List<string> { "Flour", "Tomato", "Cheddar", "Oregano", "Sea salt", "Olive oil" }, new List<string> { "Make the dough", "Top and bake", "Serve as a combo meal" }, CookingMethod.Bake, KitchenEquipment.Oven, CuisineType.FastFood, ServingTemperature.Hot, 18f, 12, 18, new List<string> { "savory", "cheesy" }, new List<string> { "takeout", "fast-food", "pizza" }, 710f, 28f, 29f, 78f, salt: 6f));
+            AddRecipeIfMissing(CreateRecipe("smoothie_bowl_deluxe", "Smoothie Bowl Deluxe", new List<string> { "Yogurt", "Banana", "Mango", "Blueberry", "Almond" }, new List<string> { "Blend yogurt and fruit", "Pour into bowl", "Top with almonds" }, CookingMethod.Blend, KitchenEquipment.Blender, CuisineType.Mediterranean, ServingTemperature.Cold, 8f, 5, 3, new List<string> { "sweet", "fruit-forward", "cooling" }, new List<string> { "breakfast", "fruit", "healthy" }, 360f, 10f, 9f, 58f, vitamins: 12f, sugar: 22f));
+        }
+
+        private void AddFoodIfMissing(FoodItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Name) || GetFood(item.Name) != null)
+            {
+                return;
+            }
+
+            foods.Add(item);
+        }
+
+        private void AddRecipeIfMissing(FoodRecipeDefinition recipe)
+        {
+            if (recipe == null || string.IsNullOrWhiteSpace(recipe.Name) || GetRecipe(recipe.Name) != null || GetRecipe(recipe.Id) != null)
+            {
+                return;
+            }
+
+            recipeDefinitions.Add(recipe);
         }
 
         private static FoodItem CreateFood(

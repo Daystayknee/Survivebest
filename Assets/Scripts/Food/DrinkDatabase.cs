@@ -96,6 +96,11 @@ namespace Survivebest.Food
 
         public IReadOnlyList<DrinkItem> Drinks => drinks;
 
+        private void Awake()
+        {
+            EnsureExpandedDrinkCoverage();
+        }
+
         public DrinkItem GetRandomDrink()
         {
             if (drinks == null || drinks.Count == 0)
@@ -115,6 +120,34 @@ namespace Survivebest.Food
             }
 
             return matches[UnityEngine.Random.Range(0, matches.Count)];
+        }
+
+        private void EnsureExpandedDrinkCoverage()
+        {
+            AddDrinkIfMissing(new DrinkItem { Name = "Lemon Water", Category = DrinkCategory.Water, HydrationRestore = 24f, EnergyDelta = 1f, MoodDelta = 1f, HygieneDelta = 0f, VitalityDelta = 2f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Lime Water", Category = DrinkCategory.Water, HydrationRestore = 24f, EnergyDelta = 1f, MoodDelta = 1f, HygieneDelta = 0f, VitalityDelta = 2f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Sweet Tea", Category = DrinkCategory.Tea, HydrationRestore = 12f, EnergyDelta = 5f, MoodDelta = 4f, HygieneDelta = 0f, VitalityDelta = 0f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Iced Tea", Category = DrinkCategory.Tea, HydrationRestore = 13f, EnergyDelta = 5f, MoodDelta = 3f, HygieneDelta = 0f, VitalityDelta = 1f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Hot Chocolate", Category = DrinkCategory.Coffee, HydrationRestore = 10f, EnergyDelta = 4f, MoodDelta = 6f, HygieneDelta = 0f, VitalityDelta = 1f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Sports Drink", Category = DrinkCategory.Soda, HydrationRestore = 18f, EnergyDelta = 6f, MoodDelta = 2f, HygieneDelta = 0f, VitalityDelta = 2f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Milk", Category = DrinkCategory.Smoothie, HydrationRestore = 14f, EnergyDelta = 4f, MoodDelta = 2f, HygieneDelta = 0f, VitalityDelta = 2f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Chocolate Milk", Category = DrinkCategory.Smoothie, HydrationRestore = 13f, EnergyDelta = 6f, MoodDelta = 5f, HygieneDelta = 0f, VitalityDelta = 1f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Arnold Palmer", Category = DrinkCategory.Tea, HydrationRestore = 14f, EnergyDelta = 4f, MoodDelta = 4f, HygieneDelta = 0f, VitalityDelta = 1f, IsAlcoholic = false });
+            AddDrinkIfMissing(new DrinkItem { Name = "Matcha Latte", Category = DrinkCategory.Tea, HydrationRestore = 11f, EnergyDelta = 8f, MoodDelta = 4f, HygieneDelta = 0f, VitalityDelta = 2f, IsAlcoholic = false });
+        }
+
+        private void AddDrinkIfMissing(DrinkItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Name))
+            {
+                return;
+            }
+
+            bool exists = drinks.Exists(d => d != null && string.Equals(d.Name, item.Name, StringComparison.OrdinalIgnoreCase));
+            if (!exists)
+            {
+                drinks.Add(item);
+            }
         }
     }
 }

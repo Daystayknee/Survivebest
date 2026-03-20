@@ -55,6 +55,24 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void ApplyBreakup_ReducesReconciliationPotential()
+        {
+            GameObject go = new GameObject("CompatibilityBreakup");
+            RelationshipCompatibilityEngine engine = go.AddComponent<RelationshipCompatibilityEngine>();
+            RelationshipCompatibilityProfile profile = engine.GetOrCreateProfile("a", "b");
+            float before = engine.EvaluateReconciliationPotential("a", "b");
+
+            engine.ApplyBreakup("a", "b", 0.8f);
+
+            float after = engine.EvaluateReconciliationPotential("a", "b");
+            string blurb = engine.BuildCompatibilityBlurb("a", "b");
+            Assert.Less(after, before);
+            StringAssert.Contains("resentment", blurb);
+            Object.DestroyImmediate(go);
+        }
+
         [Test]
         public void BuildCompatibilityDashboard_ReturnsExpectedSections()
         {

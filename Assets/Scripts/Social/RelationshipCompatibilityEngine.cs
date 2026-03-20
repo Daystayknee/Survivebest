@@ -48,6 +48,17 @@ namespace Survivebest.Social
         [Range(0f, 100f)] public float Loyalty = 40f;
         [Range(0f, 100f)] public float RomanticInterest = 30f;
         [Range(0f, 100f)] public float CompatibilityScore = 50f;
+        [Range(0f, 100f)] public float Resentment = 12f;
+        [Range(0f, 100f)] public float Dependency = 18f;
+        [Range(0f, 100f)] public float Admiration = 45f;
+        [Range(0f, 100f)] public float Fear = 8f;
+        [Range(0f, 100f)] public float RomanticChemistry = 35f;
+        [Range(0f, 100f)] public float ForgivenessThreshold = 55f;
+        [Range(0f, 100f)] public float BreakupRecovery = 50f;
+        [Range(0f, 100f)] public float ReconciliationMomentum = 35f;
+        [Range(0f, 100f)] public float FamilyRolePressure = 10f;
+        [Range(0f, 100f)] public float CohabitationFriction = 15f;
+        [Range(0f, 100f)] public float ParentingStrain = 8f;
         public FriendshipStage FriendshipStage;
         public RomanticPhase RomanticPhase;
         public RivalryState RivalryState;
@@ -115,6 +126,17 @@ namespace Survivebest.Social
                 Loyalty = 35f,
                 RomanticInterest = 25f,
                 CompatibilityScore = 50f,
+                Resentment = 12f,
+                Dependency = 18f,
+                Admiration = 45f,
+                Fear = 8f,
+                RomanticChemistry = 35f,
+                ForgivenessThreshold = 55f,
+                BreakupRecovery = 50f,
+                ReconciliationMomentum = 35f,
+                FamilyRolePressure = 10f,
+                CohabitationFriction = 15f,
+                ParentingStrain = 8f,
                 FriendshipStage = FriendshipStage.Acquaintance,
                 RomanticPhase = RomanticPhase.None,
                 RivalryState = RivalryState.None
@@ -189,6 +211,9 @@ namespace Survivebest.Social
                 profile.Comfort = Mathf.Clamp(profile.Comfort + (normalizedImpact * 7f), 0f, 100f);
                 profile.Respect = Mathf.Clamp(profile.Respect + (normalizedImpact * 6f), 0f, 100f);
                 profile.Loyalty = Mathf.Clamp(profile.Loyalty + (normalizedImpact * 6f), 0f, 100f);
+                profile.Admiration = Mathf.Clamp(profile.Admiration + (normalizedImpact * 7f), 0f, 100f);
+                profile.ReconciliationMomentum = Mathf.Clamp(profile.ReconciliationMomentum + (normalizedImpact * 5f), 0f, 100f);
+                profile.Resentment = Mathf.Clamp(profile.Resentment - (normalizedImpact * 6f), 0f, 100f);
                 profile.Tension = Mathf.Clamp(profile.Tension - (normalizedImpact * 5f), 0f, 100f);
             }
             else
@@ -198,17 +223,23 @@ namespace Survivebest.Social
                 profile.Comfort = Mathf.Clamp(profile.Comfort - (n * 7f), 0f, 100f);
                 profile.Tension = Mathf.Clamp(profile.Tension + (n * 10f), 0f, 100f);
                 profile.Jealousy = Mathf.Clamp(profile.Jealousy + (n * 5f), 0f, 100f);
+                profile.Resentment = Mathf.Clamp(profile.Resentment + (n * 8f), 0f, 100f);
+                profile.Fear = Mathf.Clamp(profile.Fear + (n * 4f), 0f, 100f);
+                profile.BreakupRecovery = Mathf.Clamp(profile.BreakupRecovery - (n * 6f), 0f, 100f);
             }
 
             if (string.Equals(eventType, "shared_adventure", StringComparison.OrdinalIgnoreCase))
             {
                 profile.FriendshipStage = (FriendshipStage)Mathf.Clamp((int)profile.FriendshipStage + 1, 0, (int)FriendshipStage.BestFriend);
                 profile.Loyalty = Mathf.Clamp(profile.Loyalty + 8f, 0f, 100f);
+                profile.Dependency = Mathf.Clamp(profile.Dependency + 3f, 0f, 100f);
             }
             else if (string.Equals(eventType, "betrayal", StringComparison.OrdinalIgnoreCase) || string.Equals(eventType, "lied", StringComparison.OrdinalIgnoreCase))
             {
                 profile.Trust = Mathf.Clamp(profile.Trust - 14f, 0f, 100f);
                 profile.Tension = Mathf.Clamp(profile.Tension + 12f, 0f, 100f);
+                profile.Resentment = Mathf.Clamp(profile.Resentment + 12f, 0f, 100f);
+                profile.ReconciliationMomentum = Mathf.Clamp(profile.ReconciliationMomentum - 8f, 0f, 100f);
             }
 
             if (personalityMatrixSystem != null)
@@ -260,6 +291,50 @@ namespace Survivebest.Social
             PublishRelationshipEvent(profile, $"Appearance reaction: {changeTag}");
         }
 
+        public string BuildCompatibilityBlurb(string characterAId, string characterBId)
+        {
+            RelationshipCompatibilityProfile profile = GetOrCreateProfile(characterAId, characterBId);
+            if (profile == null)
+            {
+                return "Compatibility unavailable.";
+            }
+
+            string tone = profile.CompatibilityScore >= 70f ? "easy chemistry" : profile.CompatibilityScore >= 45f ? "mixed but workable chemistry" : "volatile chemistry";
+            string repair = EvaluateReconciliationPotential(characterAId, characterBId) >= profile.ForgivenessThreshold ? "Repair still feels possible." : "Repair will require visible proof, not just apologies.";
+            return $"They carry {tone}: trust {profile.Trust:0}, comfort {profile.Comfort:0}, resentment {profile.Resentment:0}, and loyalty {profile.Loyalty:0}. {repair}";
+        }
+
+        public float EvaluateReconciliationPotential(string characterAId, string characterBId)
+        {
+            RelationshipCompatibilityProfile profile = GetOrCreateProfile(characterAId, characterBId);
+            if (profile == null)
+            {
+                return 0f;
+            }
+
+            float value = (profile.Trust * 0.28f) + (profile.Comfort * 0.18f) + (profile.Loyalty * 0.18f) + (profile.Admiration * 0.12f) + (profile.ReconciliationMomentum * 0.18f) - (profile.Resentment * 0.22f) - (profile.Tension * 0.15f);
+            return Mathf.Clamp(value, 0f, 100f);
+        }
+
+        public void ApplyBreakup(string characterAId, string characterBId, float severity = 0.5f)
+        {
+            RelationshipCompatibilityProfile profile = GetOrCreateProfile(characterAId, characterBId);
+            if (profile == null)
+            {
+                return;
+            }
+
+            float weight = Mathf.Clamp01(severity);
+            profile.Trust = Mathf.Clamp(profile.Trust - weight * 22f, 0f, 100f);
+            profile.Comfort = Mathf.Clamp(profile.Comfort - weight * 20f, 0f, 100f);
+            profile.Resentment = Mathf.Clamp(profile.Resentment + weight * 24f, 0f, 100f);
+            profile.BreakupRecovery = Mathf.Clamp(profile.BreakupRecovery - weight * 28f, 0f, 100f);
+            profile.ReconciliationMomentum = Mathf.Clamp(profile.ReconciliationMomentum - weight * 18f, 0f, 100f);
+            profile.RomanticPhase = RomanticPhase.None;
+            ResolveStages(profile);
+            PublishRelationshipEvent(profile, "Breakup applied");
+        }
+
         public string BuildCompatibilityDashboard(string characterAId, string characterBId)
         {
             RelationshipCompatibilityProfile profile = GetOrCreateProfile(characterAId, characterBId);
@@ -300,14 +375,17 @@ namespace Survivebest.Social
                 case PersonalMemoryKind.Betrayal:
                     profile.Trust = Mathf.Clamp(profile.Trust - 12f, 0f, 100f);
                     profile.Tension = Mathf.Clamp(profile.Tension + 11f, 0f, 100f);
+                    profile.Resentment = Mathf.Clamp(profile.Resentment + 10f, 0f, 100f);
                     break;
                 case PersonalMemoryKind.Help:
                     profile.Loyalty = Mathf.Clamp(profile.Loyalty + 8f, 0f, 100f);
                     profile.Trust = Mathf.Clamp(profile.Trust + 7f, 0f, 100f);
+                    profile.Admiration = Mathf.Clamp(profile.Admiration + 6f, 0f, 100f);
                     break;
                 case PersonalMemoryKind.Insult:
                     profile.Tension = Mathf.Clamp(profile.Tension + 8f, 0f, 100f);
                     profile.Comfort = Mathf.Clamp(profile.Comfort - 7f, 0f, 100f);
+                    profile.Resentment = Mathf.Clamp(profile.Resentment + 6f, 0f, 100f);
                     break;
                 case PersonalMemoryKind.Kindness:
                     profile.Comfort = Mathf.Clamp(profile.Comfort + 6f, 0f, 100f);
@@ -424,7 +502,8 @@ namespace Survivebest.Social
                 _ => FriendshipStage.Acquaintance
             };
 
-            profile.RomanticInterest = Mathf.Clamp((profile.Attraction * 0.45f) + (profile.CompatibilityScore * 0.25f) + (profile.Comfort * 0.2f) - (profile.Tension * 0.2f), 0f, 100f);
+            profile.RomanticChemistry = Mathf.Clamp((profile.Attraction * 0.35f) + (profile.CompatibilityScore * 0.2f) + (profile.Comfort * 0.15f) + (profile.Admiration * 0.2f) + (profile.Dependency * 0.1f) - (profile.Tension * 0.18f) - (profile.Resentment * 0.12f), 0f, 100f);
+            profile.RomanticInterest = Mathf.Clamp(profile.RomanticChemistry + profile.ReconciliationMomentum * 0.15f - profile.Fear * 0.08f, 0f, 100f);
             profile.RomanticPhase = profile.RomanticInterest switch
             {
                 >= 85f => RomanticPhase.LongTermBond,
