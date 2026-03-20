@@ -246,6 +246,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Deepened `LivingWorldInfrastructureEngine` with itemized supply-chain state (`SupplyItemType` stocks, availability/price pressure/volatility) and business supply dependency so shortages now propagate into service quality, demand pressure, and district stress.
 - Extended `PsychologicalGrowthMentalHealthEngine` with life-satisfaction scoring and explicit risk-flag outputs so other directors/systems can respond consistently to crisis, burnout, and isolation states.
 - Strengthened `GameplayLifeLoopOrchestrator` and `GameplayInteractionPresentationLayer` to trigger cooldown-gated self-regulation interventions and recovery-focused action suggestions when risk flags indicate crisis or burnout conditions, with deduplicated/capped context prompts.
+- Added `ConsequenceGlueSystem` to turn silent-realism-killer rules into runtime state: time consistency gates (work/store/school/court/doctor/transit/sleep/vampire-night actions), space-consistency profiles (belonging/legality/smells/sounds/witnesses/safety/vampire exposure), cross-system status propagation, explicit recovery loops, and messy non-game-over failure arcs.
 
 ### Implemented but Scene-Wiring Dependent
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
