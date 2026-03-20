@@ -53,6 +53,7 @@ _Last updated: current branch state._
 - Full scene/prefab assignment for all optional UI references and polish transitions.
 - End-to-end PlayMode validation across all manager interactions in one authored gameplay scene.
 - Balance pass for economy pacing, illness/escalation cadence, and story incident frequency.
+- Production save/load parity and long-run lifecycle verification still need repeated authored-scene smoke tests even though runtime payload coverage is broader now.
 
 ### 🎯 Next high-impact steps
 1. Run complete EditMode + PlayMode suites in Unity CI and fix any compile/runtime regressions.
@@ -136,7 +137,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Splash flow: timed/skip transition to main menu (`SplashScreenController`).
 - Menu navigation with back-stack across splash/main/new/load/settings/world/household/gameplay/character pages (`MainMenuFlowController`).
 - Settings persistence: audio/display/subtitles/UI scale + theme color pickers with live target tinting (`SettingsPageController`, `SettingsTabsController`).
-- Save/load slots: 3-slot metadata model + payload persistence (world time, room, per-character needs/health/skills/status) + load-screen slot rendering (`SaveGameManager`, `LoadGameScreenController`).
+- Save/load slots: 3-slot metadata model + payload persistence for world time/room/economy/per-character state plus broader runtime world-system state (justice/prison, ordering, contracts, chores, NPC schedule, town/culling, director/story, culture, and player-experience collections) + load-screen slot rendering (`SaveGameManager`, `LoadGameScreenController`).
 - World creator tabs + preview + template generation into world/law/location systems (`WorldCreatorScreenController` + `WorldCreatorManager`).
 - Household maker tabs with rotate/zoom controls and start-game routing (`HouseholdMakerScreenController`).
 - Gameplay HUD layout orchestration: location nav, map label, environment/ecology/government summaries, resources row, and character vitals (`GameplayScreenController`).
@@ -252,6 +253,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - Final visual polish (glass gradients, glows, particles, transitions, map artwork, panel prefab styling).
 - Button and prefab hookups for every optional text/slider field in each page controller.
 - Deeper narrative/event animations and rich popup variant templates.
+- A concrete authored-scene hookup checklist now lives in `SCENE_HOOKUP_CHECKLIST.md` so gameplay/UI/runtime managers can be validated consistently before Alpha signoff.
 - Use `AssetReadinessReporter` context action to quickly surface missing controller/image/text references in configured UI scenes.
 - `AssetReadinessReporter` now includes an `Auto Wire Known References` context action to auto-bind many commonly-missed scene references before running missing-reference reports.
 - `AssetReadinessReporter` now includes `Report Runtime Vision Coverage` to verify required-vs-optional runtime systems are present and enabled for the intended gameplay vision.
