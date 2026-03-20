@@ -121,6 +121,62 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void ConflictSystem_BuildCombatActionCatalog_ProducesThousandsOfCombatActions()
+        {
+            GameObject go = new GameObject("CombatCatalog");
+            ConflictSystem conflict = go.AddComponent<ConflictSystem>();
+
+            var catalog = conflict.BuildCombatActionCatalog();
+
+            Assert.GreaterOrEqual(catalog.Count, 1000);
+            Assert.IsTrue(catalog.Exists(entry => entry.Contains("weapon strike") || entry.Contains("bite") || entry.Contains("web shot")));
+            Assert.IsTrue(catalog.Exists(entry => entry.Contains("eyes") || entry.Contains("thorax")));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void ConflictSystem_ResolveCombatRound_ReportsHitMissDodgeAndDeflectPercentages()
+        {
+            Random.InitState(12345);
+            GameObject ownerGo = new GameObject("OwnerPercentages");
+            GameObject targetGo = new GameObject("TargetPercentages");
+            GameObject systemsGo = new GameObject("ConflictPercentages");
+
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner", "Owner", LifeStage.Adult);
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target", "Target", LifeStage.Adult, CharacterSpecies.Vampire);
+
+            ConflictSystem conflict = systemsGo.AddComponent<ConflictSystem>();
+            EmotionSystem emotion = systemsGo.AddComponent<EmotionSystem>();
+            SocialSystem social = systemsGo.AddComponent<SocialSystem>();
+            HealthSystem ownerHealth = systemsGo.AddComponent<HealthSystem>();
+            HealthSystem targetHealth = targetGo.AddComponent<HealthSystem>();
+
+            typeof(ConflictSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, owner);
+            typeof(ConflictSystem).GetField("emotionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, emotion);
+            typeof(ConflictSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, social);
+            typeof(ConflictSystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, ownerHealth);
+
+            CombatRoundResult result = conflict.ResolveCombatRound(target, targetHealth, CombatOption.CounterStrike, CombatOption.Deflect);
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.OwnerHitChance >= 15f && result.OwnerHitChance <= 93f);
+            Assert.IsTrue(result.TargetHitChance >= 15f && result.TargetHitChance <= 93f);
+            Assert.IsTrue(result.OwnerDodgeChance >= 2f && result.OwnerDodgeChance <= 48f);
+            Assert.IsTrue(result.TargetDeflectChance >= 1f && result.TargetDeflectChance <= 52f);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerTargetBodyPart));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerActionLabel));
+            StringAssert.Contains("Combat round resolved:", result.Summary);
+
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(systemsGo);
+        }
+
         [Test]
         public void ConflictSystem_ResolveCombatRound_CreatesInjuryForOwnerWhenHitHard()
         {
