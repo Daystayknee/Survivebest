@@ -114,6 +114,16 @@ namespace Survivebest.NPC
 
         public IReadOnlyList<NpcProfile> NpcProfiles => npcProfiles;
 
+        public List<NpcProfile> CaptureRuntimeState()
+        {
+            return new List<NpcProfile>(npcProfiles);
+        }
+
+        public void ApplyRuntimeState(List<NpcProfile> profiles)
+        {
+            npcProfiles = profiles != null ? new List<NpcProfile>(profiles) : new List<NpcProfile>();
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)

@@ -42,6 +42,17 @@ namespace Survivebest.Quest
 
         public IReadOnlyList<AnimalSightingContract> Contracts => contracts;
 
+        public List<AnimalSightingContract> CaptureRuntimeState()
+        {
+            return new List<AnimalSightingContract>(contracts);
+        }
+
+        public void ApplyRuntimeState(List<AnimalSightingContract> savedContracts)
+        {
+            contracts = savedContracts != null ? new List<AnimalSightingContract>(savedContracts) : new List<AnimalSightingContract>();
+            EnsureContractPool();
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)
