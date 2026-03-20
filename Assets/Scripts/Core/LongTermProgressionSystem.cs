@@ -49,6 +49,15 @@ namespace Survivebest.Core
         public List<string> UnlockedPerks = new();
     }
 
+
+    [Serializable]
+    public class GoalDriftSnapshot
+    {
+        public string GoalId;
+        public float ProgressDelta;
+        public bool Retargeted;
+    }
+
     public class LongTermProgressionSystem : MonoBehaviour
     {
         [SerializeField] private WorldClock worldClock;
@@ -63,6 +72,35 @@ namespace Survivebest.Core
         public IReadOnlyList<AspirationGoal> Goals => goals;
         public IReadOnlyList<ProgressionMilestone> Milestones => milestones;
         public LegacyProfile Legacy => legacyProfile;
+
+        public List<GoalDriftSnapshot> ApplyGoalDrift(float intensity)
+        {
+            List<GoalDriftSnapshot> snapshots = new();
+            float drift = Mathf.Clamp(intensity, 0f, 2f);
+            for (int i = 0; i < goals.Count; i++)
+            {
+                AspirationGoal goal = goals[i];
+                if (goal == null || goal.Completed)
+                {
+                    continue;
+                }
+
+                float delta = goal.CurrentAmount > 0 ? -Mathf.Min(goal.CurrentAmount, Mathf.CeilToInt(drift)) : 0f;
+                if (delta != 0f)
+                {
+                    goal.CurrentAmount = Mathf.Max(0, goal.CurrentAmount + Mathf.RoundToInt(delta));
+                }
+
+                snapshots.Add(new GoalDriftSnapshot
+                {
+                    GoalId = goal.GoalId,
+                    ProgressDelta = delta,
+                    Retargeted = goal.CurrentAmount == 0 && drift > 1.2f
+                });
+            }
+
+            return snapshots;
+        }
 
         private void OnEnable()
         {

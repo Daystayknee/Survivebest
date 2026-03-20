@@ -93,6 +93,21 @@ namespace Survivebest.Core
         [Range(0f, 100f)] public float IdentityStrength = 45f;
     }
 
+
+    [Serializable]
+    public class NeighborhoodMicroCultureProfile
+    {
+        public string DistrictId;
+        public string Slang = "plainspoken";
+        public string FashionTrend = "practical streetwear";
+        public string MusicTaste = "radio pop";
+        [Range(0f, 100f)] public float CrimeTolerance = 35f;
+        [Range(0f, 100f)] public float Friendliness = 55f;
+        [Range(0f, 100f)] public float GossipIntensity = 45f;
+        public string NightlifeStyle = "late cafe";
+        [Range(0f, 100f)] public float VampireAwareness = 8f;
+    }
+
     public class WorldCultureSocietyEngine : MonoBehaviour
     {
         [Header("Wiring")]
@@ -109,9 +124,11 @@ namespace Survivebest.Core
         [Header("Runtime")]
         [SerializeField] private List<CultureProfile> cultures = new();
         [SerializeField] private List<CulturalIdentityState> identities = new();
+        [SerializeField] private List<NeighborhoodMicroCultureProfile> microCultures = new();
 
         public IReadOnlyList<CultureProfile> Cultures => cultures;
         public IReadOnlyList<CulturalIdentityState> Identities => identities;
+        public IReadOnlyList<NeighborhoodMicroCultureProfile> MicroCultures => microCultures;
 
         private void OnEnable()
         {
@@ -187,6 +204,50 @@ namespace Survivebest.Core
             cultures.Find(x => x != null && x.RegionId == region);
             identities.Add(identity);
             return identity;
+        }
+
+
+        public NeighborhoodMicroCultureProfile GetOrCreateMicroCulture(string districtId)
+        {
+            string id = string.IsNullOrWhiteSpace(districtId) ? "town_default" : districtId;
+            NeighborhoodMicroCultureProfile profile = microCultures.Find(x => x != null && x.DistrictId == id);
+            if (profile != null)
+            {
+                return profile;
+            }
+
+            profile = new NeighborhoodMicroCultureProfile
+            {
+                DistrictId = id,
+                Slang = id.Contains("arts", StringComparison.OrdinalIgnoreCase) ? "artsy shorthand" : id.Contains("night", StringComparison.OrdinalIgnoreCase) ? "club slang" : "local shorthand",
+                FashionTrend = id.Contains("wealth", StringComparison.OrdinalIgnoreCase) ? "tailored luxury" : "layered streetwear",
+                MusicTaste = id.Contains("night", StringComparison.OrdinalIgnoreCase) ? "club remixes" : "regional playlist mix",
+                CrimeTolerance = id.Contains("underground", StringComparison.OrdinalIgnoreCase) ? 72f : 35f,
+                Friendliness = id.Contains("suburb", StringComparison.OrdinalIgnoreCase) ? 74f : 55f,
+                GossipIntensity = id.Contains("small", StringComparison.OrdinalIgnoreCase) ? 78f : 45f,
+                NightlifeStyle = id.Contains("night", StringComparison.OrdinalIgnoreCase) ? "after-hours scene" : "quiet local circuit",
+                VampireAwareness = id.Contains("vamp", StringComparison.OrdinalIgnoreCase) ? 55f : 8f
+            };
+
+            microCultures.Add(profile);
+            return profile;
+        }
+
+        public float RegisterNeighborhoodVisit(string characterId, string districtId)
+        {
+            NeighborhoodMicroCultureProfile microCulture = GetOrCreateMicroCulture(districtId);
+            CulturalIdentityState identity = GetOrCreateIdentity(characterId, districtId);
+            float fit = Mathf.Clamp01(((microCulture.Friendliness + (100f - microCulture.GossipIntensity)) * 0.5f + identity.Adaptability) / 200f);
+            identity.CultureShock = Mathf.Clamp(identity.CultureShock + ((1f - fit) * 10f) - (fit * 4f), 0f, 100f);
+            identity.CulturalBelonging = Mathf.Clamp(identity.CulturalBelonging + fit * 6f, 0f, 100f);
+            ApplyReputation(characterId, districtId, Mathf.RoundToInt((fit - 0.5f) * 10f), "Neighborhood visit");
+            return fit;
+        }
+
+        public string BuildNeighborhoodLifeSnapshot(string districtId)
+        {
+            NeighborhoodMicroCultureProfile microCulture = GetOrCreateMicroCulture(districtId);
+            return $"Slang: {microCulture.Slang} | Fashion: {microCulture.FashionTrend} | Music: {microCulture.MusicTaste} | Crime tolerance {microCulture.CrimeTolerance:0} | Friendliness {microCulture.Friendliness:0} | Gossip {microCulture.GossipIntensity:0} | Nightlife: {microCulture.NightlifeStyle} | Vampire awareness {microCulture.VampireAwareness:0}";
         }
 
         public float EvaluateNormReaction(string characterId, string regionId, string normKey, bool violated)
