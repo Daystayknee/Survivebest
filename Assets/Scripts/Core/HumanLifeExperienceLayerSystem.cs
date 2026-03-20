@@ -243,6 +243,54 @@ namespace Survivebest.Core
 
 
     [Serializable]
+    public class HumanMicroConditionProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float HangnailPain = 0f;
+        [Range(0f, 1f)] public float ChappedLips = 0f;
+        [Range(0f, 1f)] public float DryEyes = 0f;
+        [Range(0f, 1f)] public float TensionHeadache = 0f;
+        [Range(0f, 1f)] public float SoreFeet = 0f;
+        [Range(0f, 1f)] public float PostureAche = 0f;
+        [Range(0f, 1f)] public float SleepDebtFog = 0f;
+        [Range(0f, 1f)] public float SeasonalSkinIrritation = 0f;
+        public List<string> CurrentIrritations = new();
+    }
+
+    [Serializable]
+    public class FriendshipConstellationProfile
+    {
+        public string CharacterId;
+        public string BestFriendId;
+        public string BestFriendNickname = "Best friend";
+        [Range(0f, 1f)] public float BestFriendCloseness = 0.5f;
+        [Range(0f, 1f)] public float BestFriendDrift = 0f;
+        public List<string> InnerCircleIds = new();
+        public List<string> SharedRituals = new();
+        public string GroupChatName = "Inner Circle";
+        [Range(0f, 1f)] public float GroupChatChaos = 0f;
+        [Range(0f, 1f)] public float FriendshipJealousy = 0f;
+        [Range(0f, 1f)] public float RescueReliability = 0.5f;
+    }
+
+    [Serializable]
+    public class MundaneEarthLifeProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float CommuteStress = 0f;
+        [Range(0f, 1f)] public float LaundryBacklog = 0f;
+        [Range(0f, 1f)] public float SinkDishPileup = 0f;
+        [Range(0f, 1f)] public float LostItemFrequency = 0f;
+        [Range(0f, 1f)] public float PhoneBatteryAnxiety = 0f;
+        [Range(0f, 1f)] public float FridgeChaos = 0f;
+        [Range(0f, 1f)] public float NeighborNoise = 0f;
+        [Range(0f, 1f)] public float RoommateTension = 0f;
+        [Range(0f, 1f)] public float WeatherMoodEffect = 0f;
+        public List<string> SmallPleasures = new();
+    }
+
+
+    [Serializable]
     public class VampireBloodEconomyProfile
     {
         public string CharacterId;
@@ -439,6 +487,9 @@ namespace Survivebest.Core
         [SerializeField] private List<EducationJourneyProfile> educationProfiles = new();
         [SerializeField] private List<DigitalLifeProfile> digitalProfiles = new();
         [SerializeField] private List<BeliefPhilosophyProfile> beliefProfiles = new();
+        [SerializeField] private List<HumanMicroConditionProfile> humanMicroConditionProfiles = new();
+        [SerializeField] private List<FriendshipConstellationProfile> friendshipConstellationProfiles = new();
+        [SerializeField] private List<MundaneEarthLifeProfile> mundaneEarthLifeProfiles = new();
         [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
         [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
         [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
@@ -465,6 +516,9 @@ namespace Survivebest.Core
         public IReadOnlyList<EducationJourneyProfile> EducationProfiles => educationProfiles;
         public IReadOnlyList<DigitalLifeProfile> DigitalProfiles => digitalProfiles;
         public IReadOnlyList<BeliefPhilosophyProfile> BeliefProfiles => beliefProfiles;
+        public IReadOnlyList<HumanMicroConditionProfile> HumanMicroConditionProfiles => humanMicroConditionProfiles;
+        public IReadOnlyList<FriendshipConstellationProfile> FriendshipConstellationProfiles => friendshipConstellationProfiles;
+        public IReadOnlyList<MundaneEarthLifeProfile> MundaneEarthLifeProfiles => mundaneEarthLifeProfiles;
         public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
         public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
         public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
@@ -726,6 +780,47 @@ namespace Survivebest.Core
             return UpsertProfile(actor, profile, beliefProfiles, () => new BeliefPhilosophyProfile());
         }
 
+        public HumanMicroConditionProfile SetHumanMicroConditionProfile(CharacterCore actor, HumanMicroConditionProfile profile)
+        {
+            HumanMicroConditionProfile stored = UpsertProfile(actor, profile, humanMicroConditionProfiles, () => new HumanMicroConditionProfile());
+            if (stored != null)
+            {
+                float discomfort = Mathf.Max(stored.HangnailPain, stored.TensionHeadache, stored.SoreFeet, stored.SleepDebtFog);
+                if (discomfort > 0.45f)
+                {
+                    AppendThought(actor, "micro_condition", "Small physical annoyances are making it harder to stay patient with the day.", discomfort, null);
+                }
+            }
+
+            return stored;
+        }
+
+        public FriendshipConstellationProfile SetFriendshipConstellationProfile(CharacterCore actor, FriendshipConstellationProfile profile)
+        {
+            FriendshipConstellationProfile stored = UpsertProfile(actor, profile, friendshipConstellationProfiles, () => new FriendshipConstellationProfile());
+            if (stored != null && stored.BestFriendDrift > 0.5f)
+            {
+                AppendThought(actor, "friendship", $"You miss how easy things used to feel with {stored.BestFriendNickname}.", stored.BestFriendDrift, null);
+            }
+
+            return stored;
+        }
+
+        public MundaneEarthLifeProfile SetMundaneEarthLifeProfile(CharacterCore actor, MundaneEarthLifeProfile profile)
+        {
+            MundaneEarthLifeProfile stored = UpsertProfile(actor, profile, mundaneEarthLifeProfiles, () => new MundaneEarthLifeProfile());
+            if (stored != null)
+            {
+                float friction = Mathf.Max(stored.CommuteStress, stored.LaundryBacklog, stored.SinkDishPileup, stored.PhoneBatteryAnxiety, stored.RoommateTension);
+                if (friction > 0.5f)
+                {
+                    AppendThought(actor, "mundane_life", "Domestic friction is nibbling at your attention in a dozen tiny ways.", friction, null);
+                }
+            }
+
+            return stored;
+        }
+
         public VampireBloodEconomyProfile SetVampireBloodEconomyProfile(CharacterCore actor, VampireBloodEconomyProfile profile)
         {
             VampireBloodEconomyProfile stored = UpsertProfile(actor, profile, vampireBloodProfiles, () => new VampireBloodEconomyProfile());
@@ -938,6 +1033,21 @@ namespace Survivebest.Core
                 return FindProfile(characterId, beliefProfiles) as T;
             }
 
+            if (typeof(T) == typeof(HumanMicroConditionProfile))
+            {
+                return FindProfile(characterId, humanMicroConditionProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(FriendshipConstellationProfile))
+            {
+                return FindProfile(characterId, friendshipConstellationProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(MundaneEarthLifeProfile))
+            {
+                return FindProfile(characterId, mundaneEarthLifeProfiles) as T;
+            }
+
             if (typeof(T) == typeof(VampireBloodEconomyProfile))
             {
                 return FindProfile(characterId, vampireBloodProfiles) as T;
@@ -1057,6 +1167,9 @@ namespace Survivebest.Core
             SocialRoleBurdenProfile burden = FindProfile(characterId, socialRoleBurdenProfiles);
             DigitalLifeProfile digital = FindProfile(characterId, digitalProfiles);
             BeliefPhilosophyProfile belief = FindProfile(characterId, beliefProfiles);
+            HumanMicroConditionProfile micro = FindProfile(characterId, humanMicroConditionProfiles);
+            FriendshipConstellationProfile friendships = FindProfile(characterId, friendshipConstellationProfiles);
+            MundaneEarthLifeProfile mundane = FindProfile(characterId, mundaneEarthLifeProfiles);
             VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
 
             List<string> parts = new();
@@ -1084,6 +1197,29 @@ namespace Survivebest.Core
             if (belief != null && belief.MeaningCrisis > 0.2f)
             {
                 parts.Add($"Belief weather: meaning crisis {belief.MeaningCrisis:0.00}");
+            }
+
+            if (micro != null)
+            {
+                float bodyFriction = Mathf.Max(micro.HangnailPain, micro.TensionHeadache, micro.SoreFeet, micro.SleepDebtFog);
+                if (bodyFriction > 0.2f)
+                {
+                    parts.Add($"Body friction: micro annoyances {bodyFriction:0.00}");
+                }
+            }
+
+            if (friendships != null && friendships.BestFriendCloseness > 0.2f)
+            {
+                parts.Add($"Best-friend weather: {friendships.BestFriendNickname} closeness {friendships.BestFriendCloseness:0.00}");
+            }
+
+            if (mundane != null)
+            {
+                float domesticDrag = Mathf.Max(mundane.CommuteStress, mundane.LaundryBacklog, mundane.SinkDishPileup, mundane.PhoneBatteryAnxiety, mundane.RoommateTension);
+                if (domesticDrag > 0.2f)
+                {
+                    parts.Add($"Earth friction: mundane drag {domesticDrag:0.00}");
+                }
             }
 
             if (masquerade != null && masquerade.Suspicion > 0.2f)
@@ -1160,6 +1296,24 @@ namespace Survivebest.Core
             if (belief != null && (belief.MeaningCrisis > 0.5f || belief.ExistentialDread > 0.5f || belief.OccultFascination > 0.5f))
             {
                 observations.Add("Questions about meaning and what comes after keep hovering nearby.");
+            }
+
+            HumanMicroConditionProfile micro = FindProfile(actor.CharacterId, humanMicroConditionProfiles);
+            if (micro != null && (micro.HangnailPain > 0.5f || micro.TensionHeadache > 0.5f || micro.SoreFeet > 0.5f || micro.SleepDebtFog > 0.5f))
+            {
+                observations.Add("Tiny physical discomforts—hangnails, sore feet, headache haze—keep quietly rewriting your mood.");
+            }
+
+            FriendshipConstellationProfile friendships = FindProfile(actor.CharacterId, friendshipConstellationProfiles);
+            if (friendships != null && (friendships.BestFriendDrift > 0.45f || friendships.GroupChatChaos > 0.5f || friendships.FriendshipJealousy > 0.45f))
+            {
+                observations.Add($"Your friendship orbit feels active, especially around {friendships.BestFriendNickname} and the {friendships.GroupChatName} chat.");
+            }
+
+            MundaneEarthLifeProfile mundane = FindProfile(actor.CharacterId, mundaneEarthLifeProfiles);
+            if (mundane != null && (mundane.CommuteStress > 0.5f || mundane.LaundryBacklog > 0.5f || mundane.SinkDishPileup > 0.5f || mundane.PhoneBatteryAnxiety > 0.5f || mundane.RoommateTension > 0.5f))
+            {
+                observations.Add("Human life is getting granular: chores, batteries, keys, dishes, weather, and commute timing all want attention at once.");
             }
 
             if (observations.Count == 0)
@@ -1475,9 +1629,27 @@ namespace Survivebest.Core
             }
 
             DigitalLifeProfile digital = FindProfile(actor.CharacterId, digitalProfiles);
+            HumanMicroConditionProfile micro = FindProfile(actor.CharacterId, humanMicroConditionProfiles);
+            FriendshipConstellationProfile friendships = FindProfile(actor.CharacterId, friendshipConstellationProfiles);
+            MundaneEarthLifeProfile mundane = FindProfile(actor.CharacterId, mundaneEarthLifeProfiles);
             if (digital != null && digital.VampireFootprintRisk > 0.55f && actor.IsVampire)
             {
                 headline += " A small part of you worries the moment could leave a trace online.";
+            }
+
+            if (micro != null && Mathf.Max(micro.HangnailPain, micro.TensionHeadache, micro.SoreFeet) > 0.65f)
+            {
+                headline += " Small bodily annoyances make your patience feel thinner than usual.";
+            }
+
+            if (friendships != null && friendships.BestFriendDrift > 0.6f && (source == "community" || source == "romance" || source == "self"))
+            {
+                headline += $" Part of you keeps wondering whether {friendships.BestFriendNickname} would still get this version of you.";
+            }
+
+            if (mundane != null && Mathf.Max(mundane.CommuteStress, mundane.LaundryBacklog, mundane.PhoneBatteryAnxiety, mundane.RoommateTension) > 0.65f)
+            {
+                headline += " Everyday logistics keep crowding the emotional space of the moment.";
             }
 
             if (blood != null && blood.BloodHunger > 0.7f && actor.IsVampire)
