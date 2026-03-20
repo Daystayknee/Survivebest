@@ -62,6 +62,7 @@ namespace Survivebest.Dialogue
         public string SituationTag;
         public string MemoryTag;
         public string SpeakerSpecies;
+        public string SpeakerBreed;
         public bool IsPetInteraction;
         public string Line;
     }
@@ -81,6 +82,9 @@ namespace Survivebest.Dialogue
         public string SituationTag;
         public string MemoryTag;
         public string SpeakerSpecies;
+        public string SpeakerBreed;
+        public string InnerThought;
+        public string AnimalSoundText;
         public bool IsPetInteraction;
     }
 
@@ -91,6 +95,8 @@ namespace Survivebest.Dialogue
         public string ForcedMoodTag;
         public string MemoryTag;
         public string SpeakerSpecies;
+        public string SpeakerBreed;
+        public string TopicHint;
         public bool IsPetInteraction;
     }
 
@@ -171,6 +177,9 @@ namespace Survivebest.Dialogue
                 SituationTag = contextualLine != null ? contextualLine.SituationTag : ResolveSituationTag(context),
                 MemoryTag = contextualLine != null ? contextualLine.MemoryTag : ResolveMemoryTag(target, context),
                 SpeakerSpecies = contextualLine != null ? contextualLine.SpeakerSpecies : ResolveSpeakerSpeciesKey(context),
+                SpeakerBreed = contextualLine != null ? contextualLine.SpeakerBreed : context != null ? context.SpeakerBreed : null,
+                InnerThought = BuildAiSelfTalk(owner, context != null ? context.TopicHint : null, context != null ? context.SpeakerSpecies : null, target),
+                AnimalSoundText = context != null && context.IsPetInteraction ? BuildAnimalSoundText(context.SpeakerSpecies, context.SpeakerBreed, false) : string.Empty,
                 IsPetInteraction = contextualLine != null && contextualLine.IsPetInteraction
             });
 
@@ -365,12 +374,20 @@ namespace Survivebest.Dialogue
                 SituationTag = resolvedSituation,
                 MemoryTag = "shared_meal",
                 SpeakerSpecies = ResolveSpeakerSpeciesKey(null),
+                SpeakerBreed = null,
+                InnerThought = BuildAiSelfTalk(actor != null ? actor : owner, resolvedSituation, null, null),
+                AnimalSoundText = string.Empty,
                 IsPetInteraction = false
             });
 
             return true;
         }
         public bool PerformPetInteractionDialogue(string species, string petName = "Pet", string situationTag = "pet_home")
+        {
+            return PerformPetInteractionDialogue(species, null, petName, situationTag);
+        }
+
+        public bool PerformPetInteractionDialogue(string species, string breed, string petName = "Pet", string situationTag = "pet_home")
         {
             List<DialogueGeneratedLine> petLines = GetPetInteractionLines(species);
             if (petLines.Count == 0)
@@ -379,7 +396,10 @@ namespace Survivebest.Dialogue
             }
 
             DialogueGeneratedLine selected = petLines[UnityEngine.Random.Range(0, petLines.Count)];
-            OnDialogueResolved?.Invoke(selected.Line, true);
+            string soundText = BuildAnimalSoundText(species, breed, false);
+            string innerThought = BuildAiSelfTalk(owner, situationTag, species, null);
+            string line = BuildPetAiMoment(selected.Line, soundText, innerThought);
+            OnDialogueResolved?.Invoke(line, true);
             OnDialoguePresentationReady?.Invoke(new DialoguePresentationPayload
             {
                 SpeakerCharacterId = owner != null ? owner.CharacterId : null,
@@ -387,13 +407,16 @@ namespace Survivebest.Dialogue
                 SpeakerName = owner != null ? owner.DisplayName : "You",
                 TargetName = string.IsNullOrWhiteSpace(petName) ? "Pet" : petName,
                 Intent = DialogueIntent.Comfort,
-                Line = selected.Line,
+                Line = line,
                 Success = true,
                 VisualTone = "warmth",
                 MoodTag = selected.MoodTag,
                 SituationTag = string.IsNullOrWhiteSpace(situationTag) ? selected.SituationTag : situationTag,
                 MemoryTag = selected.MemoryTag,
                 SpeakerSpecies = selected.SpeakerSpecies,
+                SpeakerBreed = breed,
+                InnerThought = innerThought,
+                AnimalSoundText = soundText,
                 IsPetInteraction = true
             });
 
@@ -425,6 +448,81 @@ namespace Survivebest.Dialogue
         {
             return generatedLines.FindAll(x => x != null && x.IsPetInteraction &&
                 string.Equals(x.SpeakerSpecies, species, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public string BuildAiSelfTalk(CharacterCore actor, string topicHint = null, string animalSpecies = null, CharacterCore target = null)
+        {
+            string actorName = actor != null && !string.IsNullOrWhiteSpace(actor.DisplayName) ? actor.DisplayName : "You";
+            string topic = string.IsNullOrWhiteSpace(topicHint) ? "this moment" : topicHint.Replace("_", " ");
+            string targetName = target != null && !string.IsNullOrWhiteSpace(target.DisplayName) ? target.DisplayName : "them";
+            InnerMonologueProfile monologue = humanLifeExperienceLayerSystem != null && actor != null
+                ? humanLifeExperienceLayerSystem.GetProfile<InnerMonologueProfile>(actor.CharacterId)
+                : null;
+
+            if (monologue == null)
+            {
+                return string.IsNullOrWhiteSpace(animalSpecies)
+                    ? $"AI self-talk: {actorName} steadies their breathing and tries to stay present during {topic}."
+                    : $"AI self-talk: {actorName} reminds themself to stay calm around the {animalSpecies.ToLowerInvariant()} and keep the encounter gentle.";
+            }
+
+            string tone = monologue.HarshSelfTalk > monologue.KindSelfTalk
+                ? $"{monologue.ConsciousVoice} voice presses, '{monologue.ConflictingThoughtA}'"
+                : $"{monologue.ConsciousVoice} voice softens, '{monologue.ConflictingThoughtA}'";
+            string counter = $"while the {monologue.SubconsciousVoice} part answers, '{monologue.ConflictingThoughtB}'";
+            string hook = string.IsNullOrWhiteSpace(animalSpecies)
+                ? $"as {actorName} reads {targetName} during {topic}"
+                : $"as {actorName} studies the {animalSpecies.ToLowerInvariant()} during {topic}";
+            return $"AI self-talk: {tone}, {counter}, {hook}.";
+        }
+
+        public string BuildAnimalSoundText(string species, string breed = null, bool stressed = false)
+        {
+            string resolvedSpecies = string.IsNullOrWhiteSpace(species) ? "animal" : species.Trim();
+            string normalized = resolvedSpecies.ToLowerInvariant();
+            string sound = normalized switch
+            {
+                "dog" => stressed ? "grrr-ruff!" : "woof-woof!",
+                "cat" => stressed ? "hiss-rrrow!" : "mrrp-prrr.",
+                "rabbit" => stressed ? "thump-thump!" : "snff-snff.",
+                "cow" => stressed ? "MOOO?!" : "moo-oo.",
+                "pig" => stressed ? "squeal-squeal!" : "oink-snort.",
+                "sheep" => stressed ? "Baa-aa!" : "baa.",
+                "goat" => stressed ? "maaAA!" : "meh-eh.",
+                "horse" => stressed ? "NEIGH-snort!" : "hrrr-neigh.",
+                "bird" => stressed ? "skree-chit!" : "chirp-trill.",
+                "owl" => stressed ? "kek-kek!" : "hoo-hoo.",
+                "deer" => stressed ? "snort-bark!" : "snff.",
+                "fox" => stressed ? "yip-yip!" : "rring-yip.",
+                "reptile" => stressed ? "hsss!" : "ssssk.",
+                "mammal" => stressed ? "snarl-huff!" : "huff-snff.",
+                _ => stressed ? "skitt-skree!" : "soft rustle, soft breath."
+            };
+
+            string breedText = string.IsNullOrWhiteSpace(breed) ? string.Empty : $" {breed}";
+            string moodText = stressed ? "stressed" : "settled";
+            return $"Animal audio text:{breedText} {resolvedSpecies} goes '{sound}' ({moodText}).".Trim();
+        }
+
+        private static string BuildPetAiMoment(string selectedLine, string soundText, string innerThought)
+        {
+            List<string> parts = new();
+            if (!string.IsNullOrWhiteSpace(soundText))
+            {
+                parts.Add(soundText);
+            }
+
+            if (!string.IsNullOrWhiteSpace(selectedLine))
+            {
+                parts.Add(selectedLine);
+            }
+
+            if (!string.IsNullOrWhiteSpace(innerThought))
+            {
+                parts.Add(innerThought);
+            }
+
+            return string.Join(" ", parts);
         }
 
         private void EnsureDialogueDepth()
