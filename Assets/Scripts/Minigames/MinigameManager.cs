@@ -17,8 +17,14 @@ namespace Survivebest.Minigames
         Fishing,
         Repairs,
         FirstAid,
+        Triage,
+        Bandaging,
+        Casting,
+        Pharmacy,
         Cleaning,
         Surgery,
+        VeterinaryCare,
+        Dermatology,
         RestaurantService,
         EmergencyResponse,
         MovieNight,
@@ -55,8 +61,14 @@ namespace Survivebest.Minigames
             new MinigameSceneProfile { Type = MinigameType.Fishing, SceneBackdropId = "riverbank", Prompt = "Pick the right bait, cast with rhythm, and react to fish tension.", RecommendedSkill = "Fishing", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.Repairs, SceneBackdropId = "garage_bench", Prompt = "Diagnose the fault, pick safe tools, and verify the fix under load.", RecommendedSkill = "Engineering", DurationMultiplier = 1.1f },
             new MinigameSceneProfile { Type = MinigameType.FirstAid, SceneBackdropId = "triage_room", Prompt = "Stabilize airway, control bleeding, and monitor vitals.", RecommendedSkill = "First aid", DurationMultiplier = 1.1f },
+            new MinigameSceneProfile { Type = MinigameType.Triage, SceneBackdropId = "triage_desk", Prompt = "Sort patients by urgency, check vitals, and route them to the right care lane.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f },
+            new MinigameSceneProfile { Type = MinigameType.Bandaging, SceneBackdropId = "treatment_cart", Prompt = "Clean the wound, layer gauze, wrap with even pressure, and reassess bleeding.", RecommendedSkill = "First aid", DurationMultiplier = 0.95f },
+            new MinigameSceneProfile { Type = MinigameType.Casting, SceneBackdropId = "ortho_bay", Prompt = "Align the limb, pad pressure points, wrap the cast evenly, and confirm circulation.", RecommendedSkill = "First aid", DurationMultiplier = 1.25f },
+            new MinigameSceneProfile { Type = MinigameType.Pharmacy, SceneBackdropId = "pharmacy_counter", Prompt = "Match the prescription, calculate doses, label clearly, and prevent interactions.", RecommendedSkill = "First aid", DurationMultiplier = 0.9f },
             new MinigameSceneProfile { Type = MinigameType.Cleaning, SceneBackdropId = "home_maintenance", Prompt = "Sanitize high-touch areas and manage supplies without wasting water.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f },
             new MinigameSceneProfile { Type = MinigameType.Surgery, SceneBackdropId = "operating_theater", Prompt = "Prep sterile field, follow operation checklist, and close safely.", RecommendedSkill = "First aid", DurationMultiplier = 1.5f },
+            new MinigameSceneProfile { Type = MinigameType.VeterinaryCare, SceneBackdropId = "vet_operatory", Prompt = "Restrain gently, read species cues, treat safely, and coach the owner on aftercare.", RecommendedSkill = "First aid", DurationMultiplier = 1.2f },
+            new MinigameSceneProfile { Type = MinigameType.Dermatology, SceneBackdropId = "clinic_exam_room", Prompt = "Inspect skin layers, identify flare triggers, and choose the right topical or procedural care.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f },
             new MinigameSceneProfile { Type = MinigameType.RestaurantService, SceneBackdropId = "restaurant_line", Prompt = "Coordinate orders, avoid cross-contamination, and maintain ticket speed.", RecommendedSkill = "Cooking", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.EmergencyResponse, SceneBackdropId = "emergency_scene", Prompt = "Secure the scene, triage quickly, and coordinate responders.", RecommendedSkill = "Survival skills", DurationMultiplier = 1.35f },
             new MinigameSceneProfile { Type = MinigameType.MovieNight, SceneBackdropId = "living_room", Prompt = "Pick a film mood, settle in, and recover stress while staying present.", RecommendedSkill = "Storytelling", DurationMultiplier = 0.8f },
@@ -113,6 +125,7 @@ namespace Survivebest.Minigames
             {
                 ProfessionType.Doctor => MinigameType.Surgery,
                 ProfessionType.Nurse => MinigameType.FirstAid,
+                ProfessionType.Veterinarian => MinigameType.VeterinaryCare,
                 ProfessionType.Chef => MinigameType.RestaurantService,
                 ProfessionType.Mechanic => MinigameType.Repairs,
                 ProfessionType.Police => MinigameType.EmergencyResponse,
@@ -235,8 +248,14 @@ namespace Survivebest.Minigames
                 MinigameType.Fishing => "Fishing",
                 MinigameType.Repairs => "Engineering",
                 MinigameType.FirstAid => "First aid",
+                MinigameType.Triage => "First aid",
+                MinigameType.Bandaging => "First aid",
+                MinigameType.Casting => "First aid",
+                MinigameType.Pharmacy => "First aid",
                 MinigameType.Cleaning => "Survival skills",
                 MinigameType.Surgery => "First aid",
+                MinigameType.VeterinaryCare => "First aid",
+                MinigameType.Dermatology => "First aid",
                 MinigameType.RestaurantService => "Cooking",
                 MinigameType.EmergencyResponse => "Survival skills",
                 MinigameType.MovieNight => "Storytelling",
@@ -276,8 +295,14 @@ namespace Survivebest.Minigames
                 MinigameType.Fishing => 0.13f,
                 MinigameType.Repairs => 0.14f,
                 MinigameType.FirstAid => 0.12f,
+                MinigameType.Triage => 0.13f,
+                MinigameType.Bandaging => 0.08f,
+                MinigameType.Casting => 0.16f,
+                MinigameType.Pharmacy => 0.11f,
                 MinigameType.Cleaning => 0.04f,
                 MinigameType.Surgery => 0.2f,
+                MinigameType.VeterinaryCare => 0.17f,
+                MinigameType.Dermatology => 0.09f,
                 MinigameType.RestaurantService => 0.16f,
                 MinigameType.EmergencyResponse => 0.18f,
                 MinigameType.MovieNight => 0.02f,
@@ -300,7 +325,7 @@ namespace Survivebest.Minigames
 
             if (needs != null)
             {
-                float energyCost = type is MinigameType.Surgery or MinigameType.EmergencyResponse
+                float energyCost = type is MinigameType.Surgery or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare or MinigameType.Casting
                     ? (success ? -5f : -8f)
                     : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading
                         ? (success ? 4f : 1f)
@@ -315,7 +340,7 @@ namespace Survivebest.Minigames
             if (skillSystem != null)
             {
                 string skillName = ResolveSkillForMinigame(type);
-                float xp = type is MinigameType.Surgery or MinigameType.EmergencyResponse
+                float xp = type is MinigameType.Surgery or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare
                     ? (success ? 6f : 2f)
                     : (success ? 4f : 1.5f);
                 skillSystem.AddExperience(skillName, xp);

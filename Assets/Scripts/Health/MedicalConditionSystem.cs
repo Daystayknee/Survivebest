@@ -30,6 +30,11 @@ namespace Survivebest.Health
         AsthmaAttack,
         Hypertension,
         DiabetesComplication,
+        SkinInfection,
+        WartCluster,
+        SevereAcneFlare,
+        Abscess,
+        Sepsis,
         RadiationSickness,
         Cancer,
         TeethingFever,
@@ -48,6 +53,69 @@ namespace Survivebest.Health
         Strain,
         Bite,
         Scrape
+    }
+
+    public enum BodyLocation
+    {
+        Unknown,
+        Scalp,
+        Eye,
+        Jaw,
+        Neck,
+        Shoulder,
+        UpperArm,
+        Elbow,
+        Forearm,
+        Wrist,
+        Hand,
+        Fingers,
+        Chest,
+        Ribs,
+        Abdomen,
+        Kidney,
+        Spine,
+        Hip,
+        Groin,
+        Thigh,
+        Knee,
+        Shin,
+        Ankle,
+        Foot,
+        Antenna,
+        Mandible,
+        Thorax,
+        Wing,
+        Stinger,
+        Tail
+    }
+
+    public enum WoundType
+    {
+        None,
+        BluntImpact,
+        DeepBruising,
+        Laceration,
+        Puncture,
+        Abrasion,
+        BiteTrauma,
+        BurnTrauma,
+        JointTwist,
+        LigamentTear,
+        BoneBreak,
+        ConcussiveTrauma,
+        InternalTrauma,
+        VenomExposure
+    }
+
+    public enum FractureType
+    {
+        None,
+        Hairline,
+        Closed,
+        Open,
+        Spiral,
+        Comminuted,
+        Depressed
     }
 
     public enum MedicationType
@@ -82,6 +150,15 @@ namespace Survivebest.Health
         [Range(0f, 1f)] public float PainLevel;
         public bool RequiresBedRest;
         public MedicationType RecommendedMedication;
+        public BodyLocation BodyLocation;
+        public WoundType WoundType;
+        public FractureType FractureType;
+        [Range(0f, 1f)] public float BleedingRate;
+        [Range(0f, 1f)] public float MobilityPenalty;
+        [Range(0f, 1f)] public float InfectionRisk;
+        public bool IsOpenWound;
+        public bool IsBoneInjury;
+        public string DetailSummary;
     }
 
     public class MedicalConditionSystem : MonoBehaviour
@@ -136,17 +213,22 @@ namespace Survivebest.Health
 
         public bool AddInjury(InjuryType injuryType, ConditionSeverity severity)
         {
+            return AddDetailedInjury(injuryType, severity, BodyLocation.Unknown, DefaultWoundType(injuryType), FractureType.None);
+        }
+
+        public bool AddDetailedInjury(InjuryType injuryType, ConditionSeverity severity, BodyLocation bodyLocation, WoundType woundType, FractureType fractureType = FractureType.None, string customDisplayName = null, float? bleedingRateOverride = null, float? mobilityPenaltyOverride = null, string detailSummary = null)
+        {
             if (!IsInjuryAgeAppropriate(injuryType))
             {
                 return false;
             }
 
-            if (HasCondition(x => !x.IsIllness && x.InjuryType == injuryType))
+            if (HasCondition(x => !x.IsIllness && x.InjuryType == injuryType && x.BodyLocation == bodyLocation))
             {
                 return false;
             }
 
-            MedicalCondition condition = BuildInjury(injuryType, severity);
+            MedicalCondition condition = BuildInjury(injuryType, severity, bodyLocation, woundType, fractureType, customDisplayName, bleedingRateOverride, mobilityPenaltyOverride, detailSummary);
             AddCondition(condition);
             return true;
         }
@@ -362,6 +444,11 @@ namespace Survivebest.Health
                 IllnessType.AsthmaAttack => ("Asthma Attack", 10, 0.42f, 1.5f, 1.1f, 0.05f, 0f, 0.5f, true, MedicationType.Inhaler),
                 IllnessType.Hypertension => ("Hypertension Spike", 48, 0.25f, 0.7f, 0.7f, 0.1f, 0f, 0.22f, false, MedicationType.Sedative),
                 IllnessType.DiabetesComplication => ("Diabetes Complication", 60, 0.38f, 1.3f, 0.9f, 0.15f, 0f, 0.3f, true, MedicationType.Stimulant),
+                IllnessType.SkinInfection => ("Skin Infection", 72, 0.18f, 0.7f, 0.85f, 0.35f, 0.1f, 0.42f, false, MedicationType.Antibiotic),
+                IllnessType.WartCluster => ("Wart Cluster", 240, 0.02f, 0.1f, 0.4f, 0.08f, 0.05f, 0.12f, false, MedicationType.Antibiotic),
+                IllnessType.SevereAcneFlare => ("Severe Acne Flare", 120, 0.04f, 0.25f, 0.7f, 0.2f, 0f, 0.2f, false, MedicationType.Antibiotic),
+                IllnessType.Abscess => ("Abscess", 96, 0.25f, 0.85f, 0.75f, 0.22f, 0.08f, 0.5f, true, MedicationType.Antibiotic),
+                IllnessType.Sepsis => ("Sepsis", 168, 0.72f, 2f, 1.2f, 0.25f, 0f, 0.7f, true, MedicationType.Antibiotic),
                 IllnessType.RadiationSickness => ("Radiation Sickness", 168, 0.65f, 1.9f, 1.2f, 0.6f, 0f, 0.55f, true, MedicationType.PotassiumIodide),
                 IllnessType.Cancer => ("Cancer", 720, 0.45f, 1.5f, 1.2f, 0.2f, 0f, 0.6f, true, MedicationType.CancerSupport),
                 IllnessType.TeethingFever => ("Teething Fever", 10, 0.06f, 0.5f, 0.45f, 0.15f, 0f, 0.2f, false, MedicationType.Painkiller),
@@ -389,27 +476,34 @@ namespace Survivebest.Health
             };
         }
 
-        private MedicalCondition BuildInjury(InjuryType type, ConditionSeverity severity)
+        private MedicalCondition BuildInjury(InjuryType type, ConditionSeverity severity, BodyLocation bodyLocation, WoundType woundType, FractureType fractureType, string customDisplayName, float? bleedingRateOverride, float? mobilityPenaltyOverride, string detailSummary)
         {
             float mult = SeverityMultiplier(severity);
-            (string label, int baseHours, float vitality, float energy, float mood, float hygiene, float pain, MedicationType med) = type switch
+            (string label, int baseHours, float vitality, float energy, float mood, float hygiene, float pain, float baseBleedingRate, float baseMobilityPenalty, bool openWound, bool boneInjury, MedicationType med) = type switch
             {
-                InjuryType.Bruise => ("Bruise", 18, 0.08f, 0.45f, 0.3f, 0.05f, 0.18f, MedicationType.Painkiller),
-                InjuryType.Cut => ("Cut", 24, 0.14f, 0.55f, 0.35f, 0.15f, 0.22f, MedicationType.Antibiotic),
-                InjuryType.Sprain => ("Sprain", 36, 0.1f, 0.7f, 0.4f, 0.05f, 0.3f, MedicationType.Painkiller),
-                InjuryType.Burn => ("Burn", 48, 0.22f, 0.85f, 0.55f, 0.12f, 0.42f, MedicationType.Painkiller),
-                InjuryType.Fracture => ("Fracture", 168, 0.35f, 1.2f, 0.8f, 0.08f, 0.6f, MedicationType.Painkiller),
-                InjuryType.Concussion => ("Concussion", 72, 0.2f, 1.4f, 0.9f, 0.05f, 0.5f, MedicationType.Sedative),
-                InjuryType.Strain => ("Muscle Strain", 30, 0.08f, 0.6f, 0.3f, 0.05f, 0.24f, MedicationType.Painkiller),
-                InjuryType.Bite => ("Bite", 28, 0.12f, 0.55f, 0.45f, 0.1f, 0.25f, MedicationType.Antibiotic),
-                InjuryType.Scrape => ("Scrape", 12, 0.04f, 0.3f, 0.2f, 0.1f, 0.12f, MedicationType.Painkiller),
-                _ => (type.ToString(), 18, 0.08f, 0.45f, 0.25f, 0.05f, 0.2f, MedicationType.Painkiller)
+                InjuryType.Bruise => ("Bruise", 18, 0.08f, 0.45f, 0.3f, 0.05f, 0.18f, 0.02f, 0.08f, false, false, MedicationType.Painkiller),
+                InjuryType.Cut => ("Cut", 24, 0.14f, 0.55f, 0.35f, 0.15f, 0.22f, 0.24f, 0.12f, true, false, MedicationType.Antibiotic),
+                InjuryType.Sprain => ("Sprain", 36, 0.1f, 0.7f, 0.4f, 0.05f, 0.3f, 0.01f, 0.34f, false, false, MedicationType.Painkiller),
+                InjuryType.Burn => ("Burn", 48, 0.22f, 0.85f, 0.55f, 0.12f, 0.42f, 0.12f, 0.24f, true, false, MedicationType.Painkiller),
+                InjuryType.Fracture => ("Fracture", 168, 0.35f, 1.2f, 0.8f, 0.08f, 0.6f, 0.08f, 0.65f, fractureType == FractureType.Open, true, MedicationType.Painkiller),
+                InjuryType.Concussion => ("Concussion", 72, 0.2f, 1.4f, 0.9f, 0.05f, 0.5f, 0f, 0.45f, false, false, MedicationType.Sedative),
+                InjuryType.Strain => ("Muscle Strain", 30, 0.08f, 0.6f, 0.3f, 0.05f, 0.24f, 0.01f, 0.28f, false, false, MedicationType.Painkiller),
+                InjuryType.Bite => ("Bite", 28, 0.12f, 0.55f, 0.45f, 0.1f, 0.25f, 0.18f, 0.16f, true, false, MedicationType.Antibiotic),
+                InjuryType.Scrape => ("Scrape", 12, 0.04f, 0.3f, 0.2f, 0.1f, 0.12f, 0.06f, 0.05f, true, false, MedicationType.Painkiller),
+                _ => (type.ToString(), 18, 0.08f, 0.45f, 0.25f, 0.05f, 0.2f, 0.02f, 0.1f, false, false, MedicationType.Painkiller)
             };
+
+            string locationLabel = bodyLocation == BodyLocation.Unknown ? string.Empty : $"{bodyLocation} ";
+            string fractureLabel = type == InjuryType.Fracture && fractureType != FractureType.None ? $"{fractureType} " : string.Empty;
+            string finalLabel = string.IsNullOrWhiteSpace(customDisplayName) ? $"{fractureLabel}{locationLabel}{label}".Trim() : customDisplayName;
+            float bleedingRate = bleedingRateOverride ?? baseBleedingRate;
+            float mobilityPenalty = mobilityPenaltyOverride ?? baseMobilityPenalty;
+            float infectionRisk = Mathf.Clamp01(bleedingRate * 0.55f + (openWound ? 0.18f : 0f) + (type == InjuryType.Bite ? 0.14f : 0f));
 
             return new MedicalCondition
             {
                 Id = Guid.NewGuid().ToString("N"),
-                DisplayName = label,
+                DisplayName = finalLabel,
                 IsIllness = false,
                 InjuryType = type,
                 Severity = severity,
@@ -421,7 +515,16 @@ namespace Survivebest.Health
                 Contagiousness = 0f,
                 PainLevel = pain * mult,
                 RequiresBedRest = type is InjuryType.Fracture or InjuryType.Concussion,
-                RecommendedMedication = med
+                RecommendedMedication = med,
+                BodyLocation = bodyLocation,
+                WoundType = woundType,
+                FractureType = fractureType,
+                BleedingRate = Mathf.Clamp01(bleedingRate * mult * 0.7f),
+                MobilityPenalty = Mathf.Clamp01(mobilityPenalty * mult * 0.7f),
+                InfectionRisk = infectionRisk,
+                IsOpenWound = openWound,
+                IsBoneInjury = boneInjury,
+                DetailSummary = string.IsNullOrWhiteSpace(detailSummary) ? BuildInjuryDetailSummary(finalLabel, woundType, bodyLocation, severity, fractureType) : detailSummary
             };
         }
 
@@ -531,7 +634,34 @@ namespace Survivebest.Health
                    (medicationType == MedicationType.Painkiller && !condition.IsIllness && condition.PainLevel > 0.15f) ||
                    (medicationType == MedicationType.Antibiotic && condition.IsIllness && (condition.IllnessType is IllnessType.EarInfection or IllnessType.Bronchitis or IllnessType.Pneumonia)) ||
                    (medicationType == MedicationType.Antiviral && condition.IsIllness && (condition.IllnessType is IllnessType.CommonCold or IllnessType.Flu or IllnessType.CovidLikeVirus)) ||
-                   (medicationType == MedicationType.AntiNausea && condition.IsIllness && (condition.IllnessType is IllnessType.StomachBug or IllnessType.FoodPoisoning or IllnessType.Colic));
+                   (medicationType == MedicationType.AntiNausea && condition.IsIllness && (condition.IllnessType is IllnessType.StomachBug or IllnessType.FoodPoisoning or IllnessType.Colic)) ||
+                   (medicationType == MedicationType.Antibiotic && !condition.IsIllness && (condition.IsOpenWound || condition.InfectionRisk >= 0.24f));
+        }
+
+        private static WoundType DefaultWoundType(InjuryType injuryType)
+        {
+            return injuryType switch
+            {
+                InjuryType.Bruise => WoundType.DeepBruising,
+                InjuryType.Cut => WoundType.Laceration,
+                InjuryType.Sprain => WoundType.JointTwist,
+                InjuryType.Burn => WoundType.BurnTrauma,
+                InjuryType.Fracture => WoundType.BoneBreak,
+                InjuryType.Concussion => WoundType.ConcussiveTrauma,
+                InjuryType.Strain => WoundType.LigamentTear,
+                InjuryType.Bite => WoundType.BiteTrauma,
+                InjuryType.Scrape => WoundType.Abrasion,
+                _ => WoundType.None
+            };
+        }
+
+        private static string BuildInjuryDetailSummary(string label, WoundType woundType, BodyLocation bodyLocation, ConditionSeverity severity, FractureType fractureType)
+        {
+            string severityLabel = severity.ToString().ToLowerInvariant();
+            string woundLabel = woundType == WoundType.None ? "injury" : woundType.ToString();
+            string fractureLabel = fractureType == FractureType.None ? string.Empty : $" with a {fractureType.ToString().ToLowerInvariant()} fracture pattern";
+            string locationLabel = bodyLocation == BodyLocation.Unknown ? "unspecified location" : bodyLocation.ToString();
+            return $"{label}: {severityLabel} {woundLabel} affecting {locationLabel}{fractureLabel}.";
         }
 
         private void AddCondition(MedicalCondition condition)
