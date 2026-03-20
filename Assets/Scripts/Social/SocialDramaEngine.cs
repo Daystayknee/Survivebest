@@ -88,6 +88,18 @@ namespace Survivebest.Social
         public int HopCount;
     }
 
+    [Serializable]
+    public class SocialIncidentDefinition
+    {
+        public string IncidentId;
+        public SocialEventType EventType;
+        public string Location = "unknown";
+        public List<string> DefaultTags = new();
+        [Range(0f, 1f)] public float Severity = 0.5f;
+        [Range(0f, 1f)] public float TruthLevel = 0.9f;
+        public List<GameplayEffectDefinition> Effects = new();
+    }
+
     public class SocialDramaEngine : MonoBehaviour
     {
         [SerializeField] private World.WorldClock worldClock;
@@ -100,6 +112,7 @@ namespace Survivebest.Social
         [SerializeField] private List<ScandalEvent> scandals = new();
         [SerializeField] private List<ReputationLayerProfile> reputations = new();
         [SerializeField] private List<RumorPacket> rumors = new();
+        [SerializeField] private List<SocialIncidentDefinition> socialIncidentDefinitions = new();
         [SerializeField, Range(0f, 1f)] private float baseMutationChance = 0.25f;
         [SerializeField, Min(1)] private int pulseIntervalHours = 6;
         private int lastPulseHour = -9999;
@@ -176,6 +189,94 @@ namespace Survivebest.Social
             }
 
             Publish("DramaPulse", "Social drama pulse processed", 0.35f);
+        }
+
+        public SocialEventSignal TriggerConfiguredIncident(string incidentId, List<string> involvedCharacters = null, List<string> witnesses = null)
+        {
+            SocialIncidentDefinition definition = socialIncidentDefinitions.Find(x => x != null && string.Equals(x.IncidentId, incidentId, StringComparison.OrdinalIgnoreCase));
+            if (definition == null)
+            {
+                return null;
+            }
+
+            SocialEventSignal signal = RegisterSocialEvent(
+                definition.EventType,
+                definition.Location,
+                involvedCharacters ?? new List<string>(),
+                witnesses ?? new List<string>(),
+                definition.Severity,
+                definition.TruthLevel,
+                definition.DefaultTags != null ? definition.DefaultTags.ToArray() : Array.Empty<string>());
+
+            ApplyConfiguredEffects(definition, signal);
+            return signal;
+        }
+
+        private void ApplyConfiguredEffects(SocialIncidentDefinition definition, SocialEventSignal signal)
+        {
+            if (definition == null || signal == null)
+            {
+                return;
+            }
+
+            GameplayEffectContext context = new(
+                nameof(SocialDramaEngine),
+                signal.InvolvedCharacters.Count > 0 ? signal.InvolvedCharacters[0] : null,
+                null,
+                signal.Location);
+
+            GameplayEffectPipeline.ApplyEffects(definition.Effects, context, effect => ResolveEffectHandler(signal, effect));
+        }
+
+        private GameplayEffectPipeline.GameplayEffectHandler ResolveEffectHandler(SocialEventSignal signal, GameplayEffectDefinition effect)
+        {
+            return effect?.EffectType switch
+            {
+                GameplayEffectType.Reputation => (def, context, magnitude) => ApplyReputationEffect(signal, def, magnitude),
+                GameplayEffectType.Scandal => (def, context, magnitude) => ApplyScandalEffect(signal, def, magnitude),
+                GameplayEffectType.SocialRumor => (def, context, magnitude) => ApplyRumorEffect(signal, def, magnitude),
+                _ => null
+            };
+        }
+
+        private GameplayEffectResult ApplyReputationEffect(SocialEventSignal signal, GameplayEffectDefinition effect, float magnitude)
+        {
+            bool applied = false;
+            for (int i = 0; i < signal.InvolvedCharacters.Count; i++)
+            {
+                string characterId = signal.InvolvedCharacters[i];
+                if (string.IsNullOrWhiteSpace(characterId))
+                {
+                    continue;
+                }
+
+                ReputationLayerProfile rep = GetOrCreateReputation(characterId);
+                rep.CommunityReputation = Mathf.Clamp(rep.CommunityReputation + magnitude, -100f, 100f);
+                rep.PersonalReputation = Mathf.Clamp(rep.PersonalReputation + magnitude * 0.5f, -100f, 100f);
+                applied = true;
+            }
+
+            return new GameplayEffectResult(effect, magnitude, applied, applied ? "Reputation shifted" : "No character targets");
+        }
+
+        private GameplayEffectResult ApplyScandalEffect(SocialEventSignal signal, GameplayEffectDefinition effect, float magnitude)
+        {
+            string characterId = signal.InvolvedCharacters.Count > 0 ? signal.InvolvedCharacters[0] : null;
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return new GameplayEffectResult(effect, magnitude, false, "No scandal target");
+            }
+
+            TriggerScandal(characterId, string.IsNullOrWhiteSpace(effect.Payload) ? signal.EventType.ToString() : effect.Payload, Mathf.Clamp01(Mathf.Abs(magnitude) / 25f), magnitude);
+            return new GameplayEffectResult(effect, magnitude, true, "Scandal triggered");
+        }
+
+        private GameplayEffectResult ApplyRumorEffect(SocialEventSignal signal, GameplayEffectDefinition effect, float magnitude)
+        {
+            string source = signal.Witnesses.Count > 0 ? signal.Witnesses[0] : (signal.InvolvedCharacters.Count > 0 ? signal.InvolvedCharacters[0] : "town");
+            string subject = signal.InvolvedCharacters.Count > 0 ? signal.InvolvedCharacters[0] : source;
+            SpreadRumor(source, subject, string.IsNullOrWhiteSpace(effect.Payload) ? signal.EventType.ToString() : effect.Payload, signal.TruthLevel, Mathf.Clamp01(magnitude));
+            return new GameplayEffectResult(effect, magnitude, true, "Rumor applied");
         }
 
         public SocialEventSignal RegisterSocialEvent(SocialEventType eventType, string location, List<string> involvedCharacters, List<string> witnesses, float severity, float truthLevel, params string[] tags)
