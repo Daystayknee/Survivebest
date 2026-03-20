@@ -83,6 +83,16 @@ namespace Survivebest.Emotion
         public float TargetDamage;
         public InjuryType? OwnerInjury;
         public InjuryType? TargetInjury;
+        public ConditionSeverity? OwnerInjurySeverity;
+        public ConditionSeverity? TargetInjurySeverity;
+        public BodyLocation OwnerInjuryLocation;
+        public BodyLocation TargetInjuryLocation;
+        public WoundType OwnerWoundType;
+        public WoundType TargetWoundType;
+        public FractureType OwnerFractureType;
+        public FractureType TargetFractureType;
+        public string OwnerWoundDescription;
+        public string TargetWoundDescription;
         public int RelationshipLoss;
         public string OwnerTargetBodyPart;
         public string TargetTargetBodyPart;
@@ -121,6 +131,30 @@ namespace Survivebest.Emotion
             public bool UsesWeapon { get; }
             public bool IsAnimal { get; }
             public bool IsEscape { get; }
+        }
+
+        private readonly struct CombatInjuryDetail
+        {
+            public CombatInjuryDetail(InjuryType injuryType, ConditionSeverity severity, BodyLocation bodyLocation, WoundType woundType, FractureType fractureType, float bleedingRate, float mobilityPenalty, string description)
+            {
+                InjuryType = injuryType;
+                Severity = severity;
+                BodyLocation = bodyLocation;
+                WoundType = woundType;
+                FractureType = fractureType;
+                BleedingRate = bleedingRate;
+                MobilityPenalty = mobilityPenalty;
+                Description = description;
+            }
+
+            public InjuryType InjuryType { get; }
+            public ConditionSeverity Severity { get; }
+            public BodyLocation BodyLocation { get; }
+            public WoundType WoundType { get; }
+            public FractureType FractureType { get; }
+            public float BleedingRate { get; }
+            public float MobilityPenalty { get; }
+            public string Description { get; }
         }
 
         public enum ConflictEscalationStage
@@ -306,8 +340,8 @@ namespace Survivebest.Emotion
             emotionSystem.ModifyAnger(ownerOption == CombatOption.Guard ? 2f : 6f);
             emotionSystem.ModifyStress(5f + ownerDamage * 0.25f + (ownerDodged ? 0.5f : 0f));
 
-            InjuryType? targetInjury = TryCreateCombatInjury(targetDamage, ownerOption, false, ownerTargetBodyPart);
-            InjuryType? ownerInjury = TryCreateCombatInjury(ownerDamage, targetOption, true, targetTargetBodyPart);
+            CombatInjuryDetail? targetInjury = TryCreateCombatInjury(targetDamage, ownerOption, false, ownerTargetBodyPart);
+            CombatInjuryDetail? ownerInjury = TryCreateCombatInjury(ownerDamage, targetOption, true, targetTargetBodyPart);
 
             if (crimeSystem != null)
             {
@@ -336,14 +370,24 @@ namespace Survivebest.Emotion
                 TargetDeflectChance = targetDeflectChance * 100f,
                 OwnerDamage = ownerDamage,
                 TargetDamage = targetDamage,
-                OwnerInjury = ownerInjury,
-                TargetInjury = targetInjury,
+                OwnerInjury = ownerInjury?.InjuryType,
+                TargetInjury = targetInjury?.InjuryType,
+                OwnerInjurySeverity = ownerInjury?.Severity,
+                TargetInjurySeverity = targetInjury?.Severity,
+                OwnerInjuryLocation = ownerInjury?.BodyLocation ?? BodyLocation.Unknown,
+                TargetInjuryLocation = targetInjury?.BodyLocation ?? BodyLocation.Unknown,
+                OwnerWoundType = ownerInjury?.WoundType ?? WoundType.None,
+                TargetWoundType = targetInjury?.WoundType ?? WoundType.None,
+                OwnerFractureType = ownerInjury?.FractureType ?? FractureType.None,
+                TargetFractureType = targetInjury?.FractureType ?? FractureType.None,
+                OwnerWoundDescription = ownerInjury?.Description,
+                TargetWoundDescription = targetInjury?.Description,
                 RelationshipLoss = relationshipLoss,
                 OwnerTargetBodyPart = ownerTargetBodyPart,
                 TargetTargetBodyPart = targetTargetBodyPart,
                 OwnerActionLabel = ownerActionLabel,
                 TargetActionLabel = targetActionLabel,
-                Summary = BuildSummary(ownerActionLabel, targetActionLabel, ownerAttackMissed, targetAttackMissed, ownerDodged, targetDodged, ownerDeflected, targetDeflected, ownerDamage, targetDamage)
+                Summary = BuildSummary(ownerActionLabel, targetActionLabel, ownerAttackMissed, targetAttackMissed, ownerDodged, targetDodged, ownerDeflected, targetDeflected, ownerDamage, targetDamage, ownerInjury?.Description, targetInjury?.Description)
             };
 
             OnCombatRoundResolved?.Invoke(target, result);
@@ -404,13 +448,14 @@ namespace Survivebest.Emotion
             }
         }
 
-        private InjuryType? TryCreateCombatInjury(float damage, CombatOption option, bool ownerHurt, string targetBodyPart)
+        private CombatInjuryDetail? TryCreateCombatInjury(float damage, CombatOption option, bool ownerHurt, string targetBodyPart)
         {
             if (damage < 2f)
             {
                 return null;
             }
 
+            BodyLocation bodyLocation = MapBodyLocation(targetBodyPart);
             InjuryType injury = option switch
             {
                 CombatOption.Guard or CombatOption.ShieldBash => InjuryType.Bruise,
@@ -431,13 +476,19 @@ namespace Survivebest.Emotion
                 _ => ConditionSeverity.Severe
             };
 
+            WoundType woundType = DetermineWoundType(option, injury, damage);
+            FractureType fractureType = DetermineFractureType(injury, severity, bodyLocation, option);
+            float bleedingRate = ComputeBleedingRate(injury, woundType, severity, fractureType);
+            float mobilityPenalty = ComputeMobilityPenalty(bodyLocation, severity, injury);
+            string description = BuildWoundDescription(injury, severity, bodyLocation, woundType, fractureType, bleedingRate, mobilityPenalty);
+
             if (ownerHurt)
             {
-                medicalConditionSystem?.AddInjury(injury, severity);
+                medicalConditionSystem?.AddDetailedInjury(injury, severity, bodyLocation, woundType, fractureType, customDisplayName: null, bleedingRateOverride: bleedingRate, mobilityPenaltyOverride: mobilityPenalty, detailSummary: description);
                 injuryRecoverySystem?.AddInjury($"{injury} ({targetBodyPart})", MapSeverity(severity), Mathf.Lerp(8f, 48f, damage / 12f));
             }
 
-            return injury;
+            return new CombatInjuryDetail(injury, severity, bodyLocation, woundType, fractureType, bleedingRate, mobilityPenalty, description);
         }
 
         private static InjurySeverity MapSeverity(ConditionSeverity severity)
@@ -535,11 +586,159 @@ namespace Survivebest.Emotion
             return $"{profile.Verb} at the {targetBodyPart}";
         }
 
-        private static string BuildSummary(string ownerActionLabel, string targetActionLabel, bool ownerAttackMissed, bool targetAttackMissed, bool ownerDodged, bool targetDodged, bool ownerDeflected, bool targetDeflected, float ownerDamage, float targetDamage)
+        private static string BuildSummary(string ownerActionLabel, string targetActionLabel, bool ownerAttackMissed, bool targetAttackMissed, bool ownerDodged, bool targetDodged, bool ownerDeflected, bool targetDeflected, float ownerDamage, float targetDamage, string ownerInjuryDescription, string targetInjuryDescription)
         {
             string ownerOutcome = targetDodged ? "was dodged" : targetDeflected ? "was deflected" : ownerAttackMissed ? "missed" : $"landed for {targetDamage:0.0}";
             string targetOutcome = ownerDodged ? "was dodged" : ownerDeflected ? "was deflected" : targetAttackMissed ? "missed" : $"landed for {ownerDamage:0.0}";
-            return $"Combat round resolved: owner used {ownerActionLabel} and {ownerOutcome}; target used {targetActionLabel} and {targetOutcome}.";
+            string injuryDetail = string.Empty;
+            if (!string.IsNullOrWhiteSpace(ownerInjuryDescription) || !string.IsNullOrWhiteSpace(targetInjuryDescription))
+            {
+                injuryDetail = $" Injuries: owner {ownerInjuryDescription ?? "avoided major trauma"}; target {targetInjuryDescription ?? "avoided major trauma"}.";
+            }
+
+            return $"Combat round resolved: owner used {ownerActionLabel} and {ownerOutcome}; target used {targetActionLabel} and {targetOutcome}.{injuryDetail}";
+        }
+
+        private static WoundType DetermineWoundType(CombatOption option, InjuryType injury, float damage)
+        {
+            return option switch
+            {
+                CombatOption.Guard or CombatOption.ShieldBash => WoundType.BluntImpact,
+                CombatOption.Jab or CombatOption.Cross or CombatOption.Hook or CombatOption.HeavySwing or CombatOption.Stomp or CombatOption.Kick => damage >= 8f ? WoundType.InternalTrauma : WoundType.BluntImpact,
+                CombatOption.Elbow or CombatOption.KneeStrike or CombatOption.Scratch => WoundType.Laceration,
+                CombatOption.Grapple or CombatOption.Clinch or CombatOption.Trip or CombatOption.Pin => WoundType.JointTwist,
+                CombatOption.Throw => WoundType.DeepBruising,
+                CombatOption.WeaponStrike or CombatOption.HornGore or CombatOption.Peck => WoundType.Puncture,
+                CombatOption.Bite => WoundType.BiteTrauma,
+                CombatOption.WebShot => WoundType.LigamentTear,
+                CombatOption.VenomSpit => WoundType.VenomExposure,
+                CombatOption.Headbutt => WoundType.ConcussiveTrauma,
+                _ => injury switch
+                {
+                    InjuryType.Burn => WoundType.BurnTrauma,
+                    InjuryType.Fracture => WoundType.BoneBreak,
+                    InjuryType.Concussion => WoundType.ConcussiveTrauma,
+                    InjuryType.Scrape => WoundType.Abrasion,
+                    InjuryType.Bite => WoundType.BiteTrauma,
+                    _ => WoundType.DeepBruising
+                }
+            };
+        }
+
+        private static FractureType DetermineFractureType(InjuryType injury, ConditionSeverity severity, BodyLocation bodyLocation, CombatOption option)
+        {
+            if (injury != InjuryType.Fracture)
+            {
+                return FractureType.None;
+            }
+
+            if (severity == ConditionSeverity.Mild)
+            {
+                return FractureType.Hairline;
+            }
+
+            if (option == CombatOption.WeaponStrike || option == CombatOption.HornGore)
+            {
+                return severity == ConditionSeverity.Severe ? FractureType.Open : FractureType.Closed;
+            }
+
+            if (bodyLocation is BodyLocation.Scalp or BodyLocation.Eye or BodyLocation.Jaw)
+            {
+                return FractureType.Depressed;
+            }
+
+            return severity == ConditionSeverity.Severe ? FractureType.Comminuted : FractureType.Spiral;
+        }
+
+        private static float ComputeBleedingRate(InjuryType injury, WoundType woundType, ConditionSeverity severity, FractureType fractureType)
+        {
+            float baseRate = injury switch
+            {
+                InjuryType.Cut => 0.22f,
+                InjuryType.Burn => 0.1f,
+                InjuryType.Bite => 0.18f,
+                InjuryType.Scrape => 0.06f,
+                InjuryType.Fracture => fractureType == FractureType.Open ? 0.2f : 0.04f,
+                _ => 0.02f
+            };
+
+            if (woundType == WoundType.Puncture)
+            {
+                baseRate += 0.08f;
+            }
+            else if (woundType == WoundType.VenomExposure)
+            {
+                baseRate += 0.05f;
+            }
+
+            return Mathf.Clamp01(baseRate * (severity == ConditionSeverity.Severe ? 1.45f : severity == ConditionSeverity.Moderate ? 1.15f : 1f));
+        }
+
+        private static float ComputeMobilityPenalty(BodyLocation bodyLocation, ConditionSeverity severity, InjuryType injury)
+        {
+            float basePenalty = bodyLocation switch
+            {
+                BodyLocation.Thigh or BodyLocation.Knee or BodyLocation.Shin or BodyLocation.Ankle or BodyLocation.Foot or BodyLocation.Hip => 0.42f,
+                BodyLocation.Shoulder or BodyLocation.UpperArm or BodyLocation.Elbow or BodyLocation.Forearm or BodyLocation.Wrist or BodyLocation.Hand or BodyLocation.Fingers => 0.3f,
+                BodyLocation.Spine or BodyLocation.Ribs or BodyLocation.Chest or BodyLocation.Abdomen => 0.26f,
+                BodyLocation.Scalp or BodyLocation.Eye or BodyLocation.Jaw or BodyLocation.Neck => 0.22f,
+                _ => 0.12f
+            };
+
+            if (injury == InjuryType.Fracture)
+            {
+                basePenalty += 0.18f;
+            }
+
+            return Mathf.Clamp01(basePenalty + (severity == ConditionSeverity.Severe ? 0.22f : severity == ConditionSeverity.Moderate ? 0.1f : 0f));
+        }
+
+        private static string BuildWoundDescription(InjuryType injury, ConditionSeverity severity, BodyLocation bodyLocation, WoundType woundType, FractureType fractureType, float bleedingRate, float mobilityPenalty)
+        {
+            string severityLabel = severity.ToString().ToLowerInvariant();
+            string woundLabel = woundType == WoundType.None ? injury.ToString().ToLowerInvariant() : woundType.ToString();
+            string locationLabel = bodyLocation == BodyLocation.Unknown ? "unspecified area" : bodyLocation.ToString();
+            string fractureLabel = fractureType == FractureType.None ? string.Empty : $", {fractureType.ToString().ToLowerInvariant()} fracture";
+            return $"{severityLabel} {woundLabel} at {locationLabel}{fractureLabel}, bleeding {bleedingRate:P0}, mobility loss {mobilityPenalty:P0}";
+        }
+
+        private static BodyLocation MapBodyLocation(string targetBodyPart)
+        {
+            if (string.IsNullOrWhiteSpace(targetBodyPart))
+            {
+                return BodyLocation.Unknown;
+            }
+
+            string bodyPart = targetBodyPart.ToLowerInvariant();
+            if (bodyPart.Contains("eye")) return BodyLocation.Eye;
+            if (bodyPart.Contains("jaw") || bodyPart.Contains("mandible")) return BodyLocation.Jaw;
+            if (bodyPart.Contains("throat") || bodyPart.Contains("neck")) return BodyLocation.Neck;
+            if (bodyPart.Contains("shoulder") || bodyPart.Contains("collarbone")) return BodyLocation.Shoulder;
+            if (bodyPart.Contains("bicep")) return BodyLocation.UpperArm;
+            if (bodyPart.Contains("elbow")) return BodyLocation.Elbow;
+            if (bodyPart.Contains("forearm")) return BodyLocation.Forearm;
+            if (bodyPart.Contains("wrist")) return BodyLocation.Wrist;
+            if (bodyPart.Contains("hand")) return BodyLocation.Hand;
+            if (bodyPart.Contains("finger")) return BodyLocation.Fingers;
+            if (bodyPart.Contains("sternum") || bodyPart.Contains("chest") || bodyPart.Contains("solar plexus")) return BodyLocation.Chest;
+            if (bodyPart.Contains("rib")) return BodyLocation.Ribs;
+            if (bodyPart.Contains("kidney")) return BodyLocation.Kidney;
+            if (bodyPart.Contains("spine")) return BodyLocation.Spine;
+            if (bodyPart.Contains("hip")) return BodyLocation.Hip;
+            if (bodyPart.Contains("groin")) return BodyLocation.Groin;
+            if (bodyPart.Contains("thigh") || bodyPart.Contains("haunch")) return BodyLocation.Thigh;
+            if (bodyPart.Contains("knee")) return BodyLocation.Knee;
+            if (bodyPart.Contains("shin") || bodyPart.Contains("foreleg") || bodyPart.Contains("hind leg")) return BodyLocation.Shin;
+            if (bodyPart.Contains("ankle")) return BodyLocation.Ankle;
+            if (bodyPart.Contains("foot")) return BodyLocation.Foot;
+            if (bodyPart.Contains("antenna")) return BodyLocation.Antenna;
+            if (bodyPart.Contains("thorax")) return BodyLocation.Thorax;
+            if (bodyPart.Contains("wing")) return BodyLocation.Wing;
+            if (bodyPart.Contains("stinger")) return BodyLocation.Stinger;
+            if (bodyPart.Contains("tail")) return BodyLocation.Tail;
+            if (bodyPart.Contains("nose") || bodyPart.Contains("temple") || bodyPart.Contains("ear") || bodyPart.Contains("scalp")) return BodyLocation.Scalp;
+            if (bodyPart.Contains("abdomen") || bodyPart.Contains("flank") || bodyPart.Contains("muzzle") || bodyPart.Contains("snout")) return BodyLocation.Abdomen;
+            return BodyLocation.Unknown;
         }
 
         private void PublishConflictEvent(CharacterCore target, ViolenceType type, bool ownerWins, string reason)

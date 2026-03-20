@@ -170,7 +170,57 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(result.TargetDeflectChance >= 1f && result.TargetDeflectChance <= 52f);
             Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerTargetBodyPart));
             Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerActionLabel));
+            Assert.IsTrue(result.OwnerInjuryLocation != BodyLocation.Unknown || result.TargetInjuryLocation != BodyLocation.Unknown);
             StringAssert.Contains("Combat round resolved:", result.Summary);
+
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(systemsGo);
+        }
+
+        [Test]
+        public void ConflictSystem_ResolveCombatRound_CapturesDetailedWoundMetadata()
+        {
+            Random.InitState(999);
+            GameObject ownerGo = new GameObject("OwnerWounds");
+            GameObject targetGo = new GameObject("TargetWounds");
+            GameObject systemsGo = new GameObject("ConflictWounds");
+
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner", "Owner", LifeStage.Adult);
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target", "Target", LifeStage.Adult);
+
+            ConflictSystem conflict = systemsGo.AddComponent<ConflictSystem>();
+            EmotionSystem emotion = systemsGo.AddComponent<EmotionSystem>();
+            SocialSystem social = systemsGo.AddComponent<SocialSystem>();
+            HealthSystem ownerHealth = systemsGo.AddComponent<HealthSystem>();
+            InjuryRecoverySystem injuryRecovery = systemsGo.AddComponent<InjuryRecoverySystem>();
+            MedicalConditionSystem medical = systemsGo.AddComponent<MedicalConditionSystem>();
+            HealthSystem targetHealth = targetGo.AddComponent<HealthSystem>();
+
+            typeof(ConflictSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, owner);
+            typeof(ConflictSystem).GetField("emotionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, emotion);
+            typeof(ConflictSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, social);
+            typeof(ConflictSystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, ownerHealth);
+            typeof(ConflictSystem).GetField("injuryRecoverySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, injuryRecovery);
+            typeof(ConflictSystem).GetField("medicalConditionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, medical);
+            typeof(InjuryRecoverySystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(injuryRecovery, ownerHealth);
+            typeof(InjuryRecoverySystem).GetField("needsSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(injuryRecovery, systemsGo.AddComponent<NeedsSystem>());
+
+            CombatRoundResult result = conflict.ResolveCombatRound(target, targetHealth, CombatOption.Guard, CombatOption.WeaponStrike);
+
+            MedicalCondition ownerCondition = medical.ActiveConditions.First(c => !c.IsIllness);
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(ownerCondition);
+            Assert.AreEqual(result.OwnerInjury, ownerCondition.InjuryType);
+            Assert.AreEqual(result.OwnerInjuryLocation, ownerCondition.BodyLocation);
+            Assert.AreEqual(result.OwnerWoundType, ownerCondition.WoundType);
+            Assert.AreEqual(result.OwnerFractureType, ownerCondition.FractureType);
+            Assert.IsTrue(ownerCondition.BleedingRate >= 0f);
+            Assert.IsTrue(ownerCondition.MobilityPenalty >= 0f);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(ownerCondition.DetailSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.OwnerWoundDescription));
 
             Object.DestroyImmediate(ownerGo);
             Object.DestroyImmediate(targetGo);
