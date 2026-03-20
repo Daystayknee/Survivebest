@@ -371,6 +371,19 @@ namespace Survivebest.Core
         public List<string> SmallPleasures = new();
     }
 
+    [Serializable]
+    public class CollectionIdentityProfile
+    {
+        public string CharacterId;
+        public List<string> CollectionFocuses = new();
+        public string FavoriteKeepsake = "old photo";
+        public string EverydayCarryItem = "keys";
+        public List<string> WishlistItems = new();
+        [Range(0f, 1f)] public float CollectorDrive = 0.4f;
+        [Range(0f, 1f)] public float NostalgiaPull = 0.4f;
+        [Range(0f, 1f)] public float ThriftLuck = 0.4f;
+    }
+
 
     [Serializable]
     public class VampireBloodEconomyProfile
@@ -576,6 +589,7 @@ namespace Survivebest.Core
         [SerializeField] private List<HumanMicroConditionProfile> humanMicroConditionProfiles = new();
         [SerializeField] private List<FriendshipConstellationProfile> friendshipConstellationProfiles = new();
         [SerializeField] private List<MundaneEarthLifeProfile> mundaneEarthLifeProfiles = new();
+        [SerializeField] private List<CollectionIdentityProfile> collectionIdentityProfiles = new();
         [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
         [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
         [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
@@ -609,6 +623,7 @@ namespace Survivebest.Core
         public IReadOnlyList<HumanMicroConditionProfile> HumanMicroConditionProfiles => humanMicroConditionProfiles;
         public IReadOnlyList<FriendshipConstellationProfile> FriendshipConstellationProfiles => friendshipConstellationProfiles;
         public IReadOnlyList<MundaneEarthLifeProfile> MundaneEarthLifeProfiles => mundaneEarthLifeProfiles;
+        public IReadOnlyList<CollectionIdentityProfile> CollectionIdentityProfiles => collectionIdentityProfiles;
         public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
         public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
         public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
@@ -950,6 +965,18 @@ namespace Survivebest.Core
                 {
                     AppendThought(actor, "mundane_life", "Domestic friction is nibbling at your attention in a dozen tiny ways.", friction, null);
                 }
+            }
+
+            return stored;
+        }
+
+        public CollectionIdentityProfile SetCollectionIdentityProfile(CharacterCore actor, CollectionIdentityProfile profile)
+        {
+            CollectionIdentityProfile stored = UpsertProfile(actor, profile, collectionIdentityProfiles, () => new CollectionIdentityProfile());
+            if (stored != null && (stored.CollectorDrive > 0.45f || stored.NostalgiaPull > 0.45f))
+            {
+                string collection = stored.CollectionFocuses.Count > 0 ? stored.CollectionFocuses[0] : LifeActivityCatalog.PickCollectibleHobby();
+                AppendThought(actor, "collection_identity", $"You keep clocking {collection.ToLowerInvariant()} like it might be the next thing worth bringing home.", Mathf.Max(stored.CollectorDrive, stored.NostalgiaPull), null);
             }
 
             return stored;
@@ -1330,6 +1357,7 @@ namespace Survivebest.Core
             HumanMicroConditionProfile micro = FindProfile(characterId, humanMicroConditionProfiles);
             FriendshipConstellationProfile friendships = FindProfile(characterId, friendshipConstellationProfiles);
             MundaneEarthLifeProfile mundane = FindProfile(characterId, mundaneEarthLifeProfiles);
+            CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
             VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
 
             List<string> parts = new();
@@ -1400,6 +1428,12 @@ namespace Survivebest.Core
                 {
                     parts.Add($"Earth friction: mundane drag {domesticDrag:0.00}");
                 }
+            }
+
+            if (collection != null)
+            {
+                string focus = collection.CollectionFocuses.Count > 0 ? collection.CollectionFocuses[0] : collection.FavoriteKeepsake;
+                parts.Add($"Collection life: {focus} / keepsake {collection.FavoriteKeepsake} / carry {collection.EverydayCarryItem}");
             }
 
             if (masquerade != null && masquerade.Suspicion > 0.2f)
@@ -1520,9 +1554,17 @@ namespace Survivebest.Core
                 observations.Add("Human life is getting granular: chores, batteries, keys, dishes, weather, and commute timing all want attention at once.");
             }
 
+            CollectionIdentityProfile collection = FindProfile(actor.CharacterId, collectionIdentityProfiles);
+            if (collection != null && (collection.CollectorDrive > 0.45f || collection.NostalgiaPull > 0.45f || collection.ThriftLuck > 0.45f))
+            {
+                string focus = collection.CollectionFocuses.Count > 0 ? collection.CollectionFocuses[rng.Next(collection.CollectionFocuses.Count)] : LifeActivityCatalog.PickCollectibleHobby();
+                string objectText = string.IsNullOrWhiteSpace(collection.FavoriteKeepsake) ? LifeActivityCatalog.PickSentimentalObject() : collection.FavoriteKeepsake;
+                observations.Add($"A human-scale thrill hits when {focus.ToLowerInvariant()} show up near your {objectText}, like everyday life is quietly curating itself.");
+            }
+
             if (observations.Count == 0)
             {
-                observations.Add("The hour passes quietly, textured more by habit than crisis.");
+                observations.Add($"The hour passes quietly, textured by habit, a {LifeActivityCatalog.PickHumanExperienceMoment()}, and keeping track of your {LifeActivityCatalog.PickEverydayCarryItem()}.");
             }
 
             string message = observations[rng.Next(observations.Count)];

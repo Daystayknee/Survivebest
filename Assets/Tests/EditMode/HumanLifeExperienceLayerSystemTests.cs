@@ -357,5 +357,37 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void CollectionIdentityProfile_InfluencesHumanTextureSummaryAndPulse()
+        {
+            GameObject go = new GameObject("CollectionTexture");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharCollection");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_collection", "Collection", LifeStage.Adult);
+
+            system.SetCollectionIdentityProfile(character, new CollectionIdentityProfile
+            {
+                CollectionFocuses = new System.Collections.Generic.List<string> { "vinyl collecting", "retro game collecting" },
+                FavoriteKeepsake = "concert ticket stub",
+                EverydayCarryItem = "phone charger",
+                WishlistItems = new System.Collections.Generic.List<string> { "limited pressing", "signed poster" },
+                CollectorDrive = 0.82f,
+                NostalgiaPull = 0.74f,
+                ThriftLuck = 0.63f
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string pulse = system.SimulateHumanTexturePulse(character, 14, 99);
+
+            StringAssert.Contains("Collection life", summary);
+            StringAssert.Contains("concert ticket stub", summary);
+            Assert.IsTrue(pulse.Contains("vinyl collecting") || pulse.Contains("concert ticket stub"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }

@@ -14,11 +14,27 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void PickRandomOutfitStyle_ByLifeStage_ReturnsAgeAppropriateOptions()
+        {
+            string toddler = LifeActivityCatalog.PickRandomOutfitStyle(LifeStage.Toddler);
+            string teen = LifeActivityCatalog.PickRandomOutfitStyle(LifeStage.Teen);
+            string elder = LifeActivityCatalog.PickRandomOutfitStyle(LifeStage.Elder);
+
+            CollectionAssert.Contains(LifeActivityCatalog.GetOutfitStylesForLifeStage(LifeStage.Toddler), toddler);
+            CollectionAssert.Contains(LifeActivityCatalog.GetOutfitStylesForLifeStage(LifeStage.Teen), teen);
+            CollectionAssert.Contains(LifeActivityCatalog.GetOutfitStylesForLifeStage(LifeStage.Elder), elder);
+        }
+
+        [Test]
         public void ModernAdultPickers_ReturnNonEmptyValues()
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialFeedActivity()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHomeUpgradeProject()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickAmbitionFocus()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickCollectibleHobby()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSentimentalObject()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEverydayCarryItem()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHumanExperienceMoment()));
         }
     }
 }

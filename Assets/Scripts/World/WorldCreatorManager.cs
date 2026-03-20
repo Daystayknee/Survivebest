@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Events;
 using Survivebest.Location;
 using Survivebest.Society;
+using Survivebest.Catalog;
 
 namespace Survivebest.World
 {
@@ -57,6 +58,7 @@ namespace Survivebest.World
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private HousingPropertySystem housingPropertySystem;
         [SerializeField] private LawSystem lawSystem;
+        [SerializeField] private SupplyCatalog supplyCatalog;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<WorldAreaTemplate> areaTemplates = new();
         [SerializeField] private bool useSensibleDefaultsOnStart = true;
@@ -888,15 +890,44 @@ namespace Survivebest.World
             "Harborview Apartments"
         };
 
-        private static string[] BuildStoreAreaNames() => new[]
+        private string[] BuildStoreAreaNames()
         {
-            "Corner Grocery",
-            "Family Pharmacy",
-            "Main Street Shops",
-            "Hardware Depot",
-            "Fresh Market Hall",
-            "Night Market Row"
-        };
+            List<string> names = new()
+            {
+                "Corner Grocery",
+                "Family Pharmacy",
+                "Main Street Shops",
+                "Hardware Depot",
+                "Fresh Market Hall",
+                "Night Market Row"
+            };
+
+            if (supplyCatalog != null)
+            {
+                List<SupplyItem> stores = supplyCatalog.GetByGroup(SupplyGroup.Store);
+                for (int i = 0; i < stores.Count; i++)
+                {
+                    SupplyItem store = stores[i];
+                    if (store == null || string.IsNullOrWhiteSpace(store.Name))
+                    {
+                        continue;
+                    }
+
+                    string areaName = store.Name.Contains("Store", StringComparison.OrdinalIgnoreCase) ||
+                                      store.Name.Contains("Market", StringComparison.OrdinalIgnoreCase) ||
+                                      store.Name.Contains("Retailer", StringComparison.OrdinalIgnoreCase)
+                        ? store.Name
+                        : $"{store.Name} Plaza";
+
+                    if (!names.Contains(areaName))
+                    {
+                        names.Add(areaName);
+                    }
+                }
+            }
+
+            return names.ToArray();
+        }
 
         private static string[] BuildCivicAreaNames() => new[]
         {
