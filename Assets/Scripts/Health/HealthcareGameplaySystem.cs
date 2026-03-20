@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using Survivebest.Core;
 using Survivebest.Minigames;
 using Survivebest.NPC;
+using Survivebest.Location;
 
 namespace Survivebest.Health
 {
@@ -71,10 +73,69 @@ namespace Survivebest.Health
         public List<TreatmentDirective> Directives = new();
     }
 
+    [Serializable]
+    public class CareProviderAssignment
+    {
+        public string NpcId;
+        public string DisplayName;
+        public ProfessionType Profession;
+        public string WorkplaceLotId;
+        public string CurrentLotId;
+        public bool IsOnDuty;
+    }
+
+    [Serializable]
+    public class TreatmentRoomBooking
+    {
+        public string LotId;
+        public string DisplayName;
+        public CareFacilityType FacilityType;
+        public string RoomLabel;
+        public bool IsConfirmed;
+    }
+
+    [Serializable]
+    public class HealthcareEncounterSession
+    {
+        public HealthcareEncounterPlan Plan;
+        public List<CareProviderAssignment> Providers = new();
+        public List<TreatmentRoomBooking> Bookings = new();
+        public List<string> SessionNotes = new();
+    }
+
+    [Serializable]
+    public class TreatmentDirectiveExecution
+    {
+        public TreatmentDirective Directive;
+        public CareProviderAssignment Provider;
+        public TreatmentRoomBooking Booking;
+        public MinigameSessionBlueprint Blueprint;
+        public bool Success;
+        public float CompletionScore;
+        public string OutcomeSummary;
+    }
+
+    [Serializable]
+    public class HealthcareEncounterExecutionResult
+    {
+        public HealthcareEncounterSession Session;
+        public bool Success;
+        public float CompletionScore;
+        public int SuccessfulDirectiveCount;
+        public int FailedDirectiveCount;
+        public string BillingSummary;
+        public string OutcomeSummary;
+        public List<TreatmentDirectiveExecution> DirectiveExecutions = new();
+        public List<string> TimelineEntries = new();
+    }
+
     public class HealthcareGameplaySystem : MonoBehaviour
     {
         [SerializeField] private NpcCareerSystem npcCareerSystem;
+        [SerializeField] private NpcScheduleSystem npcScheduleSystem;
+        [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private World.WorldClock worldClock;
+        [SerializeField] private MinigameManager minigameManager;
 
         public List<HealthcareEncounterPlan> BuildPlansForCharacter(MedicalConditionSystem medicalConditionSystem, bool animalPatient = false)
         {
@@ -170,6 +231,131 @@ namespace Survivebest.Health
             builder.AppendLine(plan.MedicationSummary);
             builder.AppendLine(plan.FollowUpSummary);
             return builder.ToString().Trim();
+        }
+
+        public HealthcareEncounterSession BuildEncounterSession(MedicalCondition condition, bool animalPatient = false, string preferredLotId = null)
+        {
+            HealthcareEncounterPlan plan = BuildPlan(condition, animalPatient);
+            if (plan == null)
+            {
+                return null;
+            }
+
+            HealthcareEncounterSession session = new()
+            {
+                Plan = plan
+            };
+
+            HashSet<CareProviderRole> roles = new();
+            for (int i = 0; i < plan.Directives.Count; i++)
+            {
+                TreatmentDirective directive = plan.Directives[i];
+                if (directive == null || roles.Contains(directive.ProviderRole))
+                {
+                    continue;
+                }
+
+                roles.Add(directive.ProviderRole);
+                CareProviderAssignment provider = ResolveProvider(directive.ProviderRole, preferredLotId, animalPatient);
+                if (provider != null)
+                {
+                    session.Providers.Add(provider);
+                }
+
+                TreatmentRoomBooking booking = ResolveRoomBooking(directive.FacilityType, preferredLotId, animalPatient);
+                if (booking != null)
+                {
+                    session.Bookings.Add(booking);
+                }
+            }
+
+            session.SessionNotes.Add(BuildProviderCoverageSummary(animalPatient, preferredLotId));
+            session.SessionNotes.Add(plan.ReprocessingSummary);
+            session.SessionNotes.Add(plan.FollowUpSummary);
+            return session;
+        }
+
+        public HealthcareEncounterExecutionResult ExecuteEncounterSession(HealthcareEncounterSession session, CharacterCore performer = null, MinigameManager overrideMinigameManager = null)
+        {
+            if (session == null || session.Plan == null)
+            {
+                return null;
+            }
+
+            HealthcareEncounterExecutionResult result = new()
+            {
+                Session = session
+            };
+
+            MinigameManager resolvedMinigameManager = overrideMinigameManager != null ? overrideMinigameManager : minigameManager;
+            for (int i = 0; i < session.Plan.Directives.Count; i++)
+            {
+                TreatmentDirective directive = session.Plan.Directives[i];
+                if (directive == null)
+                {
+                    continue;
+                }
+
+                TreatmentDirectiveExecution execution = ExecuteDirective(session, directive, performer, resolvedMinigameManager);
+                result.DirectiveExecutions.Add(execution);
+                result.TimelineEntries.Add(execution.OutcomeSummary);
+
+                if (execution.Success)
+                {
+                    result.SuccessfulDirectiveCount++;
+                }
+                else
+                {
+                    result.FailedDirectiveCount++;
+                }
+            }
+
+            int totalDirectives = result.SuccessfulDirectiveCount + result.FailedDirectiveCount;
+            result.CompletionScore = totalDirectives > 0
+                ? result.SuccessfulDirectiveCount / (float)totalDirectives
+                : 0f;
+            result.Success = totalDirectives == 0 || result.FailedDirectiveCount == 0 || result.CompletionScore >= 0.75f;
+            result.BillingSummary = BuildBillingSummary(session, result);
+            result.OutcomeSummary = BuildEncounterOutcomeSummary(session, result);
+            result.TimelineEntries.Add(result.BillingSummary);
+            result.TimelineEntries.Add(result.OutcomeSummary);
+            return result;
+        }
+
+        public MinigameSessionBlueprint BuildDirectiveBlueprint(TreatmentDirective directive)
+        {
+            if (directive == null)
+            {
+                return null;
+            }
+
+            MinigameSessionBlueprint blueprint = minigameManager != null
+                ? minigameManager.BuildSessionBlueprint(directive.InteractiveMinigame, directive.AnatomyFocus, directive.RequiresSterileField)
+                : new MinigameSessionBlueprint
+                {
+                    Type = directive.InteractiveMinigame,
+                    SessionTitle = directive.Title,
+                    AnatomyFocus = string.IsNullOrWhiteSpace(directive.AnatomyFocus) ? "care lane" : directive.AnatomyFocus,
+                    EmergencyPacing = directive.RequiresSterileField
+                };
+
+            blueprint.SessionTitle = directive.Title;
+            if (blueprint.Steps.Count == 0)
+            {
+                for (int i = 0; i < directive.ProcedureSteps.Count; i++)
+                {
+                    blueprint.Steps.Add(new MinigameStepBlueprint
+                    {
+                        StepId = $"directive_step_{i + 1}",
+                        Instruction = directive.ProcedureSteps[i],
+                        ToolId = i < directive.Supplies.Count ? SanitizeToolId(directive.Supplies[i]) : "care_tray",
+                        InputStyle = ResolveInputStyle(directive.InteractiveMinigame, i),
+                        PrecisionRequirement = directive.RequiresSterileField ? 0.65f : 0.5f
+                    });
+                }
+            }
+
+            return blueprint;
         }
 
         private void AddInitialAssessment(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
@@ -464,6 +650,325 @@ namespace Survivebest.Health
             }
 
             return checklist;
+        }
+
+        private TreatmentDirectiveExecution ExecuteDirective(HealthcareEncounterSession session, TreatmentDirective directive, CharacterCore performer, MinigameManager resolvedMinigameManager)
+        {
+            CareProviderAssignment provider = FindAssignedProvider(session, directive.ProviderRole)
+                ?? ResolveProvider(directive.ProviderRole, null, session.Plan.AnimalPatient);
+            TreatmentRoomBooking booking = FindAssignedBooking(session, directive.FacilityType)
+                ?? ResolveRoomBooking(directive.FacilityType, null, session.Plan.AnimalPatient);
+            MinigameSessionBlueprint blueprint = BuildDirectiveBlueprint(directive);
+            float completionScore = EvaluateDirectiveCompletion(directive, provider, booking, blueprint, performer, resolvedMinigameManager);
+            bool success = completionScore >= (directive.RequiresSterileField ? 0.7f : 0.6f);
+
+            return new TreatmentDirectiveExecution
+            {
+                Directive = directive,
+                Provider = provider,
+                Booking = booking,
+                Blueprint = blueprint,
+                CompletionScore = completionScore,
+                Success = success,
+                OutcomeSummary = BuildDirectiveOutcomeSummary(directive, provider, booking, success, completionScore)
+            };
+        }
+
+        private static float EvaluateDirectiveCompletion(TreatmentDirective directive, CareProviderAssignment provider, TreatmentRoomBooking booking, MinigameSessionBlueprint blueprint, CharacterCore performer, MinigameManager resolvedMinigameManager)
+        {
+            float score = 0.25f;
+            if (provider != null)
+            {
+                score += provider.IsOnDuty ? 0.25f : 0.15f;
+            }
+
+            if (booking != null && booking.IsConfirmed)
+            {
+                score += 0.2f;
+            }
+
+            if (blueprint != null)
+            {
+                int stepCount = blueprint.Steps != null ? blueprint.Steps.Count : 0;
+                score += Mathf.Clamp01(stepCount / 4f) * 0.2f;
+            }
+
+            if (resolvedMinigameManager != null)
+            {
+                score += 0.05f;
+            }
+
+            if (performer != null)
+            {
+                score += 0.05f;
+            }
+
+            if (directive.RequiresSterileField && booking == null)
+            {
+                score -= 0.15f;
+            }
+
+            return Mathf.Clamp01(score);
+        }
+
+        private static string BuildDirectiveOutcomeSummary(TreatmentDirective directive, CareProviderAssignment provider, TreatmentRoomBooking booking, bool success, float completionScore)
+        {
+            string providerLabel = provider != null ? provider.DisplayName : "unassigned provider";
+            string bookingLabel = booking != null ? $"{booking.DisplayName} / {booking.RoomLabel}" : "unbooked room";
+            return $"{directive.Title}: {(success ? "completed" : "blocked")} with {providerLabel} at {bookingLabel} ({Mathf.RoundToInt(completionScore * 100f)}% readiness).";
+        }
+
+        private static string BuildBillingSummary(HealthcareEncounterSession session, HealthcareEncounterExecutionResult result)
+        {
+            int baseCharge = 75;
+            for (int i = 0; i < session.Plan.Directives.Count; i++)
+            {
+                TreatmentDirective directive = session.Plan.Directives[i];
+                if (directive == null)
+                {
+                    continue;
+                }
+
+                baseCharge += directive.EstimatedMinutes * 4;
+                if (directive.RequiresSterileField)
+                {
+                    baseCharge += 120;
+                }
+
+                if (directive.FacilityType == CareFacilityType.OperatingRoom)
+                {
+                    baseCharge += 600;
+                }
+            }
+
+            int adjustment = result.Success ? 0 : 85 * Mathf.Max(1, result.FailedDirectiveCount);
+            return $"Billing lane: estimated charge {baseCharge + adjustment} credits across {session.Plan.Directives.Count} directives, pharmacy handoff, room use, and chart closure.";
+        }
+
+        private static string BuildEncounterOutcomeSummary(HealthcareEncounterSession session, HealthcareEncounterExecutionResult result)
+        {
+            string status = result.Success ? "Encounter completed" : "Encounter partially completed";
+            return $"{status}: {result.SuccessfulDirectiveCount}/{session.Plan.Directives.Count} directives cleared for {session.Plan.ChiefComplaint}. Follow-up remains {(session.Plan.NeedsHospitalization ? "inpatient" : "outpatient")}.";
+        }
+
+        private CareProviderAssignment FindAssignedProvider(HealthcareEncounterSession session, CareProviderRole role)
+        {
+            for (int i = 0; i < session.Providers.Count; i++)
+            {
+                CareProviderAssignment provider = session.Providers[i];
+                if (provider == null)
+                {
+                    continue;
+                }
+
+                if (ProfessionMatchesRole(provider.Profession, role))
+                {
+                    return provider;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool ProfessionMatchesRole(ProfessionType profession, CareProviderRole role)
+        {
+            return role switch
+            {
+                CareProviderRole.Nurse => profession == ProfessionType.Nurse,
+                CareProviderRole.Doctor => profession == ProfessionType.Doctor,
+                CareProviderRole.Surgeon => profession == ProfessionType.Doctor,
+                CareProviderRole.Pharmacist => profession == ProfessionType.Clerk,
+                CareProviderRole.Veterinarian => profession == ProfessionType.Veterinarian,
+                CareProviderRole.Dermatologist => profession == ProfessionType.Doctor,
+                _ => profession == ProfessionType.Nurse || profession == ProfessionType.Veterinarian
+            };
+        }
+
+        private static TreatmentRoomBooking FindAssignedBooking(HealthcareEncounterSession session, CareFacilityType facilityType)
+        {
+            for (int i = 0; i < session.Bookings.Count; i++)
+            {
+                TreatmentRoomBooking booking = session.Bookings[i];
+                if (booking != null && booking.FacilityType == facilityType)
+                {
+                    return booking;
+                }
+            }
+
+            return null;
+        }
+
+        private static string SanitizeToolId(string supply)
+        {
+            if (string.IsNullOrWhiteSpace(supply))
+            {
+                return "care_tray";
+            }
+
+            return supply.Trim().ToLowerInvariant().Replace("/", "_").Replace(" ", "_");
+        }
+
+        private static MinigameInputStyle ResolveInputStyle(MinigameType minigameType, int stepIndex)
+        {
+            return minigameType switch
+            {
+                MinigameType.Surgery => stepIndex == 0 ? MinigameInputStyle.Sequence : MinigameInputStyle.Trace,
+                MinigameType.Casting => stepIndex == 0 ? MinigameInputStyle.Drag : MinigameInputStyle.Hold,
+                MinigameType.Bandaging => stepIndex == 1 ? MinigameInputStyle.Drag : MinigameInputStyle.Hold,
+                MinigameType.Pharmacy => stepIndex == 1 ? MinigameInputStyle.Sequence : MinigameInputStyle.Tap,
+                MinigameType.Dermatology => MinigameInputStyle.Trace,
+                MinigameType.Triage => MinigameInputStyle.Sequence,
+                _ => MinigameInputStyle.Hold
+            };
+        }
+
+        private CareProviderAssignment ResolveProvider(CareProviderRole role, string preferredLotId, bool animalPatient)
+        {
+            ProfessionType profession = role switch
+            {
+                CareProviderRole.Nurse => ProfessionType.Nurse,
+                CareProviderRole.Doctor => ProfessionType.Doctor,
+                CareProviderRole.Surgeon => ProfessionType.Doctor,
+                CareProviderRole.Veterinarian => ProfessionType.Veterinarian,
+                CareProviderRole.Pharmacist => ProfessionType.Clerk,
+                CareProviderRole.Dermatologist => ProfessionType.Doctor,
+                _ => animalPatient ? ProfessionType.Veterinarian : ProfessionType.Nurse
+            };
+
+            if (npcCareerSystem == null || npcScheduleSystem == null)
+            {
+                return null;
+            }
+
+            int hour = worldClock != null ? worldClock.Hour : 12;
+            NpcCareerRecord bestRecord = null;
+            NpcProfile bestProfile = null;
+            for (int i = 0; i < npcCareerSystem.Records.Count; i++)
+            {
+                NpcCareerRecord record = npcCareerSystem.Records[i];
+                if (record == null || !record.IsEmployed || record.Profession != profession)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(preferredLotId) && !string.IsNullOrWhiteSpace(record.WorkplaceLotId) && !string.Equals(record.WorkplaceLotId, preferredLotId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                NpcProfile profile = FindNpcProfile(record.NpcId);
+                bool onDuty = npcCareerSystem.IsServiceAvailable(profession, record.WorkplaceLotId, hour);
+                if (bestRecord == null || (onDuty && profile != null && profile.CurrentState == NpcActivityState.Working))
+                {
+                    bestRecord = record;
+                    bestProfile = profile;
+                    if (onDuty && profile != null && profile.CurrentState == NpcActivityState.Working)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (bestRecord == null)
+            {
+                return null;
+            }
+
+            return new CareProviderAssignment
+            {
+                NpcId = bestRecord.NpcId,
+                DisplayName = bestProfile != null ? bestProfile.DisplayName : bestRecord.NpcId,
+                Profession = bestRecord.Profession,
+                WorkplaceLotId = bestRecord.WorkplaceLotId,
+                CurrentLotId = bestProfile != null ? bestProfile.CurrentLotId : bestRecord.WorkplaceLotId,
+                IsOnDuty = npcCareerSystem.IsServiceAvailable(bestRecord.Profession, bestRecord.WorkplaceLotId, hour)
+            };
+        }
+
+        private TreatmentRoomBooking ResolveRoomBooking(CareFacilityType facilityType, string preferredLotId, bool animalPatient)
+        {
+            if (townSimulationSystem == null)
+            {
+                return null;
+            }
+
+            LotDefinition lot = !string.IsNullOrWhiteSpace(preferredLotId) ? townSimulationSystem.GetLot(preferredLotId) : null;
+            if (lot == null)
+            {
+                ZoneType targetZone = facilityType switch
+                {
+                    CareFacilityType.Pharmacy => ZoneType.Commercial,
+                    CareFacilityType.VeterinaryClinic => ZoneType.Medical,
+                    CareFacilityType.DermatologySuite => ZoneType.Medical,
+                    _ => ZoneType.Medical
+                };
+
+                List<LotDefinition> candidates = townSimulationSystem.GetOpenLotsByZone(targetZone, worldClock != null ? worldClock.Hour : 12);
+                for (int i = 0; i < candidates.Count; i++)
+                {
+                    LotDefinition candidate = candidates[i];
+                    if (candidate == null)
+                    {
+                        continue;
+                    }
+
+                    if (animalPatient && candidate.Tags != null && candidate.Tags.Contains("animal_care"))
+                    {
+                        lot = candidate;
+                        break;
+                    }
+
+                    if (!animalPatient)
+                    {
+                        lot = candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (lot == null)
+            {
+                return null;
+            }
+
+            string roomLabel = facilityType switch
+            {
+                CareFacilityType.OperatingRoom => "Operating Theater",
+                CareFacilityType.HospitalWard => "Observation Bed",
+                CareFacilityType.VeterinaryClinic => "Animal Exam Bay",
+                CareFacilityType.DermatologySuite => "Derm Procedure Chair",
+                CareFacilityType.Pharmacy => "Medication Counter",
+                _ => "Treatment Room"
+            };
+
+            return new TreatmentRoomBooking
+            {
+                LotId = lot.LotId,
+                DisplayName = lot.DisplayName,
+                FacilityType = facilityType,
+                RoomLabel = roomLabel,
+                IsConfirmed = true
+            };
+        }
+
+        private NpcProfile FindNpcProfile(string npcId)
+        {
+            if (npcScheduleSystem == null || string.IsNullOrWhiteSpace(npcId))
+            {
+                return null;
+            }
+
+            IReadOnlyList<NpcProfile> profiles = npcScheduleSystem.NpcProfiles;
+            for (int i = 0; i < profiles.Count; i++)
+            {
+                NpcProfile profile = profiles[i];
+                if (profile != null && string.Equals(profile.NpcId, npcId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return profile;
+                }
+            }
+
+            return null;
         }
     }
 }

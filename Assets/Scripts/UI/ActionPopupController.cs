@@ -1055,14 +1055,17 @@ namespace Survivebest.UI
             }
 
             MedicalCondition primary = med.ActiveConditions[0];
-            HealthcareEncounterPlan plan = healthcareGameplaySystem != null ? healthcareGameplaySystem.BuildPlan(primary) : null;
+            HealthcareEncounterSession session = healthcareGameplaySystem != null ? healthcareGameplaySystem.BuildEncounterSession(primary) : null;
+            HealthcareEncounterPlan plan = session != null ? session.Plan : healthcareGameplaySystem != null ? healthcareGameplaySystem.BuildPlan(primary) : null;
             if (plan != null && plan.Directives.Count > 0)
             {
                 minigameManager?.StartMinigame(plan.Directives[0].InteractiveMinigame, active, _ => { });
             }
 
             med.HealCondition(primary.Id, plan != null && plan.NeedsHospitalization ? 6 : 10);
-            return plan != null
+            return session != null && session.Providers.Count > 0 && session.Bookings.Count > 0
+                ? $"Doctor visit completed: {plan.Directives[0].Title} with {session.Providers[0].DisplayName} in {session.Bookings[0].DisplayName} ({session.Bookings[0].RoomLabel}). {plan.FollowUpSummary}"
+                : plan != null
                 ? $"Doctor visit completed: {plan.Directives[0].Title}. {plan.FollowUpSummary}"
                 : $"Doctor consult completed for {primary.DisplayName}.";
         }

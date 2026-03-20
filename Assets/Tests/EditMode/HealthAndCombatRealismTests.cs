@@ -5,7 +5,10 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Emotion;
 using Survivebest.Health;
+using Survivebest.Minigames;
 using Survivebest.Needs;
+using Survivebest.Location;
+using Survivebest.NPC;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -320,6 +323,145 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(SkinConditionType.CysticAcne, condition.SkinConditionType);
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Dermatology));
             Assert.IsTrue(plan.Directives.Exists(x => x.InteractiveMinigame == MinigameType.Pharmacy));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void HealthcareGameplaySystem_BuildEncounterSession_AssignsProviderAndRoom()
+        {
+            GameObject go = new GameObject("HealthcareSession");
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+            NpcCareerSystem career = go.AddComponent<NpcCareerSystem>();
+            NpcScheduleSystem schedule = go.AddComponent<NpcScheduleSystem>();
+            TownSimulationSystem town = go.AddComponent<TownSimulationSystem>();
+
+            typeof(HealthcareGameplaySystem).GetField("npcCareerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, career);
+            typeof(HealthcareGameplaySystem).GetField("npcScheduleSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, schedule);
+            typeof(HealthcareGameplaySystem).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, town);
+
+            typeof(TownSimulationSystem).GetField("lots", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(town, new System.Collections.Generic.List<LotDefinition>
+            {
+                new LotDefinition { LotId = "lot_hospital", DisplayName = "General Hospital", Zone = ZoneType.Medical, OpenHour = 0, CloseHour = 23, Tags = new System.Collections.Generic.List<string> { "hospital" } }
+            });
+
+            typeof(NpcScheduleSystem).GetField("npcProfiles", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(schedule, new System.Collections.Generic.List<NpcProfile>
+            {
+                new NpcProfile { NpcId = "npc_doc", DisplayName = "Dr. Vale", Job = NpcJobType.Medic, CurrentState = NpcActivityState.Working, CurrentLotId = "General Hospital", WorkLotId = "General Hospital" }
+            });
+
+            typeof(NpcCareerSystem).GetField("records", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(career, new System.Collections.Generic.List<NpcCareerRecord>
+            {
+                new NpcCareerRecord { NpcId = "npc_doc", Profession = ProfessionType.Doctor, WorkplaceLotId = "General Hospital", IsEmployed = true }
+            });
+
+            Assert.IsTrue(medical.AddDetailedInjury(
+                InjuryType.Fracture,
+                ConditionSeverity.Severe,
+                BodyLocation.Forearm,
+                WoundType.BoneBreak,
+                FractureType.Open,
+                detailSummary: "severe open fracture at Forearm, bleeding 35%, mobility loss 80%"));
+
+            HealthcareEncounterSession session = healthcare.BuildEncounterSession(medical.ActiveConditions.First(c => !c.IsIllness));
+
+            Assert.IsNotNull(session);
+            Assert.IsNotNull(session.Plan);
+            Assert.Greater(session.Providers.Count, 0);
+            Assert.Greater(session.Bookings.Count, 0);
+            Assert.IsTrue(session.Bookings[0].IsConfirmed);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void HealthcareGameplaySystem_ExecuteEncounterSession_ProducesDirectiveTimelineAndBilling()
+        {
+            GameObject go = new GameObject("HealthcareExecution");
+            MedicalConditionSystem medical = go.AddComponent<MedicalConditionSystem>();
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+            NpcCareerSystem career = go.AddComponent<NpcCareerSystem>();
+            NpcScheduleSystem schedule = go.AddComponent<NpcScheduleSystem>();
+            TownSimulationSystem town = go.AddComponent<TownSimulationSystem>();
+            MinigameManager minigame = go.AddComponent<MinigameManager>();
+
+            typeof(HealthcareGameplaySystem).GetField("npcCareerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, career);
+            typeof(HealthcareGameplaySystem).GetField("npcScheduleSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, schedule);
+            typeof(HealthcareGameplaySystem).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, town);
+            typeof(HealthcareGameplaySystem).GetField("minigameManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(healthcare, minigame);
+
+            typeof(TownSimulationSystem).GetField("lots", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(town, new System.Collections.Generic.List<LotDefinition>
+            {
+                new LotDefinition { LotId = "lot_hospital", DisplayName = "General Hospital", Zone = ZoneType.Medical, OpenHour = 0, CloseHour = 23, Tags = new System.Collections.Generic.List<string> { "hospital" } },
+                new LotDefinition { LotId = "lot_pharmacy", DisplayName = "Main Street Pharmacy", Zone = ZoneType.Commercial, OpenHour = 0, CloseHour = 23, Tags = new System.Collections.Generic.List<string> { "pharmacy" } }
+            });
+
+            typeof(NpcScheduleSystem).GetField("npcProfiles", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(schedule, new System.Collections.Generic.List<NpcProfile>
+            {
+                new NpcProfile { NpcId = "npc_doc", DisplayName = "Dr. Vale", Job = NpcJobType.Medic, CurrentState = NpcActivityState.Working, CurrentLotId = "General Hospital", WorkLotId = "General Hospital" },
+                new NpcProfile { NpcId = "npc_nurse", DisplayName = "Nurse June", Job = NpcJobType.Medic, CurrentState = NpcActivityState.Working, CurrentLotId = "General Hospital", WorkLotId = "General Hospital" },
+                new NpcProfile { NpcId = "npc_pharm", DisplayName = "Alex Script", Job = NpcJobType.Shopkeeper, CurrentState = NpcActivityState.Working, CurrentLotId = "Main Street Pharmacy", WorkLotId = "Main Street Pharmacy" }
+            });
+
+            typeof(NpcCareerSystem).GetField("records", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(career, new System.Collections.Generic.List<NpcCareerRecord>
+            {
+                new NpcCareerRecord { NpcId = "npc_doc", Profession = ProfessionType.Doctor, WorkplaceLotId = "General Hospital", IsEmployed = true },
+                new NpcCareerRecord { NpcId = "npc_nurse", Profession = ProfessionType.Nurse, WorkplaceLotId = "General Hospital", IsEmployed = true },
+                new NpcCareerRecord { NpcId = "npc_pharm", Profession = ProfessionType.Clerk, WorkplaceLotId = "Main Street Pharmacy", IsEmployed = true }
+            });
+
+            Assert.IsTrue(medical.AddDetailedInjury(
+                InjuryType.Fracture,
+                ConditionSeverity.Severe,
+                BodyLocation.Forearm,
+                WoundType.BoneBreak,
+                FractureType.Open,
+                detailSummary: "severe open fracture at Forearm, bleeding 35%, mobility loss 80%"));
+
+            HealthcareEncounterSession session = healthcare.BuildEncounterSession(medical.ActiveConditions.First(c => !c.IsIllness));
+            HealthcareEncounterExecutionResult result = healthcare.ExecuteEncounterSession(session);
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual(session.Plan.Directives.Count, result.DirectiveExecutions.Count);
+            Assert.AreEqual(session.Plan.Directives.Count, result.SuccessfulDirectiveCount);
+            Assert.Greater(result.CompletionScore, 0.75f);
+            StringAssert.Contains("Billing lane", result.BillingSummary);
+            StringAssert.Contains("Encounter completed", result.OutcomeSummary);
+            Assert.IsTrue(result.TimelineEntries.Any(entry => entry.Contains("Medication Fill & Dosing") || entry.Contains("Vet Pharmacy Dispense")));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void HealthcareGameplaySystem_BuildDirectiveBlueprint_UsesDirectiveStepsAndSupplies()
+        {
+            GameObject go = new GameObject("HealthcareBlueprint");
+            HealthcareGameplaySystem healthcare = go.AddComponent<HealthcareGameplaySystem>();
+
+            TreatmentDirective directive = new TreatmentDirective
+            {
+                Title = "Custom Wound Care",
+                AnatomyFocus = "Forearm",
+                InteractiveMinigame = MinigameType.Bandaging,
+                RequiresSterileField = true,
+                Supplies = new System.Collections.Generic.List<string> { "Sterile Gauze", "Suture Kit" },
+                ProcedureSteps = new System.Collections.Generic.List<string>
+                {
+                    "Clean wound edges.",
+                    "Close and dress the injury."
+                }
+            };
+
+            MinigameSessionBlueprint blueprint = healthcare.BuildDirectiveBlueprint(directive);
+
+            Assert.IsNotNull(blueprint);
+            Assert.AreEqual("Custom Wound Care", blueprint.SessionTitle);
+            Assert.AreEqual(MinigameType.Bandaging, blueprint.Type);
+            Assert.GreaterOrEqual(blueprint.Steps.Count, 2);
+            Assert.AreEqual("sterile_gauze", blueprint.Steps[0].ToolId);
+            Assert.GreaterOrEqual(blueprint.Steps[0].PrecisionRequirement, 0.65f);
 
             Object.DestroyImmediate(go);
         }

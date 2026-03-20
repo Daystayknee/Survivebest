@@ -61,6 +61,23 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+        [Test]
+        public void BuildSessionBlueprint_ForSurgeryProducesStepByStepProcedure()
+        {
+            GameObject go = new GameObject("MinigameBlueprint");
+            MinigameManager manager = go.AddComponent<MinigameManager>();
+
+            MinigameSessionBlueprint blueprint = manager.BuildSessionBlueprint(MinigameType.Surgery, "Forearm fracture", true);
+
+            Assert.IsNotNull(blueprint);
+            Assert.AreEqual(MinigameType.Surgery, blueprint.Type);
+            Assert.GreaterOrEqual(blueprint.Steps.Count, 4);
+            Assert.AreEqual("sterile_prep", blueprint.Steps[0].StepId);
+            Assert.IsTrue(blueprint.Steps.Exists(x => x.ToolId == "suture_kit"));
+
+            Object.DestroyImmediate(go);
+        }
+
 
     }
 }
