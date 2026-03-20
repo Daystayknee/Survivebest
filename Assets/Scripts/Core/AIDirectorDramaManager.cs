@@ -9,6 +9,14 @@ namespace Survivebest.Core
 {
     public class AIDirectorDramaManager : MonoBehaviour
     {
+        [System.Serializable]
+        public class DirectorRuntimeState
+        {
+            public float Tension;
+            public int BoredomHours;
+            public int LastMajorInterventionHour;
+        }
+
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
@@ -25,6 +33,31 @@ namespace Survivebest.Core
         private int lastMajorInterventionHour = -999;
 
         public float Tension => tension;
+
+        public DirectorRuntimeState CaptureRuntimeState()
+        {
+            return new DirectorRuntimeState
+            {
+                Tension = tension,
+                BoredomHours = boredomHours,
+                LastMajorInterventionHour = lastMajorInterventionHour
+            };
+        }
+
+        public void ApplyRuntimeState(DirectorRuntimeState state)
+        {
+            if (state == null)
+            {
+                tension = 0f;
+                boredomHours = 0;
+                lastMajorInterventionHour = -999;
+                return;
+            }
+
+            tension = Mathf.Clamp(state.Tension, 0f, 100f);
+            boredomHours = Mathf.Max(0, state.BoredomHours);
+            lastMajorInterventionHour = state.LastMajorInterventionHour;
+        }
 
         private void OnEnable()
         {

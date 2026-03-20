@@ -8,6 +8,12 @@ using Survivebest.Needs;
 using Survivebest.Status;
 using Survivebest.World;
 using Survivebest.Economy;
+using Survivebest.Activity;
+using Survivebest.Commerce;
+using Survivebest.Crime;
+using Survivebest.NPC;
+using Survivebest.Quest;
+using Survivebest.Story;
 
 namespace Survivebest.Core
 {
@@ -44,6 +50,36 @@ namespace Survivebest.Core
         public NeedsSnapshot Needs;
         public List<SkillEntry> Skills = new();
         public List<ActiveStatusEffect> Statuses = new();
+        public ActivitySystem.ActivityRuntimeState ActivityState;
+        public RehabilitationSystem.RehabilitationRuntimeState RehabilitationState;
+    }
+
+    [Serializable]
+    public class WorldSystemsSnapshot
+    {
+        public HouseholdControlMode HouseholdControlMode;
+        public List<HouseholdAutonomyNote> HouseholdAutonomyNotes = new();
+        public List<HouseholdPetProfile> HouseholdPets = new();
+        public List<JusticeSystem.ActiveSentenceRecord> ActiveSentences = new();
+        public List<InmateRoutineState> InmateStates = new();
+        public OrderingSystem.OrderingRuntimeState Ordering;
+        public List<AnimalSightingContract> Contracts = new();
+        public List<HouseholdChore> HouseholdChores = new();
+        public List<NpcProfile> Npcs = new();
+        public List<DistrictDefinition> Districts = new();
+        public List<LotDefinition> Lots = new();
+        public List<RouteEdge> Routes = new();
+        public List<LotSimulationState> LotStates = new();
+        public List<RemoteNpcSnapshot> RemoteNpcSnapshots = new();
+        public AIDirectorDramaManager.DirectorRuntimeState Director;
+        public AutonomousStoryGenerator.StoryRuntimeState Story;
+        public List<CultureProfile> Cultures = new();
+        public List<CulturalIdentityState> CulturalIdentities = new();
+        public List<NeighborhoodMicroCultureProfile> NeighborhoodMicroCultures = new();
+        public List<LifeDirectionState> LifeDirections = new();
+        public List<RegretEntry> Regrets = new();
+        public List<MeaningProfile> MeaningProfiles = new();
+        public List<LifeStorySnapshot> LifeStories = new();
     }
 
     [Serializable]
@@ -55,6 +91,7 @@ namespace Survivebest.Core
         public string ActiveRoomName;
         public WorldSnapshot World = new();
         public List<CharacterSnapshot> HouseholdCharacters = new();
+        public WorldSystemsSnapshot Systems = new();
     }
 
     public class SaveGameManager : MonoBehaviour
@@ -67,6 +104,18 @@ namespace Survivebest.Core
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private JusticeSystem justiceSystem;
+        [SerializeField] private PrisonRoutineSystem prisonRoutineSystem;
+        [SerializeField] private OrderingSystem orderingSystem;
+        [SerializeField] private ContractBoardSystem contractBoardSystem;
+        [SerializeField] private HouseholdChoreSystem householdChoreSystem;
+        [SerializeField] private NpcScheduleSystem npcScheduleSystem;
+        [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
+        [SerializeField] private AIDirectorDramaManager aiDirectorDramaManager;
+        [SerializeField] private AutonomousStoryGenerator autonomousStoryGenerator;
+        [SerializeField] private WorldCultureSocietyEngine worldCultureSocietyEngine;
+        [SerializeField] private PlayerExperienceCascadeSystem playerExperienceCascadeSystem;
 
         public bool SaveToSlot(int slotIndex, string worldName)
         {
@@ -193,42 +242,77 @@ namespace Survivebest.Core
                 Economy = economyInventorySystem != null ? economyInventorySystem.CaptureSnapshot() : null
             };
 
-            if (householdManager == null || householdManager.Members == null)
+            if (householdManager != null && householdManager.Members != null)
             {
-                return payload;
-            }
-
-            for (int i = 0; i < householdManager.Members.Count; i++)
-            {
-                CharacterCore member = householdManager.Members[i];
-                if (member == null)
+                for (int i = 0; i < householdManager.Members.Count; i++)
                 {
-                    continue;
+                    CharacterCore member = householdManager.Members[i];
+                    if (member == null)
+                    {
+                        continue;
+                    }
+
+                    NeedsSystem needs = member.GetComponent<NeedsSystem>();
+                    HealthSystem health = member.GetComponent<HealthSystem>();
+                    SkillSystem skills = member.GetComponent<SkillSystem>();
+                    StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
+
+                    GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
+
+                    payload.HouseholdCharacters.Add(new CharacterSnapshot
+                    {
+                        CharacterId = member.CharacterId,
+                        DisplayName = member.DisplayName,
+                        IsActive = householdManager.ActiveCharacter == member,
+                        LifeStage = member.CurrentLifeStage,
+                        Vitality = health != null ? health.CaptureVitality() : 100f,
+                        Genetics = genetics != null ? genetics.Profile : null,
+                        Phenotype = genetics != null ? genetics.Phenotype : null,
+                        Needs = needs != null ? needs.CaptureSnapshot() : null,
+                        Skills = skills != null ? skills.CaptureSnapshot() : new List<SkillEntry>(),
+                        Statuses = status != null ? status.CaptureSnapshot() : new List<ActiveStatusEffect>(),
+                        ActivityState = member.GetComponent<ActivitySystem>()?.CaptureRuntimeState(),
+                        RehabilitationState = member.GetComponent<RehabilitationSystem>()?.CaptureRuntimeState()
+                    });
                 }
-
-                NeedsSystem needs = member.GetComponent<NeedsSystem>();
-                HealthSystem health = member.GetComponent<HealthSystem>();
-                SkillSystem skills = member.GetComponent<SkillSystem>();
-                StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
-
-                GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
-
-                payload.HouseholdCharacters.Add(new CharacterSnapshot
-                {
-                    CharacterId = member.CharacterId,
-                    DisplayName = member.DisplayName,
-                    IsActive = householdManager.ActiveCharacter == member,
-                    LifeStage = member.CurrentLifeStage,
-                    Vitality = health != null ? health.CaptureVitality() : 100f,
-                    Genetics = genetics != null ? genetics.Profile : null,
-                    Phenotype = genetics != null ? genetics.Phenotype : null,
-                    Needs = needs != null ? needs.CaptureSnapshot() : null,
-                    Skills = skills != null ? skills.CaptureSnapshot() : new List<SkillEntry>(),
-                    Statuses = status != null ? status.CaptureSnapshot() : new List<ActiveStatusEffect>()
-                });
             }
+
+            payload.Systems = BuildSystemsSnapshot();
 
             return payload;
+        }
+
+        private WorldSystemsSnapshot BuildSystemsSnapshot()
+        {
+            WorldSystemsSnapshot snapshot = new();
+            if (householdManager != null)
+            {
+                snapshot.HouseholdControlMode = householdManager.ControlMode;
+                snapshot.HouseholdAutonomyNotes = new List<HouseholdAutonomyNote>(householdManager.AutonomyNotes);
+                snapshot.HouseholdPets = new List<HouseholdPetProfile>(householdManager.Pets);
+            }
+
+            snapshot.ActiveSentences = justiceSystem != null ? justiceSystem.CaptureRuntimeState() : new List<JusticeSystem.ActiveSentenceRecord>();
+            snapshot.InmateStates = prisonRoutineSystem != null ? prisonRoutineSystem.CaptureRuntimeState() : new List<InmateRoutineState>();
+            snapshot.Ordering = orderingSystem != null ? orderingSystem.CaptureRuntimeState() : null;
+            snapshot.Contracts = contractBoardSystem != null ? contractBoardSystem.CaptureRuntimeState() : new List<AnimalSightingContract>();
+            snapshot.HouseholdChores = householdChoreSystem != null ? householdChoreSystem.CaptureRuntimeState() : new List<HouseholdChore>();
+            snapshot.Npcs = npcScheduleSystem != null ? npcScheduleSystem.CaptureRuntimeState() : new List<NpcProfile>();
+            snapshot.Districts = townSimulationSystem != null ? new List<DistrictDefinition>(townSimulationSystem.Districts) : new List<DistrictDefinition>();
+            snapshot.Lots = townSimulationSystem != null ? new List<LotDefinition>(townSimulationSystem.Lots) : new List<LotDefinition>();
+            snapshot.Routes = townSimulationSystem != null ? new List<RouteEdge>(townSimulationSystem.RouteGraph) : new List<RouteEdge>();
+            snapshot.LotStates = worldPersistenceCullingSystem != null ? new List<LotSimulationState>(worldPersistenceCullingSystem.LotStates) : new List<LotSimulationState>();
+            snapshot.RemoteNpcSnapshots = worldPersistenceCullingSystem != null ? new List<RemoteNpcSnapshot>(worldPersistenceCullingSystem.RemoteNpcSnapshots) : new List<RemoteNpcSnapshot>();
+            snapshot.Director = aiDirectorDramaManager != null ? aiDirectorDramaManager.CaptureRuntimeState() : null;
+            snapshot.Story = autonomousStoryGenerator != null ? autonomousStoryGenerator.CaptureRuntimeState() : null;
+            snapshot.Cultures = worldCultureSocietyEngine != null ? new List<CultureProfile>(worldCultureSocietyEngine.Cultures) : new List<CultureProfile>();
+            snapshot.CulturalIdentities = worldCultureSocietyEngine != null ? new List<CulturalIdentityState>(worldCultureSocietyEngine.Identities) : new List<CulturalIdentityState>();
+            snapshot.NeighborhoodMicroCultures = worldCultureSocietyEngine != null ? new List<NeighborhoodMicroCultureProfile>(worldCultureSocietyEngine.MicroCultures) : new List<NeighborhoodMicroCultureProfile>();
+            snapshot.LifeDirections = playerExperienceCascadeSystem != null ? new List<LifeDirectionState>(playerExperienceCascadeSystem.DirectionStates) : new List<LifeDirectionState>();
+            snapshot.Regrets = playerExperienceCascadeSystem != null ? new List<RegretEntry>(playerExperienceCascadeSystem.Regrets) : new List<RegretEntry>();
+            snapshot.MeaningProfiles = playerExperienceCascadeSystem != null ? new List<MeaningProfile>(playerExperienceCascadeSystem.MeaningProfiles) : new List<MeaningProfile>();
+            snapshot.LifeStories = playerExperienceCascadeSystem != null ? new List<LifeStorySnapshot>(playerExperienceCascadeSystem.StorySnapshots) : new List<LifeStorySnapshot>();
+            return snapshot;
         }
 
         private void ApplyPayload(SaveSlotPayload payload)
@@ -250,61 +334,85 @@ namespace Survivebest.Core
 
             economyInventorySystem?.ApplySnapshot(payload.Economy);
 
-            if (householdManager == null || householdManager.Members == null || payload.HouseholdCharacters == null)
-            {
-                return;
-            }
-
             CharacterCore activeToSet = null;
-            for (int i = 0; i < householdManager.Members.Count; i++)
+            if (householdManager != null && householdManager.Members != null && payload.HouseholdCharacters != null)
             {
-                CharacterCore member = householdManager.Members[i];
-                if (member == null)
+                for (int i = 0; i < householdManager.Members.Count; i++)
                 {
-                    continue;
-                }
+                    CharacterCore member = householdManager.Members[i];
+                    if (member == null)
+                    {
+                        continue;
+                    }
 
-                CharacterSnapshot snapshot = payload.HouseholdCharacters.Find(c => c.CharacterId == member.CharacterId || c.DisplayName == member.DisplayName);
-                if (snapshot == null)
-                {
-                    continue;
-                }
+                    CharacterSnapshot snapshot = payload.HouseholdCharacters.Find(c => c.CharacterId == member.CharacterId || c.DisplayName == member.DisplayName);
+                    if (snapshot == null)
+                    {
+                        continue;
+                    }
 
-                member.SetLifeStage(snapshot.LifeStage);
+                    member.SetLifeStage(snapshot.LifeStage);
 
-                GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
-                if (genetics != null && snapshot.Genetics != null)
-                {
-                    genetics.OverrideGenetics(snapshot.Genetics, false);
-                }
+                    GeneticsSystem genetics = member.GetComponent<GeneticsSystem>();
+                    if (genetics != null && snapshot.Genetics != null)
+                    {
+                        genetics.OverrideGenetics(snapshot.Genetics, false);
+                    }
 
-                NeedsSystem needs = member.GetComponent<NeedsSystem>();
-                needs?.ApplySnapshot(snapshot.Needs);
+                    NeedsSystem needs = member.GetComponent<NeedsSystem>();
+                    needs?.ApplySnapshot(snapshot.Needs);
 
-                if (genetics != null)
-                {
-                    genetics.ApplyGeneticsToSystems();
-                }
+                    if (genetics != null)
+                    {
+                        genetics.ApplyGeneticsToSystems();
+                    }
 
-                HealthSystem health = member.GetComponent<HealthSystem>();
-                health?.ApplyVitality(snapshot.Vitality);
+                    HealthSystem health = member.GetComponent<HealthSystem>();
+                    health?.ApplyVitality(snapshot.Vitality);
 
-                SkillSystem skills = member.GetComponent<SkillSystem>();
-                skills?.ApplySnapshot(snapshot.Skills);
+                    SkillSystem skills = member.GetComponent<SkillSystem>();
+                    skills?.ApplySnapshot(snapshot.Skills);
 
-                StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
-                status?.ApplySnapshot(snapshot.Statuses);
+                    StatusEffectSystem status = member.GetComponent<StatusEffectSystem>();
+                    status?.ApplySnapshot(snapshot.Statuses);
+                    member.GetComponent<ActivitySystem>()?.ApplyRuntimeState(snapshot.ActivityState);
+                    member.GetComponent<RehabilitationSystem>()?.ApplyRuntimeState(snapshot.RehabilitationState);
 
-                if (snapshot.IsActive)
-                {
-                    activeToSet = member;
+                    if (snapshot.IsActive)
+                    {
+                        activeToSet = member;
+                    }
                 }
             }
+
+            ApplySystemsPayload(payload.Systems);
 
             if (activeToSet != null)
             {
                 householdManager.SetActiveCharacter(activeToSet);
             }
+        }
+
+        private void ApplySystemsPayload(WorldSystemsSnapshot systems)
+        {
+            if (systems == null)
+            {
+                return;
+            }
+
+            householdManager?.ApplyRuntimeState(systems.HouseholdControlMode, systems.HouseholdAutonomyNotes, systems.HouseholdPets);
+            justiceSystem?.ApplyRuntimeState(systems.ActiveSentences, householdManager != null ? householdManager.Members : null);
+            prisonRoutineSystem?.ApplyRuntimeState(systems.InmateStates);
+            orderingSystem?.ApplyRuntimeState(systems.Ordering, householdManager != null ? householdManager.Members : null);
+            contractBoardSystem?.ApplyRuntimeState(systems.Contracts);
+            householdChoreSystem?.ApplyRuntimeState(systems.HouseholdChores);
+            npcScheduleSystem?.ApplyRuntimeState(systems.Npcs);
+            townSimulationSystem?.ApplyRuntimeState(systems.Districts, systems.Lots, systems.Routes);
+            worldPersistenceCullingSystem?.ApplyRuntimeState(systems.LotStates, systems.RemoteNpcSnapshots);
+            aiDirectorDramaManager?.ApplyRuntimeState(systems.Director);
+            autonomousStoryGenerator?.ApplyRuntimeState(systems.Story);
+            worldCultureSocietyEngine?.ApplyRuntimeState(systems.Cultures, systems.CulturalIdentities, systems.NeighborhoodMicroCultures);
+            playerExperienceCascadeSystem?.ApplyRuntimeState(systems.LifeDirections, systems.Regrets, systems.MeaningProfiles, systems.LifeStories);
         }
 
 
@@ -331,6 +439,27 @@ namespace Survivebest.Core
                 payload.HouseholdCharacters = new List<CharacterSnapshot>();
             }
 
+            payload.Systems ??= new WorldSystemsSnapshot();
+            payload.Systems.HouseholdAutonomyNotes ??= new List<HouseholdAutonomyNote>();
+            payload.Systems.HouseholdPets ??= new List<HouseholdPetProfile>();
+            payload.Systems.ActiveSentences ??= new List<JusticeSystem.ActiveSentenceRecord>();
+            payload.Systems.InmateStates ??= new List<InmateRoutineState>();
+            payload.Systems.Contracts ??= new List<AnimalSightingContract>();
+            payload.Systems.HouseholdChores ??= new List<HouseholdChore>();
+            payload.Systems.Npcs ??= new List<NpcProfile>();
+            payload.Systems.Districts ??= new List<DistrictDefinition>();
+            payload.Systems.Lots ??= new List<LotDefinition>();
+            payload.Systems.Routes ??= new List<RouteEdge>();
+            payload.Systems.LotStates ??= new List<LotSimulationState>();
+            payload.Systems.RemoteNpcSnapshots ??= new List<RemoteNpcSnapshot>();
+            payload.Systems.Cultures ??= new List<CultureProfile>();
+            payload.Systems.CulturalIdentities ??= new List<CulturalIdentityState>();
+            payload.Systems.NeighborhoodMicroCultures ??= new List<NeighborhoodMicroCultureProfile>();
+            payload.Systems.LifeDirections ??= new List<LifeDirectionState>();
+            payload.Systems.Regrets ??= new List<RegretEntry>();
+            payload.Systems.MeaningProfiles ??= new List<MeaningProfile>();
+            payload.Systems.LifeStories ??= new List<LifeStorySnapshot>();
+
             HashSet<string> seenIds = new HashSet<string>();
             for (int i = payload.HouseholdCharacters.Count - 1; i >= 0; i--)
             {
@@ -354,6 +483,8 @@ namespace Survivebest.Core
                 character.Skills ??= new List<SkillEntry>();
                 character.Statuses ??= new List<ActiveStatusEffect>();
                 character.Needs ??= new NeedsSnapshot();
+                character.ActivityState ??= new ActivitySystem.ActivityRuntimeState();
+                character.RehabilitationState ??= new RehabilitationSystem.RehabilitationRuntimeState();
             }
         }
 
@@ -383,6 +514,17 @@ namespace Survivebest.Core
             if (payload.SchemaVersion == 2)
             {
                 // v2 payload had no shared economy snapshot. Keep runtime defaults and upgrade marker.
+                payload.SchemaVersion = 3;
+            }
+
+            if (payload.SchemaVersion == 3)
+            {
+                payload.SchemaVersion = 4;
+            }
+
+            if (payload.SchemaVersion == 4)
+            {
+                payload.Systems ??= new WorldSystemsSnapshot();
                 payload.SchemaVersion = CurrentSchemaVersion;
                 return payload;
             }

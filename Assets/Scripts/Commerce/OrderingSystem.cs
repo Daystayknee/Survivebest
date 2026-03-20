@@ -7,6 +7,7 @@ using Survivebest.Health;
 using Survivebest.World;
 using Survivebest.Events;
 using Survivebest.Economy;
+using Survivebest.Core;
 
 namespace Survivebest.Commerce
 {
@@ -41,6 +42,22 @@ namespace Survivebest.Commerce
 
     public class OrderingSystem : MonoBehaviour
     {
+        [Serializable]
+        public class PendingOrderRecord
+        {
+            public MenuItem Item;
+            public int DueTotalMinutes;
+            public string SourceCharacterId;
+        }
+
+        [Serializable]
+        public class OrderingRuntimeState
+        {
+            public float Wallet;
+            public float ServiceSatisfaction;
+            public List<PendingOrderRecord> PendingOrders = new();
+        }
+
         [Header("General Delivery Menu")]
         [SerializeField] private List<MenuItem> menu = new()
         {
@@ -125,6 +142,81 @@ namespace Survivebest.Commerce
         public IReadOnlyList<PendingOrder> PendingOrders => pendingOrders;
         public IReadOnlyList<MenuItem> Menu => menu;
         public IReadOnlyList<FastFoodLocation> FastFoodLocations => fastFoodLocations;
+
+        public OrderingRuntimeState CaptureRuntimeState()
+        {
+            OrderingRuntimeState state = new()
+            {
+                Wallet = wallet,
+                ServiceSatisfaction = serviceSatisfaction
+            };
+
+            for (int i = 0; i < pendingOrders.Count; i++)
+            {
+                PendingOrder order = pendingOrders[i];
+                if (order == null)
+                {
+                    continue;
+                }
+
+                state.PendingOrders.Add(new PendingOrderRecord
+                {
+                    Item = order.Item,
+                    DueTotalMinutes = order.DueTotalMinutes,
+                    SourceCharacterId = order.SourceCharacterId
+                });
+            }
+
+            return state;
+        }
+
+        public void ApplyRuntimeState(OrderingRuntimeState state, IReadOnlyList<CharacterCore> householdMembers)
+        {
+            pendingOrders.Clear();
+            if (state == null)
+            {
+                return;
+            }
+
+            wallet = Mathf.Max(0f, state.Wallet);
+            serviceSatisfaction = Mathf.Clamp(state.ServiceSatisfaction, 0f, 100f);
+
+            if (state.PendingOrders == null || householdMembers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < state.PendingOrders.Count; i++)
+            {
+                PendingOrderRecord record = state.PendingOrders[i];
+                if (record == null)
+                {
+                    continue;
+                }
+
+                NeedsSystem needs = null;
+                HealthSystem health = null;
+                for (int j = 0; j < householdMembers.Count; j++)
+                {
+                    CharacterCore member = householdMembers[j];
+                    if (member != null && string.Equals(member.CharacterId, record.SourceCharacterId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        needs = member.GetComponent<NeedsSystem>();
+                        health = member.GetComponent<HealthSystem>();
+                        break;
+                    }
+                }
+
+                pendingOrders.Add(new PendingOrder
+                {
+                    Item = record.Item,
+                    DueTotalMinutes = record.DueTotalMinutes,
+                    NeedsTarget = needs,
+                    HealthTarget = health,
+                    SourceCharacterId = record.SourceCharacterId
+                });
+            }
+        }
 
         private void OnEnable()
         {

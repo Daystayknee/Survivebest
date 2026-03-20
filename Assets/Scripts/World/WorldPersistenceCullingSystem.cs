@@ -40,6 +40,12 @@ namespace Survivebest.World
         public IReadOnlyList<LotSimulationState> LotStates => lotStates;
         public IReadOnlyList<RemoteNpcSnapshot> RemoteNpcSnapshots => remoteNpcSnapshots;
 
+        public void ApplyRuntimeState(List<LotSimulationState> savedLotStates, List<RemoteNpcSnapshot> savedRemoteNpcs)
+        {
+            lotStates = savedLotStates != null ? new List<LotSimulationState>(savedLotStates) : new List<LotSimulationState>();
+            remoteNpcSnapshots = savedRemoteNpcs != null ? new List<RemoteNpcSnapshot>(savedRemoteNpcs) : new List<RemoteNpcSnapshot>();
+        }
+
         private void OnEnable()
         {
             if (worldClock != null)

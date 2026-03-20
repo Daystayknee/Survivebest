@@ -92,6 +92,16 @@ namespace Survivebest.Crime
             return inmateStates.Find(x => x != null && x.CharacterId == characterId);
         }
 
+        public List<InmateRoutineState> CaptureRuntimeState()
+        {
+            return new List<InmateRoutineState>(inmateStates);
+        }
+
+        public void ApplyRuntimeState(List<InmateRoutineState> states)
+        {
+            inmateStates = states != null ? new List<InmateRoutineState>(states) : new List<InmateRoutineState>();
+        }
+
         private void HandleIncarcerationStarted(CharacterCore offender, ActiveSentence sentence)
         {
             if (offender == null)

@@ -48,6 +48,16 @@ namespace Survivebest.Location
 
         public IReadOnlyList<HouseholdChore> DailyChores => dailyChores;
 
+        public List<HouseholdChore> CaptureRuntimeState()
+        {
+            return new List<HouseholdChore>(dailyChores);
+        }
+
+        public void ApplyRuntimeState(List<HouseholdChore> savedChores)
+        {
+            dailyChores = savedChores != null ? new List<HouseholdChore>(savedChores) : new List<HouseholdChore>();
+        }
+
         private static readonly HouseholdChoreType[] AllChores = (HouseholdChoreType[])Enum.GetValues(typeof(HouseholdChoreType));
 
         private void OnEnable()

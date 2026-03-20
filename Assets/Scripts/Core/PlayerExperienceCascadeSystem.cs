@@ -71,6 +71,19 @@ namespace Survivebest.Core
         [SerializeField] private List<MeaningProfile> meaningProfiles = new();
         [SerializeField] private List<LifeStorySnapshot> storySnapshots = new();
 
+        public IReadOnlyList<LifeDirectionState> DirectionStates => directionStates;
+        public IReadOnlyList<RegretEntry> Regrets => regrets;
+        public IReadOnlyList<MeaningProfile> MeaningProfiles => meaningProfiles;
+        public IReadOnlyList<LifeStorySnapshot> StorySnapshots => storySnapshots;
+
+        public void ApplyRuntimeState(List<LifeDirectionState> savedDirectionStates, List<RegretEntry> savedRegrets, List<MeaningProfile> savedMeaningProfiles, List<LifeStorySnapshot> savedStorySnapshots)
+        {
+            directionStates = savedDirectionStates != null ? new List<LifeDirectionState>(savedDirectionStates) : new List<LifeDirectionState>();
+            regrets = savedRegrets != null ? new List<RegretEntry>(savedRegrets) : new List<RegretEntry>();
+            meaningProfiles = savedMeaningProfiles != null ? new List<MeaningProfile>(savedMeaningProfiles) : new List<MeaningProfile>();
+            storySnapshots = savedStorySnapshots != null ? new List<LifeStorySnapshot>(savedStorySnapshots) : new List<LifeStorySnapshot>();
+        }
+
         private void OnEnable()
         {
             if (humanLifeExperienceLayerSystem != null)
