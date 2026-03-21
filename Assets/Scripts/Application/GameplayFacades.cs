@@ -7,6 +7,7 @@ using Survivebest.Economy;
 using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Social;
+using Survivebest.Status;
 using Survivebest.World;
 
 namespace Survivebest.Application
@@ -16,12 +17,14 @@ namespace Survivebest.Application
         private readonly RelationshipMemorySystem relationshipMemorySystem;
         private readonly HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         private readonly PaperTrailSystem paperTrailSystem;
+        private readonly HouseholdManager householdManager;
 
-        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null)
+        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null, HouseholdManager householdManager = null)
         {
             this.relationshipMemorySystem = relationshipMemorySystem;
             this.humanLifeExperienceLayerSystem = humanLifeExperienceLayerSystem;
             this.paperTrailSystem = paperTrailSystem;
+            this.householdManager = householdManager;
         }
 
         public CharacterDashboardViewModel BuildDashboard(CharacterCore character)
@@ -33,6 +36,7 @@ namespace Survivebest.Application
 
             NeedsSystem needs = character.GetComponent<NeedsSystem>();
             NeedsSnapshot snapshot = needs != null ? needs.CaptureSnapshot() : null;
+            StatusEffectSystem statuses = character.GetComponent<StatusEffectSystem>();
             PaperTrailProfile paper = paperTrailSystem != null ? paperTrailSystem.GetOrCreateProfile(character.CharacterId) : null;
             string thought = humanLifeExperienceLayerSystem != null
                 ? humanLifeExperienceLayerSystem.BuildInnerMonologueSnapshot(character.CharacterId, true)
@@ -42,14 +46,34 @@ namespace Survivebest.Application
             {
                 CharacterId = character.CharacterId,
                 Name = character.DisplayName,
+                DisplayName = character.DisplayName,
                 Age = character.CurrentLifeStage.ToString(),
+                LifeStage = character.CurrentLifeStage.ToString(),
                 PortraitStateKey = $"{character.GetSpeciesKey()}_{character.CurrentLifeStage.ToString().ToLowerInvariant()}_{character.ClothingStyle.ToString().ToLowerInvariant()}",
+                MoodSummary = BuildMoodSummary(snapshot),
                 TopNeeds = BuildTopNeeds(snapshot),
                 CurrentThought = thought,
+                CurrentAction = householdManager != null ? householdManager.GetLatestIntentForCharacter(character.CharacterId) ?? "Idle" : "Idle",
                 ActiveMoodTags = BuildMoodTags(snapshot),
+                ActiveStatuses = BuildActiveStatuses(statuses),
                 RelationshipHighlights = BuildRelationshipHighlights(character.CharacterId),
+                KeyRelationshipAlerts = BuildRelationshipHighlights(character.CharacterId),
                 VampireSuspicionLevel = character.IsVampire && paper != null ? paper.VampireAnomalyRisk : 0f
             };
+        }
+
+        private static string BuildMoodSummary(NeedsSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return "Unknown";
+            }
+
+            if (snapshot.Mood < 30f) return "Strained";
+            if (snapshot.BurnoutRisk > 65f) return "Burning out";
+            if (snapshot.MentalFatigue > 55f) return "Mentally drained";
+            if (snapshot.Mood < 55f) return "Uneasy";
+            return "Stable";
         }
 
         private List<string> BuildTopNeeds(NeedsSnapshot snapshot)
@@ -103,6 +127,27 @@ namespace Survivebest.Application
             }
 
             return lines;
+        }
+
+        private static List<string> BuildActiveStatuses(StatusEffectSystem statusEffectSystem)
+        {
+            List<string> statuses = new();
+            IReadOnlyList<ActiveStatusEffect> activeEffects = statusEffectSystem != null ? statusEffectSystem.ActiveEffects : null;
+            if (activeEffects == null)
+            {
+                return statuses;
+            }
+
+            for (int i = 0; i < Mathf.Min(3, activeEffects.Count); i++)
+            {
+                ActiveStatusEffect effect = activeEffects[i];
+                if (effect != null && !string.IsNullOrWhiteSpace(effect.DisplayName))
+                {
+                    statuses.Add(effect.DisplayName);
+                }
+            }
+
+            return statuses;
         }
 
         private static void AddNeedIfLow(List<string> list, string label, float value, bool inverted)
@@ -420,9 +465,13 @@ namespace Survivebest.Application
             LocationManager locationManager,
             JusticeSystem justiceSystem,
             RelationshipMemorySystem relationshipMemorySystem,
-            VampireDepthSystem vampireDepthSystem)
+            VampireDepthSystem vampireDepthSystem,
+            WorldClock worldClock = null,
+            WeatherManager weatherManager = null,
+            TownSimulationManager townSimulationManager = null)
         {
             CharacterCore activeCharacter = householdManager != null ? householdManager.ActiveCharacter : null;
+            string currentRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "Unknown";
             GameplayOverviewViewModel viewModel = new GameplayOverviewViewModel
             {
                 Character = characterFacade.BuildDashboard(activeCharacter),
@@ -431,11 +480,74 @@ namespace Survivebest.Application
                 Justice = justiceFacade.BuildSummary(justiceSystem, activeCharacter),
                 Relationship = relationshipFacade.BuildSummary(relationshipMemorySystem, activeCharacter != null ? activeCharacter.CharacterId : null),
                 Vampire = vampireFacade.BuildSummary(vampireDepthSystem, activeCharacter),
-                CurrentRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "Unknown"
+                World = BuildWorldPanel(worldClock, weatherManager, currentRoom, townSimulationManager, economyInventorySystem),
+                Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem),
+                CurrentRoom = currentRoom
             };
 
-            viewModel.AvailableActions.AddRange(BuildAvailableActions(locationManager));
+            viewModel.AvailableActions.AddRange(viewModel.Actions.ContextActions);
             return viewModel;
+        }
+
+        public WorldPanelViewModel BuildWorldPanel(WorldClock worldClock, WeatherManager weatherManager, string currentRoom, TownSimulationManager townSimulationManager, EconomyInventorySystem economyInventorySystem)
+        {
+            WorldPanelViewModel vm = new WorldPanelViewModel
+            {
+                DateTimeLabel = worldClock != null ? $"Y{worldClock.Year} M{worldClock.Month} D{worldClock.Day} {worldClock.Hour:00}:{worldClock.Minute:00}" : "Unknown time",
+                Weather = weatherManager != null ? weatherManager.CurrentWeather.ToString() : "Unknown weather",
+                Location = string.IsNullOrWhiteSpace(currentRoom) ? "Unknown" : currentRoom,
+                DistrictVibe = ResolveDistrictVibe(townSimulationManager),
+                Danger = townSimulationManager != null ? townSimulationManager.GetTownPressureScore() : 0f,
+                MoneySummary = economyInventorySystem != null ? $"${economyInventorySystem.Funds:0}" : "$0"
+            };
+
+            if (townSimulationManager != null)
+            {
+                for (int i = 0; i < Mathf.Min(3, townSimulationManager.RecentCommunityEvents.Count); i++)
+                {
+                    CommunityEventRecord evt = townSimulationManager.RecentCommunityEvents[i];
+                    if (evt != null)
+                    {
+                        vm.NearbyEvents.Add(evt.Label);
+                    }
+                }
+            }
+
+            if (vm.NearbyEvents.Count == 0)
+            {
+                vm.NearbyEvents.Add("No nearby events");
+            }
+
+            return vm;
+        }
+
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem)
+        {
+            ActionPanelViewModel vm = new ActionPanelViewModel();
+            List<string> contextActions = BuildAvailableActions(locationManager);
+            vm.ContextActions.AddRange(contextActions);
+
+            if (contextActions.Count > 0)
+            {
+                vm.SuggestedActions.Add(contextActions[0]);
+            }
+
+            vm.LockedActions.Add("break_in");
+            if (justiceSystem != null && activeCharacter != null && justiceSystem.IsIncarcerated(activeCharacter))
+            {
+                vm.WarningActions.Add("escape_attempt");
+            }
+
+            if (activeCharacter != null && activeCharacter.IsVampire)
+            {
+                vm.VampireOnlyActions.Add("feed_on_target");
+                if (activeCharacter.CanCompelTargets())
+                {
+                    vm.VampireOnlyActions.Add("use_compulsion");
+                }
+            }
+
+            return vm;
         }
 
         private static List<string> BuildAvailableActions(LocationManager locationManager)
@@ -478,6 +590,20 @@ namespace Survivebest.Application
             }
 
             return actions;
+        }
+
+        private static string ResolveDistrictVibe(TownSimulationManager townSimulationManager)
+        {
+            if (townSimulationManager == null)
+            {
+                return "Unknown";
+            }
+
+            float pressure = townSimulationManager.GetTownPressureScore();
+            if (pressure >= 75f) return "Combustible";
+            if (pressure >= 50f) return "Restless";
+            if (pressure >= 25f) return "Watchful";
+            return "Calm";
         }
     }
 }
