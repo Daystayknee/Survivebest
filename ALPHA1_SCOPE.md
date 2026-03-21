@@ -45,6 +45,16 @@ The following do **not** count as completion:
 
 Do not broaden the milestone until all 12 steps are playable from UI and survive save/load.
 
+
+## After Alpha 1
+After `Milestone 0 — Human Day Slice` is truly ship-ready, expand toward the broader continuous life-sim target described in `Docs/EndlessLifeSimFramework.md`.
+
+The order stays strict:
+1. prove the one-day slice from UI with save/load parity
+2. prove a repeatable multi-day survival week
+3. widen into more jobs, pressures, social paths, and human-condition systems
+4. only then scale content breadth toward the larger endless-life vision
+
 ## Out of Scope (Alpha 1)
 - Final art polish and full animation/VFX/SFX coverage.
 - Large authored questlines/cutscenes.

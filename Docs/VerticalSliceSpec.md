@@ -349,6 +349,20 @@ This order intentionally moves from passive display to action execution, then co
 - presentation coordinator resolves one coherent screen state
 - save/load parity remains intact across the full loop
 
+
+## Beyond Milestone 0 — Endless Human Life Sim
+
+Milestone 0 is the ship gate, not the ceiling. Once the Human Day Slice is stable, the project should expand into a continuous, multi-choice life sim / survival RPG where repeated days, accumulating consequences, and diverging human strategies define the experience.
+
+Use `Docs/EndlessLifeSimFramework.md` as the follow-on framework for widening the game only after the ship gate is proven.
+
+Expansion after Milestone 0 should prioritize:
+- repeated multi-day continuity
+- multiple valid ways to solve pressures
+- delayed consequences that shape later days
+- broader human-condition simulation across needs, money, health, social life, and environment
+- RPG progression that deepens capability without trivializing the sim
+
 ## Slice 1 — Vampire Night Loop
 
 ### Goal
