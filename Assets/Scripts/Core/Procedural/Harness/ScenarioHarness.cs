@@ -132,5 +132,6 @@ namespace Survivebest.Core.Procedural.Harness
             report.EndingSummary = ScenarioAuthorshipCatalog.BuildResolutionSummary(template, arc, report.ResolutionState);
             return report;
         }
+
     }
 }
