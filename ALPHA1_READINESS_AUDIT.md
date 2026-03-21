@@ -47,7 +47,12 @@ Legend: ✅ ready, ⚠ partial, ❌ missing
 | ActionPopupController (data side) | UI observer/action bridge | Yes | ⚠ | N/A | ⚠ | ⚠ | ⚠ |
 
 ## Immediate Gaps to Close
-1. Save/load restoration breadth (status/jail/orders/contracts/ownership scopes/full activity state).
-2. Event standardization cleanup for systems that still carry implicit UI assumptions.
-3. Lifecycle completeness tests for weather/day slice/medical/substance/justice/contracts/food-service loops.
-4. Unity scene/prefab and PlayMode hardening pass so code-complete systems are production-usable.
+1. Unity scene/prefab and PlayMode hardening pass so code-complete systems are production-usable.
+2. Repeated authored-scene save/load smoke passes to confirm the existing runtime parity coverage holds through real gameplay UI.
+3. Presentation rebinding validation after load so HUD, portrait/paper-doll state, and event feed all stay in sync in Unity scenes.
+
+## Closed code/test coverage gaps
+These previously-listed gaps now have explicit implementation and test coverage evidence documented in `Docs/ALPHA1_GAP_CLOSURE.md`:
+- save/load restoration breadth (status/jail/orders/contracts/ownership scopes/full activity state)
+- event standardization cleanup for critical systems that previously risked implicit UI assumptions
+- lifecycle completeness tests for weather/day slice/medical/substance/justice/contracts/food-service loops
