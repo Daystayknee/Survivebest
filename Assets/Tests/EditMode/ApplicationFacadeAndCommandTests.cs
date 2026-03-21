@@ -36,8 +36,11 @@ namespace Survivebest.Tests.EditMode
             household.AddMember(character);
             EconomyInventorySystem economy = root.AddComponent<EconomyInventorySystem>();
             economy.AddFunds(200f, "seed");
+            economy.AddItem("Rice", 4);
+            economy.AddItem("Soap", 2);
             HouseholdFacade householdFacade = new HouseholdFacade();
             HouseholdSummaryViewModel householdVm = householdFacade.BuildSummary(household, economy);
+            EconomySummaryViewModel economyVm = new EconomyFacade().BuildSummary(economy);
 
             Assert.AreEqual("Avery", dashboard.Name);
             Assert.IsNotEmpty(dashboard.TopNeeds);
@@ -45,6 +48,8 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(dashboard.VampireSuspicionLevel, 0f);
             Assert.AreEqual(1, householdVm.MemberCount);
             Assert.AreEqual("Avery", householdVm.ActiveCharacterName);
+            Assert.AreEqual(2, economyVm.DistinctInventoryEntries);
+            Assert.IsNotEmpty(economyVm.InventoryHighlights);
 
             Object.DestroyImmediate(root);
         }
@@ -91,6 +96,57 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotEmpty(relationship.HighlightPairs);
             Assert.AreEqual("Emergency hiding used", vamp.LastDayIncident);
             CollectionAssert.Contains(vamp.Alerts, "frenzy_active");
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void GameplayFacade_BuildsSingleHudFacingOverview()
+        {
+            GameObject root = new GameObject("GameplayFacadeRoot");
+            CharacterCore character = root.AddComponent<CharacterCore>();
+            character.Initialize("char_ui", "Noa", LifeStage.Adult, CharacterSpecies.Vampire);
+            NeedsSystem needs = root.AddComponent<NeedsSystem>();
+            needs.ApplySnapshot(new NeedsSnapshot { Hunger = 18f, Energy = 41f, Mood = 36f, Hydration = 29f, BurnoutRisk = 65f, MentalFatigue = 60f, SleepDebt = 58f });
+
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            EconomyInventorySystem economy = root.AddComponent<EconomyInventorySystem>();
+            economy.AddFunds(120f, "seed");
+            economy.AddItem("Bandage", 1);
+
+            LocationManager location = root.AddComponent<LocationManager>();
+            location.SetRooms(new List<Room>
+            {
+                new Room { RoomName = "Clinic Lobby", Theme = LocationTheme.Hospital, AreaName = "Downtown" }
+            });
+            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Clinic Lobby"));
+
+            RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
+            memory.RecordEventDetailed("char_ui", "friend_ui", "late-night confession", 12, true, "clinic");
+
+            JusticeSystem justice = root.AddComponent<JusticeSystem>();
+            VampireDepthSystem vampire = root.AddComponent<VampireDepthSystem>();
+            SetPrivateField(vampire, "frenzyStates", new List<FrenzyState> { new FrenzyState { CharacterId = "char_ui", HungerPressure = 70f, SocialConsequenceRisk = 45f } });
+
+            GameplayFacade gameplayFacade = new GameplayFacade(
+                new CharacterFacade(memory),
+                new HouseholdFacade(),
+                new EconomyFacade(),
+                new JusticeFacade(),
+                new RelationshipFacade(),
+                new VampireFacade());
+
+            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(household, economy, location, justice, memory, vampire);
+
+            Assert.AreEqual("Noa", overview.Character.Name);
+            Assert.AreEqual("Clinic Lobby", overview.CurrentRoom);
+            Assert.AreEqual(1, overview.Household.MemberCount);
+            Assert.IsNotEmpty(overview.Character.TopNeeds);
+            Assert.IsNotEmpty(overview.AvailableActions);
+            Assert.AreEqual(70f, overview.Vampire.HungerPressure);
 
             Object.DestroyImmediate(root);
         }

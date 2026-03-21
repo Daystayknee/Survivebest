@@ -8,38 +8,24 @@ namespace Survivebest.Tests.EditMode
     public class GameBootstrapPipelineTests
     {
         [Test]
-        public void BootstrapGame_RunsSceneStartupPipelineInCanonicalOrder()
+        public void GameBootstrapPipeline_RunsCanonicalStartupFlowWithoutMonoBehaviourGlue()
         {
-            GameObject root = new GameObject("BootstrapRoot");
-            root.SetActive(false);
-            GameBootstrapper bootstrapper = root.AddComponent<GameBootstrapper>();
-            SimulationRestoreCoordinator restoreCoordinator = root.AddComponent<SimulationRestoreCoordinator>();
-            root.AddComponent<OrderedStaticDefinitionLoader>().OrderValue = 10;
-            root.AddComponent<OrderedServiceRegistrationStep>().OrderValue = 20;
-            root.AddComponent<OrderedSimulationInitializationStep>().OrderValue = 30;
-            root.AddComponent<OrderedGameplayFacadeBinder>().OrderValue = 40;
-            root.AddComponent<OrderedGameplayViewModelBuilder>().OrderValue = 50;
-            root.AddComponent<OrderedGameplayUiNotifier>().OrderValue = 60;
-            root.AddComponent<OrderedGameplayLoopParticipant>().OrderValue = 70;
-
             List<string> log = new();
-            root.GetComponent<OrderedStaticDefinitionLoader>().Log = log;
-            root.GetComponent<OrderedServiceRegistrationStep>().Log = log;
-            root.GetComponent<OrderedSimulationInitializationStep>().Log = log;
-            root.GetComponent<OrderedGameplayFacadeBinder>().Log = log;
-            root.GetComponent<OrderedGameplayViewModelBuilder>().Log = log;
-            root.GetComponent<OrderedGameplayUiNotifier>().Log = log;
-            root.GetComponent<OrderedGameplayLoopParticipant>().Log = log;
+            GameBootstrapPlan plan = new GameBootstrapPlan();
+            plan.StaticDefinitionLoaders.Add(new OrderedStaticDefinitionLoader { OrderValue = 10, Log = log });
+            plan.ServiceRegistrationSteps.Add(new OrderedServiceRegistrationStep { OrderValue = 20, Log = log });
+            plan.SimulationInitializationSteps.Add(new OrderedSimulationInitializationStep { OrderValue = 30, Log = log });
+            plan.GameplayFacadeBinders.Add(new OrderedGameplayFacadeBinder { OrderValue = 40, Log = log });
+            plan.GameplayViewModelBuilders.Add(new OrderedGameplayViewModelBuilder { OrderValue = 50, Log = log });
+            plan.GameplayUiNotifiers.Add(new OrderedGameplayUiNotifier { OrderValue = 60, Log = log });
+            plan.GameplayLoopParticipants.Add(new OrderedGameplayLoopParticipant { OrderValue = 70, Log = log });
+            plan.CreateNewGame = context => context.SimulationState.WorldName = "Bootstrap Test World";
 
-            bootstrapper.OnStageStarted += stage => log.Add($"stage:{stage}");
-
-            typeof(GameBootstrapper).GetField("simulationRestoreCoordinator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.SetValue(bootstrapper, restoreCoordinator);
-            typeof(GameBootstrapper).GetField("runOnAwake", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.SetValue(bootstrapper, false);
-
-            root.SetActive(true);
-            bootstrapper.BootstrapGame();
+            GameBootstrapPipeline pipeline = new GameBootstrapPipeline(plan);
+            GameBootstrapContext context = pipeline.Run(
+                new GameBootstrapContext(),
+                stage => log.Add($"stage:{stage}"),
+                null);
 
             CollectionAssert.AreEqual(new[]
             {
@@ -60,12 +46,10 @@ namespace Survivebest.Tests.EditMode
                 "gameplay-loop-entered"
             }, log);
 
-            Assert.NotNull(bootstrapper.Context);
-            Assert.AreEqual("Bootstrap Test World", bootstrapper.Context.SimulationState.WorldName);
-            Assert.AreEqual("vm-ready", bootstrapper.Context.ViewModels["hud"]);
-            Assert.IsTrue(bootstrapper.SessionController.IsSessionActive);
-
-            Object.DestroyImmediate(root);
+            Assert.NotNull(context);
+            Assert.AreEqual("Bootstrap Test World", context.SimulationState.WorldName);
+            Assert.AreEqual("vm-ready", context.ViewModels["hud"]);
+            Assert.IsTrue(pipeline.SessionController.IsSessionActive);
         }
 
         [Test]
@@ -94,7 +78,7 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(root);
         }
 
-        private sealed class OrderedStaticDefinitionLoader : MonoBehaviour, IStaticDefinitionLoader
+        private sealed class OrderedStaticDefinitionLoader : IStaticDefinitionLoader
         {
             public int OrderValue;
             public List<string> Log;
@@ -102,7 +86,7 @@ namespace Survivebest.Tests.EditMode
             public void LoadDefinitions(GameBootstrapContext context) => Log.Add("static-definitions");
         }
 
-        private sealed class OrderedServiceRegistrationStep : MonoBehaviour, IServiceRegistrationStep
+        private sealed class OrderedServiceRegistrationStep : IServiceRegistrationStep
         {
             public int OrderValue;
             public List<string> Log;
@@ -114,7 +98,7 @@ namespace Survivebest.Tests.EditMode
             }
         }
 
-        private sealed class OrderedSimulationInitializationStep : MonoBehaviour, ISimulationInitializationStep
+        private sealed class OrderedSimulationInitializationStep : ISimulationInitializationStep
         {
             public int OrderValue;
             public List<string> Log;
@@ -126,7 +110,7 @@ namespace Survivebest.Tests.EditMode
             }
         }
 
-        private sealed class OrderedGameplayFacadeBinder : MonoBehaviour, IGameplayFacadeBinder
+        private sealed class OrderedGameplayFacadeBinder : IGameplayFacadeBinder
         {
             public int OrderValue;
             public List<string> Log;
@@ -134,7 +118,7 @@ namespace Survivebest.Tests.EditMode
             public void BindFacades(GameBootstrapContext context) => Log.Add("facades-bound");
         }
 
-        private sealed class OrderedGameplayViewModelBuilder : MonoBehaviour, IGameplayViewModelBuilder
+        private sealed class OrderedGameplayViewModelBuilder : IGameplayViewModelBuilder
         {
             public int OrderValue;
             public List<string> Log;
@@ -146,7 +130,7 @@ namespace Survivebest.Tests.EditMode
             }
         }
 
-        private sealed class OrderedGameplayUiNotifier : MonoBehaviour, IGameplayUiNotifier
+        private sealed class OrderedGameplayUiNotifier : IGameplayUiNotifier
         {
             public int OrderValue;
             public List<string> Log;
@@ -154,7 +138,7 @@ namespace Survivebest.Tests.EditMode
             public void NotifyUi(GameBootstrapContext context) => Log.Add("ui-notified");
         }
 
-        private sealed class OrderedGameplayLoopParticipant : MonoBehaviour, IGameplayLoopParticipant
+        private sealed class OrderedGameplayLoopParticipant : IGameplayLoopParticipant
         {
             public int OrderValue;
             public List<string> Log;

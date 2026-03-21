@@ -82,6 +82,27 @@ namespace Survivebest.Application
     }
 
     [Serializable]
+    public sealed class EconomySummaryViewModel
+    {
+        public float Funds;
+        public int DistinctInventoryEntries;
+        public List<string> InventoryHighlights = new();
+    }
+
+    [Serializable]
+    public sealed class GameplayOverviewViewModel
+    {
+        public CharacterDashboardViewModel Character = new();
+        public HouseholdSummaryViewModel Household = new();
+        public EconomySummaryViewModel Economy = new();
+        public JusticeSummaryViewModel Justice = new();
+        public RelationshipSummaryViewModel Relationship = new();
+        public VampireSummaryViewModel Vampire = new();
+        public string CurrentRoom;
+        public List<string> AvailableActions = new();
+    }
+
+    [Serializable]
     public sealed class SimulationDebugSnapshot
     {
         public string Title;
