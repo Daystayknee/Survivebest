@@ -133,6 +133,18 @@ Minimum tuning artifacts you should maintain:
 Without balance, the game may technically function while still feeling unfair, empty, trivial, or exhausting.
 
 ## 6. Save/load coverage and migration discipline
+
+### Alpha-risk interpretation
+For this project, save/load breadth is the single most dangerous trust gap because it is where an apparently functional life sim becomes obviously fake.
+
+Failure modes to actively guard against:
+- disappearing commitments
+- duplicated jobs or orders
+- missing penalties or expired timers
+- broken NPC placement after load
+- vanished conditions or substance effects
+- desynced money, inventory, home ownership, or activity state
+
 A life sim is only real if long-running state survives.
 
 You still need:
@@ -160,6 +172,10 @@ Minimum parity matrix rows should include:
 - current job/schedule obligation state
 
 ## 7. Player-facing UX and readability
+
+### Alpha-risk interpretation
+UI observer/bridge systems are not optional polish for Alpha 1. `GameHUD`, `JournalFeedUI`, and `ActionPopupController` are part of the definition of done because the milestone must be reachable, understandable, and actionable through scene UI.
+
 A full game must explain itself to the player.
 
 You still need:

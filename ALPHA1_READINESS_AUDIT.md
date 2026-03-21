@@ -15,6 +15,54 @@ Legend: ✅ ready, ⚠ partial, ❌ missing
 - Full Unity EditMode/PlayMode execution from a real Unity runner (CLI unavailable in this environment).
 - Final save/load parity audit for every subsystem state in long multi-day runs.
 
+
+## Alpha 1 Release-Gate Priorities
+
+### 1. Save/load breadth is the #1 release gate
+This is the most dangerous gap in the entire Alpha 1 table.
+
+A life sim is judged by whether the world still makes sense after:
+- sleeping
+- changing day slice
+- leaving and returning to scene
+- saving
+- reloading
+- advancing multiple days
+- resuming in-progress tasks or consequences
+
+If parity breaks here, the player will experience fake continuity: disappearing commitments, missing penalties, duplicated jobs/orders, broken NPC placement, vanished conditions/effects, and desynced money/inventory/home ownership state.
+
+For Alpha 1, save/load parity is the top release gate. No slice should be called ready until this survives real scene UI, not only isolated system tests.
+
+### 2. UI-side systems are core, not polish
+These systems are part of the ship gate because the milestone must be playable through scene UI:
+- `GameHUD`
+- `JournalFeedUI`
+- `ActionPopupController`
+
+If simulation state is technically correct but the player cannot inspect needs, choose actions, see results, or understand failures, the Human Day Slice is not shippable.
+
+### 3. Simulation-trust containment zones
+These systems should be treated as the highest-risk simulation-trust areas until repeatedly proven over time:
+- `HealthSystem`
+- `MedicalConditionSystem`
+- `NpcScheduleSystem`
+- `NPCAutonomyController`
+- `ContractBoardSystem`
+
+The adjacent high-risk lifecycle loops are:
+- medical
+- substance
+- justice
+- contracts
+- food-service
+
+Rule for Alpha 1:
+- either harden these systems now with parity and lifecycle proof
+- or reduce the milestone's dependency on them until they are trustworthy
+
+Do not leave them vaguely required.
+
 ## System Readiness Table
 
 | System | Owner | Alpha1 Required | Lifecycle Complete | Save/Load | Events | Tests | Ready |
