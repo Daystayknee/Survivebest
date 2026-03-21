@@ -160,11 +160,14 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual("Clinic Lobby", overview.CurrentRoom);
             Assert.AreEqual(1, overview.Household.MemberCount);
             Assert.IsNotEmpty(overview.Character.TopNeeds);
-            Assert.IsNotEmpty(overview.AvailableActions);
+            Assert.GreaterOrEqual(overview.AvailableActions.Count, 10);
             Assert.AreEqual(70f, overview.Vampire.HungerPressure);
             Assert.AreEqual("Foggy", overview.World.Weather);
             Assert.IsNotEmpty(overview.World.NearbyEvents);
             CollectionAssert.Contains(overview.Actions.VampireOnlyActions, "feed_on_target");
+            CollectionAssert.Contains(overview.AvailableActions, "text_contact");
+            CollectionAssert.Contains(overview.AvailableActions, "manage_budget");
+            CollectionAssert.Contains(overview.AvailableActions, "resolve_relationship_tension");
 
             Object.DestroyImmediate(root);
         }

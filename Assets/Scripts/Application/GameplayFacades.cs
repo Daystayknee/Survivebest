@@ -12,6 +12,158 @@ using Survivebest.World;
 
 namespace Survivebest.Application
 {
+    public sealed class GameplayActionCatalog
+    {
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null)
+        {
+            ActionPanelViewModel vm = new ActionPanelViewModel();
+            List<string> contextActions = BuildContextActions(activeCharacter, locationManager, relationshipMemorySystem);
+            vm.ContextActions.AddRange(contextActions);
+
+            for (int i = 0; i < Mathf.Min(4, contextActions.Count); i++)
+            {
+                vm.SuggestedActions.Add(contextActions[i]);
+            }
+
+            vm.LockedActions.Add("demolish_city_block");
+            if (justiceSystem != null && activeCharacter != null && justiceSystem.IsIncarcerated(activeCharacter))
+            {
+                vm.WarningActions.Add("escape_attempt");
+                vm.WarningActions.Add("contraband_trade");
+            }
+
+            if (activeCharacter != null && activeCharacter.IsVampire)
+            {
+                vm.VampireOnlyActions.Add("feed_on_target");
+                vm.VampireOnlyActions.Add("hunt_blood_source");
+                vm.VampireOnlyActions.Add("conceal_evidence");
+                if (activeCharacter.CanCompelTargets())
+                {
+                    vm.VampireOnlyActions.Add("use_compulsion");
+                }
+            }
+
+            return vm;
+        }
+
+        private static List<string> BuildContextActions(CharacterCore activeCharacter, LocationManager locationManager, RelationshipMemorySystem relationshipMemorySystem)
+        {
+            List<string> ordered = new();
+            AddAlwaysAvailable(ordered);
+
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            if (room != null)
+            {
+                AddLocationActions(ordered, room.Theme);
+            }
+
+            if (activeCharacter != null)
+            {
+                AddCharacterActions(ordered, activeCharacter);
+                AddRelationshipActions(ordered, relationshipMemorySystem, activeCharacter.CharacterId);
+            }
+
+            return new List<string>(ordered);
+        }
+
+        private static void AddAlwaysAvailable(List<string> actions)
+        {
+            AddUnique(actions, "open_map_travel");
+            AddUnique(actions, "check_phone");
+            AddUnique(actions, "text_contact");
+            AddUnique(actions, "talk_to_someone");
+            AddUnique(actions, "reflect");
+            AddUnique(actions, "manage_budget");
+            AddUnique(actions, "journal");
+            AddUnique(actions, "rest");
+        }
+
+        private static void AddLocationActions(List<string> actions, LocationTheme theme)
+        {
+            switch (theme)
+            {
+                case LocationTheme.Residential:
+                    AddUnique(actions, "shower");
+                    AddUnique(actions, "eat_meal");
+                    AddUnique(actions, "order_food");
+                    AddUnique(actions, "clean_room");
+                    AddUnique(actions, "do_laundry");
+                    AddUnique(actions, "change_outfit");
+                    AddUnique(actions, "sleep");
+                    AddUnique(actions, "invite_guest");
+                    AddUnique(actions, "cook");
+                    break;
+                case LocationTheme.Workplace:
+                    AddUnique(actions, "go_to_work");
+                    AddUnique(actions, "focus_task");
+                    AddUnique(actions, "talk_coworker");
+                    AddUnique(actions, "check_gig_board");
+                    AddUnique(actions, "pitch_side_hustle");
+                    AddUnique(actions, "leave_early");
+                    break;
+                case LocationTheme.Hospital:
+                    AddUnique(actions, "check_in");
+                    AddUnique(actions, "request_tests");
+                    AddUnique(actions, "therapy_consult");
+                    AddUnique(actions, "call_family");
+                    AddUnique(actions, "rest");
+                    break;
+                case LocationTheme.StoreInterior:
+                    AddUnique(actions, "buy_groceries");
+                    AddUnique(actions, "browse");
+                    AddUnique(actions, "haggle");
+                    AddUnique(actions, "chat");
+                    break;
+                case LocationTheme.Nature:
+                    AddUnique(actions, "forage");
+                    AddUnique(actions, "observe");
+                    AddUnique(actions, "camp");
+                    AddUnique(actions, "night_walk");
+                    break;
+                default:
+                    AddUnique(actions, "explore");
+                    AddUnique(actions, "observe");
+                    AddUnique(actions, "join_town_meeting");
+                    break;
+            }
+        }
+
+        private static void AddCharacterActions(List<string> actions, CharacterCore activeCharacter)
+        {
+            AddUnique(actions, "check_needs");
+            AddUnique(actions, "household_pressure");
+            if (activeCharacter.CanFeedOnBlood())
+            {
+                AddUnique(actions, "feed_on_target");
+                AddUnique(actions, "conceal_evidence");
+            }
+        }
+
+        private static void AddRelationshipActions(List<string> actions, RelationshipMemorySystem relationshipMemorySystem, string characterId)
+        {
+            if (relationshipMemorySystem == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            List<RelationshipMemory> memories = relationshipMemorySystem.GetMemoriesForCharacter(characterId);
+            if (memories.Count > 0)
+            {
+                AddUnique(actions, "resolve_relationship_tension");
+                AddUnique(actions, "send_apology_text");
+                AddUnique(actions, "gossip");
+            }
+        }
+
+        private static void AddUnique(List<string> actions, string action)
+        {
+            if (!actions.Contains(action))
+            {
+                actions.Add(action);
+            }
+        }
+    }
+
     public sealed class CharacterFacade
     {
         private readonly RelationshipMemorySystem relationshipMemorySystem;
@@ -442,6 +594,7 @@ namespace Survivebest.Application
         private readonly JusticeFacade justiceFacade;
         private readonly RelationshipFacade relationshipFacade;
         private readonly VampireFacade vampireFacade;
+        private readonly GameplayActionCatalog gameplayActionCatalog;
 
         public GameplayFacade(
             CharacterFacade characterFacade = null,
@@ -449,7 +602,8 @@ namespace Survivebest.Application
             EconomyFacade economyFacade = null,
             JusticeFacade justiceFacade = null,
             RelationshipFacade relationshipFacade = null,
-            VampireFacade vampireFacade = null)
+            VampireFacade vampireFacade = null,
+            GameplayActionCatalog gameplayActionCatalog = null)
         {
             this.characterFacade = characterFacade ?? new CharacterFacade();
             this.householdFacade = householdFacade ?? new HouseholdFacade();
@@ -457,6 +611,7 @@ namespace Survivebest.Application
             this.justiceFacade = justiceFacade ?? new JusticeFacade();
             this.relationshipFacade = relationshipFacade ?? new RelationshipFacade();
             this.vampireFacade = vampireFacade ?? new VampireFacade();
+            this.gameplayActionCatalog = gameplayActionCatalog ?? new GameplayActionCatalog();
         }
 
         public GameplayOverviewViewModel BuildOverview(
@@ -481,7 +636,7 @@ namespace Survivebest.Application
                 Relationship = relationshipFacade.BuildSummary(relationshipMemorySystem, activeCharacter != null ? activeCharacter.CharacterId : null),
                 Vampire = vampireFacade.BuildSummary(vampireDepthSystem, activeCharacter),
                 World = BuildWorldPanel(worldClock, weatherManager, currentRoom, townSimulationManager, economyInventorySystem),
-                Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem),
+                Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem),
                 CurrentRoom = currentRoom
             };
 
@@ -521,75 +676,9 @@ namespace Survivebest.Application
             return vm;
         }
 
-        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem)
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null)
         {
-            ActionPanelViewModel vm = new ActionPanelViewModel();
-            List<string> contextActions = BuildAvailableActions(locationManager);
-            vm.ContextActions.AddRange(contextActions);
-
-            if (contextActions.Count > 0)
-            {
-                vm.SuggestedActions.Add(contextActions[0]);
-            }
-
-            vm.LockedActions.Add("break_in");
-            if (justiceSystem != null && activeCharacter != null && justiceSystem.IsIncarcerated(activeCharacter))
-            {
-                vm.WarningActions.Add("escape_attempt");
-            }
-
-            if (activeCharacter != null && activeCharacter.IsVampire)
-            {
-                vm.VampireOnlyActions.Add("feed_on_target");
-                if (activeCharacter.CanCompelTargets())
-                {
-                    vm.VampireOnlyActions.Add("use_compulsion");
-                }
-            }
-
-            return vm;
-        }
-
-        private static List<string> BuildAvailableActions(LocationManager locationManager)
-        {
-            List<string> actions = new();
-            Room room = locationManager != null ? locationManager.CurrentRoom : null;
-            if (room == null)
-            {
-                actions.Add("wait");
-                return actions;
-            }
-
-            switch (room.Theme)
-            {
-                case LocationTheme.Nature:
-                    actions.Add("forage");
-                    actions.Add("observe");
-                    actions.Add("travel");
-                    break;
-                case LocationTheme.StoreInterior:
-                    actions.Add("browse");
-                    actions.Add("buy");
-                    actions.Add("chat");
-                    break;
-                case LocationTheme.Workplace:
-                    actions.Add("work");
-                    actions.Add("network");
-                    actions.Add("leave");
-                    break;
-                case LocationTheme.Hospital:
-                    actions.Add("check_in");
-                    actions.Add("rest");
-                    actions.Add("leave");
-                    break;
-                default:
-                    actions.Add("talk");
-                    actions.Add("rest");
-                    actions.Add("travel");
-                    break;
-            }
-
-            return actions;
+            return gameplayActionCatalog.BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem);
         }
 
         private static string ResolveDistrictVibe(TownSimulationManager townSimulationManager)
