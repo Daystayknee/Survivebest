@@ -3,6 +3,16 @@ using System.Collections.Generic;
 
 namespace Survivebest.UI.ViewModels
 {
+    public enum GameplayScreenMode
+    {
+        Gameplay,
+        Travel,
+        Dialogue,
+        Medical,
+        Crisis,
+        Overlay
+    }
+
     [Serializable] public class SplashScreenViewModel { public string BuildVersion; public string StatusText; public float Progress01; }
     [Serializable] public class MainMenuViewModel { public bool CanContinue; public string SelectedProfileName; }
     [Serializable] public class LoadSlotViewModel { public int SlotIndex; public string SaveName; public string Timestamp; public string Summary; public bool IsCorrupt; }
@@ -53,12 +63,33 @@ namespace Survivebest.UI.ViewModels
     [Serializable] public class PresentationSectionViewModel
     {
         public string SectionLabel;
+        public GameplayScreenMode ScreenMode;
         public string ScreenMood;
         public string PopupTheme;
         public string LocationName;
+        public string LocationContext;
         public string ActiveCharacterName;
+        public string PortraitState;
+        public string WorldSummary;
         public string RecommendedAction;
         public string LastEventTitle;
+        public List<string> InteractionsOnScreen = new();
+        public List<PresentationTimelineCardViewModel> TimelineCards = new();
+        public List<PresentationWarningViewModel> WarningPulses = new();
         public List<string> Tabs = new();
+    }
+
+    [Serializable] public class PresentationTimelineCardViewModel
+    {
+        public string Title;
+        public string Source;
+        public string TimeLabel;
+    }
+
+    [Serializable] public class PresentationWarningViewModel
+    {
+        public string WarningKey;
+        public string Label;
+        public string PulseStyle;
     }
 }

@@ -7,21 +7,176 @@ using Survivebest.Economy;
 using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Social;
+using Survivebest.Status;
 using Survivebest.World;
 
 namespace Survivebest.Application
 {
+    public sealed class GameplayActionCatalog
+    {
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null)
+        {
+            ActionPanelViewModel vm = new ActionPanelViewModel();
+            List<string> contextActions = BuildContextActions(activeCharacter, locationManager, relationshipMemorySystem);
+            vm.ContextActions.AddRange(contextActions);
+
+            for (int i = 0; i < Mathf.Min(4, contextActions.Count); i++)
+            {
+                vm.SuggestedActions.Add(contextActions[i]);
+            }
+
+            vm.LockedActions.Add("demolish_city_block");
+            if (justiceSystem != null && activeCharacter != null && justiceSystem.IsIncarcerated(activeCharacter))
+            {
+                vm.WarningActions.Add("escape_attempt");
+                vm.WarningActions.Add("contraband_trade");
+            }
+
+            if (activeCharacter != null && activeCharacter.IsVampire)
+            {
+                vm.VampireOnlyActions.Add("feed_on_target");
+                vm.VampireOnlyActions.Add("hunt_blood_source");
+                vm.VampireOnlyActions.Add("conceal_evidence");
+                if (activeCharacter.CanCompelTargets())
+                {
+                    vm.VampireOnlyActions.Add("use_compulsion");
+                }
+            }
+
+            return vm;
+        }
+
+        private static List<string> BuildContextActions(CharacterCore activeCharacter, LocationManager locationManager, RelationshipMemorySystem relationshipMemorySystem)
+        {
+            List<string> ordered = new();
+            AddAlwaysAvailable(ordered);
+
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            if (room != null)
+            {
+                AddLocationActions(ordered, room.Theme);
+            }
+
+            if (activeCharacter != null)
+            {
+                AddCharacterActions(ordered, activeCharacter);
+                AddRelationshipActions(ordered, relationshipMemorySystem, activeCharacter.CharacterId);
+            }
+
+            return new List<string>(ordered);
+        }
+
+        private static void AddAlwaysAvailable(List<string> actions)
+        {
+            AddUnique(actions, "open_map_travel");
+            AddUnique(actions, "check_phone");
+            AddUnique(actions, "text_contact");
+            AddUnique(actions, "talk_to_someone");
+            AddUnique(actions, "reflect");
+            AddUnique(actions, "manage_budget");
+            AddUnique(actions, "journal");
+            AddUnique(actions, "rest");
+        }
+
+        private static void AddLocationActions(List<string> actions, LocationTheme theme)
+        {
+            switch (theme)
+            {
+                case LocationTheme.Residential:
+                    AddUnique(actions, "shower");
+                    AddUnique(actions, "eat_meal");
+                    AddUnique(actions, "order_food");
+                    AddUnique(actions, "clean_room");
+                    AddUnique(actions, "do_laundry");
+                    AddUnique(actions, "change_outfit");
+                    AddUnique(actions, "sleep");
+                    AddUnique(actions, "invite_guest");
+                    AddUnique(actions, "cook");
+                    break;
+                case LocationTheme.Workplace:
+                    AddUnique(actions, "go_to_work");
+                    AddUnique(actions, "focus_task");
+                    AddUnique(actions, "talk_coworker");
+                    AddUnique(actions, "check_gig_board");
+                    AddUnique(actions, "pitch_side_hustle");
+                    AddUnique(actions, "leave_early");
+                    break;
+                case LocationTheme.Hospital:
+                    AddUnique(actions, "check_in");
+                    AddUnique(actions, "request_tests");
+                    AddUnique(actions, "therapy_consult");
+                    AddUnique(actions, "call_family");
+                    AddUnique(actions, "rest");
+                    break;
+                case LocationTheme.StoreInterior:
+                    AddUnique(actions, "buy_groceries");
+                    AddUnique(actions, "browse");
+                    AddUnique(actions, "haggle");
+                    AddUnique(actions, "chat");
+                    break;
+                case LocationTheme.Nature:
+                    AddUnique(actions, "forage");
+                    AddUnique(actions, "observe");
+                    AddUnique(actions, "camp");
+                    AddUnique(actions, "night_walk");
+                    break;
+                default:
+                    AddUnique(actions, "explore");
+                    AddUnique(actions, "observe");
+                    AddUnique(actions, "join_town_meeting");
+                    break;
+            }
+        }
+
+        private static void AddCharacterActions(List<string> actions, CharacterCore activeCharacter)
+        {
+            AddUnique(actions, "check_needs");
+            AddUnique(actions, "household_pressure");
+            if (activeCharacter.CanFeedOnBlood())
+            {
+                AddUnique(actions, "feed_on_target");
+                AddUnique(actions, "conceal_evidence");
+            }
+        }
+
+        private static void AddRelationshipActions(List<string> actions, RelationshipMemorySystem relationshipMemorySystem, string characterId)
+        {
+            if (relationshipMemorySystem == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            List<RelationshipMemory> memories = relationshipMemorySystem.GetMemoriesForCharacter(characterId);
+            if (memories.Count > 0)
+            {
+                AddUnique(actions, "resolve_relationship_tension");
+                AddUnique(actions, "send_apology_text");
+                AddUnique(actions, "gossip");
+            }
+        }
+
+        private static void AddUnique(List<string> actions, string action)
+        {
+            if (!actions.Contains(action))
+            {
+                actions.Add(action);
+            }
+        }
+    }
+
     public sealed class CharacterFacade
     {
         private readonly RelationshipMemorySystem relationshipMemorySystem;
         private readonly HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         private readonly PaperTrailSystem paperTrailSystem;
+        private readonly HouseholdManager householdManager;
 
-        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null)
+        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null, HouseholdManager householdManager = null)
         {
             this.relationshipMemorySystem = relationshipMemorySystem;
             this.humanLifeExperienceLayerSystem = humanLifeExperienceLayerSystem;
             this.paperTrailSystem = paperTrailSystem;
+            this.householdManager = householdManager;
         }
 
         public CharacterDashboardViewModel BuildDashboard(CharacterCore character)
@@ -33,6 +188,7 @@ namespace Survivebest.Application
 
             NeedsSystem needs = character.GetComponent<NeedsSystem>();
             NeedsSnapshot snapshot = needs != null ? needs.CaptureSnapshot() : null;
+            StatusEffectSystem statuses = character.GetComponent<StatusEffectSystem>();
             PaperTrailProfile paper = paperTrailSystem != null ? paperTrailSystem.GetOrCreateProfile(character.CharacterId) : null;
             string thought = humanLifeExperienceLayerSystem != null
                 ? humanLifeExperienceLayerSystem.BuildInnerMonologueSnapshot(character.CharacterId, true)
@@ -42,14 +198,34 @@ namespace Survivebest.Application
             {
                 CharacterId = character.CharacterId,
                 Name = character.DisplayName,
+                DisplayName = character.DisplayName,
                 Age = character.CurrentLifeStage.ToString(),
+                LifeStage = character.CurrentLifeStage.ToString(),
                 PortraitStateKey = $"{character.GetSpeciesKey()}_{character.CurrentLifeStage.ToString().ToLowerInvariant()}_{character.ClothingStyle.ToString().ToLowerInvariant()}",
+                MoodSummary = BuildMoodSummary(snapshot),
                 TopNeeds = BuildTopNeeds(snapshot),
                 CurrentThought = thought,
+                CurrentAction = householdManager != null ? householdManager.GetLatestIntentForCharacter(character.CharacterId) ?? "Idle" : "Idle",
                 ActiveMoodTags = BuildMoodTags(snapshot),
+                ActiveStatuses = BuildActiveStatuses(statuses),
                 RelationshipHighlights = BuildRelationshipHighlights(character.CharacterId),
+                KeyRelationshipAlerts = BuildRelationshipHighlights(character.CharacterId),
                 VampireSuspicionLevel = character.IsVampire && paper != null ? paper.VampireAnomalyRisk : 0f
             };
+        }
+
+        private static string BuildMoodSummary(NeedsSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return "Unknown";
+            }
+
+            if (snapshot.Mood < 30f) return "Strained";
+            if (snapshot.BurnoutRisk > 65f) return "Burning out";
+            if (snapshot.MentalFatigue > 55f) return "Mentally drained";
+            if (snapshot.Mood < 55f) return "Uneasy";
+            return "Stable";
         }
 
         private List<string> BuildTopNeeds(NeedsSnapshot snapshot)
@@ -103,6 +279,27 @@ namespace Survivebest.Application
             }
 
             return lines;
+        }
+
+        private static List<string> BuildActiveStatuses(StatusEffectSystem statusEffectSystem)
+        {
+            List<string> statuses = new();
+            IReadOnlyList<ActiveStatusEffect> activeEffects = statusEffectSystem != null ? statusEffectSystem.ActiveEffects : null;
+            if (activeEffects == null)
+            {
+                return statuses;
+            }
+
+            for (int i = 0; i < Mathf.Min(3, activeEffects.Count); i++)
+            {
+                ActiveStatusEffect effect = activeEffects[i];
+                if (effect != null && !string.IsNullOrWhiteSpace(effect.DisplayName))
+                {
+                    statuses.Add(effect.DisplayName);
+                }
+            }
+
+            return statuses;
         }
 
         private static void AddNeedIfLow(List<string> list, string label, float value, bool inverted)
@@ -166,6 +363,43 @@ namespace Survivebest.Application
             }
 
             return viewModel;
+        }
+    }
+
+    public sealed class EconomyFacade
+    {
+        public EconomySummaryViewModel BuildSummary(EconomyInventorySystem economyInventorySystem)
+        {
+            EconomySummaryViewModel vm = new EconomySummaryViewModel();
+            if (economyInventorySystem == null)
+            {
+                return vm;
+            }
+
+            vm.Funds = economyInventorySystem.Funds;
+            EconomySnapshot snapshot = economyInventorySystem.CaptureSnapshot();
+            if (snapshot == null || snapshot.Inventory == null)
+            {
+                return vm;
+            }
+
+            vm.DistinctInventoryEntries = snapshot.Inventory.Count;
+            for (int i = 0; i < snapshot.Inventory.Count; i++)
+            {
+                SharedInventoryEntry pair = snapshot.Inventory[i];
+                if (pair == null || pair.Quantity <= 0)
+                {
+                    continue;
+                }
+
+                vm.InventoryHighlights.Add($"{pair.ItemName}:{pair.Quantity}");
+                if (vm.InventoryHighlights.Count >= 3)
+                {
+                    break;
+                }
+            }
+
+            return vm;
         }
     }
 
@@ -349,6 +583,116 @@ namespace Survivebest.Application
             }
 
             return items;
+        }
+    }
+
+    public sealed class GameplayFacade
+    {
+        private readonly CharacterFacade characterFacade;
+        private readonly HouseholdFacade householdFacade;
+        private readonly EconomyFacade economyFacade;
+        private readonly JusticeFacade justiceFacade;
+        private readonly RelationshipFacade relationshipFacade;
+        private readonly VampireFacade vampireFacade;
+        private readonly GameplayActionCatalog gameplayActionCatalog;
+
+        public GameplayFacade(
+            CharacterFacade characterFacade = null,
+            HouseholdFacade householdFacade = null,
+            EconomyFacade economyFacade = null,
+            JusticeFacade justiceFacade = null,
+            RelationshipFacade relationshipFacade = null,
+            VampireFacade vampireFacade = null,
+            GameplayActionCatalog gameplayActionCatalog = null)
+        {
+            this.characterFacade = characterFacade ?? new CharacterFacade();
+            this.householdFacade = householdFacade ?? new HouseholdFacade();
+            this.economyFacade = economyFacade ?? new EconomyFacade();
+            this.justiceFacade = justiceFacade ?? new JusticeFacade();
+            this.relationshipFacade = relationshipFacade ?? new RelationshipFacade();
+            this.vampireFacade = vampireFacade ?? new VampireFacade();
+            this.gameplayActionCatalog = gameplayActionCatalog ?? new GameplayActionCatalog();
+        }
+
+        public GameplayOverviewViewModel BuildOverview(
+            HouseholdManager householdManager,
+            EconomyInventorySystem economyInventorySystem,
+            LocationManager locationManager,
+            JusticeSystem justiceSystem,
+            RelationshipMemorySystem relationshipMemorySystem,
+            VampireDepthSystem vampireDepthSystem,
+            WorldClock worldClock = null,
+            WeatherManager weatherManager = null,
+            TownSimulationManager townSimulationManager = null)
+        {
+            CharacterCore activeCharacter = householdManager != null ? householdManager.ActiveCharacter : null;
+            string currentRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "Unknown";
+            GameplayOverviewViewModel viewModel = new GameplayOverviewViewModel
+            {
+                Character = characterFacade.BuildDashboard(activeCharacter),
+                Household = householdFacade.BuildSummary(householdManager, economyInventorySystem),
+                Economy = economyFacade.BuildSummary(economyInventorySystem),
+                Justice = justiceFacade.BuildSummary(justiceSystem, activeCharacter),
+                Relationship = relationshipFacade.BuildSummary(relationshipMemorySystem, activeCharacter != null ? activeCharacter.CharacterId : null),
+                Vampire = vampireFacade.BuildSummary(vampireDepthSystem, activeCharacter),
+                World = BuildWorldPanel(worldClock, weatherManager, currentRoom, townSimulationManager, economyInventorySystem),
+                Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem),
+                CurrentRoom = currentRoom
+            };
+
+            viewModel.AvailableActions.AddRange(viewModel.Actions.ContextActions);
+            return viewModel;
+        }
+
+        public WorldPanelViewModel BuildWorldPanel(WorldClock worldClock, WeatherManager weatherManager, string currentRoom, TownSimulationManager townSimulationManager, EconomyInventorySystem economyInventorySystem)
+        {
+            WorldPanelViewModel vm = new WorldPanelViewModel
+            {
+                DateTimeLabel = worldClock != null ? $"Y{worldClock.Year} M{worldClock.Month} D{worldClock.Day} {worldClock.Hour:00}:{worldClock.Minute:00}" : "Unknown time",
+                Weather = weatherManager != null ? weatherManager.CurrentWeather.ToString() : "Unknown weather",
+                Location = string.IsNullOrWhiteSpace(currentRoom) ? "Unknown" : currentRoom,
+                DistrictVibe = ResolveDistrictVibe(townSimulationManager),
+                Danger = townSimulationManager != null ? townSimulationManager.GetTownPressureScore() : 0f,
+                MoneySummary = economyInventorySystem != null ? $"${economyInventorySystem.Funds:0}" : "$0"
+            };
+
+            if (townSimulationManager != null)
+            {
+                for (int i = 0; i < Mathf.Min(3, townSimulationManager.RecentCommunityEvents.Count); i++)
+                {
+                    CommunityEventRecord evt = townSimulationManager.RecentCommunityEvents[i];
+                    if (evt != null)
+                    {
+                        vm.NearbyEvents.Add(evt.Label);
+                    }
+                }
+            }
+
+            if (vm.NearbyEvents.Count == 0)
+            {
+                vm.NearbyEvents.Add("No nearby events");
+            }
+
+            return vm;
+        }
+
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null)
+        {
+            return gameplayActionCatalog.BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem);
+        }
+
+        private static string ResolveDistrictVibe(TownSimulationManager townSimulationManager)
+        {
+            if (townSimulationManager == null)
+            {
+                return "Unknown";
+            }
+
+            float pressure = townSimulationManager.GetTownPressureScore();
+            if (pressure >= 75f) return "Combustible";
+            if (pressure >= 50f) return "Restless";
+            if (pressure >= 25f) return "Watchful";
+            return "Calm";
         }
     }
 }
