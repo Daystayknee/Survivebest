@@ -7,7 +7,9 @@ using Survivebest.Crime;
 using Survivebest.Economy;
 using Survivebest.Location;
 using Survivebest.Needs;
+using Survivebest.Quest;
 using Survivebest.Social;
+using Survivebest.Status;
 using Survivebest.World;
 
 namespace Survivebest.Tests.EditMode
@@ -28,23 +30,35 @@ namespace Survivebest.Tests.EditMode
             HumanLifeExperienceLayerSystem life = root.AddComponent<HumanLifeExperienceLayerSystem>();
             PaperTrailSystem paper = root.AddComponent<PaperTrailSystem>();
             paper.RecordEntry("char_1", PaperRecordType.VampireAnomaly, "suspicious neck bruises rumor", 22f, true, "test");
-
-            CharacterFacade characterFacade = new CharacterFacade(memory, life, paper);
-            CharacterDashboardViewModel dashboard = characterFacade.BuildDashboard(character);
+            StatusEffectSystem statuses = root.AddComponent<StatusEffectSystem>();
+            SetPrivateField(statuses, "activeEffects", new List<ActiveStatusEffect> { new ActiveStatusEffect { Id = "status_001", DisplayName = "Sleep Debt", RemainingHours = 6, IsNegative = true } });
 
             HouseholdManager household = root.AddComponent<HouseholdManager>();
             household.AddMember(character);
+            household.RegisterAutonomyIntent("char_1", "Eat meal");
             EconomyInventorySystem economy = root.AddComponent<EconomyInventorySystem>();
             economy.AddFunds(200f, "seed");
+            economy.AddItem("Rice", 4);
+            economy.AddItem("Soap", 2);
+            CharacterFacade characterFacade = new CharacterFacade(memory, life, paper, household);
+            CharacterDashboardViewModel dashboard = characterFacade.BuildDashboard(character);
             HouseholdFacade householdFacade = new HouseholdFacade();
             HouseholdSummaryViewModel householdVm = householdFacade.BuildSummary(household, economy);
+            EconomySummaryViewModel economyVm = new EconomyFacade().BuildSummary(economy);
 
             Assert.AreEqual("Avery", dashboard.Name);
             Assert.IsNotEmpty(dashboard.TopNeeds);
             Assert.IsNotEmpty(dashboard.ActiveMoodTags);
+            Assert.AreEqual(character.CurrentLifeStage.ToString(), dashboard.LifeStage);
+            Assert.AreEqual("Eat meal", dashboard.CurrentAction);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dashboard.MoodSummary));
+            Assert.IsNotEmpty(dashboard.ActiveStatuses);
+            Assert.IsNotEmpty(dashboard.KeyRelationshipAlerts);
             Assert.Greater(dashboard.VampireSuspicionLevel, 0f);
             Assert.AreEqual(1, householdVm.MemberCount);
             Assert.AreEqual("Avery", householdVm.ActiveCharacterName);
+            Assert.AreEqual(2, economyVm.DistinctInventoryEntries);
+            Assert.IsNotEmpty(economyVm.InventoryHighlights);
 
             Object.DestroyImmediate(root);
         }
@@ -96,6 +110,69 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void GameplayFacade_BuildsSingleHudFacingOverview()
+        {
+            GameObject root = new GameObject("GameplayFacadeRoot");
+            CharacterCore character = root.AddComponent<CharacterCore>();
+            character.Initialize("char_ui", "Noa", LifeStage.Adult, CharacterSpecies.Vampire);
+            NeedsSystem needs = root.AddComponent<NeedsSystem>();
+            needs.ApplySnapshot(new NeedsSnapshot { Hunger = 18f, Energy = 41f, Mood = 36f, Hydration = 29f, BurnoutRisk = 65f, MentalFatigue = 60f, SleepDebt = 58f });
+
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            EconomyInventorySystem economy = root.AddComponent<EconomyInventorySystem>();
+            economy.AddFunds(120f, "seed");
+            economy.AddItem("Bandage", 1);
+
+            LocationManager location = root.AddComponent<LocationManager>();
+            location.SetRooms(new List<Room>
+            {
+                new Room { RoomName = "Clinic Lobby", Theme = LocationTheme.Hospital, AreaName = "Downtown" }
+            });
+            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Clinic Lobby"));
+
+            RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
+            memory.RecordEventDetailed("char_ui", "friend_ui", "late-night confession", 12, true, "clinic");
+
+            JusticeSystem justice = root.AddComponent<JusticeSystem>();
+            VampireDepthSystem vampire = root.AddComponent<VampireDepthSystem>();
+            SetPrivateField(vampire, "frenzyStates", new List<FrenzyState> { new FrenzyState { CharacterId = "char_ui", HungerPressure = 70f, SocialConsequenceRisk = 45f } });
+            WorldClock clock = root.AddComponent<WorldClock>();
+            clock.SetDateTime(2, 3, 4, 21, 15);
+            WeatherManager weather = root.AddComponent<WeatherManager>();
+            SetPrivateField(weather, "weatherState", WeatherState.Foggy);
+            TownSimulationManager town = root.AddComponent<TownSimulationManager>();
+            SetPrivateField(town, "recentCommunityEvents", new List<CommunityEventRecord> { new CommunityEventRecord { DistrictId = "downtown", Label = "Clinic fundraiser" } });
+
+            GameplayFacade gameplayFacade = new GameplayFacade(
+                new CharacterFacade(memory, null, null, household),
+                new HouseholdFacade(),
+                new EconomyFacade(),
+                new JusticeFacade(),
+                new RelationshipFacade(),
+                new VampireFacade());
+
+            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(household, economy, location, justice, memory, vampire, clock, weather, town);
+
+            Assert.AreEqual("Noa", overview.Character.Name);
+            Assert.AreEqual("Clinic Lobby", overview.CurrentRoom);
+            Assert.AreEqual(1, overview.Household.MemberCount);
+            Assert.IsNotEmpty(overview.Character.TopNeeds);
+            Assert.GreaterOrEqual(overview.AvailableActions.Count, 10);
+            Assert.AreEqual(70f, overview.Vampire.HungerPressure);
+            Assert.AreEqual("Foggy", overview.World.Weather);
+            Assert.IsNotEmpty(overview.World.NearbyEvents);
+            CollectionAssert.Contains(overview.Actions.VampireOnlyActions, "feed_on_target");
+            CollectionAssert.Contains(overview.AvailableActions, "text_contact");
+            CollectionAssert.Contains(overview.AvailableActions, "manage_budget");
+            CollectionAssert.Contains(overview.AvailableActions, "resolve_relationship_tension");
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
         public void CommandLayer_ExecutesCleanlyAgainstBoundSystems()
         {
             GameObject root = new GameObject("CommandRoot");
@@ -114,6 +191,17 @@ namespace Survivebest.Tests.EditMode
             PsychologicalGrowthMentalHealthEngine mental = root.AddComponent<PsychologicalGrowthMentalHealthEngine>();
             EducationInstitutionSystem education = root.AddComponent<EducationInstitutionSystem>();
             PaperTrailSystem paper = root.AddComponent<PaperTrailSystem>();
+            RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
+            ContractBoardSystem contracts = root.AddComponent<ContractBoardSystem>();
+            contracts.ApplyRuntimeState(new List<AnimalSightingContract>
+            {
+                new AnimalSightingContract { ContractId = "contract_1", AnimalName = "Ghost Owl", ZoneName = "Pines", Reward = 90, State = ContractState.Available }
+            });
+            LocationManager location = root.AddComponent<LocationManager>();
+            location.SetRooms(new List<Room> { new Room { RoomName = "Apartment", Theme = LocationTheme.Residential } });
+            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Apartment"));
+
+            List<GameplayCommandRecord> history = new();
 
             GameplayCommandContext context = new GameplayCommandContext
             {
@@ -124,15 +212,42 @@ namespace Survivebest.Tests.EditMode
                 VampireDepthSystem = vampire,
                 MentalHealthEngine = mental,
                 EducationInstitutionSystem = education,
-                PaperTrailSystem = paper
+                PaperTrailSystem = paper,
+                RelationshipMemorySystem = memory,
+                ContractBoardSystem = contracts,
+                LocationManager = location,
+                RecordHistory = history.Add
             };
+            GameplayCommandDispatcher dispatcher = new GameplayCommandDispatcher();
 
-            Assert.IsTrue(new PayBillCommand { Amount = 40f }.Execute(context).Success);
-            Assert.IsTrue(new TextContactCommand { OwnerCharacterId = "vamp", OtherCharacterId = "donor", Message = "u up?", LeakRisk = true }.Execute(context).Success);
-            Assert.IsTrue(new EnrollInSchoolCommand { CharacterId = "vamp", InstitutionName = "Night College" }.Execute(context).Success);
-            Assert.IsTrue(new HideEvidenceCommand { CharacterId = "vamp", Summary = "deleted suspicious photo thread" }.Execute(context).Success);
-            Assert.IsTrue(new AttendTherapyCommand { CharacterId = "vamp", Quality = 0.7f }.Execute(context).Success);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(new SleepCommand { CharacterId = "vamp" }.Execute(context).Summary));
+            economy.AddItem("Water Bottle", 1);
+            digital.GetOrCreateSocialProfile("vamp", "Vee", "@vee_afterdark");
+            digital.GetOrCreateSocialProfile("donor", "Donor", "@donor_day");
+            Assert.IsTrue(dispatcher.Execute(new PayBillCommand { Amount = 40f }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new TextContactCommand { OwnerCharacterId = "vamp", OtherCharacterId = "donor", Message = "u up?", LeakRisk = true }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new EnrollInSchoolCommand { CharacterId = "vamp", InstitutionName = "Night College" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new HideEvidenceCommand { CharacterId = "vamp", Summary = "deleted suspicious photo thread" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new AttendTherapyCommand { CharacterId = "vamp", Quality = 0.7f }, context).Success);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dispatcher.Execute(new SleepCommand { CharacterId = "vamp" }, context).Summary));
+            Assert.IsTrue(dispatcher.Execute(new DrinkItemCommand { CharacterId = "vamp", ItemName = "Water Bottle" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new ShowerCommand { CharacterId = "vamp" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new ChangeOutfitCommand { CharacterId = "vamp", OutfitLabel = "Workwear" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new DoLaundryCommand { CharacterId = "vamp" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new GoToWorkCommand { CharacterId = "vamp" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new TalkToNpcCommand { CharacterId = "vamp", NpcId = "donor", Topic = "night shift gossip" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new BuyGroceriesCommand { ItemName = "Groceries", Quantity = 2, Cost = 12f }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new AcceptContractCommand { ContractId = "contract_1", Actor = vampireChar }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new CommitCrimeCommand { Offender = vampireChar, CrimeType = "theft", Severity = LawSeverity.Misdemeanor }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new FeedOnTargetCommand { Feeder = vampireChar, Target = donor }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new UseCompulsionCommand { User = vampireChar, TargetCharacterId = "donor" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new HideEvidenceCommand { CharacterId = "vamp", Summary = "burned receipt trail" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new FollowProfileCommand { FollowerCharacterId = "vamp", FollowedCharacterId = "donor" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new TakePhotoCommand { CharacterId = "vamp", Caption = "mirror selfie", PortraitKey = "vamp_pose", LocationName = "Apartment" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new CreateSocialPostCommand { CharacterId = "vamp", Body = "night walk dump", PortraitKey = "vamp_pose", LocationName = "Apartment", Reach = 42f }, context).Success);
+            string createdPostId = digital.SocialFeedPosts[digital.SocialFeedPosts.Count - 1].PostId;
+            Assert.IsTrue(dispatcher.Execute(new LikeSocialPostCommand { CharacterId = "donor", PostId = createdPostId }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new CommentOnSocialPostCommand { CharacterId = "donor", PostId = createdPostId, Body = "you look unreal" }, context).Success);
+            Assert.GreaterOrEqual(history.Count, 10);
 
             Object.DestroyImmediate(root);
             Object.DestroyImmediate(donor.gameObject);

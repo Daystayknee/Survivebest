@@ -8,12 +8,18 @@ namespace Survivebest.Application
     {
         public string CharacterId;
         public string Name;
+        public string DisplayName;
         public string Age;
+        public string LifeStage;
         public string PortraitStateKey;
+        public string MoodSummary;
         public List<string> TopNeeds = new();
         public string CurrentThought;
+        public string CurrentAction;
         public List<string> ActiveMoodTags = new();
+        public List<string> ActiveStatuses = new();
         public List<string> RelationshipHighlights = new();
+        public List<string> KeyRelationshipAlerts = new();
         public float VampireSuspicionLevel;
     }
 
@@ -79,6 +85,51 @@ namespace Survivebest.Application
         public string Headline;
         public string Body;
         public float Severity;
+    }
+
+    [Serializable]
+    public sealed class EconomySummaryViewModel
+    {
+        public float Funds;
+        public int DistinctInventoryEntries;
+        public List<string> InventoryHighlights = new();
+    }
+
+    [Serializable]
+    public sealed class GameplayOverviewViewModel
+    {
+        public CharacterDashboardViewModel Character = new();
+        public HouseholdSummaryViewModel Household = new();
+        public EconomySummaryViewModel Economy = new();
+        public JusticeSummaryViewModel Justice = new();
+        public RelationshipSummaryViewModel Relationship = new();
+        public VampireSummaryViewModel Vampire = new();
+        public WorldPanelViewModel World = new();
+        public ActionPanelViewModel Actions = new();
+        public string CurrentRoom;
+        public List<string> AvailableActions = new();
+    }
+
+    [Serializable]
+    public sealed class WorldPanelViewModel
+    {
+        public string DateTimeLabel;
+        public string Weather;
+        public string Location;
+        public string DistrictVibe;
+        public float Danger;
+        public string MoneySummary;
+        public List<string> NearbyEvents = new();
+    }
+
+    [Serializable]
+    public sealed class ActionPanelViewModel
+    {
+        public List<string> SuggestedActions = new();
+        public List<string> LockedActions = new();
+        public List<string> WarningActions = new();
+        public List<string> VampireOnlyActions = new();
+        public List<string> ContextActions = new();
     }
 
     [Serializable]

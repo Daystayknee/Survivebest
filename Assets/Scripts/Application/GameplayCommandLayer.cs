@@ -3,10 +3,21 @@ using Survivebest.Core;
 using Survivebest.Crime;
 using Survivebest.Economy;
 using Survivebest.Needs;
+using Survivebest.Location;
+using Survivebest.Quest;
 using Survivebest.Society;
+using Survivebest.Social;
 
 namespace Survivebest.Application
 {
+    public sealed class GameplayCommandRecord
+    {
+        public string CommandName;
+        public bool Success;
+        public string Summary;
+        public string Timestamp;
+    }
+
     public sealed class GameplayCommandContext
     {
         public HouseholdManager HouseholdManager;
@@ -17,12 +28,56 @@ namespace Survivebest.Application
         public PsychologicalGrowthMentalHealthEngine MentalHealthEngine;
         public EducationInstitutionSystem EducationInstitutionSystem;
         public PaperTrailSystem PaperTrailSystem;
+        public RelationshipMemorySystem RelationshipMemorySystem;
+        public ContractBoardSystem ContractBoardSystem;
+        public LocationManager LocationManager;
+        public Action<GameplayCommandRecord> RecordHistory;
+
+        public CharacterCore FindCharacter(string characterId)
+        {
+            if (HouseholdManager == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return null;
+            }
+
+            for (int i = 0; i < HouseholdManager.Members.Count; i++)
+            {
+                CharacterCore member = HouseholdManager.Members[i];
+                if (member != null && string.Equals(member.CharacterId, characterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return member;
+                }
+            }
+
+            return null;
+        }
     }
 
     public interface IGameplayCommand
     {
         string CommandName { get; }
         GameplayCommandResult Execute(GameplayCommandContext context);
+    }
+
+    public sealed class GameplayCommandDispatcher
+    {
+        public GameplayCommandResult Execute(IGameplayCommand command, GameplayCommandContext context)
+        {
+            if (command == null)
+            {
+                return new GameplayCommandResult { Success = false, CommandName = "Unknown", Summary = "Command missing." };
+            }
+
+            GameplayCommandResult result = command.Execute(context);
+            context?.RecordHistory?.Invoke(new GameplayCommandRecord
+            {
+                CommandName = result != null ? result.CommandName : command.CommandName,
+                Success = result != null && result.Success,
+                Summary = result != null ? result.Summary : "No summary.",
+                Timestamp = DateTime.UtcNow.ToString("o")
+            });
+            return result;
+        }
     }
 
     public sealed class EatMealCommand : IGameplayCommand
@@ -57,6 +112,84 @@ namespace Survivebest.Application
         {
             context?.HouseholdManager?.RegisterAutonomyIntent(CharacterId, "Clean room");
             return new GameplayCommandResult { Success = true, CommandName = CommandName, Summary = $"{CharacterId} starts a room reset." };
+        }
+    }
+
+    public sealed class DrinkItemCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string ItemName = "Water";
+        public int Quantity = 1;
+        public string CommandName => nameof(DrinkItemCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool success = context?.EconomyInventorySystem != null && context.EconomyInventorySystem.RemoveItem(ItemName, Quantity, "Drink item");
+            if (success)
+            {
+                context.HouseholdManager?.RegisterAutonomyIntent(CharacterId, $"Drink {ItemName}");
+            }
+
+            return new GameplayCommandResult { Success = success, CommandName = CommandName, Summary = success ? $"{CharacterId} drank {ItemName}." : $"{ItemName} was unavailable." };
+        }
+    }
+
+    public sealed class ShowerCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string CommandName => nameof(ShowerCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            context?.HouseholdManager?.RegisterAutonomyIntent(CharacterId, "Take shower");
+            return new GameplayCommandResult { Success = context?.HouseholdManager != null, CommandName = CommandName, Summary = $"{CharacterId} heads to shower and reset." };
+        }
+    }
+
+    public sealed class ChangeOutfitCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string OutfitLabel = "Everyday";
+        public string CommandName => nameof(ChangeOutfitCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            context?.HouseholdManager?.RegisterAutonomyIntent(CharacterId, $"Change outfit:{OutfitLabel}");
+            return new GameplayCommandResult { Success = context?.HouseholdManager != null, CommandName = CommandName, Summary = $"{CharacterId} switches into {OutfitLabel}." };
+        }
+    }
+
+    public sealed class DoLaundryCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string CommandName => nameof(DoLaundryCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            context?.HouseholdManager?.RegisterAutonomyIntent(CharacterId, "Do laundry");
+            return new GameplayCommandResult { Success = context?.HouseholdManager != null, CommandName = CommandName, Summary = $"{CharacterId} starts a laundry cycle." };
+        }
+    }
+
+    public sealed class GoToWorkCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string ShiftLabel = "Work shift";
+        public string CommandName => nameof(GoToWorkCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            context?.HouseholdManager?.RegisterAutonomyIntent(CharacterId, ShiftLabel);
+            return new GameplayCommandResult { Success = context?.HouseholdManager != null, CommandName = CommandName, Summary = $"{CharacterId} is heading to work." };
+        }
+    }
+
+    public sealed class TalkToNpcCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string NpcId;
+        public string Topic = "small talk";
+        public string CommandName => nameof(TalkToNpcCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            context?.HouseholdManager?.RegisterAutonomyIntent(CharacterId, $"Talk to {NpcId}");
+            context?.RelationshipMemorySystem?.RecordEventDetailed(CharacterId, NpcId, Topic, 4f, false, context?.LocationManager?.CurrentRoom != null ? context.LocationManager.CurrentRoom.RoomName : "unknown");
+            return new GameplayCommandResult { Success = !string.IsNullOrWhiteSpace(CharacterId) && !string.IsNullOrWhiteSpace(NpcId), CommandName = CommandName, Summary = $"{CharacterId} talks with {NpcId} about {Topic}." };
         }
     }
 
@@ -146,6 +279,122 @@ namespace Survivebest.Application
         {
             var student = context?.EducationInstitutionSystem?.GetOrCreateStudent(CharacterId, InstitutionName);
             return new GameplayCommandResult { Success = student != null, CommandName = CommandName, Summary = student != null ? $"{CharacterId} enrolled in {student.InstitutionName}." : "Enrollment failed." };
+        }
+    }
+
+    public sealed class BuyGroceriesCommand : IGameplayCommand
+    {
+        public string ItemName = "Groceries";
+        public int Quantity = 1;
+        public float Cost = 18f;
+        public string CommandName => nameof(BuyGroceriesCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool success = context?.EconomyInventorySystem != null && context.EconomyInventorySystem.TrySpend(Cost, "Buy groceries");
+            if (success)
+            {
+                context.EconomyInventorySystem.AddItem(ItemName, Quantity, "Buy groceries");
+            }
+
+            return new GameplayCommandResult { Success = success, CommandName = CommandName, Summary = success ? $"Bought {Quantity}x {ItemName}." : "Grocery purchase failed." };
+        }
+    }
+
+    public sealed class AcceptContractCommand : IGameplayCommand
+    {
+        public string ContractId;
+        public CharacterCore Actor;
+        public string CommandName => nameof(AcceptContractCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool accepted = context?.ContractBoardSystem != null && context.ContractBoardSystem.AcceptContract(ContractId, Actor);
+            return new GameplayCommandResult { Success = accepted, CommandName = CommandName, Summary = accepted ? $"Accepted contract {ContractId}." : "Contract acceptance failed." };
+        }
+    }
+
+    public sealed class UseCompulsionCommand : IGameplayCommand
+    {
+        public CharacterCore User;
+        public string TargetCharacterId;
+        public string Prompt = "Forget that.";
+        public string CommandName => nameof(UseCompulsionCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool success = User != null && User.CanCompelTargets();
+            if (success)
+            {
+                context?.RelationshipMemorySystem?.RecordEventDetailed(User.CharacterId, TargetCharacterId, $"Compulsion used: {Prompt}", -2f, true, "mental");
+                context?.PaperTrailSystem?.RecordEntry(User.CharacterId, PaperRecordType.VampireAnomaly, $"Compulsion risk against {TargetCharacterId}", 8f, true, nameof(UseCompulsionCommand));
+                context?.HouseholdManager?.RegisterAutonomyIntent(User.CharacterId, $"Compel {TargetCharacterId}");
+            }
+
+            return new GameplayCommandResult { Success = success, CommandName = CommandName, Summary = success ? $"{User.DisplayName} exerts supernatural influence." : "Compulsion failed." };
+        }
+    }
+
+    public sealed class TakePhotoCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string Caption;
+        public string PortraitKey;
+        public string LocationName;
+        public string CommandName => nameof(TakePhotoCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            var photo = context?.DigitalLifeSystem?.TakeCharacterPhoto(CharacterId, Caption, PortraitKey, LocationName);
+            return new GameplayCommandResult { Success = photo != null, CommandName = CommandName, Summary = photo != null ? $"{CharacterId} took a photo." : "Photo capture failed." };
+        }
+    }
+
+    public sealed class CreateSocialPostCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string Body;
+        public string PortraitKey;
+        public string LocationName;
+        public float Reach = 30f;
+        public string CommandName => nameof(CreateSocialPostCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            var post = context?.DigitalLifeSystem?.CreatePhotoPost(CharacterId, Body, PortraitKey, LocationName, Reach);
+            return new GameplayCommandResult { Success = post != null, CommandName = CommandName, Summary = post != null ? $"{CharacterId} posted to social media." : "Social post failed." };
+        }
+    }
+
+    public sealed class FollowProfileCommand : IGameplayCommand
+    {
+        public string FollowerCharacterId;
+        public string FollowedCharacterId;
+        public string CommandName => nameof(FollowProfileCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool followed = context?.DigitalLifeSystem != null && context.DigitalLifeSystem.FollowProfile(FollowerCharacterId, FollowedCharacterId);
+            return new GameplayCommandResult { Success = followed, CommandName = CommandName, Summary = followed ? $"{FollowerCharacterId} followed {FollowedCharacterId}." : "Follow failed." };
+        }
+    }
+
+    public sealed class LikeSocialPostCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string PostId;
+        public string CommandName => nameof(LikeSocialPostCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool liked = context?.DigitalLifeSystem != null && context.DigitalLifeSystem.LikePost(CharacterId, PostId);
+            return new GameplayCommandResult { Success = liked, CommandName = CommandName, Summary = liked ? $"{CharacterId} liked a post." : "Like failed." };
+        }
+    }
+
+    public sealed class CommentOnSocialPostCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string PostId;
+        public string Body;
+        public string CommandName => nameof(CommentOnSocialPostCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            var comment = context?.DigitalLifeSystem?.CommentOnPost(CharacterId, PostId, Body);
+            return new GameplayCommandResult { Success = comment != null, CommandName = CommandName, Summary = comment != null ? $"{CharacterId} commented on a post." : "Comment failed." };
         }
     }
 }
