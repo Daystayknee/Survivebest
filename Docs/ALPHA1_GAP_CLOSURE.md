@@ -100,3 +100,13 @@ The old “Immediate Gaps to Close” list should no longer describe these three
 A better description now is:
 - code/test coverage for these gaps exists
 - the remaining risk is authored-scene Unity validation, presentation rebinding, and repeated smoke testing in real gameplay flows
+
+
+## Operational interpretation for Alpha 1
+
+Use the following decision rule with the readiness audit grouping:
+- Group A systems are anchor systems; stabilize and integrate around them
+- Group B systems must earn trust through persistence, long-run, event, and UI proof
+- Group C systems should be treated as containment zones until they repeatedly survive real gameplay-scene parity and smoke validation
+
+This keeps the team from mistaking code depth for milestone safety.

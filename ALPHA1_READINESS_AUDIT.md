@@ -94,6 +94,61 @@ Do not leave them vaguely required.
 | JournalFeedUI (data side) | UI observer | Yes | ⚠ | N/A | ⚠ | ⚠ | ⚠ |
 | ActionPopupController (data side) | UI observer/action bridge | Yes | ⚠ | N/A | ⚠ | ⚠ | ⚠ |
 
+
+## Alpha 1 System Grouping
+
+### Group A — likely Alpha-core backbone ✅
+These should now be treated as anchor systems, not experimental systems:
+- `GameEventHub`
+- `WorldClock`
+- `DaySliceManager`
+- `InventoryManager`
+- `TownSimulationManager`
+- `TownSimulationSystem`
+- `QuestOpportunitySystem`
+- `HousingPropertySystem`
+
+Expectation:
+- keep these stable
+- avoid unnecessary redesign churn
+- use them as the backbone other Alpha 1 systems must integrate with
+
+### Group B — probably code-complete but not Alpha-proven ⚠️
+These feel present and likely functional, but still require ship proof:
+- `NeedsSystem`
+- `StatusEffectSystem`
+- `SubstanceSystem`
+- `EconomyManager`
+- `GrocerySystem`
+- `OrderingSystem`
+- `RecipeSystem`
+- `RelationshipMemorySystem`
+- `LifestyleBehaviorSystem`
+
+Required proof before trusting them for Alpha 1:
+- persistence proof
+- long-run proof
+- event normalization proof
+- UI proof
+
+### Group C — likely most dangerous to milestone stability ⚠️🚨
+These are the highest uncertainty nodes for Alpha 1 failure:
+- `SaveGameManager`
+- `HealthSystem`
+- `MedicalConditionSystem`
+- `NpcScheduleSystem`
+- `NPCAutonomyController`
+- `ContractBoardSystem`
+- UI bridge systems
+
+Interpretation:
+These are the places where Alpha 1 can quietly fail even if the broader project looks advanced.
+
+Ship rule:
+- harden these first
+- keep them under repeated parity/lifecycle/UI smoke coverage
+- do not assume they are safe just because adjacent systems are deep or feature-rich
+
 ## Immediate Gaps to Close
 1. Unity scene/prefab and PlayMode hardening pass so code-complete systems are production-usable.
 2. Repeated authored-scene save/load smoke passes to confirm the existing runtime parity coverage holds through real gameplay UI.
