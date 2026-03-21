@@ -41,6 +41,56 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(first.IncidentCount, second.IncidentCount);
             Assert.AreEqual(first.PeakTownPressure, second.PeakTownPressure, 0.0001f);
             Assert.AreEqual(first.DailyLog.Count, 5);
+            Assert.AreEqual(first.ScenarioTemplateLabel, second.ScenarioTemplateLabel);
+            Assert.AreEqual(first.SoftArcLabel, second.SoftArcLabel);
+            Assert.AreEqual(first.EndingSummary, second.EndingSummary);
+            Assert.IsNotEmpty(first.TurningPoints);
+            Assert.IsNotEmpty(first.BeatTimeline);
+            Assert.AreNotEqual(ScenarioResolutionState.Undefined, first.ResolutionState);
+        }
+
+        [Test]
+        public void ScenarioHarness_Run_CanUseExplicitVampireTemplateAndExposureArc()
+        {
+            ScenarioHarness harness = new ScenarioHarness();
+            ScenarioDefinition def = new ScenarioDefinition
+            {
+                MasterSeed = 777,
+                ProfileType = SimulationProfileType.GenerationalLegacy,
+                DaysToSimulate = 6,
+                StartingFunds = 650,
+                ScenarioTemplateId = "vampire_hunter_suspicion",
+                ForcedArcId = "secret_exposure"
+            };
+
+            ScenarioOutcomeReport report = harness.Run(def);
+
+            Assert.AreEqual("vampire_hunter_suspicion", report.ScenarioTemplateId);
+            Assert.AreEqual("Vampire under hunter suspicion", report.ScenarioTemplateLabel);
+            Assert.AreEqual("secret_exposure", report.SoftArcId);
+            Assert.AreEqual("Secret exposure arc", report.SoftArcLabel);
+            Assert.IsTrue(report.TurningPoints.Exists(x => x.Contains("Day")));
+            Assert.IsTrue(report.DailyLog[0].Contains("start="));
+            StringAssert.Contains("vampire", report.EndingSummary.ToLowerInvariant());
+            Assert.AreNotEqual(ScenarioResolutionState.Undefined, report.ResolutionState);
+        }
+
+        [Test]
+        public void ScenarioHarness_Run_CanPreferVampireTemplatesWithoutExplicitTemplateId()
+        {
+            ScenarioHarness harness = new ScenarioHarness();
+            ScenarioDefinition def = new ScenarioDefinition
+            {
+                MasterSeed = 81,
+                ProfileType = SimulationProfileType.SmallTownSaga,
+                DaysToSimulate = 4,
+                PreferredTemplateKind = ScenarioTemplateKind.Vampire
+            };
+
+            ScenarioOutcomeReport report = harness.Run(def);
+
+            Assert.IsNotNull(report.ScenarioTemplateId);
+            StringAssert.StartsWith("vampire_", report.ScenarioTemplateId);
         }
     }
 }
