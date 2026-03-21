@@ -77,6 +77,26 @@ namespace Survivebest.Core
         public event Action<SimulationRestorePhase> OnRestorePhaseStarted;
         public event Action<SimulationRestorePhase> OnRestorePhaseCompleted;
 
+        public bool RestoreOrCreate(SimulationBootstrapState state, Func<bool> restoreSave, Action createNewGame)
+        {
+            bool restored = restoreSave != null && restoreSave.Invoke();
+            if (!restored)
+            {
+                createNewGame?.Invoke();
+            }
+
+            if (state != null)
+            {
+                state.WasLoadedFromSave = restored;
+                if (!restored)
+                {
+                    state.RestoredSlotIndex = null;
+                }
+            }
+
+            return restored;
+        }
+
         public void RunPhasedRestore(SimulationRestoreOperationSet operations)
         {
             if (operations == null)
