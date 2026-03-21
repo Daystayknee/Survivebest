@@ -331,4 +331,70 @@ namespace Survivebest.Application
             return new GameplayCommandResult { Success = success, CommandName = CommandName, Summary = success ? $"{User.DisplayName} exerts supernatural influence." : "Compulsion failed." };
         }
     }
+
+    public sealed class TakePhotoCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string Caption;
+        public string PortraitKey;
+        public string LocationName;
+        public string CommandName => nameof(TakePhotoCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            var photo = context?.DigitalLifeSystem?.TakeCharacterPhoto(CharacterId, Caption, PortraitKey, LocationName);
+            return new GameplayCommandResult { Success = photo != null, CommandName = CommandName, Summary = photo != null ? $"{CharacterId} took a photo." : "Photo capture failed." };
+        }
+    }
+
+    public sealed class CreateSocialPostCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string Body;
+        public string PortraitKey;
+        public string LocationName;
+        public float Reach = 30f;
+        public string CommandName => nameof(CreateSocialPostCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            var post = context?.DigitalLifeSystem?.CreatePhotoPost(CharacterId, Body, PortraitKey, LocationName, Reach);
+            return new GameplayCommandResult { Success = post != null, CommandName = CommandName, Summary = post != null ? $"{CharacterId} posted to social media." : "Social post failed." };
+        }
+    }
+
+    public sealed class FollowProfileCommand : IGameplayCommand
+    {
+        public string FollowerCharacterId;
+        public string FollowedCharacterId;
+        public string CommandName => nameof(FollowProfileCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool followed = context?.DigitalLifeSystem != null && context.DigitalLifeSystem.FollowProfile(FollowerCharacterId, FollowedCharacterId);
+            return new GameplayCommandResult { Success = followed, CommandName = CommandName, Summary = followed ? $"{FollowerCharacterId} followed {FollowedCharacterId}." : "Follow failed." };
+        }
+    }
+
+    public sealed class LikeSocialPostCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string PostId;
+        public string CommandName => nameof(LikeSocialPostCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            bool liked = context?.DigitalLifeSystem != null && context.DigitalLifeSystem.LikePost(CharacterId, PostId);
+            return new GameplayCommandResult { Success = liked, CommandName = CommandName, Summary = liked ? $"{CharacterId} liked a post." : "Like failed." };
+        }
+    }
+
+    public sealed class CommentOnSocialPostCommand : IGameplayCommand
+    {
+        public string CharacterId;
+        public string PostId;
+        public string Body;
+        public string CommandName => nameof(CommentOnSocialPostCommand);
+        public GameplayCommandResult Execute(GameplayCommandContext context)
+        {
+            var comment = context?.DigitalLifeSystem?.CommentOnPost(CharacterId, PostId, Body);
+            return new GameplayCommandResult { Success = comment != null, CommandName = CommandName, Summary = comment != null ? $"{CharacterId} commented on a post." : "Comment failed." };
+        }
+    }
 }

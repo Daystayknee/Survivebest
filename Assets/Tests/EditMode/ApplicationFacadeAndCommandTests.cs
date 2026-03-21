@@ -221,6 +221,8 @@ namespace Survivebest.Tests.EditMode
             GameplayCommandDispatcher dispatcher = new GameplayCommandDispatcher();
 
             economy.AddItem("Water Bottle", 1);
+            digital.GetOrCreateSocialProfile("vamp", "Vee", "@vee_afterdark");
+            digital.GetOrCreateSocialProfile("donor", "Donor", "@donor_day");
             Assert.IsTrue(dispatcher.Execute(new PayBillCommand { Amount = 40f }, context).Success);
             Assert.IsTrue(dispatcher.Execute(new TextContactCommand { OwnerCharacterId = "vamp", OtherCharacterId = "donor", Message = "u up?", LeakRisk = true }, context).Success);
             Assert.IsTrue(dispatcher.Execute(new EnrollInSchoolCommand { CharacterId = "vamp", InstitutionName = "Night College" }, context).Success);
@@ -239,6 +241,12 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(dispatcher.Execute(new FeedOnTargetCommand { Feeder = vampireChar, Target = donor }, context).Success);
             Assert.IsTrue(dispatcher.Execute(new UseCompulsionCommand { User = vampireChar, TargetCharacterId = "donor" }, context).Success);
             Assert.IsTrue(dispatcher.Execute(new HideEvidenceCommand { CharacterId = "vamp", Summary = "burned receipt trail" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new FollowProfileCommand { FollowerCharacterId = "vamp", FollowedCharacterId = "donor" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new TakePhotoCommand { CharacterId = "vamp", Caption = "mirror selfie", PortraitKey = "vamp_pose", LocationName = "Apartment" }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new CreateSocialPostCommand { CharacterId = "vamp", Body = "night walk dump", PortraitKey = "vamp_pose", LocationName = "Apartment", Reach = 42f }, context).Success);
+            string createdPostId = digital.SocialFeedPosts[digital.SocialFeedPosts.Count - 1].PostId;
+            Assert.IsTrue(dispatcher.Execute(new LikeSocialPostCommand { CharacterId = "donor", PostId = createdPostId }, context).Success);
+            Assert.IsTrue(dispatcher.Execute(new CommentOnSocialPostCommand { CharacterId = "donor", PostId = createdPostId, Body = "you look unreal" }, context).Success);
             Assert.GreaterOrEqual(history.Count, 10);
 
             Object.DestroyImmediate(root);
