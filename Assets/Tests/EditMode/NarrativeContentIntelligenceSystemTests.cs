@@ -39,6 +39,21 @@ namespace Survivebest.Tests.EditMode
             string compatibilityBlurb = intelligence.BuildCompatibilityBlurb("avery", "jules");
             string townBlurb = intelligence.BuildTownVibeBlurb();
             string prisonText = intelligence.BuildPrisonFlavorText("avery");
+            string lateNight = intelligence.BuildLateNightEventBlurb(new LateNightEventContext
+            {
+                DistrictTag = "night_market",
+                Weather = "rainy",
+                SafetyLevel = 0.3f,
+                NightlifeIntensity = 0.9f,
+                RelationshipStatus = "complicated",
+                VampirePresence = true,
+                HungerState = 0.85f,
+                RecentScandal = true
+            }, 77);
+            string medicalSummary = intelligence.BuildMedicalSummary("avery", "blood bag theft investigation");
+            string legalSummary = intelligence.BuildLegalSummary("avery", "viral embarrassment", true);
+            string townHeadline = intelligence.BuildTownHeadline(scandalActive: true, vampireRisk: true);
+            string codexAlert = intelligence.BuildVampireCodexAlert("avery");
             string incidentSummary = intelligence.BuildIncidentSummary(new StoryIncidentRecord { Title = "Power Surge", DistrictId = "district_1", Description = "Streetlights flickered for an hour.", StoryImpact = 9f });
 
             StringAssert.Contains("anniversary song", thought);
@@ -46,6 +61,11 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("trust", compatibilityBlurb);
             StringAssert.Contains("district", townBlurb.ToLowerInvariant());
             StringAssert.Contains("Lockdown", prisonText);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(lateNight));
+            StringAssert.Contains("Medical summary", medicalSummary);
+            StringAssert.Contains("Legal summary", legalSummary);
+            StringAssert.Contains("Town headline", townHeadline);
+            StringAssert.Contains("Vampire codex alert", codexAlert);
             StringAssert.Contains("Power Surge", incidentSummary);
 
             Object.DestroyImmediate(go);
