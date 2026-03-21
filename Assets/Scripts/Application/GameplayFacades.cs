@@ -169,6 +169,43 @@ namespace Survivebest.Application
         }
     }
 
+    public sealed class EconomyFacade
+    {
+        public EconomySummaryViewModel BuildSummary(EconomyInventorySystem economyInventorySystem)
+        {
+            EconomySummaryViewModel vm = new EconomySummaryViewModel();
+            if (economyInventorySystem == null)
+            {
+                return vm;
+            }
+
+            vm.Funds = economyInventorySystem.Funds;
+            EconomySnapshot snapshot = economyInventorySystem.CaptureSnapshot();
+            if (snapshot == null || snapshot.Inventory == null)
+            {
+                return vm;
+            }
+
+            vm.DistinctInventoryEntries = snapshot.Inventory.Count;
+            for (int i = 0; i < snapshot.Inventory.Count; i++)
+            {
+                SharedInventoryEntry pair = snapshot.Inventory[i];
+                if (pair == null || pair.Quantity <= 0)
+                {
+                    continue;
+                }
+
+                vm.InventoryHighlights.Add($"{pair.ItemName}:{pair.Quantity}");
+                if (vm.InventoryHighlights.Count >= 3)
+                {
+                    break;
+                }
+            }
+
+            return vm;
+        }
+    }
+
     public sealed class TownFacade
     {
         public DistrictSummaryViewModel BuildDistrictSummary(TownSimulationManager townSimulationManager, string districtId)
@@ -349,6 +386,98 @@ namespace Survivebest.Application
             }
 
             return items;
+        }
+    }
+
+    public sealed class GameplayFacade
+    {
+        private readonly CharacterFacade characterFacade;
+        private readonly HouseholdFacade householdFacade;
+        private readonly EconomyFacade economyFacade;
+        private readonly JusticeFacade justiceFacade;
+        private readonly RelationshipFacade relationshipFacade;
+        private readonly VampireFacade vampireFacade;
+
+        public GameplayFacade(
+            CharacterFacade characterFacade = null,
+            HouseholdFacade householdFacade = null,
+            EconomyFacade economyFacade = null,
+            JusticeFacade justiceFacade = null,
+            RelationshipFacade relationshipFacade = null,
+            VampireFacade vampireFacade = null)
+        {
+            this.characterFacade = characterFacade ?? new CharacterFacade();
+            this.householdFacade = householdFacade ?? new HouseholdFacade();
+            this.economyFacade = economyFacade ?? new EconomyFacade();
+            this.justiceFacade = justiceFacade ?? new JusticeFacade();
+            this.relationshipFacade = relationshipFacade ?? new RelationshipFacade();
+            this.vampireFacade = vampireFacade ?? new VampireFacade();
+        }
+
+        public GameplayOverviewViewModel BuildOverview(
+            HouseholdManager householdManager,
+            EconomyInventorySystem economyInventorySystem,
+            LocationManager locationManager,
+            JusticeSystem justiceSystem,
+            RelationshipMemorySystem relationshipMemorySystem,
+            VampireDepthSystem vampireDepthSystem)
+        {
+            CharacterCore activeCharacter = householdManager != null ? householdManager.ActiveCharacter : null;
+            GameplayOverviewViewModel viewModel = new GameplayOverviewViewModel
+            {
+                Character = characterFacade.BuildDashboard(activeCharacter),
+                Household = householdFacade.BuildSummary(householdManager, economyInventorySystem),
+                Economy = economyFacade.BuildSummary(economyInventorySystem),
+                Justice = justiceFacade.BuildSummary(justiceSystem, activeCharacter),
+                Relationship = relationshipFacade.BuildSummary(relationshipMemorySystem, activeCharacter != null ? activeCharacter.CharacterId : null),
+                Vampire = vampireFacade.BuildSummary(vampireDepthSystem, activeCharacter),
+                CurrentRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "Unknown"
+            };
+
+            viewModel.AvailableActions.AddRange(BuildAvailableActions(locationManager));
+            return viewModel;
+        }
+
+        private static List<string> BuildAvailableActions(LocationManager locationManager)
+        {
+            List<string> actions = new();
+            Room room = locationManager != null ? locationManager.CurrentRoom : null;
+            if (room == null)
+            {
+                actions.Add("wait");
+                return actions;
+            }
+
+            switch (room.Theme)
+            {
+                case LocationTheme.Nature:
+                    actions.Add("forage");
+                    actions.Add("observe");
+                    actions.Add("travel");
+                    break;
+                case LocationTheme.StoreInterior:
+                    actions.Add("browse");
+                    actions.Add("buy");
+                    actions.Add("chat");
+                    break;
+                case LocationTheme.Workplace:
+                    actions.Add("work");
+                    actions.Add("network");
+                    actions.Add("leave");
+                    break;
+                case LocationTheme.Hospital:
+                    actions.Add("check_in");
+                    actions.Add("rest");
+                    actions.Add("leave");
+                    break;
+                default:
+                    actions.Add("talk");
+                    actions.Add("rest");
+                    actions.Add("travel");
+                    break;
+            }
+
+            return actions;
         }
     }
 }
