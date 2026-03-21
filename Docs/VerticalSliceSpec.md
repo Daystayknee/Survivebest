@@ -355,6 +355,17 @@ This order intentionally moves from passive display to action execution, then co
 - save/load parity remains intact across the full loop
 
 
+## Post-gate sequencing rule
+After the Human Day Slice is ship-ready, the next move is not arbitrary slice expansion.
+
+The order stays strict:
+1. keep the one-day slice stable from UI with save/load parity
+2. prove a repeatable multi-day survival week
+3. widen into more jobs, pressures, social paths, and human-condition systems
+4. only then scale toward larger additional slices and the endless-life vision
+
+Additional slice expansion is blocked until the first two steps above are stable.
+
 ## Beyond Milestone 0 — Endless Human Life Sim
 
 Milestone 0 is the ship gate, not the ceiling. Once the Human Day Slice is stable, the project should expand into a continuous, multi-choice life sim / survival RPG where repeated days, accumulating consequences, and diverging human strategies define the experience.

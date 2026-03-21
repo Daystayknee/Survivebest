@@ -214,6 +214,20 @@ A loop is considered ready for endless play only when:
 - at least one choice carries delayed consequences
 - the state survives save/load without obvious resets
 
+## Expansion gate after Milestone 0
+Do not treat the Human Day Slice as permission to immediately explode scope.
+
+Post-gate order remains strict:
+1. prove the one-day slice from UI with save/load parity
+2. prove a repeatable multi-day survival week
+3. widen into more jobs, pressures, social paths, and human-condition systems
+4. only then scale content breadth toward the larger endless-life vision
+
+Additional slice rule:
+- no new major slice should outrank multi-day continuity proof
+- new slices must inherit the same playable, visible, persistent, and consequence-carrying standard
+- if a new slice weakens save/load trust or UI readability, it is expanding too early
+
 ## Practical roadmap after the Human Day Slice
 
 ### Phase 1 — Repeatable survival week

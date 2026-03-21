@@ -55,6 +55,14 @@ The order stays strict:
 3. widen into more jobs, pressures, social paths, and human-condition systems
 4. only then scale content breadth toward the larger endless-life vision
 
+### Additional slice expansion rule
+Do **not** add additional slices beyond the Human Day Slice until steps 1 and 2 above are stable in authored gameplay scenes.
+
+That means:
+- no new major slice should outrank multi-day parity hardening
+- no content lane should expand faster than save/load, UI readability, and continuity proof
+- follow-on slices should inherit the same playable + visible + persistent standard as Milestone 0
+
 ## Out of Scope (Alpha 1)
 - Final art polish and full animation/VFX/SFX coverage.
 - Large authored questlines/cutscenes.
