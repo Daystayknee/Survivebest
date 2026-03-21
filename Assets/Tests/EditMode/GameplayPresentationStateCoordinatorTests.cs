@@ -2,8 +2,10 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Economy;
 using Survivebest.Events;
 using Survivebest.Location;
+using Survivebest.Social;
 using Survivebest.UI;
 
 namespace Survivebest.Tests.EditMode
@@ -25,20 +27,35 @@ namespace Survivebest.Tests.EditMode
             typeof(GameplayPresentationStateCoordinator).GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, location);
             typeof(GameplayPresentationStateCoordinator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, household);
             typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)?.SetValue(location, new Room { RoomName = "Ward", Theme = LocationTheme.Hospital });
+            typeof(GameplayInteractionPresentationLayer).GetField("currentWorldPanel", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(presentation, new WorldPanelSnapshot { LocationName = "Ward", TimeLabel = "21:00", WeatherLabel = "Foggy", ContextState = "messy_home" });
+            typeof(GameplayInteractionPresentationLayer).GetField("currentCharacterPanel", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(presentation, new CharacterPanelSnapshot { CharacterId = "char_present_state", Energy = 20f, Hunger = 80f, VisualMode = "exhausted", OverlayTag = "crisis_pulse" });
+            typeof(GameplayInteractionPresentationLayer).GetField("recentTimelinePreview", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(presentation, new System.Collections.Generic.List<LifeTimelinePreview> { new LifeTimelinePreview { Title = "Late shift", Source = "work", Day = 2, Hour = 21 } });
+            typeof(GameplayInteractionPresentationLayer).GetField("gameplayVisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(presentation, vision);
 
             GameObject charGo = new GameObject("CoordinatorChar");
             CharacterCore character = charGo.AddComponent<CharacterCore>();
-            character.Initialize("char_present_state", "Avery", LifeStage.Adult);
+            character.Initialize("char_present_state", "Avery", LifeStage.Adult, CharacterSpecies.Vampire);
             household.AddMember(character);
             household.SetActiveCharacter(character);
+
+            EconomyInventorySystem economy = go.AddComponent<EconomyInventorySystem>();
+            economy.TrySpend(230f, "setup");
+            typeof(GameplayPresentationStateCoordinator).GetField("economyInventorySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, economy);
+            RelationshipMemorySystem memory = go.AddComponent<RelationshipMemorySystem>();
+            memory.RecordEventDetailed("char_present_state", "friend_1", "bad fight", -10, true, "ward");
+            typeof(GameplayPresentationStateCoordinator).GetField("relationshipMemorySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, memory);
 
             coordinator.SetFocusedAction("get_meds");
 
             Assert.AreEqual("Medical", coordinator.CurrentState.SectionLabel);
+            Assert.AreEqual(Survivebest.UI.ViewModels.GameplayScreenMode.Medical, coordinator.CurrentState.ScreenMode);
             Assert.AreEqual("Ward", coordinator.CurrentState.LocationName);
             Assert.AreEqual("Avery", coordinator.CurrentState.ActiveCharacterName);
+            Assert.AreEqual("Ward • 21:00 • Foggy • funds $20", coordinator.CurrentState.WorldSummary);
             Assert.IsTrue(coordinator.CurrentState.Tabs.Contains("Vitals"));
             Assert.IsTrue(coordinator.CurrentState.Tabs.Contains("Recovery"));
+            Assert.IsNotEmpty(coordinator.CurrentState.TimelineCards);
+            Assert.IsTrue(coordinator.CurrentState.WarningPulses.Count >= 3);
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
