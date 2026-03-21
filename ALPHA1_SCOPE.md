@@ -27,7 +27,7 @@ The following do **not** count as completion:
 - Contracts/opportunities + autonomous incidents + AI director pacing.
 - Save/load migration with deterministic procedural run/profile/seed data.
 - Journal/HUD/popup/feed data pipelines via simulation events.
-- One fully playable Human Day Slice with visible proof and save/load parity.
+- One fully playable Human Day Slice with visible proof, 2D character presentation proof, and save/load parity.
 
 ## Milestone 0 checklist
 1. wake in apartment
@@ -64,7 +64,7 @@ The order stays strict:
 
 ## Exit Criteria
 - Human Day Slice is stable and player-completable from gameplay scene UI.
-- Every Human Day Slice step has visible on-screen proof.
+- Every Human Day Slice step has visible on-screen proof, including portrait/paper-doll feedback where the character's condition should be readable.
 - Save/load round-trip keeps parity for the Human Day Slice state.
 - Core loop is stable for 7 in-game days in harness tests.
 - Event spam remains bounded.

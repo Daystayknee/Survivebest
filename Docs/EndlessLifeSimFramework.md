@@ -20,6 +20,18 @@ If a system cannot survive that standard, it is still prototype-level, not ship-
 
 ## Post-gate design pillars
 
+### 0. Embodied 2D paper-doll life presentation
+This is not just a spreadsheet life sim. The player should read life conditions through a 2D paper-doll body and live portrait presentation.
+
+Required presentation goals:
+- the active character always has a readable portrait and paper-doll presence in gameplay UI
+- needs, health, grooming, stress, clothing, and lifestyle changes can show up as layer, pose, tint, outfit, or overlay changes
+- home actions, work outcomes, and social reactions should be reflected in the character's look when appropriate
+- appearance should be part of the simulation, not a disconnected dress-up shell
+
+Minimum embodiment rule:
+- if a survival or social system affects how the character should look or carry themselves, the design should define what the 2D paper-doll / portrait proof is
+
 ### 1. Endless day continuity
 The game must support repeated day-to-day play instead of a single authored proof run.
 
@@ -63,6 +75,21 @@ Examples:
 Design requirement:
 - every major action category should have at least one delayed consequence channel
 
+
+### 4.5. Appearance and embodiment as gameplay
+Appearance is part of the life sim loop because people live through bodies, clothes, grooming, and visible condition.
+
+Target appearance lanes:
+- outfit context: sleepwear, homewear, workwear, outdoor wear, emergency wear
+- grooming state: clean, unwashed, freshly showered, rushed, disheveled, styled
+- body condition overlays: sweat, sickness, bruising, fatigue, tears, grime, weather impact
+- emotional/readability states: confidence, shutdown, tension, embarrassment, comfort, attraction, intimidation
+- life-wear continuity: worn clothing, missing essentials, laundry backlog, repeated outfits, new purchases
+
+Design requirement:
+- appearance changes should come from gameplay actions and conditions, not only creator menus
+- the player should be able to inspect visible state through portrait, paper-doll body, outfit summary, and context text
+
 ### 5. RPG progression without breaking the sim
 Progression should deepen capability and expression without turning life pressures into irrelevant numbers.
 
@@ -78,6 +105,23 @@ Avoid:
 - upgrades that bypass the human-condition loop entirely
 
 ## Content expansion lanes after Milestone 0
+
+### Lane 0 — Paper-doll embodiment and visible life state
+The 2D paper-doll stack should become a gameplay delivery layer, not just art support.
+
+Priority examples:
+- room-aware outfits and outfit switching from gameplay
+- hygiene/grooming changes reflected in portrait and body layers
+- fatigue, sickness, injury, stress, and weather overlays
+- body posture / expression presets tied to condition and context
+- item-worn, damaged, dirty, or missing-clothing states
+- visible continuity for towels, laundry, accessories, work uniforms, and comfort items
+
+Each addition should define:
+- what event or action changes the paper-doll state
+- what exact layer/pose/overlay is visible to the player
+- how the state persists through save/load
+- what later gameplay consequence that visible state can influence
 
 ### Lane A — Household survival depth
 Expand the home from one pressure into a layered domestic loop.

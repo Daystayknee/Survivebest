@@ -100,6 +100,12 @@ The authored gameplay scene must support one repeatable scenario with:
 - location/home context binder
 - contact/social binder
 
+### Character embodiment contract
+- active character portrait binder
+- active character paper-doll or avatar presentation binder
+- presentation state refresh path for needs, stress, hygiene, outfit, and condition overlays
+- no gameplay-facing state should require inspector-only portrait injection to become visible
+
 ### HUD contract
 - `GameplayOverviewViewModel`
 - `CharacterDashboardViewModel`
@@ -148,6 +154,7 @@ Each required output needs explicit on-screen proof such as:
 - world summary/date/location changing
 - household pressure card appearing or clearing
 - relationship/social text changing
+- portrait or paper-doll state changing when appearance/hygiene/stress/condition should be visible
 - save slot metadata updating after save
 
 If a step has no visible proof in the scene, the step is not ready.

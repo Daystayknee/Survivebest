@@ -57,6 +57,7 @@ This is the entire near-term ship target for the gameplay slice. Do not broaden 
 **Expected visible feedback**
 - Apartment panel is visible.
 - Character portrait is visible.
+- Paper-doll/body presentation or avatar state is visible if the scene supports it.
 - Current room is visible.
 - Time/date is visible.
 
@@ -100,6 +101,7 @@ This is the entire near-term ship target for the gameplay slice. Do not broaden 
 - The action appears in the action list.
 - The action resolves visibly.
 - Updated need/status values are shown after completion.
+- Hygiene/grooming presentation changes are visible in portrait/paper-doll state if supported.
 
 **Save/load expectations**
 - Post-shower state persists after reload.
@@ -121,6 +123,7 @@ This is the entire near-term ship target for the gameplay slice. Do not broaden 
 - Eat action is selectable from scene UI.
 - Hunger visibly changes.
 - Food source or result is shown in HUD/feed/action feedback.
+- If applicable, the character presentation updates for carried food, satiety, or meal aftermath.
 
 **Save/load expectations**
 - Consumed food, money, and need changes remain correct after reload.
@@ -143,6 +146,7 @@ This is the entire near-term ship target for the gameplay slice. Do not broaden 
 - Contact list is visible.
 - Interaction is selectable.
 - Feedback line is visible.
+- Portrait/body presentation can reflect social outcome when appropriate.
 
 **Save/load expectations**
 - Relationship/social outcome remains after reload.
@@ -291,6 +295,7 @@ Preferred proof examples:
 - action disappears after completion
 - dirty-room warning clears
 - relationship blurb changes
+- portrait expression, outfit, posture, or overlay changes when the action should visibly affect the character
 - save slot metadata changes
 
 ### Milestone board states
@@ -361,6 +366,7 @@ Expansion after Milestone 0 should prioritize:
 - multiple valid ways to solve pressures
 - delayed consequences that shape later days
 - broader human-condition simulation across needs, money, health, social life, and environment
+- 2D paper-doll embodiment so the character visibly carries life conditions, grooming, clothing, and emotion
 - RPG progression that deepens capability without trivializing the sim
 
 ## Slice 1 — Vampire Night Loop
