@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using Survivebest.Core.Procedural;
 using Survivebest.Crime;
 using Survivebest.Location;
 using Survivebest.Social;
@@ -212,6 +213,39 @@ namespace Survivebest.Core
                 PrisonRoutineActivity.YardTime => $"Yard time is a temporary breath of oxygen, but reputation still has to be negotiated in public.",
                 _ => $"{state.CurrentActivity} runs on routine, surveillance, and the quiet math of survival."
             };
+        }
+
+        public string BuildLateNightEventBlurb(LateNightEventContext context, int seed = 0)
+        {
+            IRandomService random = new SeededRandomService(seed == 0 ? Environment.TickCount : seed);
+            return ContentExplosionCatalog.GenerateLateNightEvent(context, random);
+        }
+
+        public string BuildGossipBlurb(string subject, bool scandalActive, bool vampireRisk)
+        {
+            return ContentExplosionCatalog.BuildAnonymousForumPost(subject, scandalActive ? 0.75f : 0.35f, vampireRisk);
+        }
+
+        public string BuildMedicalSummary(string subject, string incidentLabel)
+        {
+            return ContentExplosionCatalog.BuildMedicalSummary(subject, incidentLabel);
+        }
+
+        public string BuildLegalSummary(string subject, string incidentLabel, bool evidenceThin)
+        {
+            return ContentExplosionCatalog.BuildLegalSummary(subject, incidentLabel, evidenceThin);
+        }
+
+        public string BuildTownHeadline(bool scandalActive = false, bool vampireRisk = false)
+        {
+            float pressure = townSimulationManager != null ? townSimulationManager.GetTownPressureScore() : 0f;
+            return ContentExplosionCatalog.BuildTownHeadline(pressure, scandalActive, vampireRisk);
+        }
+
+        public string BuildVampireCodexAlert(string characterId)
+        {
+            string secrecy = BuildVampireSecrecyAlert(characterId);
+            return $"Vampire codex alert: {secrecy}";
         }
 
         public string BuildVampireSecrecyAlert(string characterId)
