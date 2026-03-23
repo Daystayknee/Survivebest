@@ -15,6 +15,10 @@ using Survivebest.Minigames;
 using Survivebest.Quest;
 using Survivebest.World;
 using Survivebest.NPC;
+using Survivebest.Application;
+using Survivebest.Social;
+using Survivebest.Crime;
+using Survivebest.Economy;
 
 namespace Survivebest.UI
 {
@@ -51,6 +55,11 @@ namespace Survivebest.UI
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
         [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
         [SerializeField] private HealthcareGameplaySystem healthcareGameplaySystem;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private JusticeSystem justiceSystem;
+        [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -127,6 +136,7 @@ namespace Survivebest.UI
 
         private string currentActionKey;
         private AnimalSightingEncounter currentSighting;
+        private readonly GameplayFacade gameplayFacade = new();
 
         public event Action<string, string, float> OnActionResolved;
         private readonly StringBuilder builder = new();
@@ -311,7 +321,7 @@ namespace Survivebest.UI
 
             if (bodyText != null)
             {
-                bodyText.text = BuildVisionAwareDescription(actionKey);
+                bodyText.text = BuildVisionAwareDescription(actionKey) + BuildActionExplanationBlock(actionKey);
             }
 
             if (optionsText != null)
@@ -357,6 +367,70 @@ namespace Survivebest.UI
                 "npc_text" => "NPC Text Message",
                 _ => "Action"
             };
+        }
+
+        private string BuildActionExplanationBlock(string actionKey)
+        {
+            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(
+                householdManager,
+                economyInventorySystem,
+                locationManager,
+                justiceSystem,
+                relationshipMemorySystem,
+                null,
+                null,
+                null,
+                null,
+                humanLifeExperienceLayerSystem,
+                gameplayLifeLoopOrchestrator);
+
+            string blocked = FindActionExplanation(actionKey, overview.Actions.BlockedActionMessages);
+            string risky = FindActionExplanation(actionKey, overview.Actions.RiskActionMessages);
+            if (string.IsNullOrWhiteSpace(blocked) && string.IsNullOrWhiteSpace(risky))
+            {
+                return string.Empty;
+            }
+
+            builder.Clear();
+            builder.AppendLine();
+            if (!string.IsNullOrWhiteSpace(blocked))
+            {
+                builder.AppendLine();
+                builder.AppendLine($"Blocked/limited: {blocked}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(risky))
+            {
+                builder.AppendLine($"Risk: {risky}");
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private static string FindActionExplanation(string actionKey, List<string> messages)
+        {
+            if (messages == null || messages.Count == 0 || string.IsNullOrWhiteSpace(actionKey))
+            {
+                return null;
+            }
+
+            string normalized = actionKey.Replace("take_", string.Empty).Replace("use_", string.Empty);
+            for (int i = 0; i < messages.Count; i++)
+            {
+                string message = messages[i];
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    continue;
+                }
+
+                if (message.IndexOf(actionKey, StringComparison.OrdinalIgnoreCase) >= 0
+                    || message.IndexOf(normalized, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return message;
+                }
+            }
+
+            return messages[0];
         }
 
         private string BuildDescription(string actionKey)
