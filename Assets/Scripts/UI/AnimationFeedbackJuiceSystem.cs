@@ -76,12 +76,13 @@ namespace Survivebest.UI
                 return null;
             }
 
+            string recommendedAction = state.RecommendedAction ?? string.Empty;
             FeedbackCue cue = new FeedbackCue
             {
-                AnimationState = state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0 ? state.MicroInteractionCues[0] : "Idle",
+                AnimationState = ResolvePresentationAnimation(state),
                 PostureState = state.VisualStateSummary != null && state.VisualStateSummary.Contains("posture") ? state.VisualStateSummary : "Neutral",
-                FacialState = state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes") ? "Tired" : "Neutral",
-                LocomotionState = state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("distance") ? "CautiousWalk" : "NormalWalk",
+                FacialState = ResolvePresentationFacialState(state),
+                LocomotionState = ResolvePresentationLocomotion(state),
                 SfxKey = ResolvePresentationSfx(state),
                 VfxKey = ResolvePresentationVfx(state),
                 UiPulseKey = ResolvePresentationPulse(state),
@@ -100,6 +101,11 @@ namespace Survivebest.UI
             if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth"))
             {
                 cue.FacialState = "Open";
+            }
+
+            if (recommendedAction.Contains("break") || recommendedAction.Contains("breathe") || recommendedAction.Contains("reset"))
+            {
+                cue.LocomotionState = "SlowWalk";
             }
 
             return cue;
@@ -214,6 +220,37 @@ namespace Survivebest.UI
             return cue;
         }
 
+        private static string ResolvePresentationAnimation(PresentationSectionViewModel state)
+        {
+            if (state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0)
+            {
+                return state.MicroInteractionCues[0];
+            }
+
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction))
+            {
+                if (state.RecommendedAction.Contains("eat") || state.RecommendedAction.Contains("meal")) return "ReachForFood";
+                if (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset")) return "PauseReset";
+                if (state.RecommendedAction.Contains("text") || state.RecommendedAction.Contains("check_in")) return "PhoneCheck";
+            }
+
+            return "Idle";
+        }
+
+        private static string ResolvePresentationFacialState(PresentationSectionViewModel state)
+        {
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes")) return "Tired";
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle) && state.LastEventTitle.Contains("Relationship")) return "Guarded";
+            return "Neutral";
+        }
+
+        private static string ResolvePresentationLocomotion(PresentationSectionViewModel state)
+        {
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("distance")) return "CautiousWalk";
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset"))) return "SlowWalk";
+            return "NormalWalk";
+        }
+
         private void HandlePresentationStateChanged(PresentationSectionViewModel state)
         {
             FeedbackCue cue = BuildCueFromPresentationState(state);
@@ -225,6 +262,8 @@ namespace Survivebest.UI
 
         private static string ResolvePresentationSfx(PresentationSectionViewModel state)
         {
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle) && state.LastEventTitle.Contains("Relationship")) return "social_tension_ping";
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset"))) return "ui_soft_breath";
             if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("clinical")) return "ambient_hospital_loop";
             if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("cheap-light buzz")) return "ambient_stress_apartment";
             if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth")) return "ambient_soft_warmth";
@@ -240,6 +279,8 @@ namespace Survivebest.UI
 
         private static string ResolvePresentationPulse(PresentationSectionViewModel state)
         {
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset"))) return "recovery_prompt";
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle) && state.LastEventTitle.Contains("Relationship")) return "relationship_alert";
             if (state.MicroInteractionCues != null && state.MicroInteractionCues.Contains("check_phone_then_pace")) return "tradeoff_tension";
             if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes")) return "fatigue_pulse";
             return "presentation_idle";
@@ -259,6 +300,14 @@ namespace Survivebest.UI
             if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("stress"))
             {
                 intensity += 0.1f;
+            }
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("eat") || state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset")))
+            {
+                intensity += 0.08f;
+            }
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle))
+            {
+                intensity += 0.05f;
             }
             return Mathf.Clamp01(intensity);
         }

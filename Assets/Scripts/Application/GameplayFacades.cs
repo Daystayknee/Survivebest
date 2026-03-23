@@ -395,7 +395,7 @@ namespace Survivebest.Application
                 InterpersonalImpressionProfile impression = impressions[i];
                 if (impression != null && impression.CharacterId == characterId && !string.IsNullOrWhiteSpace(impression.CurrentImpression))
                 {
-                    return impression.CurrentImpression;
+                    return FormatSocialRead(impression);
                 }
             }
 
@@ -415,11 +415,39 @@ namespace Survivebest.Application
                 LifeTradeoffPrompt tradeoff = tradeoffs[i];
                 if (tradeoff != null && tradeoff.CharacterId == characterId)
                 {
-                    return tradeoff.Headline;
+                    return FormatTradeoff(tradeoff);
                 }
             }
 
             return "No active tradeoff.";
+        }
+
+        private static string FormatSocialRead(InterpersonalImpressionProfile impression)
+        {
+            if (impression == null)
+            {
+                return "No social read.";
+            }
+
+            string context = string.IsNullOrWhiteSpace(impression.LastContext) ? "general" : impression.LastContext;
+            string vibe = string.IsNullOrWhiteSpace(impression.VibeLabel) ? "neutral" : impression.VibeLabel;
+            string risk = impression.MisreadRisk >= 0.55f ? "read may be off" : "read feels fairly clear";
+            return $"{impression.CurrentImpression} ({vibe}, {context}, {risk})";
+        }
+
+        private static string FormatTradeoff(LifeTradeoffPrompt tradeoff)
+        {
+            if (tradeoff == null)
+            {
+                return "No active tradeoff.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(tradeoff.OptionA) && !string.IsNullOrWhiteSpace(tradeoff.OptionB))
+            {
+                return $"{tradeoff.Headline} [{tradeoff.OptionA} vs {tradeoff.OptionB}]";
+            }
+
+            return tradeoff.Headline;
         }
 
         private static List<string> BuildMoodTags(NeedsSnapshot snapshot, VisibleLifeStateProfile visibleState)
