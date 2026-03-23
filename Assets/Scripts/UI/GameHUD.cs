@@ -208,7 +208,7 @@ namespace Survivebest.UI
                 return;
             }
 
-            sectionMoodText.text = $"{state.SectionLabel} • {state.ScreenMood}";
+            sectionMoodText.text = BuildPresentationDigest(state);
         }
 
         private void AppendFeed(string line)
@@ -240,6 +240,38 @@ namespace Survivebest.UI
             slider.minValue = 0f;
             slider.maxValue = 100f;
             slider.value = Mathf.Clamp(value, 0f, 100f);
+        }
+
+        public string BuildPresentationDigest(PresentationSectionViewModel state)
+        {
+            if (state == null)
+            {
+                return "Presentation state unavailable.";
+            }
+
+            string micro = state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0
+                ? state.MicroInteractionCues[0]
+                : "idle";
+            string recommendedAction = string.IsNullOrWhiteSpace(state.RecommendedAction)
+                ? "Choose the next meaningful action"
+                : state.RecommendedAction;
+            string lastEvent = string.IsNullOrWhiteSpace(state.LastEventTitle)
+                ? "None"
+                : state.LastEventTitle;
+
+            return $"{state.SectionLabel} • {state.ScreenMood}
+" +
+                   $"Visual: {state.VisualStateSummary}
+" +
+                   $"Ambient: {state.AmbientAudioSummary}
+" +
+                   $"World reacts: {state.EnvironmentReactionSummary}
+" +
+                   $"Next: {recommendedAction}
+" +
+                   $"Last event: {lastEvent}
+" +
+                   $"Micro: {micro}";
         }
 
         public string BuildHudLoopDigest(LifeLoopExperienceSnapshot snapshot)
