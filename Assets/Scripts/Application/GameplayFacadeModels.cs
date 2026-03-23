@@ -99,6 +99,24 @@ namespace Survivebest.Application
     }
 
     [Serializable]
+    public sealed class CompletionismSummaryViewModel
+    {
+        public int AchievementsUnlocked;
+        public int TotalAchievements;
+        public int GoalsCompleted;
+        public int TotalGoals;
+        public int MilestonesUnlocked;
+        public int TotalMilestones;
+        public int Fame;
+        public int Infamy;
+        public int HousePrestige;
+        public string SocialClass;
+        public string NextMilestone;
+        public List<string> FeaturedGoals = new();
+        public List<string> UnlockedPerks = new();
+    }
+
+    [Serializable]
     public sealed class GameplayOverviewViewModel
     {
         public CharacterDashboardViewModel Character = new();
@@ -109,6 +127,7 @@ namespace Survivebest.Application
         public VampireSummaryViewModel Vampire = new();
         public WorldPanelViewModel World = new();
         public ActionPanelViewModel Actions = new();
+        public CompletionismSummaryViewModel Completionism = new();
         public string CurrentRoom;
         public List<string> AvailableActions = new();
     }

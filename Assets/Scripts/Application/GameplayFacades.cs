@@ -761,6 +761,103 @@ namespace Survivebest.Application
         }
     }
 
+    public sealed class CompletionismFacade
+    {
+        public CompletionismSummaryViewModel BuildSummary(LongTermProgressionSystem longTermProgressionSystem, AchievementSystem achievementSystem)
+        {
+            CompletionismSummaryViewModel vm = new CompletionismSummaryViewModel();
+            if (longTermProgressionSystem != null)
+            {
+                vm.Fame = longTermProgressionSystem.Legacy.Fame;
+                vm.Infamy = longTermProgressionSystem.Legacy.Infamy;
+                vm.HousePrestige = longTermProgressionSystem.Legacy.HousePrestige;
+                vm.SocialClass = longTermProgressionSystem.Legacy.SocialClass.ToString();
+                vm.TotalGoals = longTermProgressionSystem.Goals.Count;
+                vm.TotalMilestones = longTermProgressionSystem.Milestones.Count;
+
+                for (int i = 0; i < longTermProgressionSystem.Goals.Count; i++)
+                {
+                    AspirationGoal goal = longTermProgressionSystem.Goals[i];
+                    if (goal == null)
+                    {
+                        continue;
+                    }
+
+                    if (goal.Completed)
+                    {
+                        vm.GoalsCompleted++;
+                        continue;
+                    }
+
+                    if (vm.FeaturedGoals.Count < 3)
+                    {
+                        vm.FeaturedGoals.Add($"{goal.Title} ({goal.CurrentAmount}/{goal.TargetAmount})");
+                    }
+                }
+
+                for (int i = 0; i < longTermProgressionSystem.Milestones.Count; i++)
+                {
+                    ProgressionMilestone milestone = longTermProgressionSystem.Milestones[i];
+                    if (milestone == null)
+                    {
+                        continue;
+                    }
+
+                    if (milestone.Unlocked)
+                    {
+                        vm.MilestonesUnlocked++;
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(vm.NextMilestone))
+                    {
+                        vm.NextMilestone = $"{milestone.Label} (Fame {milestone.RequiredFame}, Prestige {milestone.RequiredHousePrestige})";
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(vm.NextMilestone))
+                {
+                    vm.NextMilestone = vm.TotalMilestones > 0 ? "All tracked milestones unlocked." : "No milestones tracked yet.";
+                }
+
+                for (int i = 0; i < longTermProgressionSystem.Legacy.UnlockedPerks.Count && i < 3; i++)
+                {
+                    vm.UnlockedPerks.Add(longTermProgressionSystem.Legacy.UnlockedPerks[i]);
+                }
+            }
+            else
+            {
+                vm.SocialClass = "Unknown";
+                vm.NextMilestone = "Progression system not wired.";
+            }
+
+            if (achievementSystem != null)
+            {
+                vm.TotalAchievements = achievementSystem.Achievements.Count;
+                for (int i = 0; i < achievementSystem.Achievements.Count; i++)
+                {
+                    AchievementDefinition achievement = achievementSystem.Achievements[i];
+                    if (achievement != null && achievement.Unlocked)
+                    {
+                        vm.AchievementsUnlocked++;
+                    }
+                }
+            }
+
+            if (vm.FeaturedGoals.Count == 0)
+            {
+                vm.FeaturedGoals.Add(vm.GoalsCompleted > 0 ? "Core goals completed - define a new aspiration." : "No active goals tracked yet.");
+            }
+
+            if (vm.UnlockedPerks.Count == 0)
+            {
+                vm.UnlockedPerks.Add("No legacy perks unlocked yet.");
+            }
+
+            return vm;
+        }
+    }
+
     public sealed class GameplayFeedFacade
     {
         public List<GameplayFeedItemViewModel> BuildFeed(TownSimulationManager townSimulationManager, NarrativeContentIntelligenceSystem intelligenceSystem = null)
@@ -800,6 +897,7 @@ namespace Survivebest.Application
         private readonly JusticeFacade justiceFacade;
         private readonly RelationshipFacade relationshipFacade;
         private readonly VampireFacade vampireFacade;
+        private readonly CompletionismFacade completionismFacade;
         private readonly GameplayActionCatalog gameplayActionCatalog;
 
         public GameplayFacade(
@@ -809,6 +907,7 @@ namespace Survivebest.Application
             JusticeFacade justiceFacade = null,
             RelationshipFacade relationshipFacade = null,
             VampireFacade vampireFacade = null,
+            CompletionismFacade completionismFacade = null,
             GameplayActionCatalog gameplayActionCatalog = null)
         {
             this.characterFacade = characterFacade ?? new CharacterFacade();
@@ -817,6 +916,7 @@ namespace Survivebest.Application
             this.justiceFacade = justiceFacade ?? new JusticeFacade();
             this.relationshipFacade = relationshipFacade ?? new RelationshipFacade();
             this.vampireFacade = vampireFacade ?? new VampireFacade();
+            this.completionismFacade = completionismFacade ?? new CompletionismFacade();
             this.gameplayActionCatalog = gameplayActionCatalog ?? new GameplayActionCatalog();
         }
 
@@ -831,7 +931,9 @@ namespace Survivebest.Application
             WeatherManager weatherManager = null,
             TownSimulationManager townSimulationManager = null,
             HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null,
-            GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null)
+            GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null,
+            LongTermProgressionSystem longTermProgressionSystem = null,
+            AchievementSystem achievementSystem = null)
         {
             CharacterCore activeCharacter = householdManager != null ? householdManager.ActiveCharacter : null;
             string currentRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "Unknown";
@@ -845,6 +947,7 @@ namespace Survivebest.Application
                 Vampire = vampireFacade.BuildSummary(vampireDepthSystem, activeCharacter),
                 World = BuildWorldPanel(worldClock, weatherManager, currentRoom, townSimulationManager, economyInventorySystem),
                 Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem, humanLifeExperienceLayerSystem, gameplayLifeLoopOrchestrator),
+                Completionism = completionismFacade.BuildSummary(longTermProgressionSystem, achievementSystem),
                 CurrentRoom = currentRoom
             };
 
