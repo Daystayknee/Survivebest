@@ -179,6 +179,109 @@ The player needs to answer “who is this person becoming?”
 - A run should be describable as a life story, not only as optimization.
 - The player should feel they authored a worldview and direction, not just a schedule.
 
+### Pillar 11: Thoughts, not just actions
+A realistic character does not merely execute behaviors. They interpret, judge, misread, and narrate life internally.
+
+#### Missing implementation work
+- Internal dialogue snippets tied to mood, history, social context, and current stress.
+- Opinion formation systems so characters build personal takes on places, people, jobs, and events.
+- Bias/prejudice/favorability rules shaped by upbringing, class, trauma, culture, and repeated interactions.
+- Misinterpretation systems where characters can read the same event differently.
+- “Vibe judgment” logic so characters react to tone, style, confidence, awkwardness, and resemblance.
+
+#### Must-have player-facing outcomes
+- An NPC should not only “like” or “dislike” someone; they should hold specific thoughts such as “too loud,” “reminds me of my father,” or “acts fake.”
+- The player should be able to inspect thought traces in journals, phones, mirrors, or dialogue aftermath.
+
+### Pillar 12: Visible change over time
+A life sim feels dramatically more alive when the body carries evidence of time.
+
+#### Missing implementation work
+- Continuous aging layers rather than hard age-stage swaps only.
+- Dynamic body changes from diet, stress, exercise, pregnancy, illness, and labor.
+- Posture states affected by confidence, fatigue, pain, injury, age, and depression.
+- Wear-and-tear overlays: tired eyes, rough skin, scars, limp states, grooming decline, sun exposure.
+- Phenotype resolver hooks that update portrait/world layers from simulation state over time.
+
+#### Must-have player-facing outcomes
+- Players should be able to *see* a hard year on a face/body.
+- Family resemblance, aging, exhaustion, recovery, and injury aftermath should be visually readable.
+
+### Pillar 13: Sensory feedback and emotional sound design
+The game still needs a sensory layer so locations and feelings are heard, not only seen.
+
+#### Missing implementation work
+- Ambient sound identities by district, venue, weather, season, wealth tier, and time of day.
+- Micro-sounds for footsteps, doors, fabric, typing, phone taps, cooking, dish clutter, buses, rain on roofs, fluorescent buzz, distant sirens.
+- Emotional audio mixing where anxiety narrows the sound field, calm opens it, and danger sharpens it.
+- State-aware music cues for loneliness, hope, exhaustion, romance, dread, grief, and relief.
+- Strong sound feedback for diegetic devices like phones, TVs, radios, appliances, and vehicles.
+
+### Pillar 14: Decision tension and impossible trade-offs
+The game should regularly force the player to choose what matters most because they cannot have everything.
+
+#### Missing implementation work
+- More paired trade-offs: money vs time, social life vs ambition, honesty vs survival, sleep vs productivity, safety vs opportunity.
+- Imperfect outcomes where even the “best” choice hurts something.
+- Time-slot scarcity so overlapping obligations become stressful.
+- Short-term relief / long-term damage choices.
+- Tension framing in UI so players understand what they are sacrificing.
+
+#### Must-have player-facing outcomes
+- Going to work exhausted should help bills but worsen health and burnout.
+- Skipping work to repair a relationship should feel emotionally right but financially dangerous.
+- The player should often feel: “I cannot save every part of my life today.”
+
+### Pillar 15: NPC uniqueness and behavior signatures
+NPCs need to become recognizable by behavior before the player even reads their stats.
+
+#### Missing implementation work
+- Behavior signature profiles: tempo, punctuality, talk density, cleanliness, ambition, conflict style, generosity, risk tolerance, and social stamina.
+- Signature routines that create identifiable patterns such as always late, always jogging, always gossiping after work, always reorganizing the kitchen.
+- Quirk pools: nail-biting, over-texting, humming, pacing, doomscrolling, overexplaining, disappearing during conflict, stress cleaning.
+- Distinct preference clusters so neighborhoods feel socially diverse.
+
+#### Must-have player-facing outcomes
+- Players should say “I know exactly who that is” from behavior alone.
+- NPCs should stop blending together into generic schedule bots.
+
+### Pillar 16: Player-driven stories, not just authored quests
+The strongest stories should come from systems colliding unexpectedly.
+
+#### Missing implementation work
+- Emergent breakup/reconciliation chains.
+- Opportunity collisions: promotions during illness, romance during debt, eviction during pregnancy, friendship during recovery.
+- Better cross-system aftermath tracking so stories can be reconstructed after the fact.
+- Story surfacing tools that summarize why an event mattered.
+
+#### Must-have player-facing outcomes
+- Players should regularly experience moments like “wait, that happened naturally?”
+- The best anecdotes should come from simulation, not only scripted mission text.
+
+### Pillar 17: UI that feels like part of the world
+The interface should increasingly live inside the fiction, not float above it.
+
+#### Missing implementation work
+- Phone as a real hub for texts, schedule, social media, banking, maps, contacts, delivery, memories, and reputation fallout.
+- Mirror as appearance / self-image / grooming / body-state interface.
+- Notebook, diary, or journal as the memory and reflection UI.
+- TV/radio/computer as delivery channels for news, jobs, weather, propaganda, and culture.
+- More liquid-glass / diegetic presentation that makes menus feel embodied.
+
+### Pillar 18: Flow and low-friction play
+Even deep simulation fails if every action is buried in too many clicks.
+
+#### Missing implementation work
+- Action chaining for common routines: wake up -> bathroom -> shower -> dress -> breakfast -> leave.
+- Fewer interruptive confirmation prompts for obvious low-risk actions.
+- Contextual quick actions based on location, need urgency, and routine.
+- Better batching for chores, shopping, meal prep, and social follow-ups.
+- UI responsiveness and menu trimming so common tasks resolve in two or three steps.
+
+#### Must-have player-facing outcomes
+- Repetitive daily tasks should feel smooth, not menu-heavy.
+- Depth should come from consequence and interaction, not interface friction.
+
 ---
 
 ## 2.6 Highest-priority systems to build next if the goal is “make it feel alive”
@@ -192,6 +295,12 @@ If the question is not “what is missing in general?” but “what should be b
 5. **Identity/purpose system** that tracks who the character is becoming, not only what they own.
 6. **Interconnection pass** where mood, weather, money, health, reputation, and relationships chain into one another more aggressively.
 7. **Emotional presentation layer** for journal, memories, milestones, and aftermath.
+8. **Internal thought/opinion system** so characters explain themselves in specific, biased, human ways.
+9. **Dynamic phenotype + wear-and-tear presentation pass** so lives are visibly written onto bodies and portraits.
+10. **Sensory feedback/audio identity system** for place, emotion, and state-based immersion.
+11. **Behavior signature system** so NPCs are recognizable by routine and temperament.
+12. **Diegetic phone/mirror/journal UI pass** to merge interface with world fiction.
+13. **Interaction flow cleanup** so depth is not buried under excessive clicks.
 
 ---
 
