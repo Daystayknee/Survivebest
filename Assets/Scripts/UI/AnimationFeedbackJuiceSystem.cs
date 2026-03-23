@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.World;
+using Survivebest.UI.ViewModels;
 
 namespace Survivebest.UI
 {
@@ -22,6 +23,7 @@ namespace Survivebest.UI
     {
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private GameplayPresentationStateCoordinator gameplayPresentationStateCoordinator;
         [SerializeField] private bool reactToWeather = true;
 
         public event Action<FeedbackCue> OnFeedbackRequested;
@@ -42,6 +44,11 @@ namespace Survivebest.UI
             {
                 worldClock.OnHourPassed += HandleHourPassed;
             }
+
+            if (gameplayPresentationStateCoordinator != null)
+            {
+                gameplayPresentationStateCoordinator.OnPresentationStateChanged += HandlePresentationStateChanged;
+            }
         }
 
         private void OnDisable()
@@ -55,6 +62,53 @@ namespace Survivebest.UI
             {
                 worldClock.OnHourPassed -= HandleHourPassed;
             }
+
+            if (gameplayPresentationStateCoordinator != null)
+            {
+                gameplayPresentationStateCoordinator.OnPresentationStateChanged -= HandlePresentationStateChanged;
+            }
+        }
+
+        public FeedbackCue BuildCueFromPresentationState(PresentationSectionViewModel state)
+        {
+            if (state == null)
+            {
+                return null;
+            }
+
+            string recommendedAction = state.RecommendedAction ?? string.Empty;
+            FeedbackCue cue = new FeedbackCue
+            {
+                AnimationState = ResolvePresentationAnimation(state),
+                PostureState = state.VisualStateSummary != null && state.VisualStateSummary.Contains("posture") ? state.VisualStateSummary : "Neutral",
+                FacialState = ResolvePresentationFacialState(state),
+                LocomotionState = ResolvePresentationLocomotion(state),
+                SfxKey = ResolvePresentationSfx(state),
+                VfxKey = ResolvePresentationVfx(state),
+                UiPulseKey = ResolvePresentationPulse(state),
+                Intensity = ResolvePresentationIntensity(state)
+            };
+
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("slouched"))
+            {
+                cue.PostureState = "Slouched";
+            }
+            else if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("upright"))
+            {
+                cue.PostureState = "Upright";
+            }
+
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth"))
+            {
+                cue.FacialState = "Open";
+            }
+
+            if (recommendedAction.Contains("break") || recommendedAction.Contains("breathe") || recommendedAction.Contains("reset"))
+            {
+                cue.LocomotionState = "SlowWalk";
+            }
+
+            return cue;
         }
 
         public FeedbackCue BuildCue(SimulationEvent simulationEvent)
@@ -164,6 +218,98 @@ namespace Survivebest.UI
             }
 
             return cue;
+        }
+
+        private static string ResolvePresentationAnimation(PresentationSectionViewModel state)
+        {
+            if (state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0)
+            {
+                return state.MicroInteractionCues[0];
+            }
+
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction))
+            {
+                if (state.RecommendedAction.Contains("eat") || state.RecommendedAction.Contains("meal")) return "ReachForFood";
+                if (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset")) return "PauseReset";
+                if (state.RecommendedAction.Contains("text") || state.RecommendedAction.Contains("check_in")) return "PhoneCheck";
+            }
+
+            return "Idle";
+        }
+
+        private static string ResolvePresentationFacialState(PresentationSectionViewModel state)
+        {
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes")) return "Tired";
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle) && state.LastEventTitle.Contains("Relationship")) return "Guarded";
+            return "Neutral";
+        }
+
+        private static string ResolvePresentationLocomotion(PresentationSectionViewModel state)
+        {
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("distance")) return "CautiousWalk";
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset"))) return "SlowWalk";
+            return "NormalWalk";
+        }
+
+        private void HandlePresentationStateChanged(PresentationSectionViewModel state)
+        {
+            FeedbackCue cue = BuildCueFromPresentationState(state);
+            if (cue != null)
+            {
+                OnFeedbackRequested?.Invoke(cue);
+            }
+        }
+
+        private static string ResolvePresentationSfx(PresentationSectionViewModel state)
+        {
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle) && state.LastEventTitle.Contains("Relationship")) return "social_tension_ping";
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset"))) return "ui_soft_breath";
+            if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("clinical")) return "ambient_hospital_loop";
+            if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("cheap-light buzz")) return "ambient_stress_apartment";
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth")) return "ambient_soft_warmth";
+            return "ambient_soft";
+        }
+
+        private static string ResolvePresentationVfx(PresentationSectionViewModel state)
+        {
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("weathered")) return "vfx_stress_shadow";
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth")) return "vfx_soft_warm";
+            return "vfx_timepulse";
+        }
+
+        private static string ResolvePresentationPulse(PresentationSectionViewModel state)
+        {
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset"))) return "recovery_prompt";
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle) && state.LastEventTitle.Contains("Relationship")) return "relationship_alert";
+            if (state.MicroInteractionCues != null && state.MicroInteractionCues.Contains("check_phone_then_pace")) return "tradeoff_tension";
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes")) return "fatigue_pulse";
+            return "presentation_idle";
+        }
+
+        private static float ResolvePresentationIntensity(PresentationSectionViewModel state)
+        {
+            float intensity = 0.35f;
+            if (state.MicroInteractionCues != null)
+            {
+                intensity += Mathf.Min(0.35f, state.MicroInteractionCues.Count * 0.08f);
+            }
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("distance"))
+            {
+                intensity += 0.15f;
+            }
+            if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("stress"))
+            {
+                intensity += 0.1f;
+            }
+            if (!string.IsNullOrWhiteSpace(state.RecommendedAction) && (state.RecommendedAction.Contains("eat") || state.RecommendedAction.Contains("break") || state.RecommendedAction.Contains("breathe") || state.RecommendedAction.Contains("reset")))
+            {
+                intensity += 0.08f;
+            }
+            if (!string.IsNullOrWhiteSpace(state.LastEventTitle))
+            {
+                intensity += 0.05f;
+            }
+            return Mathf.Clamp01(intensity);
         }
 
         private void HandleSimulationEvent(SimulationEvent simulationEvent)

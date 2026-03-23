@@ -19,11 +19,15 @@ namespace Survivebest.Tests.EditMode
             GameplayPresentationStateCoordinator coordinator = go.AddComponent<GameplayPresentationStateCoordinator>();
             GameplayVisionSystem vision = go.AddComponent<GameplayVisionSystem>();
             GameplayInteractionPresentationLayer presentation = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loop = go.AddComponent<GameplayLifeLoopOrchestrator>();
             LocationManager location = go.AddComponent<LocationManager>();
             HouseholdManager household = go.AddComponent<HouseholdManager>();
 
             typeof(GameplayPresentationStateCoordinator).GetField("gameplayVisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, vision);
             typeof(GameplayPresentationStateCoordinator).GetField("gameplayInteractionPresentationLayer", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, presentation);
+            typeof(GameplayPresentationStateCoordinator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, life);
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayLifeLoopOrchestrator", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, loop);
             typeof(GameplayPresentationStateCoordinator).GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, location);
             typeof(GameplayPresentationStateCoordinator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, household);
             typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)?.SetValue(location, new Room { RoomName = "Ward", Theme = LocationTheme.Hospital });
@@ -37,6 +41,13 @@ namespace Survivebest.Tests.EditMode
             character.Initialize("char_present_state", "Avery", LifeStage.Adult, CharacterSpecies.Vampire);
             household.AddMember(character);
             household.SetActiveCharacter(character);
+            life.SetHumanMicroConditionProfile(character, new HumanMicroConditionProfile { SleepDebtFog = 0.75f, TensionHeadache = 0.45f });
+            life.UpdateVisibleLifeState(character, 0.82f, 0.28f);
+            GameObject socialGo = new GameObject("PresentationOther");
+            CharacterCore social = socialGo.AddComponent<CharacterCore>();
+            social.Initialize("friend_1", "Jules", LifeStage.Adult);
+            life.GenerateInterpersonalImpression(character, social, "get_meds", 0.8f, 0.3f);
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(loop, new System.Collections.Generic.List<LifeTradeoffPrompt> { new LifeTradeoffPrompt { CharacterId = "char_present_state", Headline = "Bills want labor, but your body wants relief.", Tension = 0.82f } });
 
             EconomyInventorySystem economy = go.AddComponent<EconomyInventorySystem>();
             economy.TrySpend(230f, "setup");
@@ -56,9 +67,14 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(coordinator.CurrentState.Tabs.Contains("Recovery"));
             Assert.IsNotEmpty(coordinator.CurrentState.TimelineCards);
             Assert.IsTrue(coordinator.CurrentState.WarningPulses.Count >= 3);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(coordinator.CurrentState.VisualStateSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(coordinator.CurrentState.AmbientAudioSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(coordinator.CurrentState.EnvironmentReactionSummary));
+            Assert.IsNotEmpty(coordinator.CurrentState.MicroInteractionCues);
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
+            Object.DestroyImmediate(socialGo);
         }
 
         [Test]
@@ -87,6 +103,42 @@ namespace Survivebest.Tests.EditMode
 
             coordinator.SendMessage("OnDisable");
             Object.DestroyImmediate(go);
+        }
+
+
+        [Test]
+        public void RefreshState_UsesActiveCharacterTradeoffForMicroCues()
+        {
+            GameObject go = new GameObject("PresentationCoordinatorTradeoffFilter");
+            GameplayPresentationStateCoordinator coordinator = go.AddComponent<GameplayPresentationStateCoordinator>();
+            GameplayInteractionPresentationLayer presentation = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loop = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayInteractionPresentationLayer", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, presentation);
+            typeof(GameplayPresentationStateCoordinator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, life);
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayLifeLoopOrchestrator", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, loop);
+            typeof(GameplayPresentationStateCoordinator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, household);
+
+            GameObject activeGo = new GameObject("ActivePresentationTradeoff");
+            CharacterCore active = activeGo.AddComponent<CharacterCore>();
+            active.Initialize("char_tradeoff_present", "Rin", LifeStage.Adult);
+            household.AddMember(active);
+            household.SetActiveCharacter(active);
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(loop, new System.Collections.Generic.List<LifeTradeoffPrompt>
+            {
+                new LifeTradeoffPrompt { CharacterId = "other_char", RiskLabel = "progress_vs_recovery", Tension = 0.95f },
+                new LifeTradeoffPrompt { CharacterId = "char_tradeoff_present", RiskLabel = "connection_vs_control", Tension = 0.78f }
+            });
+
+            coordinator.RefreshState();
+
+            CollectionAssert.Contains(coordinator.CurrentState.MicroInteractionCues, "check_phone_then_pace");
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(activeGo);
         }
 
         [Test]
