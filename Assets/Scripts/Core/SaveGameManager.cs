@@ -17,6 +17,7 @@ using Survivebest.Quest;
 using Survivebest.Story;
 using Survivebest.Social;
 using Survivebest.Tasks;
+using Survivebest.Utility;
 
 namespace Survivebest.Core
 {
@@ -207,6 +208,12 @@ namespace Survivebest.Core
 
             PublishSaveEvent(SimulationEventType.SaveLoaded, slotIndex, worldName);
             return true;
+        }
+
+        public ValidationReport BuildHumanDaySliceParityReport(string worldName = "ParityCheck")
+        {
+            SaveSlotPayload payload = BuildPayload(worldName);
+            return new SaveParityDebugger().Compare(payload, householdManager, economyInventorySystem, locationManager, worldClock);
         }
 
         public void DeleteSlot(int slotIndex)

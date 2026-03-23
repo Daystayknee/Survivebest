@@ -1,8 +1,16 @@
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Reflection;
+using Survivebest.Application;
 using Survivebest.Core;
 using Survivebest.Events;
+using Survivebest.Economy;
+using Survivebest.Location;
+using Survivebest.Needs;
+using Survivebest.Crime;
+using Survivebest.Social;
+using Survivebest.World;
 using Survivebest.UI;
 
 namespace Survivebest.Tests.EditMode
@@ -97,6 +105,77 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("Parity:", onboarding);
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void GameplayScreenController_RefreshDashboardLegibility_PushesOverviewIntoUiTexts()
+        {
+            GameObject go = new GameObject("GameplayScreenOverviewUi");
+            GameplayScreenController controller = go.AddComponent<GameplayScreenController>();
+            GameHUD hud = go.AddComponent<GameHUD>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            LocationManager location = go.AddComponent<LocationManager>();
+            EconomyInventorySystem economy = go.AddComponent<EconomyInventorySystem>();
+            WorldClock clock = go.AddComponent<WorldClock>();
+            WeatherManager weather = go.AddComponent<WeatherManager>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loop = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            LongTermProgressionSystem progression = go.AddComponent<LongTermProgressionSystem>();
+            AchievementSystem achievements = go.AddComponent<AchievementSystem>();
+            JusticeSystem justice = go.AddComponent<JusticeSystem>();
+            RelationshipMemorySystem memory = go.AddComponent<RelationshipMemorySystem>();
+            VampireDepthSystem vampire = go.AddComponent<VampireDepthSystem>();
+            TownSimulationManager town = go.AddComponent<TownSimulationManager>();
+
+            GameObject charGo = new GameObject("UiChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_ui_bind", "Avery", LifeStage.Adult);
+            NeedsSystem needs = charGo.AddComponent<NeedsSystem>();
+            needs.ApplySnapshot(new NeedsSnapshot { Hunger = 30f, Energy = 60f, Hydration = 60f, Mood = 55f, Hygiene = 70f });
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+            location.SetRooms(new System.Collections.Generic.List<Room> { new Room { RoomName = "Apartment", Theme = LocationTheme.Residential } });
+            typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)?.SetValue(location, location.FindRoom("Apartment"));
+            economy.AddFunds(90f, "seed");
+            clock.SetDateTime(1, 1, 1, 7, 15);
+            typeof(LongTermProgressionSystem).GetField("goals", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(progression, new System.Collections.Generic.List<AspirationGoal> { new AspirationGoal { GoalId = "goal_1", Title = "Eat before work", CurrentAmount = 0, TargetAmount = 1 } });
+            typeof(AchievementSystem).GetField("achievements", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(achievements, new System.Collections.Generic.List<AchievementDefinition> { new AchievementDefinition { AchievementId = "ach_1", Title = "Morning Start", Unlocked = true } });
+
+            GameObject completionismGo = new GameObject("CompletionismText");
+            Text completionismText = completionismGo.AddComponent<Text>();
+            GameObject onboardingGo = new GameObject("OnboardingText");
+            Text onboardingText = onboardingGo.AddComponent<Text>();
+            GameObject parityGo = new GameObject("ParityText");
+            Text parityText = parityGo.AddComponent<Text>();
+
+            typeof(GameplayScreenController).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, household);
+            typeof(GameplayScreenController).GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, location);
+            typeof(GameplayScreenController).GetField("economyInventorySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, economy);
+            typeof(GameplayScreenController).GetField("worldClock", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, clock);
+            typeof(GameplayScreenController).GetField("weatherManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, weather);
+            typeof(GameplayScreenController).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, life);
+            typeof(GameplayScreenController).GetField("gameplayLifeLoopOrchestrator", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, loop);
+            typeof(GameplayScreenController).GetField("longTermProgressionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, progression);
+            typeof(GameplayScreenController).GetField("achievementSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, achievements);
+            typeof(GameplayScreenController).GetField("justiceSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, justice);
+            typeof(GameplayScreenController).GetField("relationshipMemorySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, memory);
+            typeof(GameplayScreenController).GetField("vampireDepthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, vampire);
+            typeof(GameplayScreenController).GetField("townSimulationManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, town);
+            typeof(GameplayScreenController).GetField("gameHUD", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, hud);
+            typeof(GameplayScreenController).GetField("completionismText", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, completionismText);
+            typeof(GameplayScreenController).GetField("onboardingText", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, onboardingText);
+            typeof(GameplayScreenController).GetField("parityText", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(controller, parityText);
+            typeof(GameplayScreenController).GetMethod("RefreshDashboardLegibility", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(controller, null);
+
+            StringAssert.Contains("Progress:", completionismText.text);
+            StringAssert.Contains("Step:", onboardingText.text);
+            StringAssert.Contains("Save/Load parity", parityText.text);
+
+            Object.DestroyImmediate(completionismGo);
+            Object.DestroyImmediate(onboardingGo);
+            Object.DestroyImmediate(parityGo);
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
         }
 
         [Test]
