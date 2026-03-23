@@ -16,6 +16,9 @@ namespace Survivebest.Application
         public List<string> TopNeeds = new();
         public string CurrentThought;
         public string CurrentAction;
+        public string VisibleStateSummary;
+        public string CurrentSocialRead;
+        public string CurrentTradeoff;
         public List<string> ActiveMoodTags = new();
         public List<string> ActiveStatuses = new();
         public List<string> RelationshipHighlights = new();
@@ -125,6 +128,9 @@ namespace Survivebest.Application
     [Serializable]
     public sealed class ActionPanelViewModel
     {
+        public string InstantAction;
+        public string AutomationHint;
+        public List<string> MicroActions = new();
         public List<string> SuggestedActions = new();
         public List<string> LockedActions = new();
         public List<string> WarningActions = new();

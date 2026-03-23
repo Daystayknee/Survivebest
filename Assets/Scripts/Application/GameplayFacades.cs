@@ -9,16 +9,20 @@ using Survivebest.Needs;
 using Survivebest.Social;
 using Survivebest.Status;
 using Survivebest.World;
+using Survivebest.UI;
 
 namespace Survivebest.Application
 {
     public sealed class GameplayActionCatalog
     {
-        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null)
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null)
         {
             ActionPanelViewModel vm = new ActionPanelViewModel();
             List<string> contextActions = BuildContextActions(activeCharacter, locationManager, relationshipMemorySystem);
+            NeedsSystem needs = activeCharacter != null ? activeCharacter.GetComponent<NeedsSystem>() : null;
             vm.ContextActions.AddRange(contextActions);
+
+            ResolveFastActions(vm, activeCharacter, needs, locationManager, humanLifeExperienceLayerSystem, gameplayLifeLoopOrchestrator, contextActions);
 
             for (int i = 0; i < Mathf.Min(4, contextActions.Count); i++)
             {
@@ -44,6 +48,76 @@ namespace Survivebest.Application
             }
 
             return vm;
+        }
+
+        private static void ResolveFastActions(ActionPanelViewModel vm, CharacterCore activeCharacter, NeedsSystem needsSystem, LocationManager locationManager, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem, GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator, List<string> contextActions)
+        {
+            if (vm == null)
+            {
+                return;
+            }
+
+            NeedsSnapshot needs = needsSystem != null ? needsSystem.CaptureSnapshot() : null;
+            VisibleLifeStateProfile visible = activeCharacter != null && humanLifeExperienceLayerSystem != null
+                ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(activeCharacter.CharacterId)
+                : null;
+            LifeTradeoffPrompt tradeoff = null;
+            if (activeCharacter != null && gameplayLifeLoopOrchestrator != null)
+            {
+                IReadOnlyList<LifeTradeoffPrompt> tradeoffs = gameplayLifeLoopOrchestrator.RecentTradeoffs;
+                for (int i = tradeoffs.Count - 1; i >= 0; i--)
+                {
+                    if (tradeoffs[i] != null && tradeoffs[i].CharacterId == activeCharacter.CharacterId)
+                    {
+                        tradeoff = tradeoffs[i];
+                        break;
+                    }
+                }
+            }
+
+            if (needs != null && needs.Hunger < 35f)
+            {
+                vm.InstantAction = "eat_quick_meal";
+                vm.AutomationHint = "Fast survival action: eat something immediately before deeper planning.";
+                vm.MicroActions.Add("grab_snack");
+                vm.MicroActions.Add("drink_water");
+            }
+            else if ((needs != null && needs.Energy < 30f) || (visible != null && visible.VisibleFatigue > 0.65f))
+            {
+                vm.InstantAction = "sit_and_breathe";
+                vm.AutomationHint = "Fast recovery action: lower pressure first, then resume the bigger plan.";
+                vm.MicroActions.Add("sit_down");
+                vm.MicroActions.Add("slow_breath");
+            }
+            else if (tradeoff != null && tradeoff.RiskLabel == "connection_vs_control")
+            {
+                vm.InstantAction = "send_check_in_text";
+                vm.AutomationHint = "Fast social action: protect the relationship without committing the whole day.";
+                vm.MicroActions.Add("check_phone");
+                vm.MicroActions.Add("send_short_text");
+            }
+            else if (locationManager != null && locationManager.CurrentRoom != null && locationManager.CurrentRoom.Theme == LocationTheme.Residential)
+            {
+                vm.InstantAction = "do_fast_tidy";
+                vm.AutomationHint = "Fast home action: improve the room without opening a long management flow.";
+                vm.MicroActions.Add("pick_up_clutter");
+                vm.MicroActions.Add("straighten_space");
+            }
+            else
+            {
+                vm.InstantAction = contextActions.Count > 0 ? contextActions[0] : "check_phone";
+                vm.AutomationHint = "Fast contextual action: the panel is surfacing the lowest-friction next step.";
+                vm.MicroActions.Add("quick_check");
+            }
+
+            if (tradeoff != null && !string.IsNullOrWhiteSpace(tradeoff.OptionA))
+            {
+                vm.MicroActions.Add(tradeoff.OptionA);
+            }
+            if (tradeoff != null && !string.IsNullOrWhiteSpace(tradeoff.OptionB))
+            {
+                vm.MicroActions.Add(tradeoff.OptionB);
+            }
         }
 
         private static List<string> BuildContextActions(CharacterCore activeCharacter, LocationManager locationManager, RelationshipMemorySystem relationshipMemorySystem)
@@ -170,13 +244,15 @@ namespace Survivebest.Application
         private readonly HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         private readonly PaperTrailSystem paperTrailSystem;
         private readonly HouseholdManager householdManager;
+        private readonly GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
 
-        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null, HouseholdManager householdManager = null)
+        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null, HouseholdManager householdManager = null, GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null)
         {
             this.relationshipMemorySystem = relationshipMemorySystem;
             this.humanLifeExperienceLayerSystem = humanLifeExperienceLayerSystem;
             this.paperTrailSystem = paperTrailSystem;
             this.householdManager = householdManager;
+            this.gameplayLifeLoopOrchestrator = gameplayLifeLoopOrchestrator;
         }
 
         public CharacterDashboardViewModel BuildDashboard(CharacterCore character)
@@ -194,6 +270,11 @@ namespace Survivebest.Application
                 ? humanLifeExperienceLayerSystem.BuildInnerMonologueSnapshot(character.CharacterId, true)
                 : relationshipMemorySystem != null ? relationshipMemorySystem.BuildMemoryInsight(character.CharacterId) : "No active thought.";
 
+            VisibleLifeStateProfile visibleState = humanLifeExperienceLayerSystem != null ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(character.CharacterId) : null;
+            string visibleStateSummary = visibleState != null ? $"{visibleState.Posture} / {visibleState.EyeState} / {visibleState.WearState}" : "No visible state.";
+            string currentSocialRead = BuildCurrentSocialRead(character.CharacterId);
+            string currentTradeoff = BuildCurrentTradeoff(character.CharacterId);
+
             return new CharacterDashboardViewModel
             {
                 CharacterId = character.CharacterId,
@@ -206,7 +287,10 @@ namespace Survivebest.Application
                 TopNeeds = BuildTopNeeds(snapshot),
                 CurrentThought = thought,
                 CurrentAction = householdManager != null ? householdManager.GetLatestIntentForCharacter(character.CharacterId) ?? "Idle" : "Idle",
-                ActiveMoodTags = BuildMoodTags(snapshot),
+                VisibleStateSummary = visibleStateSummary,
+                CurrentSocialRead = currentSocialRead,
+                CurrentTradeoff = currentTradeoff,
+                ActiveMoodTags = BuildMoodTags(snapshot, visibleState),
                 ActiveStatuses = BuildActiveStatuses(statuses),
                 RelationshipHighlights = BuildRelationshipHighlights(character.CharacterId),
                 KeyRelationshipAlerts = BuildRelationshipHighlights(character.CharacterId),
@@ -246,7 +330,47 @@ namespace Survivebest.Application
             return needs;
         }
 
-        private static List<string> BuildMoodTags(NeedsSnapshot snapshot)
+        private string BuildCurrentSocialRead(string characterId)
+        {
+            if (humanLifeExperienceLayerSystem == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No social read.";
+            }
+
+            IReadOnlyList<InterpersonalImpressionProfile> impressions = humanLifeExperienceLayerSystem.InterpersonalImpressions;
+            for (int i = impressions.Count - 1; i >= 0; i--)
+            {
+                InterpersonalImpressionProfile impression = impressions[i];
+                if (impression != null && impression.CharacterId == characterId && !string.IsNullOrWhiteSpace(impression.CurrentImpression))
+                {
+                    return impression.CurrentImpression;
+                }
+            }
+
+            return "No social read.";
+        }
+
+        private string BuildCurrentTradeoff(string characterId)
+        {
+            if (gameplayLifeLoopOrchestrator == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No active tradeoff.";
+            }
+
+            IReadOnlyList<LifeTradeoffPrompt> tradeoffs = gameplayLifeLoopOrchestrator.RecentTradeoffs;
+            for (int i = tradeoffs.Count - 1; i >= 0; i--)
+            {
+                LifeTradeoffPrompt tradeoff = tradeoffs[i];
+                if (tradeoff != null && tradeoff.CharacterId == characterId)
+                {
+                    return tradeoff.Headline;
+                }
+            }
+
+            return "No active tradeoff.";
+        }
+
+        private static List<string> BuildMoodTags(NeedsSnapshot snapshot, VisibleLifeStateProfile visibleState)
         {
             List<string> tags = new();
             if (snapshot == null)
@@ -258,6 +382,8 @@ namespace Survivebest.Application
             if (snapshot.BurnoutRisk > 60f) tags.Add("burnout_risk");
             if (snapshot.MentalFatigue > 55f) tags.Add("mentally_fried");
             if (snapshot.SleepDebt > 50f) tags.Add("sleep_deprived");
+            if (visibleState != null && visibleState.VisibleFatigue > 0.6f) tags.Add("visibly_tired");
+            if (visibleState != null && visibleState.LifeWear > 0.6f) tags.Add("life_wear");
             if (tags.Count == 0) tags.Add("steady");
             return tags;
         }
@@ -623,7 +749,9 @@ namespace Survivebest.Application
             VampireDepthSystem vampireDepthSystem,
             WorldClock worldClock = null,
             WeatherManager weatherManager = null,
-            TownSimulationManager townSimulationManager = null)
+            TownSimulationManager townSimulationManager = null,
+            HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null,
+            GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null)
         {
             CharacterCore activeCharacter = householdManager != null ? householdManager.ActiveCharacter : null;
             string currentRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "Unknown";
@@ -636,7 +764,7 @@ namespace Survivebest.Application
                 Relationship = relationshipFacade.BuildSummary(relationshipMemorySystem, activeCharacter != null ? activeCharacter.CharacterId : null),
                 Vampire = vampireFacade.BuildSummary(vampireDepthSystem, activeCharacter),
                 World = BuildWorldPanel(worldClock, weatherManager, currentRoom, townSimulationManager, economyInventorySystem),
-                Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem),
+                Actions = BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem, humanLifeExperienceLayerSystem, gameplayLifeLoopOrchestrator),
                 CurrentRoom = currentRoom
             };
 
@@ -676,9 +804,9 @@ namespace Survivebest.Application
             return vm;
         }
 
-        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null)
+        public ActionPanelViewModel BuildActionPanel(CharacterCore activeCharacter, LocationManager locationManager, JusticeSystem justiceSystem, RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null)
         {
-            return gameplayActionCatalog.BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem);
+            return gameplayActionCatalog.BuildActionPanel(activeCharacter, locationManager, justiceSystem, relationshipMemorySystem, humanLifeExperienceLayerSystem, gameplayLifeLoopOrchestrator);
         }
 
         private static string ResolveDistrictVibe(TownSimulationManager townSimulationManager)
