@@ -872,6 +872,8 @@ namespace Survivebest.Application
                 vm.UnlockedPerks.Add("No legacy perks unlocked yet.");
             }
 
+            vm.EndlessOptionsStatus = "Finish the full 12-step Human Day Slice ship gate before advertising endless play.";
+            vm.EndlessOptions.Add("Complete the Human Day Slice checklist from wake-up to reload parity.");
             return vm;
         }
     }
@@ -880,18 +882,23 @@ namespace Survivebest.Application
     {
         public OnboardingSummaryViewModel BuildSummary(GameplayOverviewViewModel overview)
         {
-            OnboardingSummaryViewModel vm = new OnboardingSummaryViewModel();
+            OnboardingSummaryViewModel vm = new OnboardingSummaryViewModel
+            {
+                TotalSliceChecks = 12
+            };
             if (overview == null)
             {
                 vm.CurrentStep = "Overview unavailable";
                 vm.Prompts.Add("Open the gameplay HUD to begin the Human Day Slice.");
+                vm.RemainingProofs.AddRange(BuildHumanDaySliceProofNames());
                 return vm;
             }
 
             bool hasBathroomAction = overview.AvailableActions.Contains("shower");
             bool hasFoodAction = overview.AvailableActions.Contains("eat_meal") || overview.AvailableActions.Contains("order_food");
             bool hasSocialAction = overview.AvailableActions.Contains("text_contact");
-            bool hasWorkAction = overview.AvailableActions.Contains("go_to_work") || overview.AvailableActions.Contains("focus_task");
+            bool hasWorkAction = overview.AvailableActions.Contains("go_to_work") || overview.AvailableActions.Contains("focus_task") || overview.AvailableActions.Contains("skip_work");
+            bool hasEndDayAction = overview.AvailableActions.Contains("sleep") || overview.AvailableActions.Contains("end_day") || overview.AvailableActions.Contains("rest");
 
             if (string.Equals(overview.CurrentRoom, "Unknown", StringComparison.OrdinalIgnoreCase))
             {
@@ -918,6 +925,11 @@ namespace Survivebest.Application
                 vm.CurrentStep = "Commit to the day obligation";
                 vm.Prompts.Add("Choose whether to go to work or deliberately skip so the sim records that branch.");
             }
+            else if (hasEndDayAction)
+            {
+                vm.CurrentStep = "Close out the day";
+                vm.Prompts.Add("Use the sleep or end-day action so the slice reaches the daily rollover and save gate.");
+            }
             else
             {
                 vm.CurrentStep = "Resolve the next visible pressure";
@@ -925,7 +937,71 @@ namespace Survivebest.Application
             }
 
             vm.Prompts.Add("Before ending the day, make sure you can explain your location, money, top pressure, and next action from the HUD.");
+
+            foreach (var pair in BuildHumanDaySliceProofChecks(overview))
+            {
+                if (pair.Item2) vm.CompletedProofs.Add(pair.Item1);
+                else vm.RemainingProofs.Add(pair.Item1);
+            }
+
+            vm.CompletedSliceChecks = vm.CompletedProofs.Count;
+            vm.HumanDaySliceShipReady = vm.CompletedSliceChecks >= vm.TotalSliceChecks;
             return vm;
+        }
+
+        private static List<string> BuildHumanDaySliceProofNames()
+        {
+            return new List<string>
+            {
+                "1. Wake in apartment.",
+                "2. Inspect needs, money, and world summary.",
+                "3. Shower / bathroom.",
+                "4. Eat.",
+                "5. Text/contact someone.",
+                "6. Go to work or skip.",
+                "7. Return home.",
+                "8. Resolve household pressure.",
+                "9. Trigger one social event.",
+                "10. End day.",
+                "11. Save.",
+                "12. Reload and verify parity."
+            };
+        }
+
+        private static List<Tuple<string, bool>> BuildHumanDaySliceProofChecks(GameplayOverviewViewModel overview)
+        {
+            bool roomKnown = !string.IsNullOrWhiteSpace(overview.CurrentRoom) && !string.Equals(overview.CurrentRoom, "Unknown", StringComparison.OrdinalIgnoreCase);
+            bool homeContext = roomKnown && (overview.CurrentRoom.IndexOf("apartment", StringComparison.OrdinalIgnoreCase) >= 0 || overview.CurrentRoom.IndexOf("home", StringComparison.OrdinalIgnoreCase) >= 0);
+            bool hasNeeds = overview.Character.TopNeeds != null && overview.Character.TopNeeds.Count > 0;
+            bool hasMoney = !string.IsNullOrWhiteSpace(overview.World.MoneySummary) && overview.World.MoneySummary != "$0";
+            bool hasClock = !string.IsNullOrWhiteSpace(overview.World.DateTimeLabel) && overview.World.DateTimeLabel != "Unknown time";
+            bool hasBathroomAction = overview.AvailableActions.Contains("shower");
+            bool hasFoodAction = overview.AvailableActions.Contains("eat_meal") || overview.AvailableActions.Contains("order_food");
+            bool hasSocialAction = overview.AvailableActions.Contains("text_contact");
+            bool hasWorkAction = overview.AvailableActions.Contains("go_to_work") || overview.AvailableActions.Contains("focus_task") || overview.AvailableActions.Contains("skip_work");
+            bool hasHouseholdPressure = overview.Household.PressureHighlights != null && overview.Household.PressureHighlights.Count > 0;
+            bool hasSocialAftermath = !string.IsNullOrWhiteSpace(overview.Relationship.CurrentThought)
+                || (overview.Relationship.HighlightPairs != null && overview.Relationship.HighlightPairs.Count > 0)
+                || (overview.World.NearbyEvents != null && overview.World.NearbyEvents.Count > 0);
+            bool hasEndDayAction = overview.AvailableActions.Contains("sleep") || overview.AvailableActions.Contains("end_day") || overview.AvailableActions.Contains("rest");
+            bool saveProofVisible = overview.Parity != null && overview.Parity.CompletedChecks.Contains("day_flow_progress");
+            bool reloadParityVisible = overview.Parity != null && overview.Parity.ReadyForSaveLoadParity;
+
+            return new List<Tuple<string, bool>>
+            {
+                Tuple.Create("1. Wake in apartment.", roomKnown),
+                Tuple.Create("2. Inspect needs, money, and world summary.", hasNeeds && hasMoney && hasClock),
+                Tuple.Create("3. Shower / bathroom.", hasBathroomAction),
+                Tuple.Create("4. Eat.", hasFoodAction),
+                Tuple.Create("5. Text/contact someone.", hasSocialAction),
+                Tuple.Create("6. Go to work or skip.", hasWorkAction),
+                Tuple.Create("7. Return home.", homeContext),
+                Tuple.Create("8. Resolve household pressure.", hasHouseholdPressure || hasNeeds),
+                Tuple.Create("9. Trigger one social event.", hasSocialAftermath || hasSocialAction),
+                Tuple.Create("10. End day.", hasEndDayAction),
+                Tuple.Create("11. Save.", saveProofVisible),
+                Tuple.Create("12. Reload and verify parity.", reloadParityVisible)
+            };
         }
     }
 
@@ -1077,7 +1153,38 @@ namespace Survivebest.Application
             viewModel.AvailableActions.AddRange(viewModel.Actions.ContextActions);
             viewModel.Onboarding = onboardingFacade.BuildSummary(viewModel);
             viewModel.Parity = humanDaySliceParityFacade.BuildSummary(viewModel);
+            viewModel.Onboarding = onboardingFacade.BuildSummary(viewModel);
+            ApplyDaySliceGate(viewModel.Completionism, viewModel.Onboarding, viewModel.Parity);
             return viewModel;
+        }
+
+        private static void ApplyDaySliceGate(CompletionismSummaryViewModel completionism, OnboardingSummaryViewModel onboarding, HumanDaySliceParityViewModel parity)
+        {
+            if (completionism == null)
+            {
+                return;
+            }
+
+            completionism.EndlessOptions.Clear();
+            bool shipReady = onboarding != null && onboarding.HumanDaySliceShipReady && parity != null && parity.ReadyForSaveLoadParity;
+            completionism.EndlessOptionsUnlocked = shipReady;
+            completionism.EndlessOptionsStatus = shipReady
+                ? "Human Day Slice ship gate complete. Endless play options can safely open."
+                : $"Human Day Slice ship gate incomplete ({onboarding?.CompletedSliceChecks ?? 0}/{onboarding?.TotalSliceChecks ?? 12} proofs). Finish the full slice before endless play expands.";
+
+            if (shipReady)
+            {
+                completionism.EndlessOptions.Add("Replay the day with different work, social, and recovery branches.");
+                completionism.EndlessOptions.Add("Continue into repeatable multi-day life-sim runs with save/load confidence.");
+                completionism.EndlessOptions.Add("Stress-test alternate household pressures without losing the core ship gate.");
+            }
+            else
+            {
+                completionism.EndlessOptions.Add("Complete the 12-step Human Day Slice proof checklist first.");
+                completionism.EndlessOptions.Add(onboarding != null && onboarding.RemainingProofs.Count > 0
+                    ? $"Next missing proof: {onboarding.RemainingProofs[0]}"
+                    : "Next missing proof: reload parity visibility.");
+            }
         }
 
         public WorldPanelViewModel BuildWorldPanel(WorldClock worldClock, WeatherManager weatherManager, string currentRoom, TownSimulationManager townSimulationManager, EconomyInventorySystem economyInventorySystem)

@@ -235,8 +235,12 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("Neighborhood Fixture", overview.Completionism.NextMilestone);
             CollectionAssert.Contains(overview.Completionism.FeaturedGoals, "Stabilize the clinic week (2/5)");
             CollectionAssert.Contains(overview.Completionism.UnlockedPerks, "night_shift_stamina");
+            Assert.IsFalse(overview.Completionism.EndlessOptionsUnlocked);
+            StringAssert.Contains("Human Day Slice ship gate incomplete", overview.Completionism.EndlessOptionsStatus);
             Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Onboarding.CurrentStep));
             Assert.IsNotEmpty(overview.Onboarding.Prompts);
+            Assert.GreaterOrEqual(overview.Onboarding.TotalSliceChecks, 12);
+            Assert.Greater(overview.Onboarding.CompletedSliceChecks, 0);
             Assert.IsTrue(overview.Parity.ReadyForSaveLoadParity);
             CollectionAssert.Contains(overview.Parity.CompletedChecks, "blocked_action_reasoning");
             CollectionAssert.Contains(overview.Actions.BlockedActionMessages, "demolish_city_block: city-scale destruction is outside the Human Day Slice and blocked in normal play.");
@@ -268,6 +272,9 @@ namespace Survivebest.Tests.EditMode
 
             StringAssert.Contains("Morning upkeep", onboarding.CurrentStep);
             Assert.IsNotEmpty(onboarding.Prompts);
+            Assert.AreEqual(12, onboarding.TotalSliceChecks);
+            Assert.GreaterOrEqual(onboarding.CompletedSliceChecks, 8);
+            CollectionAssert.Contains(onboarding.CompletedProofs, "3. Shower / bathroom.");
             Assert.IsTrue(parity.ReadyForSaveLoadParity);
             CollectionAssert.Contains(parity.CompletedChecks, "room_context");
             CollectionAssert.Contains(parity.CompletedChecks, "day_slice_step");
@@ -328,6 +335,39 @@ namespace Survivebest.Tests.EditMode
             character.Initialize("char_social_ui", "Mira", LifeStage.Adult);
             NeedsSystem needs = root.AddComponent<NeedsSystem>();
             needs.ApplySnapshot(new NeedsSnapshot { Hunger = 72f, Energy = 68f, Mood = 55f, Hydration = 61f, BurnoutRisk = 35f, MentalFatigue = 28f, SleepDebt = 20f });
+
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            LocationManager location = root.AddComponent<LocationManager>();
+            location.SetRooms(new List<Room>
+            {
+                new Room { RoomName = "Bus Stop", Theme = LocationTheme.Nature, AreaName = "Midtown" }
+            });
+            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Bus Stop"));
+
+            JusticeSystem justice = root.AddComponent<JusticeSystem>();
+            RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
+            HumanLifeExperienceLayerSystem lifeUi = root.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loopUi = root.AddComponent<GameplayLifeLoopOrchestrator>();
+            lifeUi.UpdateVisibleLifeState(character, 0.25f, 0.8f);
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(loopUi, new List<LifeTradeoffPrompt>
+                {
+                    new LifeTradeoffPrompt { CharacterId = "other_char", RiskLabel = "burnout_vs_income", Tension = 0.9f },
+                    new LifeTradeoffPrompt { CharacterId = "char_social_ui", RiskLabel = "connection_vs_control", OptionA = "Show up socially and strengthen bonds.", OptionB = "Keep your time for recovery, chores, or money.", Tension = 0.8f }
+                });
+
+            GameplayFacade gameplayFacade = new GameplayFacade();
+            ActionPanelViewModel panel = gameplayFacade.BuildActionPanel(character, location, justice, memory, lifeUi, loopUi);
+
+            Assert.AreEqual("send_check_in_text", panel.InstantAction);
+            CollectionAssert.Contains(panel.MicroActions, "check_phone");
+            CollectionAssert.Contains(panel.MicroActions, "send_short_text");
+            CollectionAssert.Contains(panel.MicroActions, "Show up socially and strengthen bonds.");
+            CollectionAssert.DoesNotContain(panel.MicroActions, "review_shift_plan");
 
             HouseholdManager household = root.AddComponent<HouseholdManager>();
             household.AddMember(character);

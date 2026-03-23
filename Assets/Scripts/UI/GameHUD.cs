@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -282,13 +283,16 @@ namespace Survivebest.UI
             }
 
             string featuredGoal = summary.FeaturedGoals != null && summary.FeaturedGoals.Count > 0 ? summary.FeaturedGoals[0] : "No featured goal.";
+            string endless = summary.EndlessOptionsStatus ?? "Endless options status unavailable.";
             return $"Progress: {summary.AchievementsUnlocked}/{summary.TotalAchievements} achievements • {summary.GoalsCompleted}/{summary.TotalGoals} goals • {summary.MilestonesUnlocked}/{summary.TotalMilestones} milestones
 " +
                    $"Legacy: Fame {summary.Fame}, Prestige {summary.HousePrestige}, Infamy {summary.Infamy}, Class {summary.SocialClass}
 " +
                    $"Next milestone: {summary.NextMilestone}
 " +
-                   $"Featured goal: {featuredGoal}";
+                   $"Featured goal: {featuredGoal}
+" +
+                   $"Endless: {endless}";
         }
 
         public string BuildOnboardingDigest(Survivebest.Application.OnboardingSummaryViewModel onboarding, Survivebest.Application.HumanDaySliceParityViewModel parity)
@@ -300,11 +304,13 @@ namespace Survivebest.UI
 
             string step = onboarding != null && !string.IsNullOrWhiteSpace(onboarding.CurrentStep) ? onboarding.CurrentStep : "No current step";
             string prompt = onboarding != null && onboarding.Prompts != null && onboarding.Prompts.Count > 0 ? onboarding.Prompts[0] : "No onboarding prompt.";
+            string progress = onboarding != null ? $"Slice: {onboarding.CompletedSliceChecks}/{Math.Max(1, onboarding.TotalSliceChecks)} proofs" : "Slice: unavailable";
             string parityLine = parity != null
                 ? parity.ReadyForSaveLoadParity ? "Parity: ready for save/load verification." : $"Parity: missing {parity.MissingChecks.Count} checks before verification."
                 : "Parity: unavailable.";
             return $"Step: {step}
 Prompt: {prompt}
+{progress}
 {parityLine}";
         }
 

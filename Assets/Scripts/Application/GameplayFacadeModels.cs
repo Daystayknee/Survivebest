@@ -112,15 +112,23 @@ namespace Survivebest.Application
         public int HousePrestige;
         public string SocialClass;
         public string NextMilestone;
+        public bool EndlessOptionsUnlocked;
+        public string EndlessOptionsStatus;
         public List<string> FeaturedGoals = new();
         public List<string> UnlockedPerks = new();
+        public List<string> EndlessOptions = new();
     }
 
     [Serializable]
     public sealed class OnboardingSummaryViewModel
     {
         public string CurrentStep;
+        public int CompletedSliceChecks;
+        public int TotalSliceChecks;
+        public bool HumanDaySliceShipReady;
         public List<string> Prompts = new();
+        public List<string> CompletedProofs = new();
+        public List<string> RemainingProofs = new();
     }
 
     [Serializable]
