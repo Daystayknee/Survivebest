@@ -3,7 +3,10 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Economy;
 using Survivebest.Location;
+using Survivebest.Needs;
+using Survivebest.Utility;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -68,6 +71,42 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(housing.Properties[0].LaundryPile, 4f);
             Assert.Greater(housing.Properties[0].TrashLevel, 5f);
             Assert.AreEqual(3, housing.DaysSinceBilling);
+
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(characterGo);
+        }
+
+        [Test]
+        public void SaveGameManager_BuildHumanDaySliceParityReport_ValidatesRoomClockFundsAndNeedsAgainstPayload()
+        {
+            GameObject root = new GameObject("SaveLoadHumanDaySliceParity");
+            SaveGameManager manager = root.AddComponent<SaveGameManager>();
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            EconomyInventorySystem economy = root.AddComponent<EconomyInventorySystem>();
+            LocationManager location = root.AddComponent<LocationManager>();
+            WorldClock clock = root.AddComponent<WorldClock>();
+
+            GameObject characterGo = new GameObject("ParityCharacter");
+            CharacterCore character = characterGo.AddComponent<CharacterCore>();
+            character.Initialize("char_parity", "Noa", LifeStage.Adult);
+            NeedsSystem needs = characterGo.AddComponent<NeedsSystem>();
+            needs.ApplySnapshot(new NeedsSnapshot { Hunger = 40f, Energy = 55f, Hydration = 61f, Mood = 70f, Hygiene = 65f });
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+            economy.AddFunds(145f, "seed");
+            location.SetRooms(new List<Room> { new Room { RoomName = "Apartment", Theme = LocationTheme.Residential } });
+            typeof(LocationManager).GetProperty("CurrentRoom", BindingFlags.Public | BindingFlags.Instance)?.SetValue(location, location.FindRoom("Apartment"));
+            clock.SetDateTime(1, 1, 2, 7, 30);
+
+            typeof(SaveGameManager).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(manager, household);
+            typeof(SaveGameManager).GetField("economyInventorySystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(manager, economy);
+            typeof(SaveGameManager).GetField("locationManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(manager, location);
+            typeof(SaveGameManager).GetField("worldClock", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(manager, clock);
+
+            ValidationReport report = manager.BuildHumanDaySliceParityReport("ParityWorld");
+
+            Assert.IsNotNull(report);
+            Assert.IsEmpty(report.Entries);
 
             Object.DestroyImmediate(root);
             Object.DestroyImmediate(characterGo);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.World;
@@ -63,6 +64,37 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class InterpersonalImpressionProfile
+    {
+        public string CharacterId;
+        public string TargetCharacterId;
+        public string LastContext = "unread";
+        public string CurrentImpression = "No strong read yet.";
+        public string VibeLabel = "neutral";
+        [Range(-1f, 1f)] public float Warmth = 0f;
+        [Range(0f, 1f)] public float Suspicion = 0f;
+        [Range(0f, 1f)] public float Familiarity = 0f;
+        [Range(0f, 1f)] public float MisreadRisk = 0f;
+        public int LastDay;
+        public int LastHour;
+    }
+
+[Serializable]
+    public class VisibleLifeStateProfile
+    {
+        public string CharacterId;
+        public string Posture = "steady";
+        public string EyeState = "clear";
+        public string BodyState = "stable";
+        public string WearState = "fresh";
+        [Range(0f, 1f)] public float VisibleFatigue = 0f;
+        [Range(0f, 1f)] public float LifeWear = 0f;
+        [Range(0f, 1f)] public float VisibleConfidence = 0.5f;
+        public int LastDay;
+        public int LastHour;
+    }
+
+[Serializable]
     public class SensoryLifeProfile
     {
         public string CharacterId;
@@ -599,10 +631,12 @@ namespace Survivebest.Core
 
         [Header("Runtime")]
         [SerializeField] private List<PlaceAttachmentState> placeAttachments = new();
+        [SerializeField] private List<InterpersonalImpressionProfile> interpersonalImpressions = new();
         [SerializeField] private List<ThoughtMessage> recentThoughts = new();
         [SerializeField] private List<ProceduralLifeMoment> recentMoments = new();
         [SerializeField] private List<LifeTimelineEntry> recentTimeline = new();
         [SerializeField] private List<SensoryLifeProfile> sensoryProfiles = new();
+        [SerializeField] private List<VisibleLifeStateProfile> visibleLifeStateProfiles = new();
         [SerializeField] private List<IdentityExpressionProfile> identityProfiles = new();
         [SerializeField] private List<SocialRoleBurdenProfile> socialRoleBurdenProfiles = new();
         [SerializeField] private List<CognitiveDistortionProfile> cognitiveDistortionProfiles = new();
@@ -637,9 +671,11 @@ namespace Survivebest.Core
 
         public IReadOnlyList<PlaceAttachmentState> PlaceAttachments => placeAttachments;
         public IReadOnlyList<ThoughtMessage> RecentThoughts => recentThoughts;
+        public IReadOnlyList<InterpersonalImpressionProfile> InterpersonalImpressions => interpersonalImpressions;
         public IReadOnlyList<ProceduralLifeMoment> RecentMoments => recentMoments;
         public IReadOnlyList<LifeTimelineEntry> RecentTimeline => recentTimeline;
         public IReadOnlyList<SensoryLifeProfile> SensoryProfiles => sensoryProfiles;
+        public IReadOnlyList<VisibleLifeStateProfile> VisibleLifeStateProfiles => visibleLifeStateProfiles;
         public IReadOnlyList<IdentityExpressionProfile> IdentityProfiles => identityProfiles;
         public IReadOnlyList<SocialRoleBurdenProfile> SocialRoleBurdenProfiles => socialRoleBurdenProfiles;
         public IReadOnlyList<CognitiveDistortionProfile> CognitiveDistortionProfiles => cognitiveDistortionProfiles;
@@ -795,6 +831,7 @@ namespace Survivebest.Core
                 psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.SocialSupport, connection);
             }
 
+            UpdateVisibleLifeState(actor, pressure, progress);
             PublishEvent(actor.CharacterId, SimulationEventType.DayStageChanged, $"hour_{hour}", "Hourly life pulse simulated", (pressure + connection + progress) / 3f);
         }
 
@@ -857,6 +894,49 @@ namespace Survivebest.Core
             }
 
             return generated;
+        }
+
+        public VisibleLifeStateProfile UpdateVisibleLifeState(CharacterCore actor, float pressureLevel, float accomplishment)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            float pressure = Mathf.Clamp01(pressureLevel);
+            float progress = Mathf.Clamp01(accomplishment);
+            MentalHealthProfile mental = psychologicalGrowthMentalHealthEngine != null
+                ? psychologicalGrowthMentalHealthEngine.GetOrCreateProfile(actor.CharacterId)
+                : null;
+            HumanMicroConditionProfile micro = FindProfile(actor.CharacterId, humanMicroConditionProfiles);
+
+            float fatigue = Mathf.Clamp01((mental != null ? (mental.StressLevel + mental.BurnoutLevel) / 220f : 0.2f) + (micro != null ? Mathf.Max(micro.SleepDebtFog, micro.TensionHeadache, micro.SoreFeet) * 0.35f : 0f));
+            float confidence = Mathf.Clamp01((mental != null ? mental.SelfEsteem / 100f : 0.5f) + (progress * 0.15f) - (pressure * 0.12f));
+            float wear = Mathf.Clamp01((pressure * 0.45f) + fatigue * 0.35f + (micro != null ? Mathf.Max(micro.HangnailPain, micro.SeasonalSkinIrritation, micro.DryEyes) * 0.2f : 0f));
+
+            VisibleLifeStateProfile profile = FindProfile(actor.CharacterId, visibleLifeStateProfiles);
+            if (profile == null)
+            {
+                profile = new VisibleLifeStateProfile { CharacterId = actor.CharacterId };
+                visibleLifeStateProfiles.Add(profile);
+            }
+
+            profile.Posture = fatigue > 0.72f ? "slouched" : confidence > 0.62f ? "upright" : "guarded";
+            profile.EyeState = fatigue > 0.68f ? "tired eyes" : wear > 0.55f ? "drawn" : "clear";
+            profile.BodyState = progress > 0.7f ? "active" : fatigue > 0.65f ? "worn down" : "steady";
+            profile.WearState = wear > 0.72f ? "weathered" : wear > 0.45f ? "lived-in" : "fresh";
+            profile.VisibleFatigue = fatigue;
+            profile.LifeWear = wear;
+            profile.VisibleConfidence = confidence;
+            profile.LastDay = worldClock != null ? worldClock.Day : 0;
+            profile.LastHour = worldClock != null ? worldClock.Hour : 0;
+
+            if (wear > 0.7f)
+            {
+                AppendThought(actor, "visible_state", $"It shows on you today: {profile.EyeState}, {profile.Posture} posture, and a {profile.WearState} kind of fatigue.", wear, null);
+            }
+
+            return profile;
         }
 
         public SensoryLifeProfile SetSensoryProfile(CharacterCore actor, SensoryLifeProfile profile)
@@ -1202,6 +1282,11 @@ namespace Survivebest.Core
                 return FindProfile(characterId, sensoryProfiles) as T;
             }
 
+            if (typeof(T) == typeof(VisibleLifeStateProfile))
+            {
+                return FindProfile(characterId, visibleLifeStateProfiles) as T;
+            }
+
             if (typeof(T) == typeof(IdentityExpressionProfile))
             {
                 return FindProfile(characterId, identityProfiles) as T;
@@ -1381,6 +1466,78 @@ namespace Survivebest.Core
             return moment;
         }
 
+        public InterpersonalImpressionProfile GenerateInterpersonalImpression(CharacterCore actor, CharacterCore target, string contextTag, float pressure = 0.5f, float socialOpportunity = 0.5f)
+        {
+            if (actor == null || target == null || actor == target)
+            {
+                return null;
+            }
+
+            string actorId = actor.CharacterId;
+            string targetId = target.CharacterId;
+            string normalizedContext = string.IsNullOrWhiteSpace(contextTag) ? "ambient_read" : contextTag;
+
+            List<RelationshipMemory> relatedMemories = relationshipMemorySystem != null
+                ? relationshipMemorySystem.GetMemoriesForCharacter(actorId).FindAll(memory => memory != null &&
+                    ((memory.SubjectCharacterId == actorId && memory.TargetCharacterId == targetId) ||
+                     (memory.SubjectCharacterId == targetId && memory.TargetCharacterId == actorId)))
+                : new List<RelationshipMemory>();
+
+            int netImpact = 0;
+            float strongestMemoryWeight = 0f;
+            for (int i = 0; i < relatedMemories.Count; i++)
+            {
+                RelationshipMemory memory = relatedMemories[i];
+                netImpact += memory.Impact;
+                strongestMemoryWeight = Mathf.Max(strongestMemoryWeight, memory.Importance + memory.TraumaIntensity + memory.RepetitionStrength);
+            }
+
+            CognitiveDistortionProfile distortion = FindProfile(actorId, cognitiveDistortionProfiles);
+            AttachmentStyleProfile attachment = FindProfile(actorId, attachmentStyleProfiles);
+            InnerMonologueProfile monologue = FindProfile(actorId, innerMonologueProfiles);
+            FriendshipConstellationProfile friendships = FindProfile(actorId, friendshipConstellationProfiles);
+
+            float warmth = Mathf.Clamp(netImpact / 120f, -1f, 1f);
+            float suspicion = Mathf.Clamp01((pressure * 0.25f) + (distortion != null ? distortion.GetDominantIntensity() * 0.2f : 0f) + Mathf.Max(0f, -warmth * 0.45f));
+            float familiarity = Mathf.Clamp01((relatedMemories.Count / 6f) + (friendships != null && friendships.InnerCircleIds.Contains(targetId) ? 0.35f : 0f));
+            float misreadRisk = Mathf.Clamp01((distortion != null ? distortion.GetDominantIntensity() * 0.35f : 0f) + (monologue != null ? monologue.IntrusiveThoughtFrequency * 0.2f : 0f) + (pressure * 0.15f));
+
+            if (attachment != null)
+            {
+                suspicion = Mathf.Clamp01(suspicion + (attachment.JealousySensitivity * 0.15f) + (attachment.AttachmentStyle == AttachmentStyle.Avoidant ? 0.08f : 0f));
+                warmth = Mathf.Clamp(warmth + (attachment.AttachmentStyle == AttachmentStyle.Secure ? 0.12f : 0f) - (attachment.AttachmentStyle == AttachmentStyle.Avoidant ? 0.08f : 0f), -1f, 1f);
+            }
+
+            string vibe = ResolveVibeLabel(warmth, suspicion, familiarity, socialOpportunity);
+            string memoryHook = relatedMemories.Count > 0 ? BuildMemoryHook(relatedMemories) : BuildNoveltyHook(target.DisplayName, familiarity);
+            string thought = BuildImpressionThought(actor, target, normalizedContext, vibe, warmth, suspicion, misreadRisk, memoryHook);
+
+            InterpersonalImpressionProfile profile = FindInterpersonalImpression(actorId, targetId);
+            if (profile == null)
+            {
+                profile = new InterpersonalImpressionProfile
+                {
+                    CharacterId = actorId,
+                    TargetCharacterId = targetId
+                };
+                interpersonalImpressions.Add(profile);
+            }
+
+            profile.LastContext = normalizedContext;
+            profile.CurrentImpression = thought;
+            profile.VibeLabel = vibe;
+            profile.Warmth = warmth;
+            profile.Suspicion = suspicion;
+            profile.Familiarity = familiarity;
+            profile.MisreadRisk = misreadRisk;
+            profile.LastDay = worldClock != null ? worldClock.Day : 0;
+            profile.LastHour = worldClock != null ? worldClock.Hour : 0;
+
+            AppendThought(actor, "social_impression", thought, Mathf.Clamp01(0.35f + strongestMemoryWeight * 0.25f + suspicion * 0.2f + Mathf.Abs(warmth) * 0.15f), null);
+            RecordLifeTimelineEvent(actor, $"Read on {target.DisplayName}", thought, "social_impression");
+            return profile;
+        }
+
         public string BuildHumanTextureSummary(string characterId)
         {
             if (string.IsNullOrWhiteSpace(characterId))
@@ -1389,6 +1546,7 @@ namespace Survivebest.Core
             }
 
             SensoryLifeProfile sensory = FindProfile(characterId, sensoryProfiles);
+            VisibleLifeStateProfile visibleState = FindProfile(characterId, visibleLifeStateProfiles);
             IdentityExpressionProfile identity = FindProfile(characterId, identityProfiles);
             SocialRoleBurdenProfile burden = FindProfile(characterId, socialRoleBurdenProfiles);
             CognitiveDistortionProfile distortion = FindProfile(characterId, cognitiveDistortionProfiles);
@@ -1414,6 +1572,11 @@ namespace Survivebest.Core
             if (identity != null)
             {
                 parts.Add($"Identity tension: public {identity.PublicSelf} vs private {identity.PrivateSelf}");
+            }
+
+            if (visibleState != null)
+            {
+                parts.Add($"Visible state: {visibleState.Posture}, {visibleState.EyeState}, {visibleState.WearState}");
             }
 
             if (burden != null && burden.SecretDoubleLifeBurden > 0.2f)
@@ -2229,6 +2392,89 @@ namespace Survivebest.Core
             }
 
             return null;
+        }
+
+        private InterpersonalImpressionProfile FindInterpersonalImpression(string characterId, string targetCharacterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(targetCharacterId))
+            {
+                return null;
+            }
+
+            for (int i = 0; i < interpersonalImpressions.Count; i++)
+            {
+                InterpersonalImpressionProfile profile = interpersonalImpressions[i];
+                if (profile != null && profile.CharacterId == characterId && profile.TargetCharacterId == targetCharacterId)
+                {
+                    return profile;
+                }
+            }
+
+            return null;
+        }
+
+        private static string ResolveVibeLabel(float warmth, float suspicion, float familiarity, float socialOpportunity)
+        {
+            if (suspicion > 0.62f)
+            {
+                return familiarity > 0.4f ? "guarded" : "wary";
+            }
+
+            if (warmth > 0.45f)
+            {
+                return socialOpportunity > 0.6f ? "easy" : "fond";
+            }
+
+            if (familiarity < 0.2f)
+            {
+                return "unclear";
+            }
+
+            return "mixed";
+        }
+
+        private static string BuildMemoryHook(List<RelationshipMemory> memories)
+        {
+            memories.Sort((a, b) => (b.Importance + b.RepetitionStrength + b.TraumaIntensity).CompareTo(a.Importance + a.RepetitionStrength + a.TraumaIntensity));
+            RelationshipMemory anchor = memories[0];
+            string tint = anchor.EmotionalTint.ToString().ToLowerInvariant();
+            return $"The {anchor.Topic} memory is still sitting there with a {tint} edge.";
+        }
+
+        private static string BuildNoveltyHook(string targetName, float familiarity)
+        {
+            if (familiarity < 0.15f)
+            {
+                return $"You are still trying to figure out what {targetName} is really like.";
+            }
+
+            return $"You know enough about {targetName} to notice the small shifts in tone.";
+        }
+
+        private string BuildImpressionThought(CharacterCore actor, CharacterCore target, string contextTag, string vibe, float warmth, float suspicion, float misreadRisk, string memoryHook)
+        {
+            string context = contextTag.Replace('_', ' ').ToLowerInvariant();
+            string read = vibe switch
+            {
+                "easy" => $"{target.DisplayName} feels easy to be around during {context}.",
+                "fond" => $"You catch yourself softening toward {target.DisplayName} during {context}.",
+                "guarded" => $"Something in {target.DisplayName}'s vibe makes you hold part of yourself back during {context}.",
+                "wary" => $"You do not fully trust the read you are getting from {target.DisplayName} during {context}.",
+                "unclear" => $"{target.DisplayName} is still hard to read during {context}.",
+                _ => $"Your read on {target.DisplayName} feels mixed during {context}."
+            };
+
+            string subtext = suspicion > Mathf.Max(0.45f, warmth + 0.2f)
+                ? "Part of you keeps scanning for a hidden angle."
+                : warmth > 0.35f
+                    ? "Part of you wants to lean closer and believe the moment is real."
+                    : "You are collecting small details before deciding what this means.";
+
+            string distortion = misreadRisk > 0.5f
+                ? $"There is also a real chance you are reading {target.DisplayName} through stress instead of clarity."
+                : string.Empty;
+
+            return string.Join(" ", new[] { read, memoryHook, subtext, distortion }.Where(part => !string.IsNullOrWhiteSpace(part)));
         }
 
         private void AppendThought(CharacterCore actor, string source, string body, float intensity, string placeId)
