@@ -12,6 +12,8 @@ using Survivebest.Crime;
 using Survivebest.World;
 using Survivebest.Quest;
 using Survivebest.Dialogue;
+using Survivebest.Application;
+using Survivebest.Economy;
 
 namespace Survivebest.UI
 {
@@ -44,8 +46,16 @@ namespace Survivebest.UI
         [SerializeField] private DaySliceManager daySliceManager;
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private TownSimulationManager townSimulationManager;
         [SerializeField] private NarrativePromptSystem narrativePromptSystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
+        [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private VampireDepthSystem vampireDepthSystem;
+        [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
+        [SerializeField] private LongTermProgressionSystem longTermProgressionSystem;
+        [SerializeField] private AchievementSystem achievementSystem;
+        [SerializeField] private GameHUD gameHUD;
 
         [Header("Map / Nav")]
         [SerializeField] private Text locationNavigatorText;
@@ -80,7 +90,11 @@ namespace Survivebest.UI
         [SerializeField] private Text suggestedActionsText;
         [SerializeField] private Text worldPulseText;
         [SerializeField] private Text legalPressureText;
+        [SerializeField] private Text completionismText;
+        [SerializeField] private Text onboardingText;
+        [SerializeField] private Text parityText;
 
+        private readonly GameplayFacade gameplayFacade = new();
         private readonly StringBuilder builder = new();
         private CharacterCore currentCharacter;
         private NeedsSystem currentNeeds;
@@ -469,6 +483,52 @@ namespace Survivebest.UI
             if (legalPressureText != null)
             {
                 legalPressureText.text = BuildLegalPressureText();
+            }
+
+            RefreshOverviewPanels();
+        }
+
+        private void RefreshOverviewPanels()
+        {
+            if (completionismText == null && onboardingText == null && parityText == null)
+            {
+                return;
+            }
+
+            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(
+                householdManager,
+                economyInventorySystem,
+                locationManager,
+                justiceSystem,
+                relationshipMemorySystem,
+                vampireDepthSystem,
+                worldClock,
+                weatherManager,
+                townSimulationManager,
+                humanLifeExperienceLayerSystem,
+                gameplayLifeLoopOrchestrator,
+                longTermProgressionSystem,
+                achievementSystem);
+
+            if (completionismText != null)
+            {
+                completionismText.text = gameHUD != null
+                    ? gameHUD.BuildCompletionismDigest(overview.Completionism)
+                    : $"Completionism: {overview.Completionism.AchievementsUnlocked}/{overview.Completionism.TotalAchievements} achievements";
+            }
+
+            if (onboardingText != null)
+            {
+                onboardingText.text = gameHUD != null
+                    ? gameHUD.BuildOnboardingDigest(overview.Onboarding, overview.Parity)
+                    : $"Step: {overview.Onboarding.CurrentStep}";
+            }
+
+            if (parityText != null)
+            {
+                parityText.text = overview.Parity.ReadyForSaveLoadParity
+                    ? "Save/Load parity ready for verification."
+                    : $"Missing parity checks: {string.Join(", ", overview.Parity.MissingChecks)}";
             }
         }
 
