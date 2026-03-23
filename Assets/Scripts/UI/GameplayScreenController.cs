@@ -526,9 +526,12 @@ namespace Survivebest.UI
 
             if (parityText != null)
             {
+                string nextMissingProof = overview.Onboarding != null && overview.Onboarding.RemainingProofs.Count > 0
+                    ? overview.Onboarding.RemainingProofs[0]
+                    : "All visible slice proofs covered.";
                 parityText.text = overview.Parity.ReadyForSaveLoadParity
-                    ? "Save/Load parity ready for verification."
-                    : $"Missing parity checks: {string.Join(", ", overview.Parity.MissingChecks)}";
+                    ? $"Save/Load parity ready for verification. Slice status: {overview.Onboarding.CompletedSliceChecks}/{overview.Onboarding.TotalSliceChecks} proofs."
+                    : $"Missing parity checks: {string.Join(", ", overview.Parity.MissingChecks)} | Next slice proof: {nextMissingProof}";
             }
         }
 

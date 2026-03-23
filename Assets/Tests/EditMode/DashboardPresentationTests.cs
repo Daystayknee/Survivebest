@@ -86,7 +86,8 @@ namespace Survivebest.Tests.EditMode
                 SocialClass = "Working",
                 NextMilestone = "Neighborhood Fixture",
                 FeaturedGoals = new System.Collections.Generic.List<string> { "Finish first work week (3/5)" },
-                EndlessOptionsStatus = "Human Day Slice ship gate incomplete (8/12 proofs). Finish the full slice before endless play expands."
+                EndlessOptionsStatus = "Human Day Slice ship gate incomplete (8/12 proofs). Finish the full slice before endless play expands.",
+                EndlessOptions = new System.Collections.Generic.List<string> { "Complete the 12-step Human Day Slice proof checklist first." }
             });
             string onboarding = hud.BuildOnboardingDigest(
                 new Survivebest.Application.OnboardingSummaryViewModel
@@ -94,7 +95,8 @@ namespace Survivebest.Tests.EditMode
                     CurrentStep = "Morning upkeep",
                     CompletedSliceChecks = 8,
                     TotalSliceChecks = 12,
-                    Prompts = new System.Collections.Generic.List<string> { "Take a shower before leaving the apartment." }
+                    Prompts = new System.Collections.Generic.List<string> { "Take a shower before leaving the apartment." },
+                    RemainingProofs = new System.Collections.Generic.List<string> { "10. End day." }
                 },
                 new Survivebest.Application.HumanDaySliceParityViewModel
                 {
@@ -105,8 +107,10 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("Progress:", completionism);
             StringAssert.Contains("Next milestone:", completionism);
             StringAssert.Contains("Endless:", completionism);
+            StringAssert.Contains("Next endless option:", completionism);
             StringAssert.Contains("Step:", onboarding);
             StringAssert.Contains("Slice:", onboarding);
+            StringAssert.Contains("Next proof:", onboarding);
             StringAssert.Contains("Parity:", onboarding);
 
             Object.DestroyImmediate(go);
@@ -173,8 +177,10 @@ namespace Survivebest.Tests.EditMode
             typeof(GameplayScreenController).GetMethod("RefreshDashboardLegibility", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(controller, null);
 
             StringAssert.Contains("Progress:", completionismText.text);
+            StringAssert.Contains("Next endless option:", completionismText.text);
             StringAssert.Contains("Step:", onboardingText.text);
-            StringAssert.Contains("Save/Load parity", parityText.text);
+            StringAssert.Contains("Next proof:", onboardingText.text);
+            StringAssert.Contains("Next slice proof:", parityText.text);
 
             Object.DestroyImmediate(completionismGo);
             Object.DestroyImmediate(onboardingGo);

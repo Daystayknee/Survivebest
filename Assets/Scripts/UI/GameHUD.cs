@@ -284,6 +284,7 @@ namespace Survivebest.UI
 
             string featuredGoal = summary.FeaturedGoals != null && summary.FeaturedGoals.Count > 0 ? summary.FeaturedGoals[0] : "No featured goal.";
             string endless = summary.EndlessOptionsStatus ?? "Endless options status unavailable.";
+            string nextEndlessOption = summary.EndlessOptions != null && summary.EndlessOptions.Count > 0 ? summary.EndlessOptions[0] : "No endless option queued.";
             return $"Progress: {summary.AchievementsUnlocked}/{summary.TotalAchievements} achievements • {summary.GoalsCompleted}/{summary.TotalGoals} goals • {summary.MilestonesUnlocked}/{summary.TotalMilestones} milestones
 " +
                    $"Legacy: Fame {summary.Fame}, Prestige {summary.HousePrestige}, Infamy {summary.Infamy}, Class {summary.SocialClass}
@@ -292,7 +293,9 @@ namespace Survivebest.UI
 " +
                    $"Featured goal: {featuredGoal}
 " +
-                   $"Endless: {endless}";
+                   $"Endless: {endless}
+" +
+                   $"Next endless option: {nextEndlessOption}";
         }
 
         public string BuildOnboardingDigest(Survivebest.Application.OnboardingSummaryViewModel onboarding, Survivebest.Application.HumanDaySliceParityViewModel parity)
@@ -305,12 +308,18 @@ namespace Survivebest.UI
             string step = onboarding != null && !string.IsNullOrWhiteSpace(onboarding.CurrentStep) ? onboarding.CurrentStep : "No current step";
             string prompt = onboarding != null && onboarding.Prompts != null && onboarding.Prompts.Count > 0 ? onboarding.Prompts[0] : "No onboarding prompt.";
             string progress = onboarding != null ? $"Slice: {onboarding.CompletedSliceChecks}/{Math.Max(1, onboarding.TotalSliceChecks)} proofs" : "Slice: unavailable";
+            string nextProof = onboarding != null && onboarding.RemainingProofs != null && onboarding.RemainingProofs.Count > 0
+                ? $"Next proof: {onboarding.RemainingProofs[0]}"
+                : onboarding != null && onboarding.HumanDaySliceShipReady
+                    ? "Next proof: slice ship gate complete."
+                    : "Next proof: unavailable.";
             string parityLine = parity != null
                 ? parity.ReadyForSaveLoadParity ? "Parity: ready for save/load verification." : $"Parity: missing {parity.MissingChecks.Count} checks before verification."
                 : "Parity: unavailable.";
             return $"Step: {step}
 Prompt: {prompt}
 {progress}
+{nextProof}
 {parityLine}";
         }
 
