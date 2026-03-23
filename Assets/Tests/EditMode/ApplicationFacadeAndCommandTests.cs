@@ -246,6 +246,7 @@ namespace Survivebest.Tests.EditMode
             CollectionAssert.Contains(panel.MicroActions, "Show up socially and strengthen bonds.");
             CollectionAssert.DoesNotContain(panel.MicroActions, "review_shift_plan");
 
+            Object.DestroyImmediate(otherUiGo);
             Object.DestroyImmediate(root);
         }
 
