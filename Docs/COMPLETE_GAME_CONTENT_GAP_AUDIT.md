@@ -51,6 +51,150 @@ For this project to play like a real finished game, it still needs all of these 
 
 ---
 
+## 2.5 Directional pillars the game still must hit
+
+The earlier version of this audit cataloged content breadth well, but it still needed a more direct statement of the **kind of game-feel** Survivebest must chase. The project does not only need “more stuff.” It needs more **life truth, social realism, autonomy, consequence, and emotional weight**.
+
+### Pillar 1: True life depth, not just meters
+The game already tracks needs and many simulation values, but a finished version still needs systems that make a person feel lived-in instead of stat-driven.
+
+#### Missing implementation work
+- Personality evolution over time from repeated choices, not just fixed starting traits.
+- Trauma, grief, shame, pride, regret, and resilience memories that alter future reactions.
+- Habit formation and habit relapse loops.
+- Private beliefs, values, and worldview conflicts.
+- Internal thoughts, intrusive thoughts, self-talk, and reflection logs.
+- Long-tail consequences where one event can echo for weeks or years.
+
+#### Must-have player-facing outcomes
+- Characters should remember *why* they fear, trust, avoid, or want something.
+- Two characters with the same stats should still behave differently because of history.
+- “Bad month” and “good month” arcs should exist naturally.
+
+### Pillar 2: Real social interaction
+Relationship bars alone are not enough. The game still needs social systems that make people feel specific, awkward, messy, and human.
+
+#### Missing implementation work
+- Context-aware dialogue that checks mood, relationship history, location, urgency, class, age, attraction, reputation, and recent events.
+- Conversation memory: promises, insults, jokes, secrets, betrayals, flirting history, apologies, and shared milestones.
+- Multi-step social states such as awkwardness, chemistry, resentment, obligation, dependency, fear, admiration, and contempt.
+- Social consequences that spread through households, friend groups, workplaces, schools, and districts.
+- Independent NPC routines that generate relationships even without the player present.
+
+#### Must-have player-facing outcomes
+- Arguments should not reset after one dialogue.
+- Rejection should affect confidence, gossip, and future options.
+- NPCs should date, feud, reconcile, and drift apart without waiting for the player.
+
+### Pillar 3: A world that exists without you
+A believable life sim cannot be a player-centered diorama. The town still needs to keep moving when the player is busy elsewhere.
+
+#### Missing implementation work
+- Autonomous household and town event generation.
+- NPC-to-NPC relationship progression off-screen.
+- Off-screen promotions, layoffs, breakups, births, moves, illnesses, arrests, and deaths.
+- Shifting shop inventories, service outages, price swings, elections, school events, and district safety changes.
+- News/rumor summaries so the player can learn what changed while away.
+
+#### Must-have player-facing outcomes
+- You should miss events and hear about them later.
+- The town should feel older, richer, poorer, safer, or more chaotic over time.
+- “I was not there, but life happened anyway” should be normal.
+
+### Pillar 4: Real consequences and pressure
+Survival and life management both need teeth. The game still needs consequences that alter story direction instead of only creating temporary stat dips.
+
+#### Missing implementation work
+- Lasting injury/scar/disability consequences.
+- Debt spirals, eviction, job loss, criminal records, school failure, burnout, and addiction relapses.
+- Scarcity tuning so food, money, medicine, housing quality, and time can become real pressure.
+- Moral choices with mutually exclusive outcomes.
+- Failure-forward systems where losing changes the run rather than simply ending it.
+
+#### Must-have player-facing outcomes
+- A single bad season can permanently redirect a family.
+- The cheapest short-term choice should sometimes create long-term damage.
+- Recovery arcs should be playable, not abstract.
+
+### Pillar 5: Life-loop variety
+The game needs daily variety so the loop does not collapse into “fill bars, go to work, repeat.”
+
+#### Missing implementation work
+- Unpredictable disruptions: illness, surprise bills, gossip, outages, accidents, pregnancy, layoffs, invitations, storms, and neighborhood drama.
+- Rare opportunities: scholarships, inheritances, chance meetings, discounts, lucky finds, mentorships, and sudden career openings.
+- Daily texture events: bad sleep, awkward text messages, cravings, weather mood shifts, memory triggers, noisy neighbors, child problems, vehicle issues.
+- Stronger narrative emergence from overlapping systems rather than only quests.
+
+### Pillar 6: Character creation with lineage and behavior
+The repo already supports genetics-facing systems, but the game still needs those systems to matter deeply in play.
+
+#### Missing implementation work
+- Genetic influence on metabolism, health risk, aging, fertility, stature, facial resemblance, hair traits, and recovery.
+- Personality inheritance tendencies and family temperament patterns.
+- Household culture inheritance: values, recipes, taboos, conflict styles, and class habits.
+- Generational mutation over time as nurture modifies nature.
+
+#### Must-have player-facing outcomes
+- Family resemblance should be visible *and* behavioral.
+- Children should feel like they came from specific parents, not a random generator.
+
+### Pillar 7: Realistic daily life systems
+A lot of the “boring parts” are actually the fantasy of a life sim. They need to be deep enough to produce stories.
+
+#### Missing implementation work
+- Full rent, debt, bills, late fees, credit damage, and shutoff pressure.
+- Time management stress between work, school, errands, care work, hygiene, cooking, rest, and relationships.
+- Jobs that are playable loops rather than invisible rabbit holes.
+- Household complexity such as unequal labor, childcare load, clutter drift, maintenance, and shared budgeting conflict.
+
+### Pillar 8: Interconnected systems
+This is one of the most important missing pieces. The game still needs stronger chains between systems so life feels entangled.
+
+#### Required chain examples
+- Mood -> concentration -> job performance -> income -> rent stress -> household conflict.
+- Weather -> illness risk -> energy -> missed shift -> reputation -> promotion loss.
+- Social rejection -> loneliness -> substance use risk -> debt/crime risk -> legal trouble.
+- Good meal + good sleep + affectionate household climate -> resilience + productivity + patience.
+- Injury -> mobility loss -> transport problems -> missed obligations -> cascading relationships damage.
+
+### Pillar 9: Emotional weight and soul
+The game still needs emotional readability and attachment systems so the player cares about outcomes.
+
+#### Missing implementation work
+- Memory-rich journal presentation instead of only event spam.
+- Milestone framing for birthdays, funerals, first love, breakups, recoveries, graduations, evictions, and deaths.
+- Keepsakes, heirlooms, favorite places, comfort objects, and grief objects.
+- More reflective text and UI that tells the player what a life *means*, not only what changed numerically.
+
+### Pillar 10: Identity and purpose
+The player needs to answer “who is this person becoming?”
+
+#### Missing implementation work
+- Life direction systems: provider, artist, survivor, social climber, rebel, caretaker, criminal, healer, community leader, drifter.
+- Belief/value identity tracks: faith, ambition, family duty, independence, justice, status, generosity, hedonism, discipline.
+- Self-concept shifts when actions repeatedly contradict stated values.
+- Purpose loops where goals are chosen, abandoned, rediscovered, or inherited.
+
+#### Must-have player-facing outcomes
+- A run should be describable as a life story, not only as optimization.
+- The player should feel they authored a worldview and direction, not just a schedule.
+
+---
+
+## 2.6 Highest-priority systems to build next if the goal is “make it feel alive”
+
+If the question is not “what is missing in general?” but “what should be built first so the game stops feeling fake?”, these are the most important additions:
+
+1. **Long-term memory + consequence graph** connecting dialogue, trauma, betrayal, milestones, and habit formation.
+2. **Context-aware social dialogue system** with memory references, social awkwardness, chemistry, and consequences.
+3. **Off-screen autonomous NPC/world progression** with player-readable news summaries.
+4. **Real pressure economy** with bills, debt, scarcity, and recovery paths.
+5. **Identity/purpose system** that tracks who the character is becoming, not only what they own.
+6. **Interconnection pass** where mood, weather, money, health, reputation, and relationships chain into one another more aggressively.
+7. **Emotional presentation layer** for journal, memories, milestones, and aftermath.
+
+---
+
 ## 3. Biggest missing gameplay systems by category
 
 These are the highest-value missing systems or underdeveloped systems.
