@@ -270,7 +270,9 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotEmpty(onboarding.Prompts);
             Assert.IsTrue(parity.ReadyForSaveLoadParity);
             CollectionAssert.Contains(parity.CompletedChecks, "room_context");
+            CollectionAssert.Contains(parity.CompletedChecks, "day_slice_step");
             CollectionAssert.Contains(parity.CompletedChecks, "onboarding_prompt");
+            CollectionAssert.Contains(parity.CompletedChecks, "day_flow_progress");
         }
 
         [Test]
@@ -359,17 +361,6 @@ namespace Survivebest.Tests.EditMode
             CollectionAssert.Contains(panel.MicroActions, "send_short_text");
             CollectionAssert.Contains(panel.MicroActions, "Show up socially and strengthen bonds.");
             CollectionAssert.DoesNotContain(panel.MicroActions, "review_shift_plan");
-
-            HouseholdManager household = root.AddComponent<HouseholdManager>();
-            household.AddMember(character);
-            household.SetActiveCharacter(character);
-
-            LocationManager location = root.AddComponent<LocationManager>();
-            location.SetRooms(new List<Room>
-            {
-                new Room { RoomName = "Bus Stop", Theme = LocationTheme.Nature, AreaName = "Midtown" }
-            });
-            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Bus Stop"));
 
             JusticeSystem justice = root.AddComponent<JusticeSystem>();
             RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();

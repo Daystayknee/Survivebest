@@ -28,6 +28,7 @@ namespace Survivebest.Utility
     {
         public string Title;
         public List<ValidationIssue> Issues = new();
+        public List<ValidationIssue> Entries => Issues;
         public bool HasErrors => Issues.Exists(issue => issue != null && issue.Severity == ValidationSeverity.Error);
 
         public void Add(ValidationSeverity severity, string code, string message)

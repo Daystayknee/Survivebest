@@ -958,8 +958,17 @@ namespace Survivebest.Application
             if (overview.Actions.BlockedActionMessages != null && overview.Actions.BlockedActionMessages.Count > 0) vm.CompletedChecks.Add("blocked_action_reasoning");
             else vm.MissingChecks.Add("blocked_action_reasoning: blocked actions lack explicit explanation.");
 
+            if (overview.Onboarding != null && !string.IsNullOrWhiteSpace(overview.Onboarding.CurrentStep)) vm.CompletedChecks.Add("day_slice_step");
+            else vm.MissingChecks.Add("day_slice_step: the current Human Day Slice milestone is not visible.");
+
             if (overview.Onboarding != null && overview.Onboarding.Prompts.Count > 0) vm.CompletedChecks.Add("onboarding_prompt");
             else vm.MissingChecks.Add("onboarding_prompt: first-day guidance is missing.");
+
+            bool hasDaySliceFlowProof = overview.Onboarding != null
+                && !string.IsNullOrWhiteSpace(overview.Onboarding.CurrentStep)
+                && overview.Onboarding.Prompts.Count > 0;
+            if (hasDaySliceFlowProof) vm.CompletedChecks.Add("day_flow_progress");
+            else vm.MissingChecks.Add("day_flow_progress: the save/load proof is missing the current step and prompt pair that explain day progression.");
 
             vm.ReadyForSaveLoadParity = vm.MissingChecks.Count == 0;
             return vm;
