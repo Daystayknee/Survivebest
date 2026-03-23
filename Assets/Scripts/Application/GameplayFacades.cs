@@ -61,63 +61,115 @@ namespace Survivebest.Application
             VisibleLifeStateProfile visible = activeCharacter != null && humanLifeExperienceLayerSystem != null
                 ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(activeCharacter.CharacterId)
                 : null;
-            LifeTradeoffPrompt tradeoff = null;
-            if (activeCharacter != null && gameplayLifeLoopOrchestrator != null)
-            {
-                IReadOnlyList<LifeTradeoffPrompt> tradeoffs = gameplayLifeLoopOrchestrator.RecentTradeoffs;
-                for (int i = tradeoffs.Count - 1; i >= 0; i--)
-                {
-                    if (tradeoffs[i] != null && tradeoffs[i].CharacterId == activeCharacter.CharacterId)
-                    {
-                        tradeoff = tradeoffs[i];
-                        break;
-                    }
-                }
-            }
+            LifeTradeoffPrompt tradeoff = FindLatestTradeoffForCharacter(gameplayLifeLoopOrchestrator, activeCharacter != null ? activeCharacter.CharacterId : null);
 
             if (needs != null && needs.Hunger < 35f)
             {
                 vm.InstantAction = "eat_quick_meal";
                 vm.AutomationHint = "Fast survival action: eat something immediately before deeper planning.";
-                vm.MicroActions.Add("grab_snack");
-                vm.MicroActions.Add("drink_water");
+                AddUniqueMicroAction(vm.MicroActions, "grab_snack");
+                AddUniqueMicroAction(vm.MicroActions, "drink_water");
             }
             else if ((needs != null && needs.Energy < 30f) || (visible != null && visible.VisibleFatigue > 0.65f))
             {
                 vm.InstantAction = "sit_and_breathe";
                 vm.AutomationHint = "Fast recovery action: lower pressure first, then resume the bigger plan.";
-                vm.MicroActions.Add("sit_down");
-                vm.MicroActions.Add("slow_breath");
+                AddUniqueMicroAction(vm.MicroActions, "sit_down");
+                AddUniqueMicroAction(vm.MicroActions, "slow_breath");
             }
-            else if (tradeoff != null && tradeoff.RiskLabel == "connection_vs_control")
+            else if (tradeoff != null && TryResolveTradeoffFastAction(vm, tradeoff))
             {
-                vm.InstantAction = "send_check_in_text";
-                vm.AutomationHint = "Fast social action: protect the relationship without committing the whole day.";
-                vm.MicroActions.Add("check_phone");
-                vm.MicroActions.Add("send_short_text");
             }
             else if (locationManager != null && locationManager.CurrentRoom != null && locationManager.CurrentRoom.Theme == LocationTheme.Residential)
             {
                 vm.InstantAction = "do_fast_tidy";
                 vm.AutomationHint = "Fast home action: improve the room without opening a long management flow.";
-                vm.MicroActions.Add("pick_up_clutter");
-                vm.MicroActions.Add("straighten_space");
+                AddUniqueMicroAction(vm.MicroActions, "pick_up_clutter");
+                AddUniqueMicroAction(vm.MicroActions, "straighten_space");
             }
             else
             {
                 vm.InstantAction = contextActions.Count > 0 ? contextActions[0] : "check_phone";
                 vm.AutomationHint = "Fast contextual action: the panel is surfacing the lowest-friction next step.";
-                vm.MicroActions.Add("quick_check");
+                AddUniqueMicroAction(vm.MicroActions, "quick_check");
             }
 
             if (tradeoff != null && !string.IsNullOrWhiteSpace(tradeoff.OptionA))
             {
-                vm.MicroActions.Add(tradeoff.OptionA);
+                AddUniqueMicroAction(vm.MicroActions, tradeoff.OptionA);
             }
             if (tradeoff != null && !string.IsNullOrWhiteSpace(tradeoff.OptionB))
             {
-                vm.MicroActions.Add(tradeoff.OptionB);
+                AddUniqueMicroAction(vm.MicroActions, tradeoff.OptionB);
             }
+        }
+
+        private static bool TryResolveTradeoffFastAction(ActionPanelViewModel vm, LifeTradeoffPrompt tradeoff)
+        {
+            if (vm == null || tradeoff == null)
+            {
+                return false;
+            }
+
+            switch (tradeoff.RiskLabel)
+            {
+                case "connection_vs_control":
+                    vm.InstantAction = "send_check_in_text";
+                    vm.AutomationHint = "Fast social action: protect the relationship without committing the whole day.";
+                    AddUniqueMicroAction(vm.MicroActions, "check_phone");
+                    AddUniqueMicroAction(vm.MicroActions, "send_short_text");
+                    return true;
+                case "burnout_vs_income":
+                case "stability_vs_rest":
+                    vm.InstantAction = "take_short_break";
+                    vm.AutomationHint = "Fast work-life action: stabilize your body before choosing how much labor to absorb.";
+                    AddUniqueMicroAction(vm.MicroActions, "step_away_briefly");
+                    AddUniqueMicroAction(vm.MicroActions, "review_shift_plan");
+                    return true;
+                case "nutrition_vs_cash":
+                    vm.InstantAction = "price_check_meal";
+                    vm.AutomationHint = "Fast budget-survival action: solve hunger with the cheapest decent option first.";
+                    AddUniqueMicroAction(vm.MicroActions, "check_wallet");
+                    AddUniqueMicroAction(vm.MicroActions, "compare_food_options");
+                    return true;
+                case "progress_vs_recovery":
+                    vm.InstantAction = "pause_and_reset";
+                    vm.AutomationHint = "Fast balance action: reduce damage now so momentum is still possible later.";
+                    AddUniqueMicroAction(vm.MicroActions, "name_next_step");
+                    AddUniqueMicroAction(vm.MicroActions, "drop_low_priority_task");
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static void AddUniqueMicroAction(List<string> microActions, string action)
+        {
+            if (microActions == null || string.IsNullOrWhiteSpace(action) || microActions.Contains(action))
+            {
+                return;
+            }
+
+            microActions.Add(action);
+        }
+
+        private static LifeTradeoffPrompt FindLatestTradeoffForCharacter(GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator, string characterId)
+        {
+            if (gameplayLifeLoopOrchestrator == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return null;
+            }
+
+            IReadOnlyList<LifeTradeoffPrompt> tradeoffs = gameplayLifeLoopOrchestrator.RecentTradeoffs;
+            for (int i = tradeoffs.Count - 1; i >= 0; i--)
+            {
+                if (tradeoffs[i] != null && tradeoffs[i].CharacterId == characterId)
+                {
+                    return tradeoffs[i];
+                }
+            }
+
+            return null;
         }
 
         private static List<string> BuildContextActions(CharacterCore activeCharacter, LocationManager locationManager, RelationshipMemorySystem relationshipMemorySystem)

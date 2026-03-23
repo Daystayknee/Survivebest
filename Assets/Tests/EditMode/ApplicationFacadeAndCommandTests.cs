@@ -195,9 +195,56 @@ namespace Survivebest.Tests.EditMode
             CollectionAssert.Contains(overview.AvailableActions, "text_contact");
             CollectionAssert.Contains(overview.AvailableActions, "manage_budget");
             CollectionAssert.Contains(overview.AvailableActions, "resolve_relationship_tension");
-            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Actions.InstantAction));
+            Assert.AreEqual("eat_quick_meal", overview.Actions.InstantAction);
             Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Actions.AutomationHint));
-            Assert.IsNotEmpty(overview.Actions.MicroActions);
+            CollectionAssert.Contains(overview.Actions.MicroActions, "grab_snack");
+
+            Object.DestroyImmediate(otherUiGo);
+            Object.DestroyImmediate(root);
+        }
+
+
+        [Test]
+        public void GameplayFacade_ActionPanel_UsesCharacterTradeoffForFastSocialAction()
+        {
+            GameObject root = new GameObject("GameplayFacadeTradeoffRoot");
+            CharacterCore character = root.AddComponent<CharacterCore>();
+            character.Initialize("char_social_ui", "Mira", LifeStage.Adult);
+            NeedsSystem needs = root.AddComponent<NeedsSystem>();
+            needs.ApplySnapshot(new NeedsSnapshot { Hunger = 72f, Energy = 68f, Mood = 55f, Hydration = 61f, BurnoutRisk = 35f, MentalFatigue = 28f, SleepDebt = 20f });
+
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            LocationManager location = root.AddComponent<LocationManager>();
+            location.SetRooms(new List<Room>
+            {
+                new Room { RoomName = "Bus Stop", Theme = LocationTheme.Nature, AreaName = "Midtown" }
+            });
+            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Bus Stop"));
+
+            JusticeSystem justice = root.AddComponent<JusticeSystem>();
+            RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
+            HumanLifeExperienceLayerSystem lifeUi = root.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loopUi = root.AddComponent<GameplayLifeLoopOrchestrator>();
+            lifeUi.UpdateVisibleLifeState(character, 0.25f, 0.8f);
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(loopUi, new List<LifeTradeoffPrompt>
+                {
+                    new LifeTradeoffPrompt { CharacterId = "other_char", RiskLabel = "burnout_vs_income", Tension = 0.9f },
+                    new LifeTradeoffPrompt { CharacterId = "char_social_ui", RiskLabel = "connection_vs_control", OptionA = "Show up socially and strengthen bonds.", OptionB = "Keep your time for recovery, chores, or money.", Tension = 0.8f }
+                });
+
+            GameplayFacade gameplayFacade = new GameplayFacade();
+            ActionPanelViewModel panel = gameplayFacade.BuildActionPanel(character, location, justice, memory, lifeUi, loopUi);
+
+            Assert.AreEqual("send_check_in_text", panel.InstantAction);
+            CollectionAssert.Contains(panel.MicroActions, "check_phone");
+            CollectionAssert.Contains(panel.MicroActions, "send_short_text");
+            CollectionAssert.Contains(panel.MicroActions, "Show up socially and strengthen bonds.");
+            CollectionAssert.DoesNotContain(panel.MicroActions, "review_shift_plan");
 
             Object.DestroyImmediate(otherUiGo);
             Object.DestroyImmediate(root);

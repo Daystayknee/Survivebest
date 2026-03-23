@@ -252,6 +252,12 @@ namespace Survivebest.UI
             string micro = state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0
                 ? state.MicroInteractionCues[0]
                 : "idle";
+            string recommendedAction = string.IsNullOrWhiteSpace(state.RecommendedAction)
+                ? "Choose the next meaningful action"
+                : state.RecommendedAction;
+            string lastEvent = string.IsNullOrWhiteSpace(state.LastEventTitle)
+                ? "None"
+                : state.LastEventTitle;
 
             return $"{state.SectionLabel} • {state.ScreenMood}
 " +
@@ -260,6 +266,10 @@ namespace Survivebest.UI
                    $"Ambient: {state.AmbientAudioSummary}
 " +
                    $"World reacts: {state.EnvironmentReactionSummary}
+" +
+                   $"Next: {recommendedAction}
+" +
+                   $"Last event: {lastEvent}
 " +
                    $"Micro: {micro}";
         }

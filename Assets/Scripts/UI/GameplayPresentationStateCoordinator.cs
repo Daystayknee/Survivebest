@@ -239,9 +239,18 @@ namespace Survivebest.UI
             } : "ambient uncertainty";
 
             float pressure = lifeLoopOrchestrator != null && lifeLoopOrchestrator.CurrentSnapshot != null ? lifeLoopOrchestrator.CurrentSnapshot.Pressure : 0.4f;
-            string pressureCue = pressure > 0.7f ? "mix narrows with stress and sharper transients" : "mix stays open and breathable";
+            VisibleLifeStateProfile visible = active != null && humanLifeExperienceLayerSystem != null
+                ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(active.CharacterId)
+                : null;
+            LifeTradeoffPrompt tradeoff = FindLatestTradeoff(active, lifeLoopOrchestrator);
+            string pressureCue = pressure > 0.7f || (visible != null && visible.VisibleFatigue > 0.6f)
+                ? "mix narrows with stress and sharper transients"
+                : "mix stays open and breathable";
             string wealthCue = economyInventorySystem != null && economyInventorySystem.Funds < 50f ? "cheap-light buzz and thin walls read through the space" : "the space carries cleaner, softer ambience";
-            return $"{roomCue}; {pressureCue}; {wealthCue}.";
+            string tradeoffCue = tradeoff != null && tradeoff.Tension > 0.6f
+                ? $"foreground details keep tugging at {tradeoff.RiskLabel.Replace('_', ' ')}"
+                : "room detail stays secondary to routine";
+            return $"{roomCue}; {pressureCue}; {wealthCue}; {tradeoffCue}.";
         }
 
         private static string BuildEnvironmentReactionSummary(Room room, CharacterCore active, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem, RelationshipMemorySystem relationshipMemorySystem, EconomyInventorySystem economyInventorySystem)
@@ -290,13 +299,10 @@ namespace Survivebest.UI
                 cues.Add("upright_weight_shift");
             }
 
-            if (lifeLoopOrchestrator != null && lifeLoopOrchestrator.RecentTradeoffs.Count > 0)
+            LifeTradeoffPrompt tradeoff = FindLatestTradeoff(active, lifeLoopOrchestrator);
+            if (tradeoff != null && tradeoff.Tension > 0.55f)
             {
-                LifeTradeoffPrompt tradeoff = lifeLoopOrchestrator.RecentTradeoffs[^1];
-                if (tradeoff != null && tradeoff.Tension > 0.55f)
-                {
-                    cues.Add("check_phone_then_pace");
-                }
+                cues.Add("check_phone_then_pace");
             }
 
             if (cues.Count == 0)
@@ -305,6 +311,25 @@ namespace Survivebest.UI
             }
 
             return cues;
+        }
+
+        private static LifeTradeoffPrompt FindLatestTradeoff(CharacterCore active, GameplayLifeLoopOrchestrator lifeLoopOrchestrator)
+        {
+            if (active == null || lifeLoopOrchestrator == null)
+            {
+                return null;
+            }
+
+            for (int i = lifeLoopOrchestrator.RecentTradeoffs.Count - 1; i >= 0; i--)
+            {
+                LifeTradeoffPrompt tradeoff = lifeLoopOrchestrator.RecentTradeoffs[i];
+                if (tradeoff != null && tradeoff.CharacterId == active.CharacterId)
+                {
+                    return tradeoff;
+                }
+            }
+
+            return null;
         }
 
         private static System.Collections.Generic.List<string> BuildInteractions(GameplayInteractionPresentationLayer presentationLayer)

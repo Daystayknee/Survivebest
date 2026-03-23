@@ -105,6 +105,42 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(go);
         }
 
+
+        [Test]
+        public void RefreshState_UsesActiveCharacterTradeoffForMicroCues()
+        {
+            GameObject go = new GameObject("PresentationCoordinatorTradeoffFilter");
+            GameplayPresentationStateCoordinator coordinator = go.AddComponent<GameplayPresentationStateCoordinator>();
+            GameplayInteractionPresentationLayer presentation = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loop = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayInteractionPresentationLayer", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, presentation);
+            typeof(GameplayPresentationStateCoordinator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, life);
+            typeof(GameplayPresentationStateCoordinator).GetField("gameplayLifeLoopOrchestrator", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, loop);
+            typeof(GameplayPresentationStateCoordinator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(coordinator, household);
+
+            GameObject activeGo = new GameObject("ActivePresentationTradeoff");
+            CharacterCore active = activeGo.AddComponent<CharacterCore>();
+            active.Initialize("char_tradeoff_present", "Rin", LifeStage.Adult);
+            household.AddMember(active);
+            household.SetActiveCharacter(active);
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(loop, new System.Collections.Generic.List<LifeTradeoffPrompt>
+            {
+                new LifeTradeoffPrompt { CharacterId = "other_char", RiskLabel = "progress_vs_recovery", Tension = 0.95f },
+                new LifeTradeoffPrompt { CharacterId = "char_tradeoff_present", RiskLabel = "connection_vs_control", Tension = 0.78f }
+            });
+
+            coordinator.RefreshState();
+
+            CollectionAssert.Contains(coordinator.CurrentState.MicroInteractionCues, "check_phone_then_pace");
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(activeGo);
+        }
+
         [Test]
         public void SetFocusedAction_TravelActionUsesTravelPresentationSection()
         {

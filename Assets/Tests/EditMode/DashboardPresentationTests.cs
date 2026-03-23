@@ -43,12 +43,16 @@ namespace Survivebest.Tests.EditMode
                 VisualStateSummary = "slouched posture, tired eyes, weathered presentation.",
                 AmbientAudioSummary = "room tone, appliance hum, and neighborhood bleed; mix narrows with stress and sharper transients; cheap-light buzz and thin walls read through the space.",
                 EnvironmentReactionSummary = "environment reads under pressure: worn comfort, tighter budget signals; relationship tension should read as distance, avoidance, and awkward spacing.",
+                RecommendedAction = "take_short_break",
+                LastEventTitle = "ActivityCompleted",
                 MicroInteractionCues = new System.Collections.Generic.List<string> { "check_phone_then_pace" }
             });
 
             StringAssert.Contains("Visual:", digest);
             StringAssert.Contains("Ambient:", digest);
             StringAssert.Contains("World reacts:", digest);
+            StringAssert.Contains("Next:", digest);
+            StringAssert.Contains("Last event:", digest);
             StringAssert.Contains("Micro:", digest);
 
             Object.DestroyImmediate(go);
