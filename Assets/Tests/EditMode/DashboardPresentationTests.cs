@@ -31,6 +31,30 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void GameHUD_BuildPresentationDigest_FormatsVisualAmbientAndMicroSummaries()
+        {
+            GameObject go = new GameObject("HudPresentationDigest");
+            GameHUD hud = go.AddComponent<GameHUD>();
+
+            string digest = hud.BuildPresentationDigest(new Survivebest.UI.ViewModels.PresentationSectionViewModel
+            {
+                SectionLabel = "Home Life",
+                ScreenMood = "warm but strained",
+                VisualStateSummary = "slouched posture, tired eyes, weathered presentation.",
+                AmbientAudioSummary = "room tone, appliance hum, and neighborhood bleed; mix narrows with stress and sharper transients; cheap-light buzz and thin walls read through the space.",
+                EnvironmentReactionSummary = "environment reads under pressure: worn comfort, tighter budget signals; relationship tension should read as distance, avoidance, and awkward spacing.",
+                MicroInteractionCues = new System.Collections.Generic.List<string> { "check_phone_then_pace" }
+            });
+
+            StringAssert.Contains("Visual:", digest);
+            StringAssert.Contains("Ambient:", digest);
+            StringAssert.Contains("World reacts:", digest);
+            StringAssert.Contains("Micro:", digest);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void JournalFeedUI_BuildDailyDigest_UsesRecentPublishedEvents()
         {
             GameObject go = new GameObject("JournalDigest");

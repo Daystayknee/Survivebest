@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.World;
+using Survivebest.UI.ViewModels;
 
 namespace Survivebest.UI
 {
@@ -22,6 +23,7 @@ namespace Survivebest.UI
     {
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private WorldClock worldClock;
+        [SerializeField] private GameplayPresentationStateCoordinator gameplayPresentationStateCoordinator;
         [SerializeField] private bool reactToWeather = true;
 
         public event Action<FeedbackCue> OnFeedbackRequested;
@@ -42,6 +44,11 @@ namespace Survivebest.UI
             {
                 worldClock.OnHourPassed += HandleHourPassed;
             }
+
+            if (gameplayPresentationStateCoordinator != null)
+            {
+                gameplayPresentationStateCoordinator.OnPresentationStateChanged += HandlePresentationStateChanged;
+            }
         }
 
         private void OnDisable()
@@ -55,6 +62,47 @@ namespace Survivebest.UI
             {
                 worldClock.OnHourPassed -= HandleHourPassed;
             }
+
+            if (gameplayPresentationStateCoordinator != null)
+            {
+                gameplayPresentationStateCoordinator.OnPresentationStateChanged -= HandlePresentationStateChanged;
+            }
+        }
+
+        public FeedbackCue BuildCueFromPresentationState(PresentationSectionViewModel state)
+        {
+            if (state == null)
+            {
+                return null;
+            }
+
+            FeedbackCue cue = new FeedbackCue
+            {
+                AnimationState = state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0 ? state.MicroInteractionCues[0] : "Idle",
+                PostureState = state.VisualStateSummary != null && state.VisualStateSummary.Contains("posture") ? state.VisualStateSummary : "Neutral",
+                FacialState = state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes") ? "Tired" : "Neutral",
+                LocomotionState = state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("distance") ? "CautiousWalk" : "NormalWalk",
+                SfxKey = ResolvePresentationSfx(state),
+                VfxKey = ResolvePresentationVfx(state),
+                UiPulseKey = ResolvePresentationPulse(state),
+                Intensity = ResolvePresentationIntensity(state)
+            };
+
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("slouched"))
+            {
+                cue.PostureState = "Slouched";
+            }
+            else if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("upright"))
+            {
+                cue.PostureState = "Upright";
+            }
+
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth"))
+            {
+                cue.FacialState = "Open";
+            }
+
+            return cue;
         }
 
         public FeedbackCue BuildCue(SimulationEvent simulationEvent)
@@ -164,6 +212,55 @@ namespace Survivebest.UI
             }
 
             return cue;
+        }
+
+        private void HandlePresentationStateChanged(PresentationSectionViewModel state)
+        {
+            FeedbackCue cue = BuildCueFromPresentationState(state);
+            if (cue != null)
+            {
+                OnFeedbackRequested?.Invoke(cue);
+            }
+        }
+
+        private static string ResolvePresentationSfx(PresentationSectionViewModel state)
+        {
+            if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("clinical")) return "ambient_hospital_loop";
+            if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("cheap-light buzz")) return "ambient_stress_apartment";
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth")) return "ambient_soft_warmth";
+            return "ambient_soft";
+        }
+
+        private static string ResolvePresentationVfx(PresentationSectionViewModel state)
+        {
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("weathered")) return "vfx_stress_shadow";
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("warmth")) return "vfx_soft_warm";
+            return "vfx_timepulse";
+        }
+
+        private static string ResolvePresentationPulse(PresentationSectionViewModel state)
+        {
+            if (state.MicroInteractionCues != null && state.MicroInteractionCues.Contains("check_phone_then_pace")) return "tradeoff_tension";
+            if (state.VisualStateSummary != null && state.VisualStateSummary.Contains("tired eyes")) return "fatigue_pulse";
+            return "presentation_idle";
+        }
+
+        private static float ResolvePresentationIntensity(PresentationSectionViewModel state)
+        {
+            float intensity = 0.35f;
+            if (state.MicroInteractionCues != null)
+            {
+                intensity += Mathf.Min(0.35f, state.MicroInteractionCues.Count * 0.08f);
+            }
+            if (state.EnvironmentReactionSummary != null && state.EnvironmentReactionSummary.Contains("distance"))
+            {
+                intensity += 0.15f;
+            }
+            if (state.AmbientAudioSummary != null && state.AmbientAudioSummary.Contains("stress"))
+            {
+                intensity += 0.1f;
+            }
+            return Mathf.Clamp01(intensity);
         }
 
         private void HandleSimulationEvent(SimulationEvent simulationEvent)
