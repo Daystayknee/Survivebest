@@ -73,6 +73,10 @@ namespace Survivebest.UI.ViewModels
         public string WorldSummary;
         public string RecommendedAction;
         public string LastEventTitle;
+        public string VisualStateSummary;
+        public string AmbientAudioSummary;
+        public string EnvironmentReactionSummary;
+        public List<string> MicroInteractionCues = new();
         public List<string> InteractionsOnScreen = new();
         public List<PresentationTimelineCardViewModel> TimelineCards = new();
         public List<PresentationWarningViewModel> WarningPulses = new();

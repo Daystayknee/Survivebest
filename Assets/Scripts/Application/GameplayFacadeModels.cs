@@ -16,6 +16,9 @@ namespace Survivebest.Application
         public List<string> TopNeeds = new();
         public string CurrentThought;
         public string CurrentAction;
+        public string VisibleStateSummary;
+        public string CurrentSocialRead;
+        public string CurrentTradeoff;
         public List<string> ActiveMoodTags = new();
         public List<string> ActiveStatuses = new();
         public List<string> RelationshipHighlights = new();
