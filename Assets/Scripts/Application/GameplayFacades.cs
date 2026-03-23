@@ -170,13 +170,15 @@ namespace Survivebest.Application
         private readonly HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         private readonly PaperTrailSystem paperTrailSystem;
         private readonly HouseholdManager householdManager;
+        private readonly GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
 
-        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null, HouseholdManager householdManager = null)
+        public CharacterFacade(RelationshipMemorySystem relationshipMemorySystem = null, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem = null, PaperTrailSystem paperTrailSystem = null, HouseholdManager householdManager = null, GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator = null)
         {
             this.relationshipMemorySystem = relationshipMemorySystem;
             this.humanLifeExperienceLayerSystem = humanLifeExperienceLayerSystem;
             this.paperTrailSystem = paperTrailSystem;
             this.householdManager = householdManager;
+            this.gameplayLifeLoopOrchestrator = gameplayLifeLoopOrchestrator;
         }
 
         public CharacterDashboardViewModel BuildDashboard(CharacterCore character)
@@ -194,6 +196,11 @@ namespace Survivebest.Application
                 ? humanLifeExperienceLayerSystem.BuildInnerMonologueSnapshot(character.CharacterId, true)
                 : relationshipMemorySystem != null ? relationshipMemorySystem.BuildMemoryInsight(character.CharacterId) : "No active thought.";
 
+            VisibleLifeStateProfile visibleState = humanLifeExperienceLayerSystem != null ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(character.CharacterId) : null;
+            string visibleStateSummary = visibleState != null ? $"{visibleState.Posture} / {visibleState.EyeState} / {visibleState.WearState}" : "No visible state.";
+            string currentSocialRead = BuildCurrentSocialRead(character.CharacterId);
+            string currentTradeoff = BuildCurrentTradeoff(character.CharacterId);
+
             return new CharacterDashboardViewModel
             {
                 CharacterId = character.CharacterId,
@@ -206,7 +213,10 @@ namespace Survivebest.Application
                 TopNeeds = BuildTopNeeds(snapshot),
                 CurrentThought = thought,
                 CurrentAction = householdManager != null ? householdManager.GetLatestIntentForCharacter(character.CharacterId) ?? "Idle" : "Idle",
-                ActiveMoodTags = BuildMoodTags(snapshot),
+                VisibleStateSummary = visibleStateSummary,
+                CurrentSocialRead = currentSocialRead,
+                CurrentTradeoff = currentTradeoff,
+                ActiveMoodTags = BuildMoodTags(snapshot, visibleState),
                 ActiveStatuses = BuildActiveStatuses(statuses),
                 RelationshipHighlights = BuildRelationshipHighlights(character.CharacterId),
                 KeyRelationshipAlerts = BuildRelationshipHighlights(character.CharacterId),
@@ -246,7 +256,47 @@ namespace Survivebest.Application
             return needs;
         }
 
-        private static List<string> BuildMoodTags(NeedsSnapshot snapshot)
+        private string BuildCurrentSocialRead(string characterId)
+        {
+            if (humanLifeExperienceLayerSystem == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No social read.";
+            }
+
+            IReadOnlyList<InterpersonalImpressionProfile> impressions = humanLifeExperienceLayerSystem.InterpersonalImpressions;
+            for (int i = impressions.Count - 1; i >= 0; i--)
+            {
+                InterpersonalImpressionProfile impression = impressions[i];
+                if (impression != null && impression.CharacterId == characterId && !string.IsNullOrWhiteSpace(impression.CurrentImpression))
+                {
+                    return impression.CurrentImpression;
+                }
+            }
+
+            return "No social read.";
+        }
+
+        private string BuildCurrentTradeoff(string characterId)
+        {
+            if (gameplayLifeLoopOrchestrator == null || string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No active tradeoff.";
+            }
+
+            IReadOnlyList<LifeTradeoffPrompt> tradeoffs = gameplayLifeLoopOrchestrator.RecentTradeoffs;
+            for (int i = tradeoffs.Count - 1; i >= 0; i--)
+            {
+                LifeTradeoffPrompt tradeoff = tradeoffs[i];
+                if (tradeoff != null && tradeoff.CharacterId == characterId)
+                {
+                    return tradeoff.Headline;
+                }
+            }
+
+            return "No active tradeoff.";
+        }
+
+        private static List<string> BuildMoodTags(NeedsSnapshot snapshot, VisibleLifeStateProfile visibleState)
         {
             List<string> tags = new();
             if (snapshot == null)
@@ -258,6 +308,8 @@ namespace Survivebest.Application
             if (snapshot.BurnoutRisk > 60f) tags.Add("burnout_risk");
             if (snapshot.MentalFatigue > 55f) tags.Add("mentally_fried");
             if (snapshot.SleepDebt > 50f) tags.Add("sleep_deprived");
+            if (visibleState != null && visibleState.VisibleFatigue > 0.6f) tags.Add("visibly_tired");
+            if (visibleState != null && visibleState.LifeWear > 0.6f) tags.Add("life_wear");
             if (tags.Count == 0) tags.Add("steady");
             return tags;
         }
