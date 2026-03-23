@@ -178,7 +178,7 @@ namespace Survivebest.Tests.EditMode
                 new RelationshipFacade(),
                 new VampireFacade());
 
-            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(household, economy, location, justice, memory, vampire, clock, weather, town);
+            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(household, economy, location, justice, memory, vampire, clock, weather, town, lifeUi, loopUi);
 
             Assert.AreEqual("Noa", overview.Character.Name);
             Assert.AreEqual("Clinic Lobby", overview.CurrentRoom);
@@ -195,6 +195,9 @@ namespace Survivebest.Tests.EditMode
             CollectionAssert.Contains(overview.AvailableActions, "text_contact");
             CollectionAssert.Contains(overview.AvailableActions, "manage_budget");
             CollectionAssert.Contains(overview.AvailableActions, "resolve_relationship_tension");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Actions.InstantAction));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Actions.AutomationHint));
+            Assert.IsNotEmpty(overview.Actions.MicroActions);
 
             Object.DestroyImmediate(otherUiGo);
             Object.DestroyImmediate(root);
