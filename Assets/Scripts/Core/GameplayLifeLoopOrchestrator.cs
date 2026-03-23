@@ -20,6 +20,19 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class LifeTradeoffPrompt
+    {
+        public string CharacterId;
+        public string Headline;
+        public string OptionA;
+        public string OptionB;
+        public string RiskLabel;
+        public int Day;
+        public int Hour;
+        [Range(0f, 1f)] public float Tension = 0.5f;
+    }
+
+[Serializable]
     public class LifeLoopExperienceSnapshot
     {
         public string CharacterId;
@@ -59,13 +72,16 @@ namespace Survivebest.Core
         [SerializeField, Range(0, 23)] private int wakeHour = 6;
         [SerializeField, Range(0, 23)] private int sleepHour = 22;
         [SerializeField] private List<LifeLoopStepRecord> recentSteps = new();
+        [SerializeField] private List<LifeTradeoffPrompt> recentTradeoffs = new();
         [SerializeField, Min(20)] private int maxStepHistory = 600;
+        [SerializeField, Min(5)] private int maxTradeoffHistory = 80;
         [SerializeField, Min(0)] private int recoveryInterventionCooldownHours = 4;
 
         private readonly Dictionary<string, int> lastRecoveryInterventionHour = new();
         private int fallbackAbsoluteHourCounter;
 
         public IReadOnlyList<LifeLoopStepRecord> RecentSteps => recentSteps;
+        public IReadOnlyList<LifeTradeoffPrompt> RecentTradeoffs => recentTradeoffs;
         public LifeLoopExperienceSnapshot CurrentSnapshot { get; private set; }
 
         public event Action<LifeLoopStepRecord> OnLifeLoopStep;
@@ -140,6 +156,12 @@ namespace Survivebest.Core
             }
 
             humanLifeExperienceLayerSystem?.SimulateHourPulse(active, hour, pressure, social, progress);
+
+            LifeTradeoffPrompt tradeoff = GenerateTradeoffPrompt(active, decision, pressure, social, progress);
+            if (tradeoff != null)
+            {
+                RecordStep(active, "Tradeoff", tradeoff.RiskLabel, tradeoff.Tension);
+            }
 
             CharacterCore socialTarget = ResolveSocialTarget(active);
             if (socialTarget != null && (social > 0.58f || decision == AutonomousActionType.Socialize))
@@ -284,6 +306,58 @@ namespace Survivebest.Core
             return fallbackAbsoluteHourCounter++;
         }
 
+        private LifeTradeoffPrompt GenerateTradeoffPrompt(CharacterCore actor, AutonomousActionType decision, float pressure, float social, float progress)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            LifeTradeoffPrompt prompt = new LifeTradeoffPrompt
+            {
+                CharacterId = actor.CharacterId,
+                Day = worldClock != null ? worldClock.Day : 0,
+                Hour = worldClock != null ? worldClock.Hour : 0,
+                Tension = Mathf.Clamp01((pressure * 0.5f) + ((1f - progress) * 0.2f) + (social * 0.15f))
+            };
+
+            switch (decision)
+            {
+                case AutonomousActionType.Work:
+                    prompt.Headline = "Bills want labor, but your body wants relief.";
+                    prompt.OptionA = "Push through the shift for money.";
+                    prompt.OptionB = "Protect energy and risk falling behind.";
+                    prompt.RiskLabel = pressure > 0.65f ? "burnout_vs_income" : "stability_vs_rest";
+                    break;
+                case AutonomousActionType.Socialize:
+                    prompt.Headline = "People need time that survival systems also want.";
+                    prompt.OptionA = "Show up socially and strengthen bonds.";
+                    prompt.OptionB = "Keep your time for recovery, chores, or money.";
+                    prompt.RiskLabel = "connection_vs_control";
+                    break;
+                case AutonomousActionType.Eat:
+                    prompt.Headline = "Food solves today while money decides tomorrow.";
+                    prompt.OptionA = "Spend on a decent meal now.";
+                    prompt.OptionB = "Save cash and accept lower comfort or nutrition.";
+                    prompt.RiskLabel = "nutrition_vs_cash";
+                    break;
+                default:
+                    prompt.Headline = "You cannot protect every part of life at once.";
+                    prompt.OptionA = "Lean into momentum.";
+                    prompt.OptionB = "Slow down to reduce future damage.";
+                    prompt.RiskLabel = "progress_vs_recovery";
+                    break;
+            }
+
+            recentTradeoffs.Add(prompt);
+            while (recentTradeoffs.Count > maxTradeoffHistory)
+            {
+                recentTradeoffs.RemoveAt(0);
+            }
+
+            return prompt;
+        }
+
         private CharacterCore ResolveSocialTarget(CharacterCore active)
         {
             if (active == null || householdManager == null || householdManager.Members == null)
@@ -412,6 +486,9 @@ namespace Survivebest.Core
             string replayability = suggestions != null && suggestions.Count > 1
                 ? $"{Mathf.Min(8, suggestions.Count)} context actions are ready if you pivot"
                 : "One strong next action is currently standing out";
+            string tradeoffSummary = recentTradeoffs.Count > 0
+                ? $" Tradeoff: {recentTradeoffs[^1].Headline}"
+                : string.Empty;
 
             return new LifeLoopExperienceSnapshot
             {
@@ -423,7 +500,7 @@ namespace Survivebest.Core
                 IdentityLabel = identity,
                 ImmersionLabel = immersion,
                 ReplayabilityLabel = replayability,
-                Summary = $"{presence}. {consequence}. {recommendedAction}",
+                Summary = $"{presence}. {consequence}. {recommendedAction}.{tradeoffSummary}",
                 Pressure = pressure,
                 SocialOpportunity = social,
                 Progress = progress

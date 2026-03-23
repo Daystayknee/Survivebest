@@ -464,6 +464,38 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void SimulateHourPulse_UpdatesVisibleLifeStateProfile()
+        {
+            GameObject go = new GameObject("VisibleStateLife");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+            typeof(HumanLifeExperienceLayerSystem).GetField("psychologicalGrowthMentalHealthEngine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(system, mental);
+
+            GameObject charGo = new GameObject("VisibleChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_visible_state", "Visible", LifeStage.Adult);
+
+            mental.RecordLifeEvent(character.CharacterId, MentalHealthEventType.Crisis, 1.1f);
+            system.SetHumanMicroConditionProfile(character, new HumanMicroConditionProfile
+            {
+                SleepDebtFog = 0.8f,
+                TensionHeadache = 0.7f,
+                DryEyes = 0.5f
+            });
+
+            system.SimulateHourPulse(character, 9, 0.82f, 0.2f, 0.25f);
+
+            VisibleLifeStateProfile visible = system.GetProfile<VisibleLifeStateProfile>(character.CharacterId);
+            Assert.IsNotNull(visible);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(visible.Posture));
+            Assert.Greater(visible.VisibleFatigue, 0.4f);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
         public void GenerateInterpersonalImpression_CreatesTargetedThoughtAndProfile()
         {
             GameObject go = new GameObject("LifeImpression");

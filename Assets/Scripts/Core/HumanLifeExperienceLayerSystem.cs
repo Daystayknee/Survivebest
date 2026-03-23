@@ -80,6 +80,21 @@ namespace Survivebest.Core
     }
 
 [Serializable]
+    public class VisibleLifeStateProfile
+    {
+        public string CharacterId;
+        public string Posture = "steady";
+        public string EyeState = "clear";
+        public string BodyState = "stable";
+        public string WearState = "fresh";
+        [Range(0f, 1f)] public float VisibleFatigue = 0f;
+        [Range(0f, 1f)] public float LifeWear = 0f;
+        [Range(0f, 1f)] public float VisibleConfidence = 0.5f;
+        public int LastDay;
+        public int LastHour;
+    }
+
+[Serializable]
     public class SensoryLifeProfile
     {
         public string CharacterId;
@@ -621,6 +636,7 @@ namespace Survivebest.Core
         [SerializeField] private List<ProceduralLifeMoment> recentMoments = new();
         [SerializeField] private List<LifeTimelineEntry> recentTimeline = new();
         [SerializeField] private List<SensoryLifeProfile> sensoryProfiles = new();
+        [SerializeField] private List<VisibleLifeStateProfile> visibleLifeStateProfiles = new();
         [SerializeField] private List<IdentityExpressionProfile> identityProfiles = new();
         [SerializeField] private List<SocialRoleBurdenProfile> socialRoleBurdenProfiles = new();
         [SerializeField] private List<CognitiveDistortionProfile> cognitiveDistortionProfiles = new();
@@ -659,6 +675,7 @@ namespace Survivebest.Core
         public IReadOnlyList<ProceduralLifeMoment> RecentMoments => recentMoments;
         public IReadOnlyList<LifeTimelineEntry> RecentTimeline => recentTimeline;
         public IReadOnlyList<SensoryLifeProfile> SensoryProfiles => sensoryProfiles;
+        public IReadOnlyList<VisibleLifeStateProfile> VisibleLifeStateProfiles => visibleLifeStateProfiles;
         public IReadOnlyList<IdentityExpressionProfile> IdentityProfiles => identityProfiles;
         public IReadOnlyList<SocialRoleBurdenProfile> SocialRoleBurdenProfiles => socialRoleBurdenProfiles;
         public IReadOnlyList<CognitiveDistortionProfile> CognitiveDistortionProfiles => cognitiveDistortionProfiles;
@@ -814,6 +831,7 @@ namespace Survivebest.Core
                 psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.SocialSupport, connection);
             }
 
+            UpdateVisibleLifeState(actor, pressure, progress);
             PublishEvent(actor.CharacterId, SimulationEventType.DayStageChanged, $"hour_{hour}", "Hourly life pulse simulated", (pressure + connection + progress) / 3f);
         }
 
@@ -876,6 +894,49 @@ namespace Survivebest.Core
             }
 
             return generated;
+        }
+
+        public VisibleLifeStateProfile UpdateVisibleLifeState(CharacterCore actor, float pressureLevel, float accomplishment)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            float pressure = Mathf.Clamp01(pressureLevel);
+            float progress = Mathf.Clamp01(accomplishment);
+            MentalHealthProfile mental = psychologicalGrowthMentalHealthEngine != null
+                ? psychologicalGrowthMentalHealthEngine.GetOrCreateProfile(actor.CharacterId)
+                : null;
+            HumanMicroConditionProfile micro = FindProfile(actor.CharacterId, humanMicroConditionProfiles);
+
+            float fatigue = Mathf.Clamp01((mental != null ? (mental.StressLevel + mental.BurnoutLevel) / 220f : 0.2f) + (micro != null ? Mathf.Max(micro.SleepDebtFog, micro.TensionHeadache, micro.SoreFeet) * 0.35f : 0f));
+            float confidence = Mathf.Clamp01((mental != null ? mental.SelfEsteem / 100f : 0.5f) + (progress * 0.15f) - (pressure * 0.12f));
+            float wear = Mathf.Clamp01((pressure * 0.45f) + fatigue * 0.35f + (micro != null ? Mathf.Max(micro.HangnailPain, micro.SeasonalSkinIrritation, micro.DryEyes) * 0.2f : 0f));
+
+            VisibleLifeStateProfile profile = FindProfile(actor.CharacterId, visibleLifeStateProfiles);
+            if (profile == null)
+            {
+                profile = new VisibleLifeStateProfile { CharacterId = actor.CharacterId };
+                visibleLifeStateProfiles.Add(profile);
+            }
+
+            profile.Posture = fatigue > 0.72f ? "slouched" : confidence > 0.62f ? "upright" : "guarded";
+            profile.EyeState = fatigue > 0.68f ? "tired eyes" : wear > 0.55f ? "drawn" : "clear";
+            profile.BodyState = progress > 0.7f ? "active" : fatigue > 0.65f ? "worn down" : "steady";
+            profile.WearState = wear > 0.72f ? "weathered" : wear > 0.45f ? "lived-in" : "fresh";
+            profile.VisibleFatigue = fatigue;
+            profile.LifeWear = wear;
+            profile.VisibleConfidence = confidence;
+            profile.LastDay = worldClock != null ? worldClock.Day : 0;
+            profile.LastHour = worldClock != null ? worldClock.Hour : 0;
+
+            if (wear > 0.7f)
+            {
+                AppendThought(actor, "visible_state", $"It shows on you today: {profile.EyeState}, {profile.Posture} posture, and a {profile.WearState} kind of fatigue.", wear, null);
+            }
+
+            return profile;
         }
 
         public SensoryLifeProfile SetSensoryProfile(CharacterCore actor, SensoryLifeProfile profile)
@@ -1221,6 +1282,11 @@ namespace Survivebest.Core
                 return FindProfile(characterId, sensoryProfiles) as T;
             }
 
+            if (typeof(T) == typeof(VisibleLifeStateProfile))
+            {
+                return FindProfile(characterId, visibleLifeStateProfiles) as T;
+            }
+
             if (typeof(T) == typeof(IdentityExpressionProfile))
             {
                 return FindProfile(characterId, identityProfiles) as T;
@@ -1480,6 +1546,7 @@ namespace Survivebest.Core
             }
 
             SensoryLifeProfile sensory = FindProfile(characterId, sensoryProfiles);
+            VisibleLifeStateProfile visibleState = FindProfile(characterId, visibleLifeStateProfiles);
             IdentityExpressionProfile identity = FindProfile(characterId, identityProfiles);
             SocialRoleBurdenProfile burden = FindProfile(characterId, socialRoleBurdenProfiles);
             CognitiveDistortionProfile distortion = FindProfile(characterId, cognitiveDistortionProfiles);
@@ -1505,6 +1572,11 @@ namespace Survivebest.Core
             if (identity != null)
             {
                 parts.Add($"Identity tension: public {identity.PublicSelf} vs private {identity.PrivateSelf}");
+            }
+
+            if (visibleState != null)
+            {
+                parts.Add($"Visible state: {visibleState.Posture}, {visibleState.EyeState}, {visibleState.WearState}");
             }
 
             if (burden != null && burden.SecretDoubleLifeBurden > 0.2f)

@@ -173,6 +173,42 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void ExecuteManualLifeLoopTick_GeneratesTradeoffPrompt()
+        {
+            GameObject go = new GameObject("LoopOrchestratorTradeoff");
+            GameplayLifeLoopOrchestrator orchestrator = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, household);
+            typeof(GameplayLifeLoopOrchestrator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, life);
+            typeof(GameplayLifeLoopOrchestrator).GetField("personalityDecisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, decisions);
+            typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, mental);
+
+            GameObject charGo = new GameObject("TradeoffChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_tradeoff", "Tradeoff", LifeStage.Adult);
+            charGo.AddComponent<NeedsSystem>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            orchestrator.ExecuteManualLifeLoopTick(10);
+
+            Assert.Greater(orchestrator.RecentTradeoffs.Count, 0);
+            Assert.IsTrue(System.Linq.Enumerable.Any(orchestrator.RecentSteps, s => s.StepLabel == "Tradeoff"));
+            Assert.IsTrue(orchestrator.CurrentSnapshot.Summary.Contains("Tradeoff:"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
         public void ExecuteManualLifeLoopTick_WithSecondHouseholdMember_GeneratesSocialImpressionStep()
         {
             GameObject go = new GameObject("LoopOrchestratorSocialRead");
