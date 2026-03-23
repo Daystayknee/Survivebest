@@ -28,6 +28,7 @@ namespace Survivebest.Utility
     {
         public string Title;
         public List<ValidationIssue> Issues = new();
+        public List<ValidationIssue> Entries => Issues;
         public bool HasErrors => Issues.Exists(issue => issue != null && issue.Severity == ValidationSeverity.Error);
 
         public void Add(ValidationSeverity severity, string code, string message)
@@ -283,7 +284,7 @@ namespace Survivebest.Utility
 
     public sealed class SaveParityDebugger
     {
-        public ValidationReport Compare(SaveSlotPayload payload, HouseholdManager householdManager, EconomyInventorySystem economyInventorySystem)
+        public ValidationReport Compare(SaveSlotPayload payload, HouseholdManager householdManager, EconomyInventorySystem economyInventorySystem, LocationManager locationManager = null, WorldClock worldClock = null)
         {
             ValidationReport report = new ValidationReport { Title = nameof(SaveParityDebugger) };
             if (payload == null)
@@ -304,6 +305,53 @@ namespace Survivebest.Utility
             if (Mathf.Abs(runtimeFunds - savedFunds) > 0.01f)
             {
                 report.Add(ValidationSeverity.Warning, "save.economy.mismatch", $"Funds mismatch. runtime={runtimeFunds:0.##}, save={savedFunds:0.##}");
+            }
+
+            string runtimeRoom = locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : string.Empty;
+            string savedRoom = payload.ActiveRoomName ?? string.Empty;
+            if (!string.Equals(runtimeRoom, savedRoom, System.StringComparison.Ordinal))
+            {
+                report.Add(ValidationSeverity.Warning, "save.room.mismatch", $"Room mismatch. runtime={runtimeRoom}, save={savedRoom}");
+            }
+
+            if (worldClock != null && payload.World != null)
+            {
+                if (worldClock.Year != payload.World.Year
+                    || worldClock.Month != payload.World.Month
+                    || worldClock.Day != payload.World.Day
+                    || worldClock.Hour != payload.World.Hour
+                    || worldClock.Minute != payload.World.Minute)
+                {
+                    report.Add(ValidationSeverity.Warning, "save.clock.mismatch", $"Clock mismatch. runtime=Y{worldClock.Year} M{worldClock.Month} D{worldClock.Day} {worldClock.Hour:00}:{worldClock.Minute:00}, save=Y{payload.World.Year} M{payload.World.Month} D{payload.World.Day} {payload.World.Hour:00}:{payload.World.Minute:00}");
+                }
+            }
+
+            if (householdManager != null && payload.HouseholdCharacters != null)
+            {
+                for (int i = 0; i < payload.HouseholdCharacters.Count; i++)
+                {
+                    CharacterSnapshot savedCharacter = payload.HouseholdCharacters[i];
+                    if (savedCharacter == null || savedCharacter.Needs == null)
+                    {
+                        continue;
+                    }
+
+                    CharacterCore runtimeCharacter = householdManager.Members.Find(x => x != null && x.CharacterId == savedCharacter.CharacterId);
+                    NeedsSystem runtimeNeeds = runtimeCharacter != null ? runtimeCharacter.GetComponent<NeedsSystem>() : null;
+                    if (runtimeNeeds == null)
+                    {
+                        report.Add(ValidationSeverity.Warning, "save.needs.missing", $"Runtime needs missing for {savedCharacter.CharacterId}.");
+                        continue;
+                    }
+
+                    NeedsSnapshot runtimeSnapshot = runtimeNeeds.CaptureSnapshot();
+                    if (Mathf.Abs(runtimeSnapshot.Hunger - savedCharacter.Needs.Hunger) > 0.01f
+                        || Mathf.Abs(runtimeSnapshot.Energy - savedCharacter.Needs.Energy) > 0.01f
+                        || Mathf.Abs(runtimeSnapshot.Hydration - savedCharacter.Needs.Hydration) > 0.01f)
+                    {
+                        report.Add(ValidationSeverity.Warning, "save.needs.mismatch", $"Needs mismatch for {savedCharacter.CharacterId}.");
+                    }
+                }
             }
 
             return report;

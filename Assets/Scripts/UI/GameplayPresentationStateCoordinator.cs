@@ -21,6 +21,7 @@ namespace Survivebest.UI
         [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
         [SerializeField] private GameplayInteractionPresentationLayer gameplayInteractionPresentationLayer;
         [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
+        [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
@@ -99,6 +100,7 @@ namespace Survivebest.UI
                 vision,
                 gameplayInteractionPresentationLayer,
                 gameplayLifeLoopOrchestrator,
+                humanLifeExperienceLayerSystem,
                 gameplayVisionSystem,
                 relationshipMemorySystem,
                 economyInventorySystem,
@@ -149,6 +151,7 @@ namespace Survivebest.UI
             GameplaySectionVision vision,
             GameplayInteractionPresentationLayer presentationLayer,
             GameplayLifeLoopOrchestrator lifeLoopOrchestrator,
+            HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem,
             GameplayVisionSystem gameplayVisionSystem,
             RelationshipMemorySystem relationshipMemorySystem,
             EconomyInventorySystem economyInventorySystem,
@@ -172,9 +175,13 @@ namespace Survivebest.UI
                     ? lifeLoopOrchestrator.CurrentSnapshot.RecommendedAction
                     : presentationLayer != null ? ResolveSuggestedAction(presentationLayer) : "Choose the next meaningful action",
                 LastEventTitle = lastEventTitle,
+                VisualStateSummary = BuildVisualStateSummary(active, humanLifeExperienceLayerSystem),
+                AmbientAudioSummary = BuildAmbientAudioSummary(room, active, humanLifeExperienceLayerSystem, lifeLoopOrchestrator, economyInventorySystem),
+                EnvironmentReactionSummary = BuildEnvironmentReactionSummary(room, active, humanLifeExperienceLayerSystem, relationshipMemorySystem, economyInventorySystem),
                 Tabs = gameplayVisionSystem != null ? gameplayVisionSystem.BuildTabsForContext(focusedActionKey, room) : new System.Collections.Generic.List<string>()
             };
 
+            state.MicroInteractionCues.AddRange(BuildMicroInteractionCues(active, humanLifeExperienceLayerSystem, lifeLoopOrchestrator));
             state.InteractionsOnScreen.AddRange(BuildInteractions(presentationLayer));
             state.TimelineCards.AddRange(BuildTimelineCards(presentationLayer));
             state.WarningPulses.AddRange(BuildWarnings(active, presentationLayer, relationshipMemorySystem, economyInventorySystem));
@@ -202,6 +209,127 @@ namespace Survivebest.UI
             string weather = world != null ? world.WeatherLabel : "Unknown";
             string money = economyInventorySystem != null ? $"${economyInventorySystem.Funds:0}" : "$0";
             return $"{location} • {time} • {weather} • funds {money}";
+        }
+
+        private static string BuildVisualStateSummary(CharacterCore active, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem)
+        {
+            if (active == null || humanLifeExperienceLayerSystem == null)
+            {
+                return "Visual state unresolved.";
+            }
+
+            VisibleLifeStateProfile visible = humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(active.CharacterId);
+            if (visible == null)
+            {
+                return "Visual state unresolved.";
+            }
+
+            return $"{visible.Posture} posture, {visible.EyeState}, {visible.WearState} presentation.";
+        }
+
+        private static string BuildAmbientAudioSummary(Room room, CharacterCore active, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem, GameplayLifeLoopOrchestrator lifeLoopOrchestrator, EconomyInventorySystem economyInventorySystem)
+        {
+            string roomCue = room != null ? room.Theme switch
+            {
+                LocationTheme.Residential => "room tone, appliance hum, and neighborhood bleed",
+                LocationTheme.Workplace => "HVAC hum, keyboards, and fluorescent buzz",
+                LocationTheme.Hospital => "clinical ambience, carts, and distant monitors",
+                LocationTheme.StoreInterior => "store chatter, coolers, and register beeps",
+                _ => "contextual ambient life"
+            } : "ambient uncertainty";
+
+            float pressure = lifeLoopOrchestrator != null && lifeLoopOrchestrator.CurrentSnapshot != null ? lifeLoopOrchestrator.CurrentSnapshot.Pressure : 0.4f;
+            VisibleLifeStateProfile visible = active != null && humanLifeExperienceLayerSystem != null
+                ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(active.CharacterId)
+                : null;
+            LifeTradeoffPrompt tradeoff = FindLatestTradeoff(active, lifeLoopOrchestrator);
+            string pressureCue = pressure > 0.7f || (visible != null && visible.VisibleFatigue > 0.6f)
+                ? "mix narrows with stress and sharper transients"
+                : "mix stays open and breathable";
+            string wealthCue = economyInventorySystem != null && economyInventorySystem.Funds < 50f ? "cheap-light buzz and thin walls read through the space" : "the space carries cleaner, softer ambience";
+            string tradeoffCue = tradeoff != null && tradeoff.Tension > 0.6f
+                ? $"foreground details keep tugging at {tradeoff.RiskLabel.Replace('_', ' ')}"
+                : "room detail stays secondary to routine";
+            return $"{roomCue}; {pressureCue}; {wealthCue}; {tradeoffCue}.";
+        }
+
+        private static string BuildEnvironmentReactionSummary(Room room, CharacterCore active, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem, RelationshipMemorySystem relationshipMemorySystem, EconomyInventorySystem economyInventorySystem)
+        {
+            string homeCue = economyInventorySystem != null && economyInventorySystem.Funds < 50f
+                ? "environment reads under pressure: worn comfort, tighter budget signals"
+                : "environment can hold warmth and upkeep";
+
+            string socialCue = "social response is still neutral";
+            if (active != null && humanLifeExperienceLayerSystem != null)
+            {
+                IReadOnlyList<InterpersonalImpressionProfile> impressions = humanLifeExperienceLayerSystem.InterpersonalImpressions;
+                for (int i = impressions.Count - 1; i >= 0; i--)
+                {
+                    InterpersonalImpressionProfile impression = impressions[i];
+                    if (impression != null && impression.CharacterId == active.CharacterId)
+                    {
+                        socialCue = impression.VibeLabel is "guarded" or "wary"
+                            ? "relationship tension should read as distance, avoidance, and awkward spacing"
+                            : impression.VibeLabel is "easy" or "fond"
+                                ? "relationship warmth should read as openness and comfort"
+                                : "social reads stay mixed and subtle";
+                        break;
+                    }
+                }
+            }
+
+            return $"{homeCue}; {socialCue}.";
+        }
+
+        private static System.Collections.Generic.List<string> BuildMicroInteractionCues(CharacterCore active, HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem, GameplayLifeLoopOrchestrator lifeLoopOrchestrator)
+        {
+            System.Collections.Generic.List<string> cues = new();
+            VisibleLifeStateProfile visible = active != null && humanLifeExperienceLayerSystem != null
+                ? humanLifeExperienceLayerSystem.GetProfile<VisibleLifeStateProfile>(active.CharacterId)
+                : null;
+
+            if (visible != null && visible.VisibleFatigue > 0.6f)
+            {
+                cues.Add("sigh_and_rub_eyes");
+                cues.Add("fix_clothes_slowly");
+            }
+
+            if (visible != null && visible.VisibleConfidence > 0.62f)
+            {
+                cues.Add("upright_weight_shift");
+            }
+
+            LifeTradeoffPrompt tradeoff = FindLatestTradeoff(active, lifeLoopOrchestrator);
+            if (tradeoff != null && tradeoff.Tension > 0.55f)
+            {
+                cues.Add("check_phone_then_pace");
+            }
+
+            if (cues.Count == 0)
+            {
+                cues.Add("idle_phone_check");
+            }
+
+            return cues;
+        }
+
+        private static LifeTradeoffPrompt FindLatestTradeoff(CharacterCore active, GameplayLifeLoopOrchestrator lifeLoopOrchestrator)
+        {
+            if (active == null || lifeLoopOrchestrator == null)
+            {
+                return null;
+            }
+
+            for (int i = lifeLoopOrchestrator.RecentTradeoffs.Count - 1; i >= 0; i--)
+            {
+                LifeTradeoffPrompt tradeoff = lifeLoopOrchestrator.RecentTradeoffs[i];
+                if (tradeoff != null && tradeoff.CharacterId == active.CharacterId)
+                {
+                    return tradeoff;
+                }
+            }
+
+            return null;
         }
 
         private static System.Collections.Generic.List<string> BuildInteractions(GameplayInteractionPresentationLayer presentationLayer)

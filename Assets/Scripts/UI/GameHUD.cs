@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -208,7 +209,7 @@ namespace Survivebest.UI
                 return;
             }
 
-            sectionMoodText.text = $"{state.SectionLabel} • {state.ScreenMood}";
+            sectionMoodText.text = BuildPresentationDigest(state);
         }
 
         private void AppendFeed(string line)
@@ -240,6 +241,86 @@ namespace Survivebest.UI
             slider.minValue = 0f;
             slider.maxValue = 100f;
             slider.value = Mathf.Clamp(value, 0f, 100f);
+        }
+
+        public string BuildPresentationDigest(PresentationSectionViewModel state)
+        {
+            if (state == null)
+            {
+                return "Presentation state unavailable.";
+            }
+
+            string micro = state.MicroInteractionCues != null && state.MicroInteractionCues.Count > 0
+                ? state.MicroInteractionCues[0]
+                : "idle";
+            string recommendedAction = string.IsNullOrWhiteSpace(state.RecommendedAction)
+                ? "Choose the next meaningful action"
+                : state.RecommendedAction;
+            string lastEvent = string.IsNullOrWhiteSpace(state.LastEventTitle)
+                ? "None"
+                : state.LastEventTitle;
+
+            return $"{state.SectionLabel} • {state.ScreenMood}
+" +
+                   $"Visual: {state.VisualStateSummary}
+" +
+                   $"Ambient: {state.AmbientAudioSummary}
+" +
+                   $"World reacts: {state.EnvironmentReactionSummary}
+" +
+                   $"Next: {recommendedAction}
+" +
+                   $"Last event: {lastEvent}
+" +
+                   $"Micro: {micro}";
+        }
+
+        public string BuildCompletionismDigest(Survivebest.Application.CompletionismSummaryViewModel summary)
+        {
+            if (summary == null)
+            {
+                return "Completionism overview unavailable.";
+            }
+
+            string featuredGoal = summary.FeaturedGoals != null && summary.FeaturedGoals.Count > 0 ? summary.FeaturedGoals[0] : "No featured goal.";
+            string endless = summary.EndlessOptionsStatus ?? "Endless options status unavailable.";
+            string nextEndlessOption = summary.EndlessOptions != null && summary.EndlessOptions.Count > 0 ? summary.EndlessOptions[0] : "No endless option queued.";
+            return $"Progress: {summary.AchievementsUnlocked}/{summary.TotalAchievements} achievements • {summary.GoalsCompleted}/{summary.TotalGoals} goals • {summary.MilestonesUnlocked}/{summary.TotalMilestones} milestones
+" +
+                   $"Legacy: Fame {summary.Fame}, Prestige {summary.HousePrestige}, Infamy {summary.Infamy}, Class {summary.SocialClass}
+" +
+                   $"Next milestone: {summary.NextMilestone}
+" +
+                   $"Featured goal: {featuredGoal}
+" +
+                   $"Endless: {endless}
+" +
+                   $"Next endless option: {nextEndlessOption}";
+        }
+
+        public string BuildOnboardingDigest(Survivebest.Application.OnboardingSummaryViewModel onboarding, Survivebest.Application.HumanDaySliceParityViewModel parity)
+        {
+            if (onboarding == null && parity == null)
+            {
+                return "Day-slice guidance unavailable.";
+            }
+
+            string step = onboarding != null && !string.IsNullOrWhiteSpace(onboarding.CurrentStep) ? onboarding.CurrentStep : "No current step";
+            string prompt = onboarding != null && onboarding.Prompts != null && onboarding.Prompts.Count > 0 ? onboarding.Prompts[0] : "No onboarding prompt.";
+            string progress = onboarding != null ? $"Slice: {onboarding.CompletedSliceChecks}/{Math.Max(1, onboarding.TotalSliceChecks)} proofs" : "Slice: unavailable";
+            string nextProof = onboarding != null && onboarding.RemainingProofs != null && onboarding.RemainingProofs.Count > 0
+                ? $"Next proof: {onboarding.RemainingProofs[0]}"
+                : onboarding != null && onboarding.HumanDaySliceShipReady
+                    ? "Next proof: slice ship gate complete."
+                    : "Next proof: unavailable.";
+            string parityLine = parity != null
+                ? parity.ReadyForSaveLoadParity ? "Parity: ready for save/load verification." : $"Parity: missing {parity.MissingChecks.Count} checks before verification."
+                : "Parity: unavailable.";
+            return $"Step: {step}
+Prompt: {prompt}
+{progress}
+{nextProof}
+{parityLine}";
         }
 
         public string BuildHudLoopDigest(LifeLoopExperienceSnapshot snapshot)
