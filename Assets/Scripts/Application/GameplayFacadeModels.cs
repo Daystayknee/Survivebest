@@ -16,6 +16,9 @@ namespace Survivebest.Application
         public List<string> TopNeeds = new();
         public string CurrentThought;
         public string CurrentAction;
+        public string VisibleStateSummary;
+        public string CurrentSocialRead;
+        public string CurrentTradeoff;
         public List<string> ActiveMoodTags = new();
         public List<string> ActiveStatuses = new();
         public List<string> RelationshipHighlights = new();
@@ -96,6 +99,24 @@ namespace Survivebest.Application
     }
 
     [Serializable]
+    public sealed class CompletionismSummaryViewModel
+    {
+        public int AchievementsUnlocked;
+        public int TotalAchievements;
+        public int GoalsCompleted;
+        public int TotalGoals;
+        public int MilestonesUnlocked;
+        public int TotalMilestones;
+        public int Fame;
+        public int Infamy;
+        public int HousePrestige;
+        public string SocialClass;
+        public string NextMilestone;
+        public List<string> FeaturedGoals = new();
+        public List<string> UnlockedPerks = new();
+    }
+
+    [Serializable]
     public sealed class GameplayOverviewViewModel
     {
         public CharacterDashboardViewModel Character = new();
@@ -106,6 +127,7 @@ namespace Survivebest.Application
         public VampireSummaryViewModel Vampire = new();
         public WorldPanelViewModel World = new();
         public ActionPanelViewModel Actions = new();
+        public CompletionismSummaryViewModel Completionism = new();
         public string CurrentRoom;
         public List<string> AvailableActions = new();
     }
@@ -125,6 +147,9 @@ namespace Survivebest.Application
     [Serializable]
     public sealed class ActionPanelViewModel
     {
+        public string InstantAction;
+        public string AutomationHint;
+        public List<string> MicroActions = new();
         public List<string> SuggestedActions = new();
         public List<string> LockedActions = new();
         public List<string> WarningActions = new();

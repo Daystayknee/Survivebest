@@ -11,6 +11,7 @@ using Survivebest.Quest;
 using Survivebest.Social;
 using Survivebest.Status;
 using Survivebest.World;
+using System.Reflection;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -28,6 +29,7 @@ namespace Survivebest.Tests.EditMode
             RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
             memory.RecordEventDetailed("char_1", "friend_1", "odd injury pattern at brunch", -8, true, "cafe");
             HumanLifeExperienceLayerSystem life = root.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loop = root.AddComponent<GameplayLifeLoopOrchestrator>();
             PaperTrailSystem paper = root.AddComponent<PaperTrailSystem>();
             paper.RecordEntry("char_1", PaperRecordType.VampireAnomaly, "suspicious neck bruises rumor", 22f, true, "test");
             StatusEffectSystem statuses = root.AddComponent<StatusEffectSystem>();
@@ -40,7 +42,15 @@ namespace Survivebest.Tests.EditMode
             economy.AddFunds(200f, "seed");
             economy.AddItem("Rice", 4);
             economy.AddItem("Soap", 2);
-            CharacterFacade characterFacade = new CharacterFacade(memory, life, paper, household);
+            life.SetHumanMicroConditionProfile(character, new HumanMicroConditionProfile { SleepDebtFog = 0.7f, DryEyes = 0.4f });
+            life.UpdateVisibleLifeState(character, 0.78f, 0.3f);
+            GameObject friendGo = new GameObject("FriendFacade");
+            CharacterCore friend = friendGo.AddComponent<CharacterCore>();
+            friend.Initialize("friend_1", "Mina", LifeStage.Adult);
+            life.GenerateInterpersonalImpression(character, friend, "talk", 0.68f, 0.7f);
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(loop, new List<LifeTradeoffPrompt> { new LifeTradeoffPrompt { CharacterId = "char_1", Headline = "Bills want labor, but your body wants relief." } });
+            CharacterFacade characterFacade = new CharacterFacade(memory, life, paper, household, loop);
             CharacterDashboardViewModel dashboard = characterFacade.BuildDashboard(character);
             HouseholdFacade householdFacade = new HouseholdFacade();
             HouseholdSummaryViewModel householdVm = householdFacade.BuildSummary(household, economy);
@@ -50,6 +60,11 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotEmpty(dashboard.TopNeeds);
             Assert.IsNotEmpty(dashboard.ActiveMoodTags);
             Assert.AreEqual(character.CurrentLifeStage.ToString(), dashboard.LifeStage);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dashboard.VisibleStateSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dashboard.CurrentSocialRead));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dashboard.CurrentTradeoff));
+            StringAssert.Contains("(", dashboard.CurrentSocialRead);
+            StringAssert.Contains("vs", dashboard.CurrentTradeoff);
             Assert.AreEqual("Eat meal", dashboard.CurrentAction);
             Assert.IsFalse(string.IsNullOrWhiteSpace(dashboard.MoodSummary));
             Assert.IsNotEmpty(dashboard.ActiveStatuses);
@@ -60,6 +75,7 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(2, economyVm.DistinctInventoryEntries);
             Assert.IsNotEmpty(economyVm.InventoryHighlights);
 
+            Object.DestroyImmediate(friendGo);
             Object.DestroyImmediate(root);
         }
 
@@ -146,20 +162,59 @@ namespace Survivebest.Tests.EditMode
             TownSimulationManager town = root.AddComponent<TownSimulationManager>();
             SetPrivateField(town, "recentCommunityEvents", new List<CommunityEventRecord> { new CommunityEventRecord { DistrictId = "downtown", Label = "Clinic fundraiser" } });
 
+            HumanLifeExperienceLayerSystem lifeUi = root.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loopUi = root.AddComponent<GameplayLifeLoopOrchestrator>();
+            lifeUi.SetHumanMicroConditionProfile(character, new HumanMicroConditionProfile { SleepDebtFog = 0.8f, TensionHeadache = 0.4f });
+            lifeUi.UpdateVisibleLifeState(character, 0.75f, 0.35f);
+            GameObject otherUiGo = new GameObject("OtherUi");
+            CharacterCore otherUi = otherUiGo.AddComponent<CharacterCore>();
+            otherUi.Initialize("friend_ui", "Tess", LifeStage.Adult);
+            lifeUi.GenerateInterpersonalImpression(character, otherUi, "socialize", 0.62f, 0.8f);
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(loopUi, new List<LifeTradeoffPrompt> { new LifeTradeoffPrompt { CharacterId = "char_ui", Headline = "People need time that survival systems also want." } });
+
+            LongTermProgressionSystem progression = root.AddComponent<LongTermProgressionSystem>();
+            typeof(LongTermProgressionSystem).GetField("goals", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(progression, new List<AspirationGoal>
+                {
+                    new AspirationGoal { GoalId = "goal_1", Title = "Stabilize the clinic week", CurrentAmount = 2, TargetAmount = 5 },
+                    new AspirationGoal { GoalId = "goal_2", Title = "Keep the apartment stocked", CurrentAmount = 1, TargetAmount = 1, Completed = true }
+                });
+            typeof(LongTermProgressionSystem).GetField("milestones", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(progression, new List<ProgressionMilestone>
+                {
+                    new ProgressionMilestone { MilestoneId = "mile_1", Label = "Neighborhood Fixture", RequiredFame = 25, RequiredHousePrestige = 10 },
+                    new ProgressionMilestone { MilestoneId = "mile_2", Label = "Trusted Regular", RequiredFame = 10, RequiredHousePrestige = 5, Unlocked = true }
+                });
+            typeof(LongTermProgressionSystem).GetField("legacyProfile", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(progression, new LegacyProfile { Fame = 12, Infamy = 1, HousePrestige = 7, SocialClass = SocialClassTier.Working, UnlockedPerks = new List<string> { "night_shift_stamina" } });
+
+            AchievementSystem achievements = root.AddComponent<AchievementSystem>();
+            typeof(AchievementSystem).GetField("achievements", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(achievements, new List<AchievementDefinition>
+                {
+                    new AchievementDefinition { AchievementId = "ach_1", Title = "First Shift", Unlocked = true },
+                    new AchievementDefinition { AchievementId = "ach_2", Title = "Quiet Night", Unlocked = false }
+                });
+
             GameplayFacade gameplayFacade = new GameplayFacade(
-                new CharacterFacade(memory, null, null, household),
+                new CharacterFacade(memory, lifeUi, null, household, loopUi),
                 new HouseholdFacade(),
                 new EconomyFacade(),
                 new JusticeFacade(),
                 new RelationshipFacade(),
-                new VampireFacade());
+                new VampireFacade(),
+                new CompletionismFacade());
 
-            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(household, economy, location, justice, memory, vampire, clock, weather, town);
+            GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(household, economy, location, justice, memory, vampire, clock, weather, town, lifeUi, loopUi, progression, achievements);
 
             Assert.AreEqual("Noa", overview.Character.Name);
             Assert.AreEqual("Clinic Lobby", overview.CurrentRoom);
             Assert.AreEqual(1, overview.Household.MemberCount);
             Assert.IsNotEmpty(overview.Character.TopNeeds);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Character.VisibleStateSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Character.CurrentSocialRead));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Character.CurrentTradeoff));
             Assert.GreaterOrEqual(overview.AvailableActions.Count, 10);
             Assert.AreEqual(70f, overview.Vampire.HungerPressure);
             Assert.AreEqual("Foggy", overview.World.Weather);
@@ -168,6 +223,108 @@ namespace Survivebest.Tests.EditMode
             CollectionAssert.Contains(overview.AvailableActions, "text_contact");
             CollectionAssert.Contains(overview.AvailableActions, "manage_budget");
             CollectionAssert.Contains(overview.AvailableActions, "resolve_relationship_tension");
+            Assert.AreEqual("eat_quick_meal", overview.Actions.InstantAction);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(overview.Actions.AutomationHint));
+            CollectionAssert.Contains(overview.Actions.MicroActions, "grab_snack");
+            Assert.AreEqual(1, overview.Completionism.AchievementsUnlocked);
+            Assert.AreEqual(2, overview.Completionism.TotalAchievements);
+            Assert.AreEqual(1, overview.Completionism.GoalsCompleted);
+            Assert.AreEqual("Working", overview.Completionism.SocialClass);
+            StringAssert.Contains("Neighborhood Fixture", overview.Completionism.NextMilestone);
+            CollectionAssert.Contains(overview.Completionism.FeaturedGoals, "Stabilize the clinic week (2/5)");
+            CollectionAssert.Contains(overview.Completionism.UnlockedPerks, "night_shift_stamina");
+
+            Object.DestroyImmediate(otherUiGo);
+            Object.DestroyImmediate(root);
+        }
+
+
+        [Test]
+        public void CompletionismFacade_BuildsProgressSnapshotFromGoalsMilestonesAndAchievements()
+        {
+            GameObject root = new GameObject("CompletionismFacadeRoot");
+            LongTermProgressionSystem progression = root.AddComponent<LongTermProgressionSystem>();
+            AchievementSystem achievements = root.AddComponent<AchievementSystem>();
+
+            typeof(LongTermProgressionSystem).GetField("goals", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(progression, new List<AspirationGoal>
+                {
+                    new AspirationGoal { GoalId = "goal_a", Title = "Reach cooking rank", CurrentAmount = 3, TargetAmount = 10 },
+                    new AspirationGoal { GoalId = "goal_b", Title = "Launch neighborhood supper club", CurrentAmount = 1, TargetAmount = 1, Completed = true }
+                });
+            typeof(LongTermProgressionSystem).GetField("milestones", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(progression, new List<ProgressionMilestone>
+                {
+                    new ProgressionMilestone { MilestoneId = "mile_a", Label = "Local Celebrity", RequiredFame = 40, RequiredHousePrestige = 15 },
+                    new ProgressionMilestone { MilestoneId = "mile_b", Label = "Household Name", RequiredFame = 20, RequiredHousePrestige = 10, Unlocked = true }
+                });
+            typeof(LongTermProgressionSystem).GetField("legacyProfile", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(progression, new LegacyProfile { Fame = 18, Infamy = 2, HousePrestige = 11, SocialClass = SocialClassTier.Working, UnlockedPerks = new List<string> { "meal_prep_speed", "vip_discount" } });
+            typeof(AchievementSystem).GetField("achievements", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(achievements, new List<AchievementDefinition>
+                {
+                    new AchievementDefinition { AchievementId = "ach_a", Title = "Home Cook", Unlocked = true },
+                    new AchievementDefinition { AchievementId = "ach_b", Title = "Patron Favorite", Unlocked = true },
+                    new AchievementDefinition { AchievementId = "ach_c", Title = "Night Mayor", Unlocked = false }
+                });
+
+            CompletionismSummaryViewModel summary = new CompletionismFacade().BuildSummary(progression, achievements);
+
+            Assert.AreEqual(2, summary.AchievementsUnlocked);
+            Assert.AreEqual(3, summary.TotalAchievements);
+            Assert.AreEqual(1, summary.GoalsCompleted);
+            Assert.AreEqual(2, summary.TotalGoals);
+            Assert.AreEqual(1, summary.MilestonesUnlocked);
+            Assert.AreEqual(2, summary.TotalMilestones);
+            Assert.AreEqual("Working", summary.SocialClass);
+            StringAssert.Contains("Local Celebrity", summary.NextMilestone);
+            CollectionAssert.Contains(summary.FeaturedGoals, "Reach cooking rank (3/10)");
+            CollectionAssert.Contains(summary.UnlockedPerks, "meal_prep_speed");
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void GameplayFacade_ActionPanel_UsesCharacterTradeoffForFastSocialAction()
+        {
+            GameObject root = new GameObject("GameplayFacadeTradeoffRoot");
+            CharacterCore character = root.AddComponent<CharacterCore>();
+            character.Initialize("char_social_ui", "Mira", LifeStage.Adult);
+            NeedsSystem needs = root.AddComponent<NeedsSystem>();
+            needs.ApplySnapshot(new NeedsSnapshot { Hunger = 72f, Energy = 68f, Mood = 55f, Hydration = 61f, BurnoutRisk = 35f, MentalFatigue = 28f, SleepDebt = 20f });
+
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            LocationManager location = root.AddComponent<LocationManager>();
+            location.SetRooms(new List<Room>
+            {
+                new Room { RoomName = "Bus Stop", Theme = LocationTheme.Nature, AreaName = "Midtown" }
+            });
+            SetPrivateField(location, "<CurrentRoom>k__BackingField", location.FindRoom("Bus Stop"));
+
+            JusticeSystem justice = root.AddComponent<JusticeSystem>();
+            RelationshipMemorySystem memory = root.AddComponent<RelationshipMemorySystem>();
+            HumanLifeExperienceLayerSystem lifeUi = root.AddComponent<HumanLifeExperienceLayerSystem>();
+            GameplayLifeLoopOrchestrator loopUi = root.AddComponent<GameplayLifeLoopOrchestrator>();
+            lifeUi.UpdateVisibleLifeState(character, 0.25f, 0.8f);
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("recentTradeoffs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(loopUi, new List<LifeTradeoffPrompt>
+                {
+                    new LifeTradeoffPrompt { CharacterId = "other_char", RiskLabel = "burnout_vs_income", Tension = 0.9f },
+                    new LifeTradeoffPrompt { CharacterId = "char_social_ui", RiskLabel = "connection_vs_control", OptionA = "Show up socially and strengthen bonds.", OptionB = "Keep your time for recovery, chores, or money.", Tension = 0.8f }
+                });
+
+            GameplayFacade gameplayFacade = new GameplayFacade();
+            ActionPanelViewModel panel = gameplayFacade.BuildActionPanel(character, location, justice, memory, lifeUi, loopUi);
+
+            Assert.AreEqual("send_check_in_text", panel.InstantAction);
+            CollectionAssert.Contains(panel.MicroActions, "check_phone");
+            CollectionAssert.Contains(panel.MicroActions, "send_short_text");
+            CollectionAssert.Contains(panel.MicroActions, "Show up socially and strengthen bonds.");
+            CollectionAssert.DoesNotContain(panel.MicroActions, "review_shift_plan");
 
             Object.DestroyImmediate(root);
         }
