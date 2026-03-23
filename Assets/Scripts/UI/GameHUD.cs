@@ -274,6 +274,40 @@ namespace Survivebest.UI
                    $"Micro: {micro}";
         }
 
+        public string BuildCompletionismDigest(Survivebest.Application.CompletionismSummaryViewModel summary)
+        {
+            if (summary == null)
+            {
+                return "Completionism overview unavailable.";
+            }
+
+            string featuredGoal = summary.FeaturedGoals != null && summary.FeaturedGoals.Count > 0 ? summary.FeaturedGoals[0] : "No featured goal.";
+            return $"Progress: {summary.AchievementsUnlocked}/{summary.TotalAchievements} achievements • {summary.GoalsCompleted}/{summary.TotalGoals} goals • {summary.MilestonesUnlocked}/{summary.TotalMilestones} milestones
+" +
+                   $"Legacy: Fame {summary.Fame}, Prestige {summary.HousePrestige}, Infamy {summary.Infamy}, Class {summary.SocialClass}
+" +
+                   $"Next milestone: {summary.NextMilestone}
+" +
+                   $"Featured goal: {featuredGoal}";
+        }
+
+        public string BuildOnboardingDigest(Survivebest.Application.OnboardingSummaryViewModel onboarding, Survivebest.Application.HumanDaySliceParityViewModel parity)
+        {
+            if (onboarding == null && parity == null)
+            {
+                return "Day-slice guidance unavailable.";
+            }
+
+            string step = onboarding != null && !string.IsNullOrWhiteSpace(onboarding.CurrentStep) ? onboarding.CurrentStep : "No current step";
+            string prompt = onboarding != null && onboarding.Prompts != null && onboarding.Prompts.Count > 0 ? onboarding.Prompts[0] : "No onboarding prompt.";
+            string parityLine = parity != null
+                ? parity.ReadyForSaveLoadParity ? "Parity: ready for save/load verification." : $"Parity: missing {parity.MissingChecks.Count} checks before verification."
+                : "Parity: unavailable.";
+            return $"Step: {step}
+Prompt: {prompt}
+{parityLine}";
+        }
+
         public string BuildHudLoopDigest(LifeLoopExperienceSnapshot snapshot)
         {
             if (snapshot == null)

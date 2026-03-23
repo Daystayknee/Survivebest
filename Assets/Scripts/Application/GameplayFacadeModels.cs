@@ -117,6 +117,21 @@ namespace Survivebest.Application
     }
 
     [Serializable]
+    public sealed class OnboardingSummaryViewModel
+    {
+        public string CurrentStep;
+        public List<string> Prompts = new();
+    }
+
+    [Serializable]
+    public sealed class HumanDaySliceParityViewModel
+    {
+        public bool ReadyForSaveLoadParity;
+        public List<string> CompletedChecks = new();
+        public List<string> MissingChecks = new();
+    }
+
+    [Serializable]
     public sealed class GameplayOverviewViewModel
     {
         public CharacterDashboardViewModel Character = new();
@@ -128,6 +143,8 @@ namespace Survivebest.Application
         public WorldPanelViewModel World = new();
         public ActionPanelViewModel Actions = new();
         public CompletionismSummaryViewModel Completionism = new();
+        public OnboardingSummaryViewModel Onboarding = new();
+        public HumanDaySliceParityViewModel Parity = new();
         public string CurrentRoom;
         public List<string> AvailableActions = new();
     }
@@ -153,6 +170,8 @@ namespace Survivebest.Application
         public List<string> SuggestedActions = new();
         public List<string> LockedActions = new();
         public List<string> WarningActions = new();
+        public List<string> BlockedActionMessages = new();
+        public List<string> RiskActionMessages = new();
         public List<string> VampireOnlyActions = new();
         public List<string> ContextActions = new();
     }

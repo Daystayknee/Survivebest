@@ -30,10 +30,28 @@ namespace Survivebest.Application
             }
 
             vm.LockedActions.Add("demolish_city_block");
+            vm.BlockedActionMessages.Add("demolish_city_block: city-scale destruction is outside the Human Day Slice and blocked in normal play.");
             if (justiceSystem != null && activeCharacter != null && justiceSystem.IsIncarcerated(activeCharacter))
             {
                 vm.WarningActions.Add("escape_attempt");
                 vm.WarningActions.Add("contraband_trade");
+                vm.RiskActionMessages.Add("escape_attempt: extremely high legal risk while incarcerated.");
+                vm.RiskActionMessages.Add("contraband_trade: will deepen jail consequences and surveillance pressure.");
+            }
+
+            if (needs != null && needs.Hunger < 35f)
+            {
+                vm.RiskActionMessages.Add("skip_meal: hunger is already urgent and ignoring food will destabilize the day slice.");
+            }
+
+            if (needs != null && needs.Energy < 30f)
+            {
+                vm.RiskActionMessages.Add("push_through_exhaustion: low energy increases recovery pressure and bad outcomes.");
+            }
+
+            if (locationManager == null || locationManager.CurrentRoom == null)
+            {
+                vm.BlockedActionMessages.Add("travel_context: no active room context is available, so location-specific actions are limited.");
             }
 
             if (activeCharacter != null && activeCharacter.IsVampire)
@@ -858,6 +876,96 @@ namespace Survivebest.Application
         }
     }
 
+    public sealed class OnboardingFacade
+    {
+        public OnboardingSummaryViewModel BuildSummary(GameplayOverviewViewModel overview)
+        {
+            OnboardingSummaryViewModel vm = new OnboardingSummaryViewModel();
+            if (overview == null)
+            {
+                vm.CurrentStep = "Overview unavailable";
+                vm.Prompts.Add("Open the gameplay HUD to begin the Human Day Slice.");
+                return vm;
+            }
+
+            bool hasBathroomAction = overview.AvailableActions.Contains("shower");
+            bool hasFoodAction = overview.AvailableActions.Contains("eat_meal") || overview.AvailableActions.Contains("order_food");
+            bool hasSocialAction = overview.AvailableActions.Contains("text_contact");
+            bool hasWorkAction = overview.AvailableActions.Contains("go_to_work") || overview.AvailableActions.Contains("focus_task");
+
+            if (string.Equals(overview.CurrentRoom, "Unknown", StringComparison.OrdinalIgnoreCase))
+            {
+                vm.CurrentStep = "Re-enter the playable home slice";
+                vm.Prompts.Add("Spawn or load into a real apartment/home room before progressing the day.");
+            }
+            else if (hasBathroomAction)
+            {
+                vm.CurrentStep = "Morning upkeep";
+                vm.Prompts.Add("Use shower or bathroom actions first so the day starts from a stable hygiene state.");
+            }
+            else if (hasFoodAction)
+            {
+                vm.CurrentStep = "Eat before leaving";
+                vm.Prompts.Add("Resolve food or hydration pressure before committing to work/social flow.");
+            }
+            else if (hasSocialAction)
+            {
+                vm.CurrentStep = "Maintain one relationship";
+                vm.Prompts.Add("Send a text or check in with someone to satisfy the Human Day Slice social step.");
+            }
+            else if (hasWorkAction)
+            {
+                vm.CurrentStep = "Commit to the day obligation";
+                vm.Prompts.Add("Choose whether to go to work or deliberately skip so the sim records that branch.");
+            }
+            else
+            {
+                vm.CurrentStep = "Resolve the next visible pressure";
+                vm.Prompts.Add("Follow the instant action and complete one meaningful household or recovery action.");
+            }
+
+            vm.Prompts.Add("Before ending the day, make sure you can explain your location, money, top pressure, and next action from the HUD.");
+            return vm;
+        }
+    }
+
+    public sealed class HumanDaySliceParityFacade
+    {
+        public HumanDaySliceParityViewModel BuildSummary(GameplayOverviewViewModel overview)
+        {
+            HumanDaySliceParityViewModel vm = new HumanDaySliceParityViewModel();
+            if (overview == null)
+            {
+                vm.MissingChecks.Add("overview_missing: no gameplay overview exists to compare against save/load state.");
+                return vm;
+            }
+
+            if (!string.IsNullOrWhiteSpace(overview.CurrentRoom) && overview.CurrentRoom != "Unknown") vm.CompletedChecks.Add("room_context");
+            else vm.MissingChecks.Add("room_context: active room is missing.");
+
+            if (!string.IsNullOrWhiteSpace(overview.World.DateTimeLabel) && overview.World.DateTimeLabel != "Unknown time") vm.CompletedChecks.Add("clock_time");
+            else vm.MissingChecks.Add("clock_time: time/date label is missing.");
+
+            if (!string.IsNullOrWhiteSpace(overview.World.MoneySummary) && overview.World.MoneySummary != "$0") vm.CompletedChecks.Add("money_summary");
+            else vm.MissingChecks.Add("money_summary: visible funds summary is missing or zeroed.");
+
+            if (overview.Character.TopNeeds != null && overview.Character.TopNeeds.Count > 0) vm.CompletedChecks.Add("top_needs");
+            else vm.MissingChecks.Add("top_needs: no active pressure is visible to the player.");
+
+            if (overview.AvailableActions != null && overview.AvailableActions.Count > 0) vm.CompletedChecks.Add("action_menu");
+            else vm.MissingChecks.Add("action_menu: no player-facing actions are surfaced.");
+
+            if (overview.Actions.BlockedActionMessages != null && overview.Actions.BlockedActionMessages.Count > 0) vm.CompletedChecks.Add("blocked_action_reasoning");
+            else vm.MissingChecks.Add("blocked_action_reasoning: blocked actions lack explicit explanation.");
+
+            if (overview.Onboarding != null && overview.Onboarding.Prompts.Count > 0) vm.CompletedChecks.Add("onboarding_prompt");
+            else vm.MissingChecks.Add("onboarding_prompt: first-day guidance is missing.");
+
+            vm.ReadyForSaveLoadParity = vm.MissingChecks.Count == 0;
+            return vm;
+        }
+    }
+
     public sealed class GameplayFeedFacade
     {
         public List<GameplayFeedItemViewModel> BuildFeed(TownSimulationManager townSimulationManager, NarrativeContentIntelligenceSystem intelligenceSystem = null)
@@ -898,6 +1006,8 @@ namespace Survivebest.Application
         private readonly RelationshipFacade relationshipFacade;
         private readonly VampireFacade vampireFacade;
         private readonly CompletionismFacade completionismFacade;
+        private readonly OnboardingFacade onboardingFacade;
+        private readonly HumanDaySliceParityFacade humanDaySliceParityFacade;
         private readonly GameplayActionCatalog gameplayActionCatalog;
 
         public GameplayFacade(
@@ -908,6 +1018,8 @@ namespace Survivebest.Application
             RelationshipFacade relationshipFacade = null,
             VampireFacade vampireFacade = null,
             CompletionismFacade completionismFacade = null,
+            OnboardingFacade onboardingFacade = null,
+            HumanDaySliceParityFacade humanDaySliceParityFacade = null,
             GameplayActionCatalog gameplayActionCatalog = null)
         {
             this.characterFacade = characterFacade ?? new CharacterFacade();
@@ -917,6 +1029,8 @@ namespace Survivebest.Application
             this.relationshipFacade = relationshipFacade ?? new RelationshipFacade();
             this.vampireFacade = vampireFacade ?? new VampireFacade();
             this.completionismFacade = completionismFacade ?? new CompletionismFacade();
+            this.onboardingFacade = onboardingFacade ?? new OnboardingFacade();
+            this.humanDaySliceParityFacade = humanDaySliceParityFacade ?? new HumanDaySliceParityFacade();
             this.gameplayActionCatalog = gameplayActionCatalog ?? new GameplayActionCatalog();
         }
 
@@ -952,6 +1066,8 @@ namespace Survivebest.Application
             };
 
             viewModel.AvailableActions.AddRange(viewModel.Actions.ContextActions);
+            viewModel.Onboarding = onboardingFacade.BuildSummary(viewModel);
+            viewModel.Parity = humanDaySliceParityFacade.BuildSummary(viewModel);
             return viewModel;
         }
 

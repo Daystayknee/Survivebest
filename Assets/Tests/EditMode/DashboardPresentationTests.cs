@@ -59,6 +59,47 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void GameHUD_BuildsCompletionismAndOnboardingDigests()
+        {
+            GameObject go = new GameObject("HudCompletionismDigest");
+            GameHUD hud = go.AddComponent<GameHUD>();
+
+            string completionism = hud.BuildCompletionismDigest(new Survivebest.Application.CompletionismSummaryViewModel
+            {
+                AchievementsUnlocked = 3,
+                TotalAchievements = 10,
+                GoalsCompleted = 2,
+                TotalGoals = 5,
+                MilestonesUnlocked = 1,
+                TotalMilestones = 4,
+                Fame = 18,
+                HousePrestige = 12,
+                Infamy = 1,
+                SocialClass = "Working",
+                NextMilestone = "Neighborhood Fixture",
+                FeaturedGoals = new System.Collections.Generic.List<string> { "Finish first work week (3/5)" }
+            });
+            string onboarding = hud.BuildOnboardingDigest(
+                new Survivebest.Application.OnboardingSummaryViewModel
+                {
+                    CurrentStep = "Morning upkeep",
+                    Prompts = new System.Collections.Generic.List<string> { "Take a shower before leaving the apartment." }
+                },
+                new Survivebest.Application.HumanDaySliceParityViewModel
+                {
+                    ReadyForSaveLoadParity = false,
+                    MissingChecks = new System.Collections.Generic.List<string> { "action_menu" }
+                });
+
+            StringAssert.Contains("Progress:", completionism);
+            StringAssert.Contains("Next milestone:", completionism);
+            StringAssert.Contains("Step:", onboarding);
+            StringAssert.Contains("Parity:", onboarding);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void JournalFeedUI_BuildDailyDigest_UsesRecentPublishedEvents()
         {
             GameObject go = new GameObject("JournalDigest");
