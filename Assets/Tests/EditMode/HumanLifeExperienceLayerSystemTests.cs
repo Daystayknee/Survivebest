@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Social;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -460,6 +461,43 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void GenerateInterpersonalImpression_CreatesTargetedThoughtAndProfile()
+        {
+            GameObject go = new GameObject("LifeImpression");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            RelationshipMemorySystem memories = go.AddComponent<RelationshipMemorySystem>();
+            typeof(HumanLifeExperienceLayerSystem).GetField("relationshipMemorySystem", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(system, memories);
+
+            GameObject actorGo = new GameObject("Actor");
+            CharacterCore actor = actorGo.AddComponent<CharacterCore>();
+            actor.Initialize("char_impression_actor", "Avery", LifeStage.Adult);
+
+            GameObject targetGo = new GameObject("Target");
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("char_impression_target", "Jordan", LifeStage.Adult);
+
+            memories.RecordEventDetailed(actor.CharacterId, target.CharacterId, "awkward dinner", -18, false);
+            system.SetCognitiveDistortionProfile(actor, new CognitiveDistortionProfile
+            {
+                MindReading = 0.6f,
+                DominantDistortion = CognitiveDistortionType.MindReading
+            });
+
+            InterpersonalImpressionProfile impression = system.GenerateInterpersonalImpression(actor, target, "socialize", 0.72f, 0.8f);
+
+            Assert.IsNotNull(impression);
+            Assert.AreEqual(target.CharacterId, impression.TargetCharacterId);
+            Assert.AreEqual("social_impression", system.RecentThoughts[^1].Source);
+            StringAssert.Contains("Jordan", system.RecentThoughts[^1].Body);
+            Assert.Greater(system.InterpersonalImpressions.Count, 0);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(actorGo);
+            Object.DestroyImmediate(targetGo);
         }
 
     }

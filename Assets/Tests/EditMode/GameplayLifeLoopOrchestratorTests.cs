@@ -172,5 +172,48 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void ExecuteManualLifeLoopTick_WithSecondHouseholdMember_GeneratesSocialImpressionStep()
+        {
+            GameObject go = new GameObject("LoopOrchestratorSocialRead");
+            GameplayLifeLoopOrchestrator orchestrator = go.AddComponent<GameplayLifeLoopOrchestrator>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+            HumanLifeExperienceLayerSystem life = go.AddComponent<HumanLifeExperienceLayerSystem>();
+            PersonalityDecisionSystem decisions = go.AddComponent<PersonalityDecisionSystem>();
+            PsychologicalGrowthMentalHealthEngine mental = go.AddComponent<PsychologicalGrowthMentalHealthEngine>();
+
+            typeof(GameplayLifeLoopOrchestrator).GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, household);
+            typeof(GameplayLifeLoopOrchestrator).GetField("humanLifeExperienceLayerSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, life);
+            typeof(GameplayLifeLoopOrchestrator).GetField("personalityDecisionSystem", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, decisions);
+            typeof(GameplayLifeLoopOrchestrator).GetField("psychologicalGrowthMentalHealthEngine", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(orchestrator, mental);
+
+            GameObject activeGo = new GameObject("ActiveChar");
+            CharacterCore active = activeGo.AddComponent<CharacterCore>();
+            active.Initialize("char_social_active", "Alex", LifeStage.Adult);
+            activeGo.AddComponent<NeedsSystem>();
+
+            GameObject otherGo = new GameObject("OtherChar");
+            CharacterCore other = otherGo.AddComponent<CharacterCore>();
+            other.Initialize("char_social_other", "Sam", LifeStage.Adult);
+            otherGo.AddComponent<NeedsSystem>();
+
+            household.AddMember(active);
+            household.AddMember(other);
+            household.SetActiveCharacter(active);
+
+            orchestrator.ExecuteManualLifeLoopTick(18);
+
+            Assert.IsTrue(System.Linq.Enumerable.Any(orchestrator.RecentSteps, s => s.StepLabel == "ReadPerson"));
+            Assert.IsTrue(System.Linq.Enumerable.Any(life.RecentThoughts, t => t.Source == "social_impression"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(activeGo);
+            Object.DestroyImmediate(otherGo);
+        }
+
     }
 }

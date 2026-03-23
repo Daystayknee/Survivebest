@@ -140,6 +140,22 @@ namespace Survivebest.Core
             }
 
             humanLifeExperienceLayerSystem?.SimulateHourPulse(active, hour, pressure, social, progress);
+
+            CharacterCore socialTarget = ResolveSocialTarget(active);
+            if (socialTarget != null && (social > 0.58f || decision == AutonomousActionType.Socialize))
+            {
+                InterpersonalImpressionProfile impression = humanLifeExperienceLayerSystem?.GenerateInterpersonalImpression(
+                    active,
+                    socialTarget,
+                    decision.ToString(),
+                    pressure,
+                    social);
+                if (impression != null)
+                {
+                    RecordStep(active, "ReadPerson", $"social_impression_{impression.VibeLabel}", Mathf.Clamp01(Mathf.Abs(impression.Warmth) + impression.Suspicion));
+                }
+            }
+
             adaptiveLifeEventsDirector?.DirectBeatForActiveCharacter(hour);
             gameplayInteractionPresentationLayer?.RegisterManualChoiceResult(decision.ToString(), $"Loop resolved: {decision}", progress * 8f - pressure * 3f);
 
@@ -266,6 +282,26 @@ namespace Survivebest.Core
             }
 
             return fallbackAbsoluteHourCounter++;
+        }
+
+        private CharacterCore ResolveSocialTarget(CharacterCore active)
+        {
+            if (active == null || householdManager == null || householdManager.Members == null)
+            {
+                return null;
+            }
+
+            IReadOnlyList<CharacterCore> members = householdManager.Members;
+            for (int i = 0; i < members.Count; i++)
+            {
+                CharacterCore candidate = members[i];
+                if (candidate != null && candidate != active && !candidate.IsDead)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private static float BuildProgressFromDecision(AutonomousActionType decision)
