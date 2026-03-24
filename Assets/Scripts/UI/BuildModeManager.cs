@@ -25,12 +25,16 @@ namespace Survivebest.UI
             {
                 Vector3 world = GetWorldPoint(Input.mousePosition);
                 RaycastHit2D hit = Physics2D.Raycast(world, Vector2.zero, Mathf.Infinity, placeableLayerMask);
-                selected = hit.collider != null ? hit.collider.GetComponent<FurniturePlaceable>() : null;
+                FurniturePlaceable candidate = hit.collider != null ? hit.collider.GetComponent<FurniturePlaceable>() : null;
+                selected = candidate != null && candidate.CanMove(buildModeEnabled) ? candidate : null;
             }
 
             if (Input.GetMouseButton(0) && selected != null)
             {
-                selected.TryMoveTo(GetWorldPoint(Input.mousePosition));
+                if (selected.CanMove(buildModeEnabled))
+                {
+                    selected.TryMoveTo(GetWorldPoint(Input.mousePosition));
+                }
             }
 
             if (Input.GetMouseButtonUp(0))
