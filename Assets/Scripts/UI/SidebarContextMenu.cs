@@ -24,6 +24,7 @@ namespace Survivebest.UI
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
+        [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private Text titleText;
         [SerializeField] private Text optionsText;
@@ -120,6 +121,8 @@ namespace Survivebest.UI
             }
 
             AddDynamicWorldOptions(room);
+            DeduplicateOptionsByActionKey();
+            EnsureMinimumFallbackOptions();
             RefreshText(room);
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
@@ -150,7 +153,7 @@ namespace Survivebest.UI
             LotDefinition lot = FindLotForRoom(room);
             if (lot != null && townSimulationSystem != null)
             {
-                bool open = townSimulationSystem.IsLotOpen(lot.LotId, DateTime.Now.Hour);
+                bool open = townSimulationSystem.IsLotOpen(lot.LotId, GetCurrentHour());
                 currentOptions.Add(new SidebarOption { Label = open ? "Read District Pulse" : "Wait / Replan", ActionKey = "review_local_pulse" });
             }
 
@@ -208,6 +211,43 @@ namespace Survivebest.UI
             {
                 optionsText.text += $"{i + 1}. {currentOptions[i].Label}\n";
             }
+        }
+
+        private int GetCurrentHour()
+        {
+            if (worldClock != null)
+            {
+                return worldClock.Hour;
+            }
+
+            return DateTime.Now.Hour;
+        }
+
+        private void DeduplicateOptionsByActionKey()
+        {
+            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = currentOptions.Count - 1; i >= 0; i--)
+            {
+                SidebarOption option = currentOptions[i];
+                string actionKey = option != null ? option.ActionKey : null;
+                if (string.IsNullOrWhiteSpace(actionKey) || seen.Add(actionKey))
+                {
+                    continue;
+                }
+
+                currentOptions.RemoveAt(i);
+            }
+        }
+
+        private void EnsureMinimumFallbackOptions()
+        {
+            if (currentOptions.Count > 0)
+            {
+                return;
+            }
+
+            currentOptions.Add(new SidebarOption { Label = "Rest", ActionKey = "rest" });
+            currentOptions.Add(new SidebarOption { Label = "Review Needs", ActionKey = "check_needs" });
         }
     }
 }
