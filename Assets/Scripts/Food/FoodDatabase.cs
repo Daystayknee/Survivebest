@@ -14,7 +14,9 @@ namespace Survivebest.Food
         StreetFood,
         Breakfast,
         Dessert,
-        Drink
+        Drink,
+        PartyFood,
+        KidsMeal
     }
 
     public enum CookingMethod
@@ -28,7 +30,12 @@ namespace Survivebest.Food
         Blend,
         Mix,
         Assemble,
-        Brew
+        Brew,
+        Braise,
+        Smoke,
+        Ferment,
+        SlowCook,
+        AirFry
     }
 
     public enum KitchenEquipment
@@ -40,7 +47,12 @@ namespace Survivebest.Food
         CoffeeMachine,
         Kettle,
         Toaster,
-        Grill
+        Grill,
+        AirFryer,
+        SlowCooker,
+        PressureCooker,
+        RiceCooker,
+        Smoker
     }
 
     public enum CuisineType
@@ -56,7 +68,10 @@ namespace Survivebest.Food
         Mediterranean,
         Comfort,
         StreetFood,
-        FastFood
+        FastFood,
+        Korean,
+        MiddleEastern,
+        Spanish
     }
 
     public enum FoodQuality
@@ -337,6 +352,14 @@ namespace Survivebest.Food
             AddFoodIfMissing(CreateFood("Chicken Wrap", FoodCategory.StreetFood, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Warm, 32f, 4f, 3f, 2f, 46f, tags: new List<string> { "takeout", "handheld", "quick" }, calories: 470f, protein: 26f, fat: 16f, carbs: 42f));
             AddFoodIfMissing(CreateFood("Pizza Combo", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Bake, ServingTemperature.Hot, 40f, 4f, 4f, 1f, 58f, tags: new List<string> { "takeout", "fast-food", "pizza" }, calories: 710f, protein: 28f, fat: 29f, carbs: 78f, salt: 6f));
             AddFoodIfMissing(CreateFood("Smoothie Bowl Deluxe", FoodCategory.Breakfast, CuisineType.Mediterranean, CookingMethod.Blend, ServingTemperature.Cold, 30f, 5f, 4f, 4f, 34f, tags: new List<string> { "breakfast", "fruit", "healthy" }, calories: 360f, protein: 10f, fat: 9f, carbs: 58f, vitamins: 12f, sugar: 22f));
+            AddFoodIfMissing(CreateFood("Air Fryer Falafel Wrap", FoodCategory.StreetFood, CuisineType.MiddleEastern, CookingMethod.AirFry, ServingTemperature.Hot, 34f, 5f, 3f, 3f, 52f, tags: new List<string> { "takeout", "street-food", "air-fried" }, calories: 510f, protein: 18f, fat: 17f, carbs: 64f, vitamins: 9f));
+            AddFoodIfMissing(CreateFood("Slow Cooker Beef Barbacoa", FoodCategory.HomeCooked, CuisineType.Mexican, CookingMethod.SlowCook, ServingTemperature.Hot, 48f, 6f, 5f, 4f, 82f, tags: new List<string> { "family-meal", "slow-cooked", "protein" }, calories: 640f, protein: 36f, fat: 28f, carbs: 40f));
+            AddFoodIfMissing(CreateFood("Pressure Dal Bowl", FoodCategory.Healthy, CuisineType.Indian, CookingMethod.Braise, ServingTemperature.Hot, 40f, 6f, 4f, 5f, 56f, tags: new List<string> { "healthy", "batch-cook", "lentils" }, calories: 470f, protein: 20f, fat: 10f, carbs: 72f, vitamins: 10f));
+            AddFoodIfMissing(CreateFood("Smoked Brisket Plate", FoodCategory.Gourmet, CuisineType.American, CookingMethod.Smoke, ServingTemperature.Hot, 52f, 5f, 6f, 2f, 84f, tags: new List<string> { "gourmet", "smoky", "protein" }, calories: 760f, protein: 42f, fat: 44f, carbs: 24f));
+            AddFoodIfMissing(CreateFood("Fermented Veggie Bowl", FoodCategory.Healthy, CuisineType.Korean, CookingMethod.Ferment, ServingTemperature.Cold, 24f, 4f, 3f, 4f, 30f, tags: new List<string> { "healthy", "fermented", "vegetable" }, calories: 250f, protein: 7f, fat: 7f, carbs: 34f, hydration: 16f, vitamins: 15f));
+            AddFoodIfMissing(CreateFood("Rice Cooker Salmon Bowl", FoodCategory.HomeCooked, CuisineType.Japanese, CookingMethod.Steam, ServingTemperature.Warm, 42f, 6f, 4f, 5f, 58f, tags: new List<string> { "everyday", "rice-bowl", "seafood" }, calories: 540f, protein: 30f, fat: 18f, carbs: 60f, vitamins: 8f));
+            AddFoodIfMissing(CreateFood("Party Nacho Tray", FoodCategory.PartyFood, CuisineType.Mexican, CookingMethod.Assemble, ServingTemperature.Hot, 36f, 4f, 6f, 0f, 70f, tags: new List<string> { "party-food", "shareable", "comfort" }, calories: 620f, protein: 20f, fat: 31f, carbs: 62f, salt: 6f));
+            AddFoodIfMissing(CreateFood("Air Fryer Apple Hand Pie", FoodCategory.Dessert, CuisineType.American, CookingMethod.AirFry, ServingTemperature.Warm, 22f, 7f, 8f, -1f, 80f, tags: new List<string> { "dessert", "air-fried", "sweet" }, calories: 390f, protein: 5f, fat: 17f, carbs: 54f, sugar: 24f));
 
             AddRecipeIfMissing(CreateRecipe("apple_slices", "Apple Slices", new List<string> { "Apple" }, new List<string> { "Wash and slice the apple", "Serve chilled or room temperature" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "fresh", "sweet" }, new List<string> { "fruit", "snack", "quick" }, 70f, 0f, 0f, 19f, hydration: 8f, vitamins: 4f));
             AddRecipeIfMissing(CreateRecipe("tropical_fruit_cup", "Tropical Fruit Cup", new List<string> { "Pineapple", "Mango", "Grapes" }, new List<string> { "Dice fruit", "Mix in a bowl", "Serve chilled" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 4f, 4, 0, new List<string> { "sweet", "fresh" }, new List<string> { "fruit", "snack", "hydrating" }, 120f, 1f, 0f, 28f, hydration: 14f, vitamins: 9f));
@@ -353,6 +376,14 @@ namespace Survivebest.Food
             AddRecipeIfMissing(CreateRecipe("chicken_wrap", "Chicken Wrap", new List<string> { "Chicken breast", "Tortilla", "Lettuce", "Tomato", "Black Pepper" }, new List<string> { "Cook chicken", "Slice produce", "Wrap together and serve warm" }, CookingMethod.Assemble, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Warm, 10f, 8, 8, new List<string> { "savory", "fresh" }, new List<string> { "takeout", "handheld", "quick" }, 470f, 26f, 16f, 42f, salt: 3f));
             AddRecipeIfMissing(CreateRecipe("pizza_combo", "Pizza Combo", new List<string> { "Flour", "Tomato", "Cheddar", "Oregano", "Sea salt", "Olive oil" }, new List<string> { "Make the dough", "Top and bake", "Serve as a combo meal" }, CookingMethod.Bake, KitchenEquipment.Oven, CuisineType.FastFood, ServingTemperature.Hot, 18f, 12, 18, new List<string> { "savory", "cheesy" }, new List<string> { "takeout", "fast-food", "pizza" }, 710f, 28f, 29f, 78f, salt: 6f));
             AddRecipeIfMissing(CreateRecipe("smoothie_bowl_deluxe", "Smoothie Bowl Deluxe", new List<string> { "Yogurt", "Banana", "Mango", "Blueberry", "Almond" }, new List<string> { "Blend yogurt and fruit", "Pour into bowl", "Top with almonds" }, CookingMethod.Blend, KitchenEquipment.Blender, CuisineType.Mediterranean, ServingTemperature.Cold, 8f, 5, 3, new List<string> { "sweet", "fruit-forward", "cooling" }, new List<string> { "breakfast", "fruit", "healthy" }, 360f, 10f, 9f, 58f, vitamins: 12f, sugar: 22f));
+            AddRecipeIfMissing(CreateRecipe("air_fryer_falafel_wrap", "Air Fryer Falafel Wrap", new List<string> { "Chickpeas", "Pita", "Cucumber", "Tomato", "Sea salt" }, new List<string> { "Mash and season chickpeas", "Air-fry falafel bites until crisp", "Fill pita with falafel and fresh vegetables" }, CookingMethod.AirFry, KitchenEquipment.AirFryer, CuisineType.MiddleEastern, ServingTemperature.Hot, 18f, 10, 14, new List<string> { "savory", "crispy", "fresh" }, new List<string> { "takeout", "street-food", "air-fried" }, 510f, 18f, 17f, 64f, vitamins: 9f, salt: 3f));
+            AddRecipeIfMissing(CreateRecipe("slow_cooker_beef_barbacoa", "Slow Cooker Beef Barbacoa", new List<string> { "Beef", "Onion", "Garlic", "Cumin", "Chili powder", "Lime", "Sea salt" }, new List<string> { "Season beef and aromatics", "Slow-cook until fork tender", "Shred and finish with lime" }, CookingMethod.SlowCook, KitchenEquipment.SlowCooker, CuisineType.Mexican, ServingTemperature.Hot, 20f, 12, 240, new List<string> { "savory", "spiced", "rich" }, new List<string> { "family", "slow-cooked", "protein" }, 640f, 36f, 28f, 40f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("pressure_dal_bowl", "Pressure Dal Bowl", new List<string> { "Lentils", "Onion", "Garlic", "Turmeric", "Cumin", "Rice", "Sea salt" }, new List<string> { "Sauté aromatics and spices", "Pressure-cook lentils until creamy", "Serve over hot rice" }, CookingMethod.Braise, KitchenEquipment.PressureCooker, CuisineType.Indian, ServingTemperature.Hot, 16f, 8, 22, new List<string> { "savory", "spiced", "comfort" }, new List<string> { "healthy", "batch-cook", "lentils" }, 470f, 20f, 10f, 72f, vitamins: 10f, salt: 3f));
+            AddRecipeIfMissing(CreateRecipe("smoked_brisket_plate", "Smoked Brisket Plate", new List<string> { "Beef", "Kosher salt", "Black Pepper", "Paprika", "Potato" }, new List<string> { "Rub and rest brisket", "Smoke low and slow", "Serve sliced with potatoes" }, CookingMethod.Smoke, KitchenEquipment.Smoker, CuisineType.American, ServingTemperature.Hot, 28f, 20, 300, new List<string> { "smoky", "savory", "rich" }, new List<string> { "gourmet", "protein", "barbecue" }, 760f, 42f, 44f, 24f, salt: 5f));
+            AddRecipeIfMissing(CreateRecipe("fermented_veggie_bowl", "Fermented Veggie Bowl", new List<string> { "Cabbage", "Carrot", "Ginger", "Sea salt", "Rice" }, new List<string> { "Salt and massage vegetables", "Ferment until tangy", "Serve over rice" }, CookingMethod.Ferment, KitchenEquipment.PressureCooker, CuisineType.Korean, ServingTemperature.Cold, 14f, 12, 0, new List<string> { "tangy", "fresh", "fermented" }, new List<string> { "healthy", "fermented", "vegetable" }, 250f, 7f, 7f, 34f, hydration: 16f, vitamins: 15f, salt: 3f));
+            AddRecipeIfMissing(CreateRecipe("rice_cooker_salmon_bowl", "Rice Cooker Salmon Bowl", new List<string> { "Salmon", "Rice", "Soy Sauce", "Cucumber", "Sea salt" }, new List<string> { "Cook rice in a rice cooker", "Steam salmon until flaky", "Assemble bowl with cucumber and sauce" }, CookingMethod.Steam, KitchenEquipment.RiceCooker, CuisineType.Japanese, ServingTemperature.Warm, 15f, 8, 18, new List<string> { "savory", "clean", "umami" }, new List<string> { "everyday", "rice-bowl", "seafood" }, 540f, 30f, 18f, 60f, vitamins: 8f, salt: 3f));
+            AddRecipeIfMissing(CreateRecipe("party_nacho_tray", "Party Nacho Tray", new List<string> { "Tortilla", "Cheddar", "Jalapeño", "Tomato", "Black beans", "Sea salt" }, new List<string> { "Layer tortillas and toppings", "Melt cheddar until bubbly", "Serve immediately for sharing" }, CookingMethod.Assemble, KitchenEquipment.Microwave, CuisineType.Mexican, ServingTemperature.Hot, 10f, 8, 6, new List<string> { "savory", "spicy", "shareable" }, new List<string> { "party-food", "comfort", "shareable" }, 620f, 20f, 31f, 62f, salt: 6f));
+            AddRecipeIfMissing(CreateRecipe("air_fryer_apple_hand_pie", "Air Fryer Apple Hand Pie", new List<string> { "Apple", "Flour", "Butter", "Sugar", "Cinnamon" }, new List<string> { "Prepare sweet apple filling", "Wrap in dough", "Air-fry until golden" }, CookingMethod.AirFry, KitchenEquipment.AirFryer, CuisineType.American, ServingTemperature.Warm, 12f, 12, 10, new List<string> { "sweet", "spiced", "crispy" }, new List<string> { "dessert", "air-fried", "sweet" }, 390f, 5f, 17f, 54f, sugar: 24f));
         }
 
         private void AddFoodIfMissing(FoodItem item)

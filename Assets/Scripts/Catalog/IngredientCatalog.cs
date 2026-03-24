@@ -291,6 +291,11 @@ namespace Survivebest.Catalog
             AddIfMissing(CreateIngredient("Burger bun", IngredientGroup.Grain, IngredientCategory.Grains, new List<string> { "bread", "sandwich", "fast-food" }, spoilHours: 168f, calories: 270f, protein: 9f, carbs: 51f));
             AddIfMissing(CreateIngredient("Fries", IngredientGroup.Snack, IngredientCategory.PreparedFoods, new List<string> { "fried", "side", "fast-food" }, spoilHours: 24f, calories: 312f, fat: 15f, carbs: 41f));
             AddIfMissing(CreateIngredient("Soda syrup", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "sweet", "soda" }, isPerishable: false, spoilHours: 1440f, carbs: 70f));
+            AddIfMissing(CreateIngredient("Pita", IngredientGroup.Grain, IngredientCategory.Grains, new List<string> { "flatbread", "middle-eastern", "staple" }, spoilHours: 216f, calories: 275f, protein: 9f, carbs: 55f));
+            AddIfMissing(CreateIngredient("Turmeric", IngredientGroup.Spice, IngredientCategory.Spices, new List<string> { "seasoning", "earthy", "golden" }, isPerishable: false, spoilHours: 8760f));
+            AddIfMissing(CreateIngredient("Kimchi", IngredientGroup.Vegetable, IngredientCategory.PreparedFoods, new List<string> { "fermented", "spicy", "preserved" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 720f, calories: 23f, carbs: 4f, hydration: 88f));
+            AddIfMissing(CreateIngredient("Sesame oil", IngredientGroup.Pantry, IngredientCategory.Oils, new List<string> { "oil", "nutty", "asian" }, isPerishable: false, spoilHours: 2400f, fat: 100f));
+            AddIfMissing(CreateIngredient("Tahini", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "sesame", "creamy", "sauce" }, isPerishable: false, spoilHours: 1440f, calories: 595f, protein: 17f, fat: 53f, carbs: 21f));
         }
 
         private void AddIfMissing(IngredientItem item)
