@@ -177,6 +177,8 @@ namespace Survivebest.Health
 
             AddInitialAssessment(plan, condition, animalPatient);
             AddPrimaryTreatment(plan, condition, animalPatient);
+            AddSurgicalTrack(plan, condition, animalPatient);
+            AddPainManagementTrack(plan, condition, animalPatient);
             AddMedicationSupport(plan, condition, animalPatient);
             AddFollowUpCare(plan, condition, animalPatient);
 
@@ -184,6 +186,24 @@ namespace Survivebest.Health
             plan.MedicationSummary = BuildMedicationSummary(plan);
             plan.FollowUpSummary = BuildFollowUpSummary(plan);
             return plan;
+        }
+
+        public List<HealthcareEncounterPlan> BuildMaxIntensityPlans(MedicalConditionSystem medicalConditionSystem, bool animalPatient = false)
+        {
+            List<HealthcareEncounterPlan> plans = BuildPlansForCharacter(medicalConditionSystem, animalPatient);
+            for (int i = 0; i < plans.Count; i++)
+            {
+                HealthcareEncounterPlan plan = plans[i];
+                if (plan == null)
+                {
+                    continue;
+                }
+
+                plan.ReprocessingSummary += " Max-intensity mode: enforce sterile auditing, imaging verification, and post-procedure chart lock every phase.";
+                plan.FollowUpSummary += " Max-intensity mode: auto-schedule recheck windows at 12h, 24h, and 72h.";
+            }
+
+            return plans;
         }
 
         public string BuildProviderCoverageSummary(bool animalPatient = false, string workplaceLotId = null)
@@ -463,6 +483,69 @@ namespace Survivebest.Health
             });
         }
 
+        private void AddSurgicalTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (animalPatient || condition == null || (!plan.NeedsSurgery && !condition.RequiresSurgeryConsult))
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = "Surgery Prep & Operative Control",
+                Description = "Sterile prep, anesthesia safety check, operation cadence, and closure review.",
+                ProviderRole = CareProviderRole.Surgeon,
+                FacilityType = CareFacilityType.OperatingRoom,
+                AnatomyFocus = $"{condition.BodyLocation} / {condition.FractureType} / {condition.InternalComplication}",
+                InteractiveMinigame = MinigameType.Surgery,
+                EstimatedMinutes = 60,
+                RequiresSterileField = true,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Sterile drapes", "Anesthesia monitor", "Surgical clamps", "Irrigation", "Closure kit" },
+                ProcedureSteps = new List<string>
+                {
+                    "Confirm identity, consent, anatomy site, allergies, and blood-loss risk.",
+                    "Run sterile prep, instrument count, and anesthesia timeout.",
+                    "Complete reduction/repair/debridement and verify closure integrity.",
+                    "Transfer to monitored recovery with handoff checklist."
+                },
+                ReprocessingChecklist = new List<string>
+                {
+                    "Count instruments and sharps",
+                    "Sterilize reusable tools and suction lines",
+                    "Document operative timeline and closure quality"
+                }
+            });
+        }
+
+        private void AddPainManagementTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (condition == null || condition.PainLevel < 0.2f)
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = animalPatient ? "Comfort & Pain Reassessment" : "Pain Ladder Reassessment",
+                Description = "Re-score pain, mobility, and function to prevent undertreatment or unsafe overmedication.",
+                ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Nurse,
+                FacilityType = plan.NeedsHospitalization ? CareFacilityType.HospitalWard : CareFacilityType.Clinic,
+                AnatomyFocus = $"{condition.DisplayName} / pain {Mathf.RoundToInt(condition.PainLevel * 100f)}%",
+                InteractiveMinigame = MinigameType.FirstAid,
+                EstimatedMinutes = 14,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Pain scale card", "Mobility checklist", "Medication reconciliation log" },
+                ProcedureSteps = new List<string>
+                {
+                    "Measure pain at rest and with motion.",
+                    "Adjust pain-med schedule against side effects and sedation signs.",
+                    "Set next reassessment checkpoint and escalation trigger."
+                },
+                ReprocessingChecklist = new List<string> { "Update MAR log", "Reset reassessment chart", "Clear bedside tray" }
+            });
+        }
+
         private void AddFollowUpCare(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
         {
             plan.Directives.Add(new TreatmentDirective
@@ -547,10 +630,15 @@ namespace Survivebest.Health
                 return MinigameType.VeterinaryCare;
             }
 
+            if (condition.InjuryType == InjuryType.Fracture && condition.RequiresSurgeryConsult)
+            {
+                return MinigameType.Surgery;
+            }
+
             return condition.InjuryType switch
             {
                 InjuryType.Fracture => MinigameType.Casting,
-                InjuryType.Cut or InjuryType.Bite or InjuryType.Scrape or InjuryType.Burn => MinigameType.Bandaging,
+                InjuryType.Cut or InjuryType.Bite or InjuryType.Scrape or InjuryType.Scab or InjuryType.Burn => MinigameType.Bandaging,
                 _ => MinigameType.FirstAid
             };
         }
@@ -563,6 +651,7 @@ namespace Survivebest.Health
                 InjuryType.Cut => condition.RequiresSutures ? "Wound Cleaning, Suturing & Dressing" : "Wound Cleaning, Closure & Dressing",
                 InjuryType.Bite => "Bite Irrigation & Infection Control",
                 InjuryType.Burn => "Burn Cooling, Debridement & Dressing",
+                InjuryType.Scab => "Scab Protection, Cleaning & Skin Recovery",
                 InjuryType.Scrape => "Surface Wound Clean & Cover",
                 _ => "General Trauma Stabilization"
             };
@@ -578,6 +667,9 @@ namespace Survivebest.Health
                     break;
                 case InjuryType.Cut:
                     supplies.AddRange(new[] { "Antiseptic", "Gauze", "Bandage", "Steri-strips", "Suture kit" });
+                    break;
+                case InjuryType.Scab:
+                    supplies.AddRange(new[] { "Saline rinse", "Hydrocolloid patch", "Barrier ointment" });
                     break;
                 case InjuryType.Burn:
                     supplies.AddRange(new[] { "Cooling gel", "Non-stick dressing", "Burn cream" });
