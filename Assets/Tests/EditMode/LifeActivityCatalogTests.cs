@@ -36,5 +36,16 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEverydayCarryItem()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHumanExperienceMoment()));
         }
+
+        [Test]
+        public void ChoiceDepthSummary_ReportsLargeAuthoredOptionPool()
+        {
+            int total = LifeActivityCatalog.GetTotalChoiceCount();
+            string summary = LifeActivityCatalog.BuildChoiceDepthSummary();
+
+            Assert.GreaterOrEqual(total, 220);
+            StringAssert.Contains(total.ToString(), summary);
+            StringAssert.Contains("20 activity pools", summary);
+        }
     }
 }

@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Emotion;
@@ -116,6 +117,86 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("10,000", renderer.BuildPortraitVariationSummary());
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void CharacterPortraitRenderer_BuildMappedSpriteRosterReport_ListsAllMappedSpriteSlots()
+        {
+            GameObject go = new GameObject("PortraitRoster");
+            CharacterPortraitRenderer renderer = go.AddComponent<CharacterPortraitRenderer>();
+
+            Sprite spriteA = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
+            spriteA.name = "face_oval_01";
+            Sprite spriteB = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
+            spriteB.name = "eyes_round_01";
+
+            SetPrivateField(renderer, "faceSprites", new List<FaceShapeSpriteEntry>
+            {
+                new FaceShapeSpriteEntry { FaceShape = FaceShapeType.Oval, Sprite = spriteA }
+            });
+            SetPrivateField(renderer, "eyeSprites", new List<EyeShapeSpriteEntry>
+            {
+                new EyeShapeSpriteEntry { EyeShape = EyeShapeType.Round, Sprite = spriteB }
+            });
+
+            IReadOnlyList<string> roster = renderer.BuildMappedSpriteRoster();
+            string report = renderer.BuildMappedSpriteRosterReport();
+            IReadOnlyList<string> expected = renderer.BuildExpectedSpriteRosterKeys();
+
+            CollectionAssert.Contains(roster, "Face|Oval|face_oval_01");
+            CollectionAssert.Contains(roster, "Eyes|Round|eyes_round_01");
+            StringAssert.Contains("Mapped sprite roster entries: 2", report);
+            StringAssert.Contains("Face|Oval|face_oval_01", report);
+            StringAssert.Contains("Eyes|Round|eyes_round_01", report);
+            CollectionAssert.Contains(expected, "Face|Oval");
+            CollectionAssert.Contains(expected, "Face|InvertedTriangle");
+            CollectionAssert.Contains(expected, "Face|Oblong");
+            CollectionAssert.Contains(expected, "Face|Hexagon");
+            CollectionAssert.Contains(expected, "Face|Bell");
+            CollectionAssert.Contains(expected, "Face|Gaunt");
+            CollectionAssert.Contains(expected, "Face|Chiseled");
+            CollectionAssert.Contains(expected, "Eyes|Round");
+            CollectionAssert.Contains(expected, "Eyes|Sanpaku");
+            CollectionAssert.Contains(expected, "Eyes|Sleepy");
+            CollectionAssert.Contains(expected, "Eyes|Sunken");
+            CollectionAssert.Contains(expected, "Eyes|Fox");
+            CollectionAssert.Contains(expected, "Eyes|HeavyLidded");
+            CollectionAssert.Contains(expected, "Eyes|Asymmetrical");
+            CollectionAssert.Contains(expected, "Body|Average");
+            CollectionAssert.Contains(expected, "Body|Ectomorph");
+            CollectionAssert.Contains(expected, "Body|Endomorph");
+            CollectionAssert.Contains(expected, "Body|Mesomorph");
+            CollectionAssert.Contains(expected, "Body|Pear");
+            CollectionAssert.Contains(expected, "Body|Apple");
+            CollectionAssert.Contains(expected, "Body|Lithe");
+            CollectionAssert.Contains(expected, "Body|Burly");
+            CollectionAssert.Contains(expected, "Clothing|Casual");
+            CollectionAssert.Contains(expected, "Clothing|Cyber");
+            CollectionAssert.Contains(expected, "Clothing|Vintage");
+            CollectionAssert.Contains(expected, "Clothing|Gothic");
+            CollectionAssert.Contains(expected, "Clothing|Minimalist");
+            CollectionAssert.Contains(expected, "Clothing|Boho");
+            CollectionAssert.Contains(expected, "Clothing|Preppy");
+            CollectionAssert.Contains(expected, "Clothing|Tactical");
+            CollectionAssert.Contains(expected, "Clothing|AvantGarde");
+            CollectionAssert.Contains(expected, "Hair|Pixie");
+            CollectionAssert.Contains(expected, "Hair|Shag");
+            CollectionAssert.Contains(expected, "Hair|Locs");
+            CollectionAssert.Contains(expected, "Hair|Undercut");
+            CollectionAssert.Contains(expected, "Hair|TopKnot");
+            CollectionAssert.Contains(expected, "Hair|Mullet");
+            CollectionAssert.Contains(expected, "Hair|Fringe");
+            CollectionAssert.Contains(expected, "Hair|Coiled");
+
+            Object.DestroyImmediate(spriteA);
+            Object.DestroyImmediate(spriteB);
+            Object.DestroyImmediate(go);
+        }
+
+        private static void SetPrivateField(object instance, string fieldName, object value)
+        {
+            var field = instance.GetType().GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(instance, value);
         }
     }
 }

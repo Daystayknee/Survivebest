@@ -68,15 +68,25 @@ namespace Survivebest.Application
                 return new GameplayCommandResult { Success = false, CommandName = "Unknown", Summary = "Command missing." };
             }
 
-            GameplayCommandResult result = command.Execute(context);
+            GameplayCommandResult result = command.Execute(context) ?? BuildNullResult(command);
             context?.RecordHistory?.Invoke(new GameplayCommandRecord
             {
-                CommandName = result != null ? result.CommandName : command.CommandName,
-                Success = result != null && result.Success,
-                Summary = result != null ? result.Summary : "No summary.",
+                CommandName = result.CommandName,
+                Success = result.Success,
+                Summary = result.Summary,
                 Timestamp = DateTime.UtcNow.ToString("o")
             });
             return result;
+        }
+
+        private static GameplayCommandResult BuildNullResult(IGameplayCommand command)
+        {
+            return new GameplayCommandResult
+            {
+                Success = false,
+                CommandName = command != null ? command.CommandName : "Unknown",
+                Summary = "Command completed without a result payload."
+            };
         }
     }
 

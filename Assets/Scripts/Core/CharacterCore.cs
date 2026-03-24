@@ -47,12 +47,18 @@ namespace Survivebest.Core
         Round,
         Square,
         Heart,
+        InvertedTriangle,
         Diamond,
         Rectangle,
+        Oblong,
         Triangle,
+        Hexagon,
+        Bell,
         LongOval,
         SoftPear,
+        Gaunt,
         BroadOval,
+        Chiseled,
         NarrowAngular
     }
 
@@ -61,28 +67,41 @@ namespace Survivebest.Core
         Almond,
         Round,
         Hooded,
+        HeavyLidded,
         Monolid,
         Upturned,
         Downturned,
+        Sleepy,
         DeepSet,
+        Sunken,
         Protruding,
         CloseSet,
         WideSet,
         Doe,
-        CatEye
+        CatEye,
+        Fox,
+        Sanpaku,
+        Asymmetrical
     }
 
     public enum BodyType
     {
+        Ectomorph,
+        Mesomorph,
+        Endomorph,
         Petite,
         Slim,
         Lean,
+        Lithe,
         Average,
         Soft,
         Curvy,
+        Pear,
+        Apple,
         Athletic,
         Muscular,
         Broad,
+        Burly,
         TallLean,
         PlusSize,
         Heavy
@@ -134,10 +153,18 @@ namespace Survivebest.Core
         Medical,
         Outdoor,
         Streetwear,
+        Cyber,
+        Vintage,
+        Gothic,
+        Minimalist,
+        Boho,
+        Preppy,
         Traditional,
+        Tactical,
         Loungewear,
         Festival,
         Evening,
+        AvantGarde,
         Utility
     }
 

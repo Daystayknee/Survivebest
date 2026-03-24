@@ -17,6 +17,12 @@ namespace Survivebest.Tests.EditMode
 {
     public class ApplicationFacadeAndCommandTests
     {
+        private sealed class NullResultCommand : IGameplayCommand
+        {
+            public string CommandName => "NullResultCommand";
+            public GameplayCommandResult Execute(GameplayCommandContext context) => null;
+        }
+
         [Test]
         public void CharacterAndHouseholdFacades_BuildReadableViewModels()
         {
@@ -594,6 +600,24 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotEmpty(builder.BuildWorldIncidentDigest(town).Lines);
 
             Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void GameplayCommandDispatcher_WhenCommandReturnsNull_ProvidesFailureFallbackResult()
+        {
+            GameplayCommandDispatcher dispatcher = new GameplayCommandDispatcher();
+            List<GameplayCommandRecord> history = new List<GameplayCommandRecord>();
+            GameplayCommandContext context = new GameplayCommandContext { RecordHistory = history.Add };
+
+            GameplayCommandResult result = dispatcher.Execute(new NullResultCommand(), context);
+
+            Assert.IsNotNull(result);
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual("NullResultCommand", result.CommandName);
+            Assert.AreEqual("Command completed without a result payload.", result.Summary);
+            Assert.AreEqual(1, history.Count);
+            Assert.AreEqual("NullResultCommand", history[0].CommandName);
+            Assert.IsFalse(history[0].Success);
         }
 
         private static void SetPrivateField(object instance, string fieldName, object value)

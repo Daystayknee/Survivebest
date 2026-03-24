@@ -8,12 +8,20 @@ namespace Survivebest.Appearance
     public enum HairStyleType
     {
         Buzz,
+        Pixie,
         ShortStraight,
+        Shag,
         Bob,
         Ponytail,
         LongWavy,
         Curly,
+        Coiled,
         Braids,
+        Locs,
+        Fringe,
+        Undercut,
+        TopKnot,
+        Mullet,
         Afro,
         Mohawk
     }
