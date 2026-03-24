@@ -615,13 +615,24 @@ namespace Survivebest.Catalog
                     break;
                 case ClothingStyleType.Streetwear:
                 case ClothingStyleType.Festival:
+                case ClothingStyleType.Cyber:
+                case ClothingStyleType.Gothic:
+                case ClothingStyleType.Boho:
                     AddGroupIfMissing(groups, SupplyGroup.Accessory);
                     AddGroupIfMissing(groups, SupplyGroup.Trinket);
                     break;
                 case ClothingStyleType.Utility:
                 case ClothingStyleType.Outdoor:
+                case ClothingStyleType.Tactical:
                     AddGroupIfMissing(groups, SupplyGroup.Tool);
                     AddGroupIfMissing(groups, SupplyGroup.Household);
+                    break;
+                case ClothingStyleType.Vintage:
+                case ClothingStyleType.Minimalist:
+                case ClothingStyleType.Preppy:
+                case ClothingStyleType.AvantGarde:
+                    AddGroupIfMissing(groups, SupplyGroup.Clothing);
+                    AddGroupIfMissing(groups, SupplyGroup.Accessory);
                     break;
             }
 
