@@ -53,11 +53,17 @@ namespace Survivebest.UI
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
+        [SerializeField] private DigitalLifeSystem digitalLifeSystem;
         [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
         [SerializeField] private HealthcareGameplaySystem healthcareGameplaySystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private VampireDepthSystem vampireDepthSystem;
+        [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
+        [SerializeField] private EducationInstitutionSystem educationInstitutionSystem;
+        [SerializeField] private PaperTrailSystem paperTrailSystem;
+        [SerializeField] private ContractBoardSystem contractBoardSystem;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
 
@@ -135,8 +141,10 @@ namespace Survivebest.UI
         };
 
         private string currentActionKey;
+        private string currentResolvedActionKey;
         private AnimalSightingEncounter currentSighting;
         private readonly GameplayFacade gameplayFacade = new();
+        private readonly GameplayCommandDispatcher gameplayCommandDispatcher = new();
 
         public event Action<string, string, float> OnActionResolved;
         private readonly StringBuilder builder = new();
@@ -162,14 +170,16 @@ namespace Survivebest.UI
         private void HandleSidebarOption(string actionKey)
         {
             currentActionKey = actionKey;
-            currentSighting = actionKey == "animal_sight" ? PickSighting() : null;
+            currentResolvedActionKey = NormalizeActionKey(actionKey);
+            currentSighting = currentResolvedActionKey == "animal_sight" ? PickSighting() : null;
             SetPopupVisible(true);
-            RefreshPopupContent(actionKey);
+            RefreshPopupContent(currentResolvedActionKey);
         }
 
         public void ConfirmAction()
         {
-            if (string.IsNullOrWhiteSpace(currentActionKey))
+            string actionKey = !string.IsNullOrWhiteSpace(currentResolvedActionKey) ? currentResolvedActionKey : currentActionKey;
+            if (string.IsNullOrWhiteSpace(actionKey))
             {
                 return;
             }
@@ -177,8 +187,16 @@ namespace Survivebest.UI
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
             string reason;
             float magnitude = 1f;
+            if (TryExecuteCommandAction(actionKey, active, out reason, out magnitude))
+            {
+                PublishActionEvent(reason, magnitude);
+                OnActionResolved?.Invoke(!string.IsNullOrWhiteSpace(currentActionKey) ? currentActionKey : actionKey, reason, magnitude);
+                ClearCurrentActionSelection();
+                SetPopupVisible(false);
+                return;
+            }
 
-            switch (currentActionKey)
+            switch (actionKey)
             {
                 case "buy":
                     reason = DoBuy();
@@ -205,6 +223,30 @@ namespace Survivebest.UI
                 case "camp":
                     reason = "Camp setup complete. Energy recovery boosted tonight.";
                     magnitude = 2f;
+                    break;
+                case "clean_room":
+                    reason = "Room reset complete. Clutter pressure eased.";
+                    magnitude = 2f;
+                    break;
+                case "do_laundry":
+                    reason = "Laundry cycle started. Hygiene and outfit options improved.";
+                    magnitude = 2f;
+                    break;
+                case "go_to_work":
+                    reason = "Shift started. Income and career momentum are in motion.";
+                    magnitude = 3f;
+                    break;
+                case "manage_budget":
+                    reason = "Budget review complete. Spending plan updated.";
+                    magnitude = 1.5f;
+                    break;
+                case "check_needs":
+                    reason = "Needs reviewed. Short-term priorities are clearer.";
+                    magnitude = 1f;
+                    break;
+                case "household_pressure":
+                    reason = "Household pressure reviewed. Task order adjusted.";
+                    magnitude = 1.5f;
                     break;
                 case "fish":
                     reason = DoFishing(active);
@@ -298,18 +340,170 @@ namespace Survivebest.UI
                     magnitude = 2f;
                     break;
                 default:
-                    reason = "Action completed.";
+                    reason = ResolveGenericActionOutcome(actionKey, active, out magnitude);
                     break;
             }
 
             PublishActionEvent(reason, magnitude);
-            OnActionResolved?.Invoke(currentActionKey, reason, magnitude);
+            OnActionResolved?.Invoke(!string.IsNullOrWhiteSpace(currentActionKey) ? currentActionKey : actionKey, reason, magnitude);
+            ClearCurrentActionSelection();
             SetPopupVisible(false);
+        }
+
+        private bool TryExecuteCommandAction(string actionKey, CharacterCore activeCharacter, out string reason, out float magnitude)
+        {
+            reason = null;
+            magnitude = 1f;
+            if (string.IsNullOrWhiteSpace(actionKey))
+            {
+                return false;
+            }
+
+            string characterId = activeCharacter != null ? activeCharacter.CharacterId : null;
+            IGameplayCommand command = actionKey switch
+            {
+                "cook_meal" => new EatMealCommand { CharacterId = characterId, Cost = 8f },
+                "camp" => new SleepCommand { CharacterId = characterId },
+                "clean_room" => new CleanRoomCommand { CharacterId = characterId },
+                "do_laundry" => new DoLaundryCommand { CharacterId = characterId },
+                "go_to_work" => new GoToWorkCommand { CharacterId = characterId, ShiftLabel = "Work shift" },
+                "take_shower" => new ShowerCommand { CharacterId = characterId },
+                "clothing_store" => new ChangeOutfitCommand { CharacterId = characterId, OutfitLabel = "Fresh fit" },
+                "buy" => new BuyGroceriesCommand { ItemName = "Groceries", Quantity = 1, Cost = 18f },
+                "npc_chat" => new TalkToNpcCommand { CharacterId = characterId, NpcId = GetSocialTargetCharacterId(characterId), Topic = "check-in" },
+                "npc_text" => new TextContactCommand { OwnerCharacterId = characterId, OtherCharacterId = GetSocialTargetCharacterId(characterId), Message = "How are you holding up?", LeakRisk = false },
+                "accept_local_opportunity" => BuildAcceptContractCommand(activeCharacter),
+                _ => null
+            };
+
+            if (command == null)
+            {
+                return false;
+            }
+
+            GameplayCommandResult result = gameplayCommandDispatcher.Execute(command, BuildCommandContext());
+            bool success = result != null && result.Success;
+            reason = result != null && !string.IsNullOrWhiteSpace(result.Summary)
+                ? result.Summary
+                : success ? "Action completed." : "Action failed.";
+            magnitude = success ? 3f : 1f;
+            return true;
+        }
+
+        private string ResolveGenericActionOutcome(string actionKey, CharacterCore activeCharacter, out float magnitude)
+        {
+            magnitude = 1.25f;
+            if (activeCharacter == null)
+            {
+                return "Action completed.";
+            }
+
+            string readable = string.IsNullOrWhiteSpace(actionKey)
+                ? "action"
+                : actionKey.Replace('_', ' ').Trim();
+            householdManager?.RegisterAutonomyIntent(activeCharacter.CharacterId, readable);
+
+            if (actionKey != null && actionKey.IndexOf("talk", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                string targetId = GetSocialTargetCharacterId(activeCharacter.CharacterId);
+                relationshipMemorySystem?.RecordEventDetailed(activeCharacter.CharacterId, targetId, $"Conversation: {readable}", 2f, false, locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "unknown");
+                magnitude = 1.5f;
+                return $"{activeCharacter.DisplayName} followed through on {readable}.";
+            }
+
+            if (actionKey != null && (actionKey.Contains("rest") || actionKey.Contains("sleep")))
+            {
+                magnitude = 2f;
+                return $"{activeCharacter.DisplayName} focused on recovery ({readable}).";
+            }
+
+            if (actionKey != null && (actionKey.Contains("work") || actionKey.Contains("task")))
+            {
+                magnitude = 2.5f;
+                return $"{activeCharacter.DisplayName} progressed work responsibilities ({readable}).";
+            }
+
+            if (actionKey != null && (actionKey.Contains("buy") || actionKey.Contains("sell") || actionKey.Contains("budget")))
+            {
+                magnitude = 2f;
+                return $"{activeCharacter.DisplayName} updated household finances via {readable}.";
+            }
+
+            return $"{activeCharacter.DisplayName} completed {readable}.";
+        }
+
+        private GameplayCommandContext BuildCommandContext()
+        {
+            return new GameplayCommandContext
+            {
+                HouseholdManager = householdManager,
+                EconomyInventorySystem = economyInventorySystem,
+                DigitalLifeSystem = digitalLifeSystem,
+                JusticeSystem = justiceSystem,
+                VampireDepthSystem = vampireDepthSystem,
+                MentalHealthEngine = psychologicalGrowthMentalHealthEngine,
+                EducationInstitutionSystem = educationInstitutionSystem,
+                PaperTrailSystem = paperTrailSystem,
+                RelationshipMemorySystem = relationshipMemorySystem,
+                ContractBoardSystem = contractBoardSystem,
+                LocationManager = locationManager
+            };
+        }
+
+        private IGameplayCommand BuildAcceptContractCommand(CharacterCore activeCharacter)
+        {
+            IReadOnlyList<AnimalSightingContract> contracts = contractBoardSystem != null ? contractBoardSystem.Contracts : null;
+            if (contracts == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < contracts.Count; i++)
+            {
+                AnimalSightingContract contract = contracts[i];
+                if (contract != null && contract.State == ContractState.Available && !string.IsNullOrWhiteSpace(contract.ContractId))
+                {
+                    return new AcceptContractCommand
+                    {
+                        ContractId = contract.ContractId,
+                        Actor = activeCharacter
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        private string GetSocialTargetCharacterId(string activeCharacterId)
+        {
+            if (householdManager == null || householdManager.Members == null || householdManager.Members.Count == 0)
+            {
+                return "npc_neighbor";
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member != null && !string.Equals(member.CharacterId, activeCharacterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return member.CharacterId;
+                }
+            }
+
+            return "npc_neighbor";
         }
 
         public void CancelAction()
         {
+            ClearCurrentActionSelection();
             SetPopupVisible(false);
+        }
+
+        private void ClearCurrentActionSelection()
+        {
+            currentActionKey = null;
+            currentResolvedActionKey = null;
+            currentSighting = null;
         }
 
         private void RefreshPopupContent(string actionKey)
@@ -321,7 +515,7 @@ namespace Survivebest.UI
 
             if (bodyText != null)
             {
-                bodyText.text = BuildVisionAwareDescription(actionKey) + BuildActionExplanationBlock(actionKey);
+                bodyText.text = BuildVisionAwareDescription(actionKey) + BuildActionExplanationBlock(currentActionKey, actionKey);
             }
 
             if (optionsText != null)
@@ -330,6 +524,44 @@ namespace Survivebest.UI
             }
 
             RefreshAnimalPreview();
+        }
+
+        private static string NormalizeActionKey(string actionKey)
+        {
+            return actionKey switch
+            {
+                "eat_meal" => "cook_meal",
+                "order_food" => "buy",
+                "change_outfit" => "clothing_store",
+                "sleep" => "camp",
+                "invite_guest" => "npc_chat",
+                "cook" => "cook_meal",
+                "focus_task" => "train_skill",
+                "talk_coworker" => "talk_coworkers",
+                "check_gig_board" => "accept_local_opportunity",
+                "pitch_side_hustle" => "continue_local_opportunity",
+                "leave_early" => "camp",
+                "buy_groceries" => "buy",
+                "browse" => "review_local_pulse",
+                "haggle" => "trade",
+                "chat" => "npc_chat",
+                "check_in" => "see_doctor",
+                "request_tests" => "see_doctor",
+                "therapy_consult" => "see_doctor",
+                "call_family" => "npc_text",
+                "observe" => "review_local_pulse",
+                "night_walk" => "forage",
+                "explore" => "forage",
+                "join_town_meeting" => "npc_chat",
+                "text_contact" => "npc_text",
+                "talk_to_someone" => "npc_chat",
+                "reflect" => "ask_world_ai",
+                "journal" => "ask_world_ai",
+                "rest" => "camp",
+                "check_phone" => "review_local_pulse",
+                "open_map_travel" => "forage",
+                _ => actionKey
+            };
         }
 
         private string BuildTitle(string actionKey)
@@ -344,6 +576,12 @@ namespace Survivebest.UI
                 "forage" => "Nature: Forage",
                 "fish" => "Nature: Fishing",
                 "camp" => "Nature: Camp",
+                "clean_room" => "Home: Clean Room",
+                "do_laundry" => "Home: Do Laundry",
+                "go_to_work" => "Career: Work Shift",
+                "manage_budget" => "Finance: Budget Review",
+                "check_needs" => "Vitals: Needs Check",
+                "household_pressure" => "Household: Pressure Check",
                 "watch_tv" => "Home: Watch TV",
                 "watch_movie" => "Home: Movie Night",
                 "go_movies" => "Outing: Go to Movies",
@@ -369,7 +607,7 @@ namespace Survivebest.UI
             };
         }
 
-        private string BuildActionExplanationBlock(string actionKey)
+        private string BuildActionExplanationBlock(string requestedActionKey, string resolvedActionKey)
         {
             GameplayOverviewViewModel overview = gameplayFacade.BuildOverview(
                 householdManager,
@@ -384,8 +622,8 @@ namespace Survivebest.UI
                 humanLifeExperienceLayerSystem,
                 gameplayLifeLoopOrchestrator);
 
-            string blocked = FindActionExplanation(actionKey, overview.Actions.BlockedActionMessages);
-            string risky = FindActionExplanation(actionKey, overview.Actions.RiskActionMessages);
+            string blocked = FindActionExplanation(requestedActionKey, resolvedActionKey, overview.Actions.BlockedActionMessages);
+            string risky = FindActionExplanation(requestedActionKey, resolvedActionKey, overview.Actions.RiskActionMessages);
             if (string.IsNullOrWhiteSpace(blocked) && string.IsNullOrWhiteSpace(risky))
             {
                 return string.Empty;
@@ -407,8 +645,9 @@ namespace Survivebest.UI
             return builder.ToString().TrimEnd();
         }
 
-        private static string FindActionExplanation(string actionKey, List<string> messages)
+        private static string FindActionExplanation(string requestedActionKey, string resolvedActionKey, List<string> messages)
         {
+            string actionKey = !string.IsNullOrWhiteSpace(requestedActionKey) ? requestedActionKey : resolvedActionKey;
             if (messages == null || messages.Count == 0 || string.IsNullOrWhiteSpace(actionKey))
             {
                 return null;
@@ -423,8 +662,11 @@ namespace Survivebest.UI
                     continue;
                 }
 
-                if (message.IndexOf(actionKey, StringComparison.OrdinalIgnoreCase) >= 0
-                    || message.IndexOf(normalized, StringComparison.OrdinalIgnoreCase) >= 0)
+                bool matchesRequested = message.IndexOf(actionKey, StringComparison.OrdinalIgnoreCase) >= 0
+                    || message.IndexOf(normalized, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool matchesResolved = !string.IsNullOrWhiteSpace(resolvedActionKey)
+                    && message.IndexOf(resolvedActionKey, StringComparison.OrdinalIgnoreCase) >= 0;
+                if (matchesRequested || matchesResolved)
                 {
                     return message;
                 }
@@ -445,6 +687,12 @@ namespace Survivebest.UI
                 "forage" => "Explore wild zones and gather random ingredients.",
                 "fish" => "Cast lines in rivers/lakes and bring home fish for meals or sale.",
                 "camp" => "Set camp to restore comfort and safety overnight.",
+                "clean_room" => "Clear clutter and reduce home-life stress pressure.",
+                "do_laundry" => "Run laundry to restore hygiene and outfit availability.",
+                "go_to_work" => "Commit to a work shift to support income and progression.",
+                "manage_budget" => "Review spending, debt, and priorities before the next purchases.",
+                "check_needs" => "Read your live needs and identify the most urgent recovery action.",
+                "household_pressure" => "Audit household load and identify what is overwhelming the day slice.",
                 "watch_tv" => "Pick a show genre and decompress while recovering mood.",
                 "watch_movie" => "Choose a movie vibe and enjoy a full focused entertainment block.",
                 "go_movies" => "Travel out for a theater outing with stronger social/mood impact.",
@@ -540,6 +788,42 @@ Finder payout: ${currentSighting.Payment}.";
                     builder.AppendLine("• River cast");
                     builder.AppendLine("• Lake shore cast");
                     builder.AppendLine("• Bait setup");
+                    break;
+                case "clean_room":
+                    builder.AppendLine("Cleaning plan:");
+                    builder.AppendLine("• Gather clutter");
+                    builder.AppendLine("• Wipe surfaces");
+                    builder.AppendLine("• Ventilate and reset");
+                    break;
+                case "do_laundry":
+                    builder.AppendLine("Laundry cycle:");
+                    builder.AppendLine("• Sort colors/fabrics");
+                    builder.AppendLine("• Wash + dry");
+                    builder.AppendLine("• Fold and store");
+                    break;
+                case "go_to_work":
+                    builder.AppendLine("Shift choices:");
+                    builder.AppendLine("• Standard shift");
+                    builder.AppendLine("• Overtime push");
+                    builder.AppendLine("• Focus sprint");
+                    break;
+                case "manage_budget":
+                    builder.AppendLine("Budget review:");
+                    builder.AppendLine("• Check cash and debt");
+                    builder.AppendLine("• Prioritize essentials");
+                    builder.AppendLine("• Set next-day spend cap");
+                    break;
+                case "check_needs":
+                    builder.AppendLine("Needs scan:");
+                    builder.AppendLine("• Hunger/Hydration");
+                    builder.AppendLine("• Energy/Hygiene");
+                    builder.AppendLine("• Mood and stress");
+                    break;
+                case "household_pressure":
+                    builder.AppendLine("Pressure scan:");
+                    builder.AppendLine("• Pending chores");
+                    builder.AppendLine("• Schedule collisions");
+                    builder.AppendLine("• Social and finance stress");
                     break;
                 case "watch_tv":
                     builder.AppendLine("TV Genres:");
