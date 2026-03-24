@@ -121,12 +121,15 @@ namespace Survivebest.Health
         public HealthcareEncounterSession Session;
         public bool Success;
         public float CompletionScore;
+        public float ComplicationRiskScore;
         public int SuccessfulDirectiveCount;
         public int FailedDirectiveCount;
         public string BillingSummary;
         public string OutcomeSummary;
         public List<TreatmentDirectiveExecution> DirectiveExecutions = new();
         public List<string> TimelineEntries = new();
+        public List<string> ComplicationEvents = new();
+        public List<MinigameType> RecommendedNextMinigames = new();
     }
 
     public class HealthcareGameplaySystem : MonoBehaviour
@@ -136,6 +139,7 @@ namespace Survivebest.Health
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private World.WorldClock worldClock;
         [SerializeField] private MinigameManager minigameManager;
+        [SerializeField] private bool highComplexityMode = true;
 
         public List<HealthcareEncounterPlan> BuildPlansForCharacter(MedicalConditionSystem medicalConditionSystem, bool animalPatient = false)
         {
@@ -177,6 +181,11 @@ namespace Survivebest.Health
 
             AddInitialAssessment(plan, condition, animalPatient);
             AddPrimaryTreatment(plan, condition, animalPatient);
+            AddSurgicalTrack(plan, condition, animalPatient);
+            AddPainManagementTrack(plan, condition, animalPatient);
+            AddDiagnosticsTrack(plan, condition, animalPatient);
+            AddDoctorRoundsTrack(plan, condition, animalPatient);
+            AddRehabilitationTrack(plan, condition, animalPatient);
             AddMedicationSupport(plan, condition, animalPatient);
             AddFollowUpCare(plan, condition, animalPatient);
 
@@ -184,6 +193,24 @@ namespace Survivebest.Health
             plan.MedicationSummary = BuildMedicationSummary(plan);
             plan.FollowUpSummary = BuildFollowUpSummary(plan);
             return plan;
+        }
+
+        public List<HealthcareEncounterPlan> BuildMaxIntensityPlans(MedicalConditionSystem medicalConditionSystem, bool animalPatient = false)
+        {
+            List<HealthcareEncounterPlan> plans = BuildPlansForCharacter(medicalConditionSystem, animalPatient);
+            for (int i = 0; i < plans.Count; i++)
+            {
+                HealthcareEncounterPlan plan = plans[i];
+                if (plan == null)
+                {
+                    continue;
+                }
+
+                plan.ReprocessingSummary += " Max-intensity mode: enforce sterile auditing, imaging verification, and post-procedure chart lock every phase.";
+                plan.FollowUpSummary += " Max-intensity mode: auto-schedule recheck windows at 12h, 24h, and 72h.";
+            }
+
+            return plans;
         }
 
         public string BuildProviderCoverageSummary(bool animalPatient = false, string workplaceLotId = null)
@@ -316,8 +343,15 @@ namespace Survivebest.Health
                 : 0f;
             result.Success = totalDirectives == 0 || result.FailedDirectiveCount == 0 || result.CompletionScore >= 0.75f;
             result.BillingSummary = BuildBillingSummary(session, result);
+            result.ComplicationRiskScore = ComputeComplicationRisk(session, result);
+            BuildComplicationEvents(result);
+            BuildRecommendedNextMinigames(result);
             result.OutcomeSummary = BuildEncounterOutcomeSummary(session, result);
             result.TimelineEntries.Add(result.BillingSummary);
+            for (int i = 0; i < result.ComplicationEvents.Count; i++)
+            {
+                result.TimelineEntries.Add(result.ComplicationEvents[i]);
+            }
             result.TimelineEntries.Add(result.OutcomeSummary);
             return result;
         }
@@ -405,6 +439,23 @@ namespace Survivebest.Health
                         ReprocessingChecklist = new List<string> { "Disinfect dermatoscope", "Replace extraction tips", "Bag contaminated cotton and swabs" }
                     });
                 }
+                else
+                {
+                    plan.Directives.Add(new TreatmentDirective
+                    {
+                        Title = ResolveIllnessDirectiveTitle(condition),
+                        Description = "Doctor-led illness stabilization with targeted lane selection for infection, allergy, and airway risks.",
+                        ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Doctor,
+                        FacilityType = plan.NeedsHospitalization ? CareFacilityType.HospitalWard : CareFacilityType.Clinic,
+                        AnatomyFocus = condition.DisplayName,
+                        InteractiveMinigame = ResolveIllnessMinigame(condition),
+                        EstimatedMinutes = condition.Severity == ConditionSeverity.Severe ? 32 : 20,
+                        RequiresFollowUp = true,
+                        Supplies = BuildIllnessSupplyList(condition),
+                        ProcedureSteps = BuildIllnessProcedureSteps(condition),
+                        ReprocessingChecklist = new List<string> { "Sanitize exam surfaces", "Update infection/allergy flags", "Reset treatment cart" }
+                    });
+                }
 
                 return;
             }
@@ -463,6 +514,69 @@ namespace Survivebest.Health
             });
         }
 
+        private void AddSurgicalTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (animalPatient || condition == null || (!plan.NeedsSurgery && !condition.RequiresSurgeryConsult))
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = "Surgery Prep & Operative Control",
+                Description = "Sterile prep, anesthesia safety check, operation cadence, and closure review.",
+                ProviderRole = CareProviderRole.Surgeon,
+                FacilityType = CareFacilityType.OperatingRoom,
+                AnatomyFocus = $"{condition.BodyLocation} / {condition.FractureType} / {condition.InternalComplication}",
+                InteractiveMinigame = condition.InjuryType == InjuryType.Fracture ? MinigameType.OrthopedicSurgery : MinigameType.Surgery,
+                EstimatedMinutes = 60,
+                RequiresSterileField = true,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Sterile drapes", "Anesthesia monitor", "Surgical clamps", "Irrigation", "Closure kit" },
+                ProcedureSteps = new List<string>
+                {
+                    "Confirm identity, consent, anatomy site, allergies, and blood-loss risk.",
+                    "Run sterile prep, instrument count, and anesthesia timeout.",
+                    "Complete reduction/repair/debridement and verify closure integrity.",
+                    "Transfer to monitored recovery with handoff checklist."
+                },
+                ReprocessingChecklist = new List<string>
+                {
+                    "Count instruments and sharps",
+                    "Sterilize reusable tools and suction lines",
+                    "Document operative timeline and closure quality"
+                }
+            });
+        }
+
+        private void AddPainManagementTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (condition == null || condition.PainLevel < 0.2f)
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = animalPatient ? "Comfort & Pain Reassessment" : "Pain Ladder Reassessment",
+                Description = "Re-score pain, mobility, and function to prevent undertreatment or unsafe overmedication.",
+                ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Nurse,
+                FacilityType = plan.NeedsHospitalization ? CareFacilityType.HospitalWard : CareFacilityType.Clinic,
+                AnatomyFocus = $"{condition.DisplayName} / pain {Mathf.RoundToInt(condition.PainLevel * 100f)}%",
+                InteractiveMinigame = MinigameType.FirstAid,
+                EstimatedMinutes = 14,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Pain scale card", "Mobility checklist", "Medication reconciliation log" },
+                ProcedureSteps = new List<string>
+                {
+                    "Measure pain at rest and with motion.",
+                    "Adjust pain-med schedule against side effects and sedation signs.",
+                    "Set next reassessment checkpoint and escalation trigger."
+                },
+                ReprocessingChecklist = new List<string> { "Update MAR log", "Reset reassessment chart", "Clear bedside tray" }
+            });
+        }
+
         private void AddFollowUpCare(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
         {
             plan.Directives.Add(new TreatmentDirective
@@ -482,6 +596,102 @@ namespace Survivebest.Health
                     "Book recheck for wound closure, x-ray review, dermatology follow-up, or suture removal."
                 },
                 ReprocessingChecklist = new List<string> { "Restock take-home supplies", "Print aftercare sheet" }
+            });
+        }
+
+        private void AddDiagnosticsTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (condition == null || (!highComplexityMode && !condition.RequiresImaging && !condition.RequiresSurgeryConsult))
+            {
+                return;
+            }
+
+            bool needsDeepDiagnostics = condition.RequiresImaging || condition.RequiresSurgeryConsult || condition.InternalBleedingRisk >= 0.2f || condition.InfectionRisk >= 0.25f;
+            if (!needsDeepDiagnostics)
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = animalPatient ? "Advanced Vet Diagnostics" : "Advanced Diagnostic Workup",
+                Description = "Run imaging/lab decision tree to detect hidden bleeding, infection spread, or unstable fractures.",
+                ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Doctor,
+                FacilityType = CareFacilityType.HospitalWard,
+                AnatomyFocus = $"{condition.BodyLocation} / bleed risk {Mathf.RoundToInt(condition.InternalBleedingRisk * 100f)}%",
+                InteractiveMinigame = MinigameType.RadiologyScan,
+                EstimatedMinutes = 24,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Imaging order set", "Lab panel kit", "Vitals trend sheet" },
+                ProcedureSteps = new List<string>
+                {
+                    "Select urgent imaging/lab lanes from triage findings.",
+                    "Cross-check abnormal values against symptoms and pain trajectory.",
+                    "Escalate to surgery, inpatient observation, or outpatient pathway."
+                },
+                ReprocessingChecklist = new List<string> { "Archive lab sample chain", "Sanitize diagnostics station", "Update differential sheet" }
+            });
+        }
+
+        private void AddDoctorRoundsTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (condition == null || condition.Severity == ConditionSeverity.Mild || !highComplexityMode)
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = animalPatient ? "Veterinary Attending Rounds" : "Doctor Attending Rounds",
+                Description = "Attending review of pain, wound status, medication effects, and escalation thresholds.",
+                ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Doctor,
+                FacilityType = plan.NeedsHospitalization ? CareFacilityType.HospitalWard : CareFacilityType.Clinic,
+                AnatomyFocus = $"{condition.DisplayName} / severity {condition.Severity}",
+                InteractiveMinigame = plan.NeedsHospitalization ? MinigameType.IntensiveCare : MinigameType.FirstAid,
+                EstimatedMinutes = 16,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Progress chart", "Medication response notes", "Escalation protocol card" },
+                ProcedureSteps = new List<string>
+                {
+                    "Assess overnight trend and symptom trajectory.",
+                    "Adjust treatment intensity and watchlist thresholds.",
+                    "Approve discharge or continue inpatient observation."
+                },
+                ReprocessingChecklist = new List<string> { "Sign attending note", "Log treatment revision", "Refresh bedside board" }
+            });
+        }
+
+        private void AddRehabilitationTrack(HealthcareEncounterPlan plan, MedicalCondition condition, bool animalPatient)
+        {
+            if (condition == null)
+            {
+                return;
+            }
+
+            bool needsRehab = condition.MobilityPenalty >= 0.2f || condition.IsBoneInjury || condition.InjuryType is InjuryType.Sprain or InjuryType.Strain;
+            if (!needsRehab)
+            {
+                return;
+            }
+
+            plan.Directives.Add(new TreatmentDirective
+            {
+                Title = animalPatient ? "Gait & Mobility Rehab" : "Mobility Rehab Session",
+                Description = "Progressive movement and load tolerance loop to restore function safely.",
+                ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Nurse,
+                FacilityType = CareFacilityType.RehabCenter,
+                AnatomyFocus = $"{condition.BodyLocation} / mobility penalty {Mathf.RoundToInt(condition.MobilityPenalty * 100f)}%",
+                InteractiveMinigame = condition.IsBoneInjury ? MinigameType.Casting : MinigameType.FirstAid,
+                EstimatedMinutes = 26,
+                RequiresFollowUp = true,
+                Supplies = new List<string> { "Mobility ladder", "Support brace", "Pain response tracker" },
+                ProcedureSteps = new List<string>
+                {
+                    "Warm-up and validate safe movement baseline.",
+                    "Run stepwise range-of-motion and load checks.",
+                    "Set home exercise cadence and stop conditions."
+                },
+                ReprocessingChecklist = new List<string> { "Clean rehab equipment", "Log mobility score", "Schedule next rehab block" }
             });
         }
 
@@ -547,10 +757,15 @@ namespace Survivebest.Health
                 return MinigameType.VeterinaryCare;
             }
 
+            if (condition.InjuryType == InjuryType.Fracture && condition.RequiresSurgeryConsult)
+            {
+                return MinigameType.OrthopedicSurgery;
+            }
+
             return condition.InjuryType switch
             {
                 InjuryType.Fracture => MinigameType.Casting,
-                InjuryType.Cut or InjuryType.Bite or InjuryType.Scrape or InjuryType.Burn => MinigameType.Bandaging,
+                InjuryType.Cut or InjuryType.Bite or InjuryType.Scrape or InjuryType.Scab or InjuryType.Burn => MinigameType.Bandaging,
                 _ => MinigameType.FirstAid
             };
         }
@@ -563,9 +778,81 @@ namespace Survivebest.Health
                 InjuryType.Cut => condition.RequiresSutures ? "Wound Cleaning, Suturing & Dressing" : "Wound Cleaning, Closure & Dressing",
                 InjuryType.Bite => "Bite Irrigation & Infection Control",
                 InjuryType.Burn => "Burn Cooling, Debridement & Dressing",
+                InjuryType.Scab => "Scab Protection, Cleaning & Skin Recovery",
                 InjuryType.Scrape => "Surface Wound Clean & Cover",
                 _ => "General Trauma Stabilization"
             };
+        }
+
+        private static string ResolveIllnessDirectiveTitle(MedicalCondition condition)
+        {
+            return condition.IllnessType switch
+            {
+                IllnessType.AllergyFlare => "Allergy Stabilization & Trigger Control",
+                IllnessType.Sepsis => "Sepsis Shock Bundle Activation",
+                IllnessType.WoundInfection => "Infection Source Control & Debridement",
+                IllnessType.SinusInfection or IllnessType.StrepThroat or IllnessType.UrinaryTractInfection => "Targeted Infection Workup",
+                _ => "Illness Stabilization & Observation"
+            };
+        }
+
+        private static MinigameType ResolveIllnessMinigame(MedicalCondition condition)
+        {
+            return condition.IllnessType switch
+            {
+                IllnessType.AllergyFlare => MinigameType.AllergyResponse,
+                IllnessType.WoundInfection or IllnessType.Abscess => MinigameType.WoundDebridement,
+                IllnessType.Sepsis or IllnessType.SinusInfection or IllnessType.StrepThroat or IllnessType.UrinaryTractInfection => MinigameType.InfectionControl,
+                _ => MinigameType.Triage
+            };
+        }
+
+        private static List<string> BuildIllnessSupplyList(MedicalCondition condition)
+        {
+            List<string> supplies = new() { "Vitals monitor", "Chart notes", "Hydration support" };
+            switch (condition.IllnessType)
+            {
+                case IllnessType.AllergyFlare:
+                    supplies.AddRange(new[] { "Antihistamine kit", "Airway monitor", "Trigger list" });
+                    break;
+                case IllnessType.WoundInfection:
+                case IllnessType.Abscess:
+                    supplies.AddRange(new[] { "Irrigation kit", "Debridement tools", "Culture swab" });
+                    break;
+                case IllnessType.Sepsis:
+                    supplies.AddRange(new[] { "Sepsis bundle card", "IV fluid line", "Broad-spectrum antibiotic order" });
+                    break;
+                default:
+                    supplies.AddRange(new[] { "Lab order", "Medication reconciliation sheet" });
+                    break;
+            }
+
+            return supplies;
+        }
+
+        private static List<string> BuildIllnessProcedureSteps(MedicalCondition condition)
+        {
+            List<string> steps = new()
+            {
+                "Recheck vitals and symptom trend against baseline.",
+                "Select targeted medication and supportive-care lane.",
+                "Log red flags and escalation thresholds before discharge."
+            };
+
+            if (condition.IllnessType == IllnessType.AllergyFlare)
+            {
+                steps.Insert(1, "Assess airway compromise risk and immediate trigger isolation.");
+            }
+            if (condition.IllnessType is IllnessType.WoundInfection or IllnessType.Abscess)
+            {
+                steps.Insert(1, "Evaluate infection source and decide irrigation/debridement depth.");
+            }
+            if (condition.IllnessType == IllnessType.Sepsis)
+            {
+                steps.Insert(1, "Launch sepsis timer pathway with fluids, broad coverage, and repeat labs.");
+            }
+
+            return steps;
         }
 
         private static List<string> BuildSupplyList(MedicalCondition condition)
@@ -578,6 +865,9 @@ namespace Survivebest.Health
                     break;
                 case InjuryType.Cut:
                     supplies.AddRange(new[] { "Antiseptic", "Gauze", "Bandage", "Steri-strips", "Suture kit" });
+                    break;
+                case InjuryType.Scab:
+                    supplies.AddRange(new[] { "Saline rinse", "Hydrocolloid patch", "Barrier ointment" });
                     break;
                 case InjuryType.Burn:
                     supplies.AddRange(new[] { "Cooling gel", "Non-stick dressing", "Burn cream" });
@@ -748,7 +1038,68 @@ namespace Survivebest.Health
         private static string BuildEncounterOutcomeSummary(HealthcareEncounterSession session, HealthcareEncounterExecutionResult result)
         {
             string status = result.Success ? "Encounter completed" : "Encounter partially completed";
-            return $"{status}: {result.SuccessfulDirectiveCount}/{session.Plan.Directives.Count} directives cleared for {session.Plan.ChiefComplaint}. Follow-up remains {(session.Plan.NeedsHospitalization ? "inpatient" : "outpatient")}.";
+            return $"{status}: {result.SuccessfulDirectiveCount}/{session.Plan.Directives.Count} directives cleared for {session.Plan.ChiefComplaint}. Follow-up remains {(session.Plan.NeedsHospitalization ? "inpatient" : "outpatient")}. Complication risk {Mathf.RoundToInt(result.ComplicationRiskScore * 100f)}%.";
+        }
+
+        private static float ComputeComplicationRisk(HealthcareEncounterSession session, HealthcareEncounterExecutionResult result)
+        {
+            if (session == null || session.Plan == null)
+            {
+                return 0f;
+            }
+
+            float risk = 0.08f;
+            if (session.Plan.NeedsSurgery) risk += 0.2f;
+            if (session.Plan.NeedsHospitalization) risk += 0.12f;
+            if (!result.Success) risk += 0.2f;
+            risk += Mathf.Clamp01(result.FailedDirectiveCount / 4f) * 0.2f;
+            risk -= Mathf.Clamp01(result.CompletionScore) * 0.12f;
+            return Mathf.Clamp01(risk);
+        }
+
+        private static void BuildComplicationEvents(HealthcareEncounterExecutionResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            if (result.ComplicationRiskScore >= 0.7f)
+            {
+                result.ComplicationEvents.Add("High complication risk: monitor every 2 in-game hours with ICU escalation readiness.");
+            }
+            else if (result.ComplicationRiskScore >= 0.45f)
+            {
+                result.ComplicationEvents.Add("Moderate complication risk: increase reassessment cadence and keep diagnostics open.");
+            }
+            else
+            {
+                result.ComplicationEvents.Add("Low complication risk: continue standard follow-up pathway.");
+            }
+        }
+
+        private static void BuildRecommendedNextMinigames(HealthcareEncounterExecutionResult result)
+        {
+            if (result == null || result.Session == null || result.Session.Plan == null)
+            {
+                return;
+            }
+
+            if (result.Session.Plan.NeedsSurgery)
+            {
+                result.RecommendedNextMinigames.Add(MinigameType.IntensiveCare);
+            }
+
+            if (result.ComplicationRiskScore >= 0.4f)
+            {
+                result.RecommendedNextMinigames.Add(MinigameType.RadiologyScan);
+                result.RecommendedNextMinigames.Add(MinigameType.InfectionControl);
+            }
+
+            if (result.RecommendedNextMinigames.Count == 0)
+            {
+                result.RecommendedNextMinigames.Add(MinigameType.FirstAid);
+            }
         }
 
         private CareProviderAssignment FindAssignedProvider(HealthcareEncounterSession session, CareProviderRole role)
