@@ -176,7 +176,8 @@ namespace Survivebest.Health
         ComprehensiveCrisis,
         InfectionOverload,
         TraumaCascade,
-        AllergySpiral
+        AllergySpiral,
+        MassCasualty
     }
 
     [Serializable]
@@ -309,6 +310,7 @@ namespace Survivebest.Health
                 HealthScenarioPreset.InfectionOverload => AddInfectionOverloadScenario(),
                 HealthScenarioPreset.TraumaCascade => AddTraumaCascadeScenario(),
                 HealthScenarioPreset.AllergySpiral => AddAllergySpiralScenario(),
+                HealthScenarioPreset.MassCasualty => AddMassCasualtyScenario(),
                 _ => 0
             };
         }
@@ -838,6 +840,17 @@ namespace Survivebest.Health
             if (TryAddIllness(IllnessType.AllergyFlare, ConditionSeverity.Severe)) added++;
             if (TryAddIllness(IllnessType.AsthmaAttack, ConditionSeverity.Moderate)) added++;
             if (TryAddIllness(IllnessType.SinusInfection, ConditionSeverity.Moderate)) added++;
+            return added;
+        }
+
+        private int AddMassCasualtyScenario()
+        {
+            int added = 0;
+            added += AddTraumaCascadeScenario();
+            added += AddInfectionOverloadScenario();
+            if (TryAddInjury(InjuryType.Burn, ConditionSeverity.Severe, BodyLocation.Chest, WoundType.BurnTrauma, FractureType.None, "Severe Chest Burn")) added++;
+            if (TryAddInjury(InjuryType.Fracture, ConditionSeverity.Severe, BodyLocation.Ribs, WoundType.BoneBreak, FractureType.Open, "Open Rib Fracture")) added++;
+            if (TryAddIllness(IllnessType.AllergyFlare, ConditionSeverity.Moderate)) added++;
             return added;
         }
 

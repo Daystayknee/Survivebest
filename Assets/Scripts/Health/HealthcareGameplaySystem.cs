@@ -121,12 +121,15 @@ namespace Survivebest.Health
         public HealthcareEncounterSession Session;
         public bool Success;
         public float CompletionScore;
+        public float ComplicationRiskScore;
         public int SuccessfulDirectiveCount;
         public int FailedDirectiveCount;
         public string BillingSummary;
         public string OutcomeSummary;
         public List<TreatmentDirectiveExecution> DirectiveExecutions = new();
         public List<string> TimelineEntries = new();
+        public List<string> ComplicationEvents = new();
+        public List<MinigameType> RecommendedNextMinigames = new();
     }
 
     public class HealthcareGameplaySystem : MonoBehaviour
@@ -340,8 +343,15 @@ namespace Survivebest.Health
                 : 0f;
             result.Success = totalDirectives == 0 || result.FailedDirectiveCount == 0 || result.CompletionScore >= 0.75f;
             result.BillingSummary = BuildBillingSummary(session, result);
+            result.ComplicationRiskScore = ComputeComplicationRisk(session, result);
+            BuildComplicationEvents(result);
+            BuildRecommendedNextMinigames(result);
             result.OutcomeSummary = BuildEncounterOutcomeSummary(session, result);
             result.TimelineEntries.Add(result.BillingSummary);
+            for (int i = 0; i < result.ComplicationEvents.Count; i++)
+            {
+                result.TimelineEntries.Add(result.ComplicationEvents[i]);
+            }
             result.TimelineEntries.Add(result.OutcomeSummary);
             return result;
         }
@@ -609,7 +619,7 @@ namespace Survivebest.Health
                 ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Doctor,
                 FacilityType = CareFacilityType.HospitalWard,
                 AnatomyFocus = $"{condition.BodyLocation} / bleed risk {Mathf.RoundToInt(condition.InternalBleedingRisk * 100f)}%",
-                InteractiveMinigame = MinigameType.Triage,
+                InteractiveMinigame = MinigameType.RadiologyScan,
                 EstimatedMinutes = 24,
                 RequiresFollowUp = true,
                 Supplies = new List<string> { "Imaging order set", "Lab panel kit", "Vitals trend sheet" },
@@ -637,7 +647,7 @@ namespace Survivebest.Health
                 ProviderRole = animalPatient ? CareProviderRole.Veterinarian : CareProviderRole.Doctor,
                 FacilityType = plan.NeedsHospitalization ? CareFacilityType.HospitalWard : CareFacilityType.Clinic,
                 AnatomyFocus = $"{condition.DisplayName} / severity {condition.Severity}",
-                InteractiveMinigame = MinigameType.FirstAid,
+                InteractiveMinigame = plan.NeedsHospitalization ? MinigameType.IntensiveCare : MinigameType.FirstAid,
                 EstimatedMinutes = 16,
                 RequiresFollowUp = true,
                 Supplies = new List<string> { "Progress chart", "Medication response notes", "Escalation protocol card" },
@@ -1028,7 +1038,68 @@ namespace Survivebest.Health
         private static string BuildEncounterOutcomeSummary(HealthcareEncounterSession session, HealthcareEncounterExecutionResult result)
         {
             string status = result.Success ? "Encounter completed" : "Encounter partially completed";
-            return $"{status}: {result.SuccessfulDirectiveCount}/{session.Plan.Directives.Count} directives cleared for {session.Plan.ChiefComplaint}. Follow-up remains {(session.Plan.NeedsHospitalization ? "inpatient" : "outpatient")}.";
+            return $"{status}: {result.SuccessfulDirectiveCount}/{session.Plan.Directives.Count} directives cleared for {session.Plan.ChiefComplaint}. Follow-up remains {(session.Plan.NeedsHospitalization ? "inpatient" : "outpatient")}. Complication risk {Mathf.RoundToInt(result.ComplicationRiskScore * 100f)}%.";
+        }
+
+        private static float ComputeComplicationRisk(HealthcareEncounterSession session, HealthcareEncounterExecutionResult result)
+        {
+            if (session == null || session.Plan == null)
+            {
+                return 0f;
+            }
+
+            float risk = 0.08f;
+            if (session.Plan.NeedsSurgery) risk += 0.2f;
+            if (session.Plan.NeedsHospitalization) risk += 0.12f;
+            if (!result.Success) risk += 0.2f;
+            risk += Mathf.Clamp01(result.FailedDirectiveCount / 4f) * 0.2f;
+            risk -= Mathf.Clamp01(result.CompletionScore) * 0.12f;
+            return Mathf.Clamp01(risk);
+        }
+
+        private static void BuildComplicationEvents(HealthcareEncounterExecutionResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            if (result.ComplicationRiskScore >= 0.7f)
+            {
+                result.ComplicationEvents.Add("High complication risk: monitor every 2 in-game hours with ICU escalation readiness.");
+            }
+            else if (result.ComplicationRiskScore >= 0.45f)
+            {
+                result.ComplicationEvents.Add("Moderate complication risk: increase reassessment cadence and keep diagnostics open.");
+            }
+            else
+            {
+                result.ComplicationEvents.Add("Low complication risk: continue standard follow-up pathway.");
+            }
+        }
+
+        private static void BuildRecommendedNextMinigames(HealthcareEncounterExecutionResult result)
+        {
+            if (result == null || result.Session == null || result.Session.Plan == null)
+            {
+                return;
+            }
+
+            if (result.Session.Plan.NeedsSurgery)
+            {
+                result.RecommendedNextMinigames.Add(MinigameType.IntensiveCare);
+            }
+
+            if (result.ComplicationRiskScore >= 0.4f)
+            {
+                result.RecommendedNextMinigames.Add(MinigameType.RadiologyScan);
+                result.RecommendedNextMinigames.Add(MinigameType.InfectionControl);
+            }
+
+            if (result.RecommendedNextMinigames.Count == 0)
+            {
+                result.RecommendedNextMinigames.Add(MinigameType.FirstAid);
+            }
         }
 
         private CareProviderAssignment FindAssignedProvider(HealthcareEncounterSession session, CareProviderRole role)

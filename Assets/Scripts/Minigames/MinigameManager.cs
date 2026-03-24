@@ -27,6 +27,8 @@ namespace Survivebest.Minigames
         WoundDebridement,
         InfectionControl,
         AllergyResponse,
+        RadiologyScan,
+        IntensiveCare,
         VeterinaryCare,
         Dermatology,
         RestaurantService,
@@ -106,6 +108,8 @@ namespace Survivebest.Minigames
             new MinigameSceneProfile { Type = MinigameType.WoundDebridement, SceneBackdropId = "trauma_treatment_bay", Prompt = "Remove nonviable tissue, preserve healthy edges, and irrigate thoroughly.", RecommendedSkill = "First aid", DurationMultiplier = 1.3f },
             new MinigameSceneProfile { Type = MinigameType.InfectionControl, SceneBackdropId = "isolation_room", Prompt = "Control spread with strict PPE flow, sample handling, and sanitation cadence.", RecommendedSkill = "First aid", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.AllergyResponse, SceneBackdropId = "urgent_care_bay", Prompt = "Identify trigger severity, deliver antihistamine support, and monitor airway risk.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f },
+            new MinigameSceneProfile { Type = MinigameType.RadiologyScan, SceneBackdropId = "radiology_suite", Prompt = "Position precisely, reduce motion artifacts, and capture diagnostically clear imaging.", RecommendedSkill = "First aid", DurationMultiplier = 1.1f },
+            new MinigameSceneProfile { Type = MinigameType.IntensiveCare, SceneBackdropId = "icu_bedside", Prompt = "Trend vitals, titrate support, and prevent cascade failures under pressure.", RecommendedSkill = "First aid", DurationMultiplier = 1.45f },
             new MinigameSceneProfile { Type = MinigameType.VeterinaryCare, SceneBackdropId = "vet_operatory", Prompt = "Restrain gently, read species cues, treat safely, and coach the owner on aftercare.", RecommendedSkill = "First aid", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.Dermatology, SceneBackdropId = "clinic_exam_room", Prompt = "Inspect skin layers, identify flare triggers, and choose the right topical or procedural care.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f },
             new MinigameSceneProfile { Type = MinigameType.RestaurantService, SceneBackdropId = "restaurant_line", Prompt = "Coordinate orders, avoid cross-contamination, and maintain ticket speed.", RecommendedSkill = "Cooking", DurationMultiplier = 1.2f },
@@ -380,6 +384,8 @@ namespace Survivebest.Minigames
                 MinigameType.WoundDebridement => "First aid",
                 MinigameType.InfectionControl => "First aid",
                 MinigameType.AllergyResponse => "First aid",
+                MinigameType.RadiologyScan => "First aid",
+                MinigameType.IntensiveCare => "First aid",
                 MinigameType.VeterinaryCare => "First aid",
                 MinigameType.Dermatology => "First aid",
                 MinigameType.RestaurantService => "Cooking",
@@ -431,6 +437,8 @@ namespace Survivebest.Minigames
                 MinigameType.WoundDebridement => 0.18f,
                 MinigameType.InfectionControl => 0.17f,
                 MinigameType.AllergyResponse => 0.14f,
+                MinigameType.RadiologyScan => 0.15f,
+                MinigameType.IntensiveCare => 0.21f,
                 MinigameType.VeterinaryCare => 0.17f,
                 MinigameType.Dermatology => 0.09f,
                 MinigameType.RestaurantService => 0.16f,
@@ -455,7 +463,7 @@ namespace Survivebest.Minigames
 
             if (needs != null)
             {
-                float energyCost = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare or MinigameType.Casting
+                float energyCost = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.IntensiveCare or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare or MinigameType.Casting
                     ? (success ? -5f : -8f)
                     : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading
                         ? (success ? 4f : 1f)
@@ -470,7 +478,7 @@ namespace Survivebest.Minigames
             if (skillSystem != null)
             {
                 string skillName = ResolveSkillForMinigame(type);
-                float xp = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare
+                float xp = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.IntensiveCare or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare
                     ? (success ? 6f : 2f)
                     : (success ? 4f : 1.5f);
                 skillSystem.AddExperience(skillName, xp);
@@ -532,7 +540,7 @@ namespace Survivebest.Minigames
 
         private static bool IsBlueprintDriven(MinigameType type)
         {
-            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.VeterinaryCare or MinigameType.Dermatology;
+            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology;
         }
 
         private static IEnumerable<MinigameStepBlueprint> BuildStepBlueprints(MinigameType type, string anatomyFocus, bool emergencyPacing)
@@ -585,6 +593,16 @@ namespace Survivebest.Minigames
                     yield return Step("trigger_triage", "Classify trigger severity and airway risk in seconds.", "triage_card", MinigameInputStyle.Sequence, 0.57f);
                     yield return Step("med_delivery", "Deliver antihistamine support at the correct timing window.", "med_pen", MinigameInputStyle.TimingWindow, 0.6f);
                     yield return Step("airway_monitor", "Track breathing changes and escalation thresholds.", "airway_monitor", MinigameInputStyle.Hold, 0.63f);
+                    break;
+                case MinigameType.RadiologyScan:
+                    yield return Step("positioning", $"Position patient and target anatomy for {anatomyFocus}.", "positioning_board", MinigameInputStyle.Drag, 0.58f);
+                    yield return Step("artifact_control", "Stabilize posture and suppress motion artifacts during capture.", "stability_monitor", MinigameInputStyle.Hold, 0.62f);
+                    yield return Step("image_validation", "Review contrast, angle, and retake criteria.", "scan_console", MinigameInputStyle.Sequence, 0.6f);
+                    break;
+                case MinigameType.IntensiveCare:
+                    yield return Step("vitals_trend", "Interpret rapid vitals trend shifts and prioritize interventions.", "icu_monitor", MinigameInputStyle.Sequence, 0.68f);
+                    yield return Step("support_titration", "Adjust support settings without overshooting safe thresholds.", "infusion_pump", MinigameInputStyle.TimingWindow, 0.72f);
+                    yield return Step("cascade_prevention", "Catch destabilization early and execute escalation protocol.", "rapid_response_pad", MinigameInputStyle.Trace, 0.7f);
                     break;
                 case MinigameType.Dermatology:
                     yield return Step("inspect_skin", $"Inspect skin layers and lesion edges at {anatomyFocus}.", "dermatoscope", MinigameInputStyle.Drag, 0.4f);
