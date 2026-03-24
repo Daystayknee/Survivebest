@@ -190,7 +190,7 @@ namespace Survivebest.UI
             if (TryExecuteCommandAction(actionKey, active, out reason, out magnitude))
             {
                 PublishActionEvent(reason, magnitude);
-                OnActionResolved?.Invoke(currentActionKey, reason, magnitude);
+                OnActionResolved?.Invoke(!string.IsNullOrWhiteSpace(currentActionKey) ? currentActionKey : actionKey, reason, magnitude);
                 ClearCurrentActionSelection();
                 SetPopupVisible(false);
                 return;
@@ -340,12 +340,12 @@ namespace Survivebest.UI
                     magnitude = 2f;
                     break;
                 default:
-                    reason = "Action completed.";
+                    reason = ResolveGenericActionOutcome(actionKey, active, out magnitude);
                     break;
             }
 
             PublishActionEvent(reason, magnitude);
-            OnActionResolved?.Invoke(currentActionKey, reason, magnitude);
+            OnActionResolved?.Invoke(!string.IsNullOrWhiteSpace(currentActionKey) ? currentActionKey : actionKey, reason, magnitude);
             ClearCurrentActionSelection();
             SetPopupVisible(false);
         }
@@ -388,6 +388,48 @@ namespace Survivebest.UI
                 : success ? "Action completed." : "Action failed.";
             magnitude = success ? 3f : 1f;
             return true;
+        }
+
+        private string ResolveGenericActionOutcome(string actionKey, CharacterCore activeCharacter, out float magnitude)
+        {
+            magnitude = 1.25f;
+            if (activeCharacter == null)
+            {
+                return "Action completed.";
+            }
+
+            string readable = string.IsNullOrWhiteSpace(actionKey)
+                ? "action"
+                : actionKey.Replace('_', ' ').Trim();
+            householdManager?.RegisterAutonomyIntent(activeCharacter.CharacterId, readable);
+
+            if (actionKey != null && actionKey.IndexOf("talk", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                string targetId = GetSocialTargetCharacterId(activeCharacter.CharacterId);
+                relationshipMemorySystem?.RecordEventDetailed(activeCharacter.CharacterId, targetId, $"Conversation: {readable}", 2f, false, locationManager != null && locationManager.CurrentRoom != null ? locationManager.CurrentRoom.RoomName : "unknown");
+                magnitude = 1.5f;
+                return $"{activeCharacter.DisplayName} followed through on {readable}.";
+            }
+
+            if (actionKey != null && (actionKey.Contains("rest") || actionKey.Contains("sleep")))
+            {
+                magnitude = 2f;
+                return $"{activeCharacter.DisplayName} focused on recovery ({readable}).";
+            }
+
+            if (actionKey != null && (actionKey.Contains("work") || actionKey.Contains("task")))
+            {
+                magnitude = 2.5f;
+                return $"{activeCharacter.DisplayName} progressed work responsibilities ({readable}).";
+            }
+
+            if (actionKey != null && (actionKey.Contains("buy") || actionKey.Contains("sell") || actionKey.Contains("budget")))
+            {
+                magnitude = 2f;
+                return $"{activeCharacter.DisplayName} updated household finances via {readable}.";
+            }
+
+            return $"{activeCharacter.DisplayName} completed {readable}.";
         }
 
         private GameplayCommandContext BuildCommandContext()
