@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Emotion;
@@ -116,6 +117,51 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("10,000", renderer.BuildPortraitVariationSummary());
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void CharacterPortraitRenderer_BuildMappedSpriteRosterReport_ListsAllMappedSpriteSlots()
+        {
+            GameObject go = new GameObject("PortraitRoster");
+            CharacterPortraitRenderer renderer = go.AddComponent<CharacterPortraitRenderer>();
+
+            Sprite spriteA = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
+            spriteA.name = "face_oval_01";
+            Sprite spriteB = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
+            spriteB.name = "eyes_round_01";
+
+            SetPrivateField(renderer, "faceSprites", new List<FaceShapeSpriteEntry>
+            {
+                new FaceShapeSpriteEntry { FaceShape = FaceShapeType.Oval, Sprite = spriteA }
+            });
+            SetPrivateField(renderer, "eyeSprites", new List<EyeShapeSpriteEntry>
+            {
+                new EyeShapeSpriteEntry { EyeShape = EyeShapeType.Round, Sprite = spriteB }
+            });
+
+            IReadOnlyList<string> roster = renderer.BuildMappedSpriteRoster();
+            string report = renderer.BuildMappedSpriteRosterReport();
+            IReadOnlyList<string> expected = renderer.BuildExpectedSpriteRosterKeys();
+
+            CollectionAssert.Contains(roster, "Face|Oval|face_oval_01");
+            CollectionAssert.Contains(roster, "Eyes|Round|eyes_round_01");
+            StringAssert.Contains("Mapped sprite roster entries: 2", report);
+            StringAssert.Contains("Face|Oval|face_oval_01", report);
+            StringAssert.Contains("Eyes|Round|eyes_round_01", report);
+            CollectionAssert.Contains(expected, "Face|Oval");
+            CollectionAssert.Contains(expected, "Eyes|Round");
+            CollectionAssert.Contains(expected, "Body|Average");
+            CollectionAssert.Contains(expected, "Clothing|Casual");
+
+            Object.DestroyImmediate(spriteA);
+            Object.DestroyImmediate(spriteB);
+            Object.DestroyImmediate(go);
+        }
+
+        private static void SetPrivateField(object instance, string fieldName, object value)
+        {
+            var field = instance.GetType().GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(instance, value);
         }
     }
 }
