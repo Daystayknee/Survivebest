@@ -22,6 +22,8 @@ namespace Survivebest.Location
         [Min(1)] public int Bathrooms = 1;
         [Min(20)] public int FloorArea = 70;
         public string FurnitureStyle = "practical";
+        public List<string> RoomTypes = new();
+        public List<HomeExpansionOption> ExpansionOptions = new();
         [Min(0)] public int RentPerDay;
         [Min(0)] public int MortgagePerDay;
         [Min(0)] public int ElectricityBillPerDay;
@@ -68,19 +70,27 @@ namespace Survivebest.Location
 
     public enum HomePlotType
     {
+        TinyInfillLot,
         StandardLot,
+        SuburbanLot,
         CornerLot,
+        HillsideLot,
         RuralHomestead,
         WaterfrontParcel,
         CompactUrbanLot,
+        MultiFamilyLot,
         EstateParcel
     }
 
     public enum HouseBlueprintType
     {
+        MicroStudio,
         CompactStarter,
         FamilyRanch,
+        SplitLevelHome,
         UrbanTownhouse,
+        TriplexResidence,
+        HillsideRetreat,
         RuralFarmhouse,
         WaterfrontDuplex,
         EstateManor
@@ -108,6 +118,18 @@ namespace Survivebest.Location
         public string StyleTag;
         [Range(0f, 100f)] public float ComfortContribution = 5f;
         [Range(0f, 100f)] public float DecorContribution = 4f;
+    }
+
+    [Serializable]
+    public class HomeExpansionOption
+    {
+        public string ExpansionId;
+        public string Label;
+        [Min(0)] public int Cost;
+        [Min(0)] public int AddedFloorArea;
+        [Min(0)] public int AddedBedrooms;
+        [Min(0)] public int AddedBathrooms;
+        public ResidentialPlotSize RequiredPlotSize = ResidentialPlotSize.Small;
     }
 
     public enum WasteItemState
@@ -485,6 +507,8 @@ namespace Survivebest.Location
             int floorArea = ResolveFloorArea(blueprintType);
             string furnitureStyle = ResolveFurnitureStyle(plotType, blueprintType);
             List<FurniturePlacementRecord> furniture = BuildFurnitureLayout(blueprintType, furnitureStyle);
+            List<string> roomTypes = BuildRoomTypes(blueprintType);
+            List<HomeExpansionOption> expansionOptions = BuildExpansionOptions(lot, blueprintType);
             float decorBonus = Mathf.Clamp(furniture.Count * 2.5f, 0f, 30f);
             float comfortBonus = Mathf.Clamp(furniture.Count * 2f, 0f, 28f);
 
@@ -501,6 +525,8 @@ namespace Survivebest.Location
                 Bathrooms = bathrooms,
                 FloorArea = floorArea,
                 FurnitureStyle = furnitureStyle,
+                RoomTypes = roomTypes,
+                ExpansionOptions = expansionOptions,
                 RentPerDay = Mathf.RoundToInt(12 + lot.Wealth * 24f + bedrooms * 2),
                 MortgagePerDay = Mathf.RoundToInt(8 + lot.Wealth * 18f + floorArea * 0.04f),
                 ElectricityBillPerDay = Mathf.RoundToInt(3 + floorArea * 0.04f),
@@ -541,17 +567,28 @@ namespace Survivebest.Location
                 return HomePlotType.StandardLot;
             }
 
+            if (lot.PlotSize == ResidentialPlotSize.Tiny) return HomePlotType.TinyInfillLot;
+            if (lot.PlotSize == ResidentialPlotSize.Large) return HomePlotType.SuburbanLot;
+            if (lot.PlotSize == ResidentialPlotSize.Estate) return HomePlotType.EstateParcel;
+
             if (lot.Tags != null)
             {
                 if (lot.Tags.Contains("waterfront")) return HomePlotType.WaterfrontParcel;
                 if (lot.Tags.Contains("rural_home")) return HomePlotType.RuralHomestead;
                 if (lot.Tags.Contains("luxury_home")) return HomePlotType.EstateParcel;
                 if (lot.Tags.Contains("urban_home")) return HomePlotType.CompactUrbanLot;
+                if (lot.Tags.Contains("multi_family")) return HomePlotType.MultiFamilyLot;
+                if (lot.Tags.Contains("hillside")) return HomePlotType.HillsideLot;
             }
 
             if (lot.DisplayName.IndexOf("corner", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return HomePlotType.CornerLot;
+            }
+
+            if (lot.DisplayName.IndexOf("triplex", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return HomePlotType.MultiFamilyLot;
             }
 
             return HomePlotType.StandardLot;
@@ -561,7 +598,11 @@ namespace Survivebest.Location
         {
             return plotType switch
             {
+                HomePlotType.TinyInfillLot => HouseBlueprintType.MicroStudio,
+                HomePlotType.SuburbanLot => HouseBlueprintType.SplitLevelHome,
                 HomePlotType.CompactUrbanLot => HouseBlueprintType.UrbanTownhouse,
+                HomePlotType.MultiFamilyLot => HouseBlueprintType.TriplexResidence,
+                HomePlotType.HillsideLot => HouseBlueprintType.HillsideRetreat,
                 HomePlotType.RuralHomestead => HouseBlueprintType.RuralFarmhouse,
                 HomePlotType.WaterfrontParcel => HouseBlueprintType.WaterfrontDuplex,
                 HomePlotType.EstateParcel => HouseBlueprintType.EstateManor,
@@ -573,7 +614,11 @@ namespace Survivebest.Location
         {
             return blueprintType switch
             {
+                HouseBlueprintType.MicroStudio => "Micro Studio Blueprint",
                 HouseBlueprintType.UrbanTownhouse => "Urban Townhouse Blueprint",
+                HouseBlueprintType.SplitLevelHome => "Split-Level Blueprint",
+                HouseBlueprintType.TriplexResidence => "Triplex Blueprint",
+                HouseBlueprintType.HillsideRetreat => "Hillside Retreat Blueprint",
                 HouseBlueprintType.RuralFarmhouse => "Farmhouse Blueprint",
                 HouseBlueprintType.WaterfrontDuplex => "Waterfront Duplex Blueprint",
                 HouseBlueprintType.EstateManor => "Estate Manor Blueprint",
@@ -586,7 +631,11 @@ namespace Survivebest.Location
         {
             return blueprintType switch
             {
+                HouseBlueprintType.MicroStudio => "studio",
                 HouseBlueprintType.UrbanTownhouse => "townhouse",
+                HouseBlueprintType.SplitLevelHome => "split_level",
+                HouseBlueprintType.TriplexResidence => "triplex",
+                HouseBlueprintType.HillsideRetreat => "hillside_home",
                 HouseBlueprintType.WaterfrontDuplex => "duplex",
                 HouseBlueprintType.EstateManor => "manor",
                 HouseBlueprintType.RuralFarmhouse => "farmhouse",
@@ -598,8 +647,12 @@ namespace Survivebest.Location
         {
             return blueprintType switch
             {
+                HouseBlueprintType.MicroStudio => 1,
                 HouseBlueprintType.CompactStarter => 1,
+                HouseBlueprintType.SplitLevelHome => 3,
                 HouseBlueprintType.UrbanTownhouse => 2,
+                HouseBlueprintType.TriplexResidence => 4,
+                HouseBlueprintType.HillsideRetreat => 3,
                 HouseBlueprintType.WaterfrontDuplex => 3,
                 HouseBlueprintType.EstateManor => 5,
                 HouseBlueprintType.RuralFarmhouse => 4,
@@ -611,8 +664,12 @@ namespace Survivebest.Location
         {
             return blueprintType switch
             {
+                HouseBlueprintType.MicroStudio => 38,
                 HouseBlueprintType.CompactStarter => 52,
+                HouseBlueprintType.SplitLevelHome => 132,
                 HouseBlueprintType.UrbanTownhouse => 88,
+                HouseBlueprintType.TriplexResidence => 176,
+                HouseBlueprintType.HillsideRetreat => 146,
                 HouseBlueprintType.WaterfrontDuplex => 124,
                 HouseBlueprintType.EstateManor => 240,
                 HouseBlueprintType.RuralFarmhouse => 156,
@@ -625,6 +682,8 @@ namespace Survivebest.Location
             if (plotType == HomePlotType.WaterfrontParcel) return "coastal";
             if (plotType == HomePlotType.RuralHomestead) return "rustic";
             if (plotType == HomePlotType.EstateParcel) return "luxury";
+            if (plotType == HomePlotType.HillsideLot) return "scandinavian";
+            if (plotType == HomePlotType.TinyInfillLot) return "minimalist";
             return blueprintType == HouseBlueprintType.UrbanTownhouse ? "modern" : "practical";
         }
 
@@ -659,7 +718,115 @@ namespace Survivebest.Location
                 furniture.Add(CreateFurniture("media_console", "Media Console", FurnitureCategory.Decor, "living_room", styleTag, 2f, 5f));
             }
 
+            if (blueprintType == HouseBlueprintType.MicroStudio)
+            {
+                furniture.Add(CreateFurniture("murphy_bed", "Murphy Bed", FurnitureCategory.Sleeping, "studio", styleTag, 7f, 3f));
+                furniture.Add(CreateFurniture("folding_desk", "Folding Desk", FurnitureCategory.Utility, "studio", styleTag, 2f, 2f));
+            }
+
+            if (blueprintType == HouseBlueprintType.TriplexResidence)
+            {
+                furniture.Add(CreateFurniture("unit_two_sofa", "Unit Two Sofa", FurnitureCategory.Seating, "suite_two", styleTag, 6f, 3f));
+                furniture.Add(CreateFurniture("unit_three_bed", "Unit Three Bed", FurnitureCategory.Sleeping, "suite_three", styleTag, 7f, 2f));
+            }
+
+            if (blueprintType == HouseBlueprintType.HillsideRetreat)
+            {
+                furniture.Add(CreateFurniture("reading_nook", "Reading Nook", FurnitureCategory.Decor, "loft", styleTag, 3f, 7f));
+                furniture.Add(CreateFurniture("fireplace", "Fireplace", FurnitureCategory.Decor, "living_room", styleTag, 5f, 9f));
+            }
+
             return furniture;
+        }
+
+        private static List<string> BuildRoomTypes(HouseBlueprintType blueprintType)
+        {
+            List<string> rooms = new() { "living_room", "kitchen", "bathroom", "bedroom" };
+
+            if (blueprintType == HouseBlueprintType.MicroStudio)
+            {
+                rooms = new List<string> { "studio", "kitchenette", "bathroom" };
+            }
+
+            if (blueprintType is HouseBlueprintType.SplitLevelHome or HouseBlueprintType.HillsideRetreat)
+            {
+                rooms.Add("loft");
+                rooms.Add("laundry_room");
+            }
+
+            if (blueprintType is HouseBlueprintType.WaterfrontDuplex or HouseBlueprintType.TriplexResidence)
+            {
+                rooms.Add("guest_room");
+                rooms.Add("balcony");
+            }
+
+            if (blueprintType is HouseBlueprintType.EstateManor or HouseBlueprintType.RuralFarmhouse)
+            {
+                rooms.Add("study");
+                rooms.Add("mudroom");
+            }
+
+            return rooms;
+        }
+
+        private static List<HomeExpansionOption> BuildExpansionOptions(LotDefinition lot, HouseBlueprintType blueprintType)
+        {
+            ResidentialPlotSize size = lot != null ? lot.PlotSize : ResidentialPlotSize.Medium;
+            List<HomeExpansionOption> options = new();
+            options.Add(new HomeExpansionOption
+            {
+                ExpansionId = "exp_storage",
+                Label = "Add Storage Shed",
+                Cost = 900,
+                AddedFloorArea = 10,
+                AddedBedrooms = 0,
+                AddedBathrooms = 0,
+                RequiredPlotSize = ResidentialPlotSize.Small
+            });
+
+            if (size >= ResidentialPlotSize.Medium)
+            {
+                options.Add(new HomeExpansionOption
+                {
+                    ExpansionId = "exp_bedroom",
+                    Label = "Build Extra Bedroom",
+                    Cost = 2600,
+                    AddedFloorArea = 20,
+                    AddedBedrooms = 1,
+                    AddedBathrooms = 0,
+                    RequiredPlotSize = ResidentialPlotSize.Medium
+                });
+            }
+
+            if (size >= ResidentialPlotSize.Large)
+            {
+                options.Add(new HomeExpansionOption
+                {
+                    ExpansionId = "exp_garage",
+                    Label = "Add Garage Workshop",
+                    Cost = 4200,
+                    AddedFloorArea = 28,
+                    AddedBedrooms = 0,
+                    AddedBathrooms = 0,
+                    RequiredPlotSize = ResidentialPlotSize.Large
+                });
+            }
+
+            if (size >= ResidentialPlotSize.Estate || blueprintType == HouseBlueprintType.EstateManor)
+            {
+                options.Add(new HomeExpansionOption
+                {
+                    ExpansionId = "exp_guest_suite",
+                    Label = "Construct Guest Suite",
+                    Cost = 7800,
+                    AddedFloorArea = 40,
+                    AddedBedrooms = 1,
+                    AddedBathrooms = 1,
+                    RequiredPlotSize = ResidentialPlotSize.Estate
+                });
+            }
+
+            return options;
         }
 
         private static FurniturePlacementRecord CreateFurniture(string furnitureId, string label, FurnitureCategory category, string roomTag, string styleTag, float comfort, float decor)

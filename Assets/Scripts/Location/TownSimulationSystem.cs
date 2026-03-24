@@ -18,6 +18,15 @@ namespace Survivebest.Location
         Entertainment
     }
 
+    public enum ResidentialPlotSize
+    {
+        Tiny,
+        Small,
+        Medium,
+        Large,
+        Estate
+    }
+
     [Serializable]
     public class LotDefinition
     {
@@ -32,6 +41,9 @@ namespace Survivebest.Location
         [Range(0f, 1f)] public float Safety = 0.6f;
         [Range(0f, 1f)] public float Wealth = 0.5f;
         [Min(0)] public int Capacity = 30;
+        public ResidentialPlotSize PlotSize = ResidentialPlotSize.Medium;
+        [Min(8)] public int PlotWidth = 22;
+        [Min(8)] public int PlotDepth = 24;
         public List<string> Tags = new();
     }
 
