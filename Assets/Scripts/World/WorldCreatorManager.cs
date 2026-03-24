@@ -135,7 +135,7 @@ namespace Survivebest.World
                     PoliceFunding = Mathf.Clamp01(template.PoliceFunding),
                     PrisonReform = Mathf.Clamp01(template.PrisonReform),
                     HealthcareCoverage = Mathf.Clamp01(template.HealthcareCoverage),
-                    SubstanceLaws = BuildDefaultSubstanceLawsByTheme(template.Theme)
+                    SubstanceLaws = BuildDefaultSubstanceLawsByTheme(template.Theme, template.AreaName)
                 });
 
                 rooms.Add(new Room
@@ -241,6 +241,8 @@ namespace Survivebest.World
                 List<string> tags = BuildTags(template, zone, districtIdentity, isAnchor);
                 int openHour = ResolveOpenHour(template, zone);
                 int closeHour = ResolveCloseHour(template, zone);
+                ResidentialPlotSize plotSize = ResolvePlotSize(template, zone, tags);
+                Vector2Int plotDimensions = ResolvePlotDimensions(plotSize);
 
                 lots.Add(new LotDefinition
                 {
@@ -253,7 +255,10 @@ namespace Survivebest.World
                     CloseHour = closeHour,
                     Safety = Mathf.Clamp01((template.TheftEnforcement + template.ViolenceEnforcement + template.PoliceFunding) / 3f),
                     Wealth = Mathf.Clamp01((template.HealthcareCoverage + (1f - template.PrisonReform) + template.TheftEnforcement) / 3f),
-                    Capacity = ResolveCapacity(template, zone, isAnchor),
+                    Capacity = ResolveCapacity(template, zone, isAnchor, plotSize),
+                    PlotSize = plotSize,
+                    PlotWidth = plotDimensions.x,
+                    PlotDepth = plotDimensions.y,
                     Tags = tags
                 });
 
@@ -650,7 +655,7 @@ namespace Survivebest.World
             };
         }
 
-        private static int ResolveCapacity(WorldAreaTemplate template, ZoneType zone, bool isAnchor)
+        private static int ResolveCapacity(WorldAreaTemplate template, ZoneType zone, bool isAnchor, ResidentialPlotSize plotSize)
         {
             int baseCapacity = template.Theme switch
             {
@@ -665,7 +670,56 @@ namespace Survivebest.World
             if (zone == ZoneType.Entertainment) baseCapacity += 35;
             if (isAnchor) baseCapacity += 20;
             if (template.AreaName.IndexOf("Transit", StringComparison.OrdinalIgnoreCase) >= 0) baseCapacity += 25;
+            if (zone == ZoneType.Residential)
+            {
+                baseCapacity += plotSize switch
+                {
+                    ResidentialPlotSize.Tiny => -8,
+                    ResidentialPlotSize.Small => -3,
+                    ResidentialPlotSize.Large => 10,
+                    ResidentialPlotSize.Estate => 22,
+                    _ => 4
+                };
+            }
+
             return baseCapacity;
+        }
+
+        private static ResidentialPlotSize ResolvePlotSize(WorldAreaTemplate template, ZoneType zone, List<string> tags)
+        {
+            if (zone != ZoneType.Residential)
+            {
+                return ResidentialPlotSize.Medium;
+            }
+
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            if (areaName.Contains("micro") || areaName.Contains("studio") || areaName.Contains("tiny")) return ResidentialPlotSize.Tiny;
+            if (areaName.Contains("starter") || areaName.Contains("bungalow") || areaName.Contains("flats")) return ResidentialPlotSize.Small;
+            if (areaName.Contains("estate") || areaName.Contains("manor") || areaName.Contains("villa")) return ResidentialPlotSize.Estate;
+            if (areaName.Contains("homestead") || areaName.Contains("ranch") || areaName.Contains("farm")) return ResidentialPlotSize.Large;
+
+            if (tags != null)
+            {
+                if (tags.Contains("luxury_home")) return ResidentialPlotSize.Estate;
+                if (tags.Contains("rural_home")) return ResidentialPlotSize.Large;
+                if (tags.Contains("starter_home")) return ResidentialPlotSize.Small;
+                if (tags.Contains("urban_home")) return ResidentialPlotSize.Small;
+            }
+
+            return ResidentialPlotSize.Medium;
+        }
+
+        private static Vector2Int ResolvePlotDimensions(ResidentialPlotSize plotSize)
+        {
+            return plotSize switch
+            {
+                ResidentialPlotSize.Tiny => new Vector2Int(10, 12),
+                ResidentialPlotSize.Small => new Vector2Int(14, 16),
+                ResidentialPlotSize.Medium => new Vector2Int(20, 24),
+                ResidentialPlotSize.Large => new Vector2Int(30, 36),
+                ResidentialPlotSize.Estate => new Vector2Int(44, 52),
+                _ => new Vector2Int(20, 24)
+            };
         }
 
         private static List<string> BuildTags(WorldAreaTemplate template, ZoneType zone, string districtIdentity, bool isAnchor)
@@ -882,12 +936,15 @@ namespace Survivebest.World
 
         private static string[] BuildResidentialAreaNames() => new[]
         {
+            "Micro Studio Lofts",
             "Starter Ranch Homes",
             "Garden Apartments",
             "Maple Townhouses",
+            "Creekside Bungalows",
             "Hillview Condos",
             "River Quarter Homes",
-            "Harborview Apartments"
+            "Harborview Apartments",
+            "Sunset Villas"
         };
 
         private string[] BuildStoreAreaNames()
@@ -895,11 +952,14 @@ namespace Survivebest.World
             List<string> names = new()
             {
                 "Corner Grocery",
+                "Neighborhood Co-op Grocery",
                 "Family Pharmacy",
+                "Community Cannabis Dispensary",
                 "Main Street Shops",
                 "Hardware Depot",
                 "Fresh Market Hall",
-                "Night Market Row"
+                "Night Market Row",
+                "Organic Farmers Market"
             };
 
             if (supplyCatalog != null)
@@ -936,7 +996,9 @@ namespace Survivebest.World
             "Fire Station",
             "Post Office",
             "Founders Square",
-            "Community Services Center"
+            "Community Services Center",
+            "History Museum",
+            "Riverside Observation Deck"
         };
 
         private static string[] BuildNatureAreaNames() => new[]
@@ -944,7 +1006,9 @@ namespace Survivebest.World
             "Community Park",
             "Riverside Park",
             "Oak Preserve",
-            "Playground Commons"
+            "Playground Commons",
+            "Scenic Overlook",
+            "Birdwatch Bluff"
         };
 
         private static string[] BuildWorkplaceAreaNames() => new[]
@@ -985,17 +1049,24 @@ namespace Survivebest.World
                 new WorldAreaTemplate { AreaName = "Forest Trail", Theme = LocationTheme.Nature, TheftEnforcement = 0.2f, ViolenceEnforcement = 0.35f, PoliceFunding = 0.32f, PrisonReform = 0.48f, HealthcareCoverage = 0.34f },
                 new WorldAreaTemplate { AreaName = "Downtown Market", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.65f, ViolenceEnforcement = 0.75f, PoliceFunding = 0.6f, PrisonReform = 0.42f, HealthcareCoverage = 0.5f },
                 new WorldAreaTemplate { AreaName = "Corner Cafe", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.6f, ViolenceEnforcement = 0.68f, PoliceFunding = 0.56f, PrisonReform = 0.44f, HealthcareCoverage = 0.48f },
+                new WorldAreaTemplate { AreaName = "Neighborhood Co-op Grocery", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.62f, ViolenceEnforcement = 0.7f, PoliceFunding = 0.57f, PrisonReform = 0.44f, HealthcareCoverage = 0.5f },
+                new WorldAreaTemplate { AreaName = "Community Cannabis Dispensary", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.6f, ViolenceEnforcement = 0.66f, PoliceFunding = 0.54f, PrisonReform = 0.5f, HealthcareCoverage = 0.46f },
                 new WorldAreaTemplate { AreaName = "Office Plaza", Theme = LocationTheme.Workplace, TheftEnforcement = 0.7f, ViolenceEnforcement = 0.85f, PoliceFunding = 0.62f, PrisonReform = 0.4f, HealthcareCoverage = 0.48f },
                 new WorldAreaTemplate { AreaName = "General Hospital", Theme = LocationTheme.Hospital, TheftEnforcement = 0.8f, ViolenceEnforcement = 0.95f, PoliceFunding = 0.58f, PrisonReform = 0.5f, HealthcareCoverage = 0.82f },
                 new WorldAreaTemplate { AreaName = "City Hall", Theme = LocationTheme.Civic, TheftEnforcement = 0.75f, ViolenceEnforcement = 0.85f, PoliceFunding = 0.64f, PrisonReform = 0.48f, HealthcareCoverage = 0.58f },
                 new WorldAreaTemplate { AreaName = "Public Library", Theme = LocationTheme.Civic, TheftEnforcement = 0.72f, ViolenceEnforcement = 0.7f, PoliceFunding = 0.55f, PrisonReform = 0.52f, HealthcareCoverage = 0.55f },
-                new WorldAreaTemplate { AreaName = "Community Park", Theme = LocationTheme.Nature, TheftEnforcement = 0.35f, ViolenceEnforcement = 0.4f, PoliceFunding = 0.4f, PrisonReform = 0.5f, HealthcareCoverage = 0.38f }
+                new WorldAreaTemplate { AreaName = "Historic Lighthouse", Theme = LocationTheme.Civic, TheftEnforcement = 0.66f, ViolenceEnforcement = 0.64f, PoliceFunding = 0.52f, PrisonReform = 0.5f, HealthcareCoverage = 0.45f },
+                new WorldAreaTemplate { AreaName = "Community Park", Theme = LocationTheme.Nature, TheftEnforcement = 0.35f, ViolenceEnforcement = 0.4f, PoliceFunding = 0.4f, PrisonReform = 0.5f, HealthcareCoverage = 0.38f },
+                new WorldAreaTemplate { AreaName = "Scenic Overlook", Theme = LocationTheme.Nature, TheftEnforcement = 0.3f, ViolenceEnforcement = 0.34f, PoliceFunding = 0.36f, PrisonReform = 0.52f, HealthcareCoverage = 0.36f }
             };
         }
 
-        private static List<SubstanceLaw> BuildDefaultSubstanceLawsByTheme(LocationTheme theme)
+        private static List<SubstanceLaw> BuildDefaultSubstanceLawsByTheme(LocationTheme theme, string areaName)
         {
-            return theme switch
+            bool isDispensary = !string.IsNullOrWhiteSpace(areaName) &&
+                                areaName.IndexOf("dispensary", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            List<SubstanceLaw> laws = theme switch
             {
                 LocationTheme.Nature => new List<SubstanceLaw>
                 {
@@ -1019,6 +1090,20 @@ namespace Survivebest.World
                     new SubstanceLaw { Substance = SubstanceType.Opioid, Severity = LawSeverity.Felony }
                 }
             };
+
+            if (isDispensary)
+            {
+                for (int i = 0; i < laws.Count; i++)
+                {
+                    if (laws[i].Substance == SubstanceType.Cannabis)
+                    {
+                        laws[i].Severity = LawSeverity.Legal;
+                        break;
+                    }
+                }
+            }
+
+            return laws;
         }
     }
 }

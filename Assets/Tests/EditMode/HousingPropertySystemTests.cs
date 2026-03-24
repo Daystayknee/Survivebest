@@ -74,7 +74,61 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(HouseBlueprintType.WaterfrontDuplex, property.BlueprintType);
             Assert.IsNotEmpty(property.BlueprintLabel);
             Assert.IsNotEmpty(property.FurnitureLayout);
+            Assert.IsNotEmpty(property.RoomTypes);
+            Assert.IsNotEmpty(property.ExpansionOptions);
             Assert.IsTrue(property.FurnitureLayout.Exists(x => x.RoomTag == "kitchen"));
+            Assert.IsTrue(property.FurnitureLayout.Exists(x => x.FurnitureId == "toilet"));
+            Assert.IsTrue(property.FurnitureLayout.Exists(x => x.FurnitureId == "shower"));
+            Assert.IsNotEmpty(property.YardDecor);
+            Assert.IsNotEmpty(property.GrassStyle);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SyncPropertiesFromTownLayout_UsesPlotSizesToDriveHousingBlueprintVariety()
+        {
+            GameObject go = new GameObject("HousingPlotSizes");
+            HousingPropertySystem system = go.AddComponent<HousingPropertySystem>();
+            TownSimulationSystem town = go.AddComponent<TownSimulationSystem>();
+
+            town.SetTownLayout(
+                new List<DistrictDefinition> { new DistrictDefinition { DistrictId = "district_homes", DisplayName = "Homes" } },
+                new List<LotDefinition>
+                {
+                    new LotDefinition
+                    {
+                        LotId = "lot_tiny",
+                        DisplayName = "Tiny Studio Homes",
+                        DistrictId = "district_homes",
+                        Zone = ZoneType.Residential,
+                        PlotSize = ResidentialPlotSize.Tiny
+                    },
+                    new LotDefinition
+                    {
+                        LotId = "lot_estate",
+                        DisplayName = "Summit Estate Villas",
+                        DistrictId = "district_homes",
+                        Zone = ZoneType.Residential,
+                        PlotSize = ResidentialPlotSize.Estate
+                    }
+                },
+                new List<RouteEdge>());
+
+            typeof(HousingPropertySystem).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(system, town);
+            system.SyncPropertiesFromTownLayout(33);
+
+            PropertyRecord tiny = system.GetProperty("property_lot_tiny");
+            PropertyRecord estate = system.GetProperty("property_lot_estate");
+            Assert.IsNotNull(tiny);
+            Assert.IsNotNull(estate);
+            Assert.AreEqual(HouseBlueprintType.MicroStudio, tiny.BlueprintType);
+            Assert.AreEqual(HouseBlueprintType.EstateManor, estate.BlueprintType);
+            Assert.IsTrue(estate.ExpansionOptions.Exists(x => x.AddedBathrooms > 0));
+            Assert.IsTrue(estate.ExpansionOptions.Exists(x => x.ExpansionId == "exp_hot_tub"));
+            Assert.IsTrue(estate.YardDecor.Exists(x => x.DecorType == "pool"));
+            Assert.IsTrue(estate.YardDecor.Exists(x => x.DecorType == "hot_tub"));
+            Assert.AreNotEqual(tiny.GrassStyle, estate.GrassStyle);
 
             Object.DestroyImmediate(go);
         }

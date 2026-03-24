@@ -2,7 +2,9 @@ using NUnit.Framework;
 using UnityEngine;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq;
 using Survivebest.Location;
+using Survivebest.Society;
 using Survivebest.World;
 
 namespace Survivebest.Tests.EditMode
@@ -121,6 +123,60 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotEmpty(firstHome.BlueprintLabel);
             Assert.Greater(firstHome.Bedrooms, 0);
             Assert.Greater(firstHome.FurnitureLayout.Count, 0);
+            Assert.IsNotEmpty(firstHome.RoomTypes);
+            Assert.IsNotEmpty(firstHome.ExpansionOptions);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildWorldFromTemplates_AssignsResidentialPlotSizesAndDimensions()
+        {
+            GameObject go = new GameObject("WorldPlotSizing");
+            WorldCreatorManager creator = go.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem town = go.AddComponent<TownSimulationSystem>();
+            typeof(WorldCreatorManager).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(creator, town);
+
+            creator.SetWorldMetadata("Plot World", 901, "hills", "Town", "Balanced", "Balanced");
+            creator.BuildWorldFromTemplates(new List<WorldAreaTemplate>
+            {
+                new WorldAreaTemplate { AreaName = "Tiny Studio Homes", Theme = LocationTheme.Residential, TheftEnforcement = 0.45f, ViolenceEnforcement = 0.58f, PoliceFunding = 0.52f, PrisonReform = 0.45f, HealthcareCoverage = 0.52f },
+                new WorldAreaTemplate { AreaName = "Summit Estate Villas", Theme = LocationTheme.Residential, TheftEnforcement = 0.5f, ViolenceEnforcement = 0.62f, PoliceFunding = 0.56f, PrisonReform = 0.46f, HealthcareCoverage = 0.56f },
+                new WorldAreaTemplate { AreaName = "Corner Grocery", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.6f, ViolenceEnforcement = 0.7f, PoliceFunding = 0.55f, PrisonReform = 0.42f, HealthcareCoverage = 0.5f }
+            });
+
+            LotDefinition tinyLot = town.Lots.FirstOrDefault(x => x != null && x.DisplayName == "Tiny Studio Homes");
+            LotDefinition estateLot = town.Lots.FirstOrDefault(x => x != null && x.DisplayName == "Summit Estate Villas");
+            Assert.IsNotNull(tinyLot);
+            Assert.IsNotNull(estateLot);
+            Assert.AreEqual(ResidentialPlotSize.Tiny, tinyLot.PlotSize);
+            Assert.AreEqual(ResidentialPlotSize.Estate, estateLot.PlotSize);
+            Assert.Less(tinyLot.PlotWidth * tinyLot.PlotDepth, estateLot.PlotWidth * estateLot.PlotDepth);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildWorldFromTemplates_DispensaryMarksCannabisAsLegalInAreaLaw()
+        {
+            GameObject go = new GameObject("WorldDispensaryLaw");
+            WorldCreatorManager creator = go.AddComponent<WorldCreatorManager>();
+            TownSimulationSystem town = go.AddComponent<TownSimulationSystem>();
+            LawSystem law = go.AddComponent<LawSystem>();
+            typeof(WorldCreatorManager).GetField("townSimulationSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(creator, town);
+            typeof(WorldCreatorManager).GetField("lawSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(creator, law);
+
+            creator.SetWorldMetadata("Legal Test", 333, "coastal", "Town", "Retail", "Balanced");
+            creator.BuildWorldFromTemplates(new List<WorldAreaTemplate>
+            {
+                new WorldAreaTemplate { AreaName = "Community Cannabis Dispensary", Theme = LocationTheme.StoreInterior, TheftEnforcement = 0.6f, ViolenceEnforcement = 0.67f, PoliceFunding = 0.54f, PrisonReform = 0.5f, HealthcareCoverage = 0.48f }
+            });
+
+            AreaLawProfile profile = law.AreaProfiles.FirstOrDefault(x => x != null && x.AreaName == "Community Cannabis Dispensary");
+            Assert.IsNotNull(profile);
+            SubstanceLaw cannabisLaw = profile.SubstanceLaws.FirstOrDefault(x => x.Substance == SubstanceType.Cannabis);
+            Assert.IsNotNull(cannabisLaw);
+            Assert.AreEqual(LawSeverity.Legal, cannabisLaw.Severity);
 
             Object.DestroyImmediate(go);
         }
