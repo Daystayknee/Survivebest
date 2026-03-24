@@ -171,6 +171,14 @@ namespace Survivebest.Health
         CancerSupport
     }
 
+    public enum HealthScenarioPreset
+    {
+        ComprehensiveCrisis,
+        InfectionOverload,
+        TraumaCascade,
+        AllergySpiral
+    }
+
     [Serializable]
     public class MedicalCondition
     {
@@ -291,6 +299,18 @@ namespace Survivebest.Health
             if (AddDetailedInjury(InjuryType.Scab, ConditionSeverity.Mild, BodyLocation.Knee, WoundType.Abrasion, FractureType.None, "Knee Scab")) added++;
             if (AddDetailedInjury(InjuryType.Fracture, ConditionSeverity.Severe, BodyLocation.Wrist, WoundType.BoneBreak, FractureType.Open, "Open Wrist Fracture")) added++;
             return added;
+        }
+
+        public int AddScenarioPreset(HealthScenarioPreset preset)
+        {
+            return preset switch
+            {
+                HealthScenarioPreset.ComprehensiveCrisis => AddMaxIntensityHealthStack() + AddComprehensiveCrisisExtras(),
+                HealthScenarioPreset.InfectionOverload => AddInfectionOverloadScenario(),
+                HealthScenarioPreset.TraumaCascade => AddTraumaCascadeScenario(),
+                HealthScenarioPreset.AllergySpiral => AddAllergySpiralScenario(),
+                _ => 0
+            };
         }
 
         public bool AdministerMedication(MedicationType medicationType)
@@ -778,6 +798,59 @@ namespace Survivebest.Health
                 InjuryType.Scrape => WoundType.Abrasion,
                 _ => WoundType.None
             };
+        }
+
+        private int AddComprehensiveCrisisExtras()
+        {
+            int added = 0;
+            if (TryAddIllness(IllnessType.StrepThroat, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.UrinaryTractInfection, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.WoundInfection, ConditionSeverity.Severe)) added++;
+            if (TryAddInjury(InjuryType.Bite, ConditionSeverity.Moderate, BodyLocation.Hand, WoundType.BiteTrauma, FractureType.None, "Infected Hand Bite")) added++;
+            return added;
+        }
+
+        private int AddInfectionOverloadScenario()
+        {
+            int added = 0;
+            if (TryAddIllness(IllnessType.SinusInfection, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.StrepThroat, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.UrinaryTractInfection, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.WoundInfection, ConditionSeverity.Severe)) added++;
+            if (TryAddIllness(IllnessType.Sepsis, ConditionSeverity.Severe)) added++;
+            return added;
+        }
+
+        private int AddTraumaCascadeScenario()
+        {
+            int added = 0;
+            if (TryAddInjury(InjuryType.Bruise, ConditionSeverity.Moderate, BodyLocation.Ribs, WoundType.DeepBruising, FractureType.None, "Rib Bruise")) added++;
+            if (TryAddInjury(InjuryType.Cut, ConditionSeverity.Moderate, BodyLocation.Forearm, WoundType.Laceration, FractureType.None, "Forearm Cut")) added++;
+            if (TryAddInjury(InjuryType.Scab, ConditionSeverity.Mild, BodyLocation.Knee, WoundType.Abrasion, FractureType.None, "Knee Scab")) added++;
+            if (TryAddInjury(InjuryType.Fracture, ConditionSeverity.Severe, BodyLocation.Ankle, WoundType.BoneBreak, FractureType.Comminuted, "Comminuted Ankle Fracture")) added++;
+            if (TryAddInjury(InjuryType.Concussion, ConditionSeverity.Moderate, BodyLocation.Scalp, WoundType.ConcussiveTrauma, FractureType.None, "Concussion Event")) added++;
+            return added;
+        }
+
+        private int AddAllergySpiralScenario()
+        {
+            int added = 0;
+            if (TryAddIllness(IllnessType.AllergyFlare, ConditionSeverity.Severe)) added++;
+            if (TryAddIllness(IllnessType.AsthmaAttack, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.SinusInfection, ConditionSeverity.Moderate)) added++;
+            return added;
+        }
+
+        private bool TryAddIllness(IllnessType illnessType, ConditionSeverity severity)
+        {
+            return HasCondition(x => x.IsIllness && x.IllnessType == illnessType) ? false : AddIllness(illnessType, severity);
+        }
+
+        private bool TryAddInjury(InjuryType injuryType, ConditionSeverity severity, BodyLocation bodyLocation, WoundType woundType, FractureType fractureType, string displayName)
+        {
+            return HasCondition(x => !x.IsIllness && x.InjuryType == injuryType && x.BodyLocation == bodyLocation)
+                ? false
+                : AddDetailedInjury(injuryType, severity, bodyLocation, woundType, fractureType, displayName);
         }
 
         private static string BuildInjuryDetailSummary(string label, WoundType woundType, BodyLocation bodyLocation, ConditionSeverity severity, FractureType fractureType)
