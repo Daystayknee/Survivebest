@@ -30,6 +30,10 @@ namespace Survivebest.Health
         AsthmaAttack,
         Hypertension,
         DiabetesComplication,
+        SinusInfection,
+        StrepThroat,
+        UrinaryTractInfection,
+        WoundInfection,
         SkinInfection,
         WartCluster,
         SevereAcneFlare,
@@ -46,6 +50,7 @@ namespace Survivebest.Health
     {
         Bruise,
         Cut,
+        Scab,
         Sprain,
         Burn,
         Fracture,
@@ -166,6 +171,14 @@ namespace Survivebest.Health
         CancerSupport
     }
 
+    public enum HealthScenarioPreset
+    {
+        ComprehensiveCrisis,
+        InfectionOverload,
+        TraumaCascade,
+        AllergySpiral
+    }
+
     [Serializable]
     public class MedicalCondition
     {
@@ -273,6 +286,31 @@ namespace Survivebest.Health
             MedicalCondition condition = BuildInjury(injuryType, severity, bodyLocation, woundType, fractureType, customDisplayName, bleedingRateOverride, mobilityPenaltyOverride, detailSummary);
             AddCondition(condition);
             return true;
+        }
+
+        public int AddMaxIntensityHealthStack()
+        {
+            int added = 0;
+            if (AddIllness(IllnessType.AllergyFlare, ConditionSeverity.Moderate)) added++;
+            if (AddIllness(IllnessType.WoundInfection, ConditionSeverity.Moderate)) added++;
+            if (AddIllness(IllnessType.SinusInfection, ConditionSeverity.Moderate)) added++;
+            if (AddDetailedInjury(InjuryType.Bruise, ConditionSeverity.Moderate, BodyLocation.Thigh, WoundType.DeepBruising, FractureType.None, "Deep Thigh Bruise")) added++;
+            if (AddDetailedInjury(InjuryType.Cut, ConditionSeverity.Moderate, BodyLocation.Forearm, WoundType.Laceration, FractureType.None, "Forearm Laceration")) added++;
+            if (AddDetailedInjury(InjuryType.Scab, ConditionSeverity.Mild, BodyLocation.Knee, WoundType.Abrasion, FractureType.None, "Knee Scab")) added++;
+            if (AddDetailedInjury(InjuryType.Fracture, ConditionSeverity.Severe, BodyLocation.Wrist, WoundType.BoneBreak, FractureType.Open, "Open Wrist Fracture")) added++;
+            return added;
+        }
+
+        public int AddScenarioPreset(HealthScenarioPreset preset)
+        {
+            return preset switch
+            {
+                HealthScenarioPreset.ComprehensiveCrisis => AddMaxIntensityHealthStack() + AddComprehensiveCrisisExtras(),
+                HealthScenarioPreset.InfectionOverload => AddInfectionOverloadScenario(),
+                HealthScenarioPreset.TraumaCascade => AddTraumaCascadeScenario(),
+                HealthScenarioPreset.AllergySpiral => AddAllergySpiralScenario(),
+                _ => 0
+            };
         }
 
         public bool AdministerMedication(MedicationType medicationType)
@@ -486,6 +524,10 @@ namespace Survivebest.Health
                 IllnessType.AsthmaAttack => ("Asthma Attack", 10, 0.42f, 1.5f, 1.1f, 0.05f, 0f, 0.5f, true, MedicationType.Inhaler),
                 IllnessType.Hypertension => ("Hypertension Spike", 48, 0.25f, 0.7f, 0.7f, 0.1f, 0f, 0.22f, false, MedicationType.Sedative),
                 IllnessType.DiabetesComplication => ("Diabetes Complication", 60, 0.38f, 1.3f, 0.9f, 0.15f, 0f, 0.3f, true, MedicationType.Stimulant),
+                IllnessType.SinusInfection => ("Sinus Infection", 60, 0.16f, 0.95f, 0.65f, 0.22f, 0.2f, 0.35f, false, MedicationType.Antibiotic),
+                IllnessType.StrepThroat => ("Strep Throat", 54, 0.2f, 0.9f, 0.75f, 0.2f, 0.3f, 0.42f, false, MedicationType.Antibiotic),
+                IllnessType.UrinaryTractInfection => ("Urinary Tract Infection", 72, 0.26f, 0.9f, 0.8f, 0.32f, 0.1f, 0.5f, false, MedicationType.Antibiotic),
+                IllnessType.WoundInfection => ("Wound Infection", 84, 0.28f, 0.85f, 0.8f, 0.24f, 0.12f, 0.52f, true, MedicationType.Antibiotic),
                 IllnessType.SkinInfection => ("Skin Infection", 72, 0.18f, 0.7f, 0.85f, 0.35f, 0.1f, 0.42f, false, MedicationType.Antibiotic),
                 IllnessType.WartCluster => ("Wart Cluster", 240, 0.02f, 0.1f, 0.4f, 0.08f, 0.05f, 0.12f, false, MedicationType.Antibiotic),
                 IllnessType.SevereAcneFlare => ("Severe Acne Flare", 120, 0.04f, 0.25f, 0.7f, 0.2f, 0f, 0.2f, false, MedicationType.Antibiotic),
@@ -520,19 +562,19 @@ namespace Survivebest.Health
                 FractureType = FractureType.None,
                 BleedingRate = 0f,
                 MobilityPenalty = type is IllnessType.Sepsis ? 0.45f : 0f,
-                InfectionRisk = type is IllnessType.SkinInfection or IllnessType.Abscess or IllnessType.Sepsis ? 0.35f : 0f,
+                InfectionRisk = type is IllnessType.SkinInfection or IllnessType.Abscess or IllnessType.Sepsis or IllnessType.WoundInfection or IllnessType.UrinaryTractInfection ? 0.35f : 0f,
                 IsOpenWound = false,
                 IsBoneInjury = false,
                 TissueDepth = type switch
                 {
                     IllnessType.SkinInfection or IllnessType.WartCluster or IllnessType.SevereAcneFlare => TissueLayerDepth.Dermal,
-                    IllnessType.Abscess => TissueLayerDepth.Subcutaneous,
+                    IllnessType.Abscess or IllnessType.WoundInfection => TissueLayerDepth.Subcutaneous,
                     IllnessType.Sepsis => TissueLayerDepth.Systemic,
                     _ => TissueLayerDepth.Systemic
                 },
                 InternalComplication = type switch
                 {
-                    IllnessType.Abscess => InternalComplicationType.InfectionSpread,
+                    IllnessType.Abscess or IllnessType.WoundInfection => InternalComplicationType.InfectionSpread,
                     IllnessType.Sepsis => InternalComplicationType.ShockRisk,
                     _ => InternalComplicationType.None
                 },
@@ -548,13 +590,14 @@ namespace Survivebest.Health
                 RequiresImaging = false,
                 RequiresSutures = false,
                 RequiresCast = false,
-                RequiresSurgeryConsult = type is IllnessType.Abscess or IllnessType.Sepsis,
+                RequiresSurgeryConsult = type is IllnessType.Abscess or IllnessType.Sepsis or IllnessType.WoundInfection,
                 DetailSummary = type switch
                 {
                     IllnessType.WartCluster => "Clustered skin-growth care plan: inspect lesions, cryo or topical treatment, and hygiene follow-up.",
                     IllnessType.SevereAcneFlare => "Deep inflammatory skin-care plan: cleanse, topical/oral medication, drainage watch, and scar prevention.",
                     IllnessType.SkinInfection => "Localized skin infection care: monitor spread, pain, drainage, and antibiotic response.",
                     IllnessType.Abscess => "Abscess care: assess depth, infection spread, drainage need, and dressing changes.",
+                    IllnessType.WoundInfection => "Wound infection pathway: irrigate, debride nonviable tissue, start antibiotics, and monitor for sepsis progression.",
                     IllnessType.Sepsis => "Systemic infection emergency: fluids, antibiotics, monitoring, and urgent escalation.",
                     _ => null
                 }
@@ -568,6 +611,7 @@ namespace Survivebest.Health
             {
                 InjuryType.Bruise => ("Bruise", 18, 0.08f, 0.45f, 0.3f, 0.05f, 0.18f, 0.02f, 0.08f, false, false, MedicationType.Painkiller),
                 InjuryType.Cut => ("Cut", 24, 0.14f, 0.55f, 0.35f, 0.15f, 0.22f, 0.24f, 0.12f, true, false, MedicationType.Antibiotic),
+                InjuryType.Scab => ("Scab", 20, 0.05f, 0.25f, 0.15f, 0.12f, 0.1f, 0.01f, 0.04f, false, false, MedicationType.Painkiller),
                 InjuryType.Sprain => ("Sprain", 36, 0.1f, 0.7f, 0.4f, 0.05f, 0.3f, 0.01f, 0.34f, false, false, MedicationType.Painkiller),
                 InjuryType.Burn => ("Burn", 48, 0.22f, 0.85f, 0.55f, 0.12f, 0.42f, 0.12f, 0.24f, true, false, MedicationType.Painkiller),
                 InjuryType.Fracture => ("Fracture", 168, 0.35f, 1.2f, 0.8f, 0.08f, 0.6f, 0.08f, 0.65f, fractureType == FractureType.Open, true, MedicationType.Painkiller),
@@ -670,7 +714,7 @@ namespace Survivebest.Health
             LifeStage stage = owner != null ? owner.CurrentLifeStage : LifeStage.YoungAdult;
             return stage switch
             {
-                LifeStage.Baby or LifeStage.Infant => injury is InjuryType.Bruise or InjuryType.Scrape or InjuryType.Bite,
+                LifeStage.Baby or LifeStage.Infant => injury is InjuryType.Bruise or InjuryType.Scrape or InjuryType.Bite or InjuryType.Scab,
                 _ => true
             };
         }
@@ -732,7 +776,7 @@ namespace Survivebest.Health
 
             return condition.RecommendedMedication == medicationType ||
                    (medicationType == MedicationType.Painkiller && !condition.IsIllness && condition.PainLevel > 0.15f) ||
-                   (medicationType == MedicationType.Antibiotic && condition.IsIllness && (condition.IllnessType is IllnessType.EarInfection or IllnessType.Bronchitis or IllnessType.Pneumonia)) ||
+                   (medicationType == MedicationType.Antibiotic && condition.IsIllness && (condition.IllnessType is IllnessType.EarInfection or IllnessType.Bronchitis or IllnessType.Pneumonia or IllnessType.SinusInfection or IllnessType.StrepThroat or IllnessType.UrinaryTractInfection or IllnessType.WoundInfection)) ||
                    (medicationType == MedicationType.Antiviral && condition.IsIllness && (condition.IllnessType is IllnessType.CommonCold or IllnessType.Flu or IllnessType.CovidLikeVirus)) ||
                    (medicationType == MedicationType.AntiNausea && condition.IsIllness && (condition.IllnessType is IllnessType.StomachBug or IllnessType.FoodPoisoning or IllnessType.Colic)) ||
                    (medicationType == MedicationType.Antibiotic && !condition.IsIllness && (condition.IsOpenWound || condition.InfectionRisk >= 0.24f));
@@ -744,6 +788,7 @@ namespace Survivebest.Health
             {
                 InjuryType.Bruise => WoundType.DeepBruising,
                 InjuryType.Cut => WoundType.Laceration,
+                InjuryType.Scab => WoundType.Abrasion,
                 InjuryType.Sprain => WoundType.JointTwist,
                 InjuryType.Burn => WoundType.BurnTrauma,
                 InjuryType.Fracture => WoundType.BoneBreak,
@@ -753,6 +798,59 @@ namespace Survivebest.Health
                 InjuryType.Scrape => WoundType.Abrasion,
                 _ => WoundType.None
             };
+        }
+
+        private int AddComprehensiveCrisisExtras()
+        {
+            int added = 0;
+            if (TryAddIllness(IllnessType.StrepThroat, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.UrinaryTractInfection, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.WoundInfection, ConditionSeverity.Severe)) added++;
+            if (TryAddInjury(InjuryType.Bite, ConditionSeverity.Moderate, BodyLocation.Hand, WoundType.BiteTrauma, FractureType.None, "Infected Hand Bite")) added++;
+            return added;
+        }
+
+        private int AddInfectionOverloadScenario()
+        {
+            int added = 0;
+            if (TryAddIllness(IllnessType.SinusInfection, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.StrepThroat, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.UrinaryTractInfection, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.WoundInfection, ConditionSeverity.Severe)) added++;
+            if (TryAddIllness(IllnessType.Sepsis, ConditionSeverity.Severe)) added++;
+            return added;
+        }
+
+        private int AddTraumaCascadeScenario()
+        {
+            int added = 0;
+            if (TryAddInjury(InjuryType.Bruise, ConditionSeverity.Moderate, BodyLocation.Ribs, WoundType.DeepBruising, FractureType.None, "Rib Bruise")) added++;
+            if (TryAddInjury(InjuryType.Cut, ConditionSeverity.Moderate, BodyLocation.Forearm, WoundType.Laceration, FractureType.None, "Forearm Cut")) added++;
+            if (TryAddInjury(InjuryType.Scab, ConditionSeverity.Mild, BodyLocation.Knee, WoundType.Abrasion, FractureType.None, "Knee Scab")) added++;
+            if (TryAddInjury(InjuryType.Fracture, ConditionSeverity.Severe, BodyLocation.Ankle, WoundType.BoneBreak, FractureType.Comminuted, "Comminuted Ankle Fracture")) added++;
+            if (TryAddInjury(InjuryType.Concussion, ConditionSeverity.Moderate, BodyLocation.Scalp, WoundType.ConcussiveTrauma, FractureType.None, "Concussion Event")) added++;
+            return added;
+        }
+
+        private int AddAllergySpiralScenario()
+        {
+            int added = 0;
+            if (TryAddIllness(IllnessType.AllergyFlare, ConditionSeverity.Severe)) added++;
+            if (TryAddIllness(IllnessType.AsthmaAttack, ConditionSeverity.Moderate)) added++;
+            if (TryAddIllness(IllnessType.SinusInfection, ConditionSeverity.Moderate)) added++;
+            return added;
+        }
+
+        private bool TryAddIllness(IllnessType illnessType, ConditionSeverity severity)
+        {
+            return HasCondition(x => x.IsIllness && x.IllnessType == illnessType) ? false : AddIllness(illnessType, severity);
+        }
+
+        private bool TryAddInjury(InjuryType injuryType, ConditionSeverity severity, BodyLocation bodyLocation, WoundType woundType, FractureType fractureType, string displayName)
+        {
+            return HasCondition(x => !x.IsIllness && x.InjuryType == injuryType && x.BodyLocation == bodyLocation)
+                ? false
+                : AddDetailedInjury(injuryType, severity, bodyLocation, woundType, fractureType, displayName);
         }
 
         private static string BuildInjuryDetailSummary(string label, WoundType woundType, BodyLocation bodyLocation, ConditionSeverity severity, FractureType fractureType)
