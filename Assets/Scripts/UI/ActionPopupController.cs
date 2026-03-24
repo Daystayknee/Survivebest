@@ -53,11 +53,17 @@ namespace Survivebest.UI
         [SerializeField] private QuestOpportunitySystem questOpportunitySystem;
         [SerializeField] private WorldGuideAISystem worldGuideAISystem;
         [SerializeField] private NpcLifeAIGuideSystem npcLifeAIGuideSystem;
+        [SerializeField] private DigitalLifeSystem digitalLifeSystem;
         [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
         [SerializeField] private HealthcareGameplaySystem healthcareGameplaySystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private EconomyInventorySystem economyInventorySystem;
+        [SerializeField] private VampireDepthSystem vampireDepthSystem;
+        [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
+        [SerializeField] private EducationInstitutionSystem educationInstitutionSystem;
+        [SerializeField] private PaperTrailSystem paperTrailSystem;
+        [SerializeField] private ContractBoardSystem contractBoardSystem;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
 
@@ -138,6 +144,7 @@ namespace Survivebest.UI
         private string currentResolvedActionKey;
         private AnimalSightingEncounter currentSighting;
         private readonly GameplayFacade gameplayFacade = new();
+        private readonly GameplayCommandDispatcher gameplayCommandDispatcher = new();
 
         public event Action<string, string, float> OnActionResolved;
         private readonly StringBuilder builder = new();
@@ -180,6 +187,14 @@ namespace Survivebest.UI
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
             string reason;
             float magnitude = 1f;
+            if (TryExecuteCommandAction(actionKey, active, out reason, out magnitude))
+            {
+                PublishActionEvent(reason, magnitude);
+                OnActionResolved?.Invoke(currentActionKey, reason, magnitude);
+                ClearCurrentActionSelection();
+                SetPopupVisible(false);
+                return;
+            }
 
             switch (actionKey)
             {
@@ -333,6 +348,107 @@ namespace Survivebest.UI
             OnActionResolved?.Invoke(currentActionKey, reason, magnitude);
             ClearCurrentActionSelection();
             SetPopupVisible(false);
+        }
+
+        private bool TryExecuteCommandAction(string actionKey, CharacterCore activeCharacter, out string reason, out float magnitude)
+        {
+            reason = null;
+            magnitude = 1f;
+            if (string.IsNullOrWhiteSpace(actionKey))
+            {
+                return false;
+            }
+
+            string characterId = activeCharacter != null ? activeCharacter.CharacterId : null;
+            IGameplayCommand command = actionKey switch
+            {
+                "cook_meal" => new EatMealCommand { CharacterId = characterId, Cost = 8f },
+                "camp" => new SleepCommand { CharacterId = characterId },
+                "clean_room" => new CleanRoomCommand { CharacterId = characterId },
+                "do_laundry" => new DoLaundryCommand { CharacterId = characterId },
+                "go_to_work" => new GoToWorkCommand { CharacterId = characterId, ShiftLabel = "Work shift" },
+                "take_shower" => new ShowerCommand { CharacterId = characterId },
+                "clothing_store" => new ChangeOutfitCommand { CharacterId = characterId, OutfitLabel = "Fresh fit" },
+                "buy" => new BuyGroceriesCommand { ItemName = "Groceries", Quantity = 1, Cost = 18f },
+                "npc_chat" => new TalkToNpcCommand { CharacterId = characterId, NpcId = GetSocialTargetCharacterId(characterId), Topic = "check-in" },
+                "npc_text" => new TextContactCommand { OwnerCharacterId = characterId, OtherCharacterId = GetSocialTargetCharacterId(characterId), Message = "How are you holding up?", LeakRisk = false },
+                "accept_local_opportunity" => BuildAcceptContractCommand(activeCharacter),
+                _ => null
+            };
+
+            if (command == null)
+            {
+                return false;
+            }
+
+            GameplayCommandResult result = gameplayCommandDispatcher.Execute(command, BuildCommandContext());
+            bool success = result != null && result.Success;
+            reason = result != null && !string.IsNullOrWhiteSpace(result.Summary)
+                ? result.Summary
+                : success ? "Action completed." : "Action failed.";
+            magnitude = success ? 3f : 1f;
+            return true;
+        }
+
+        private GameplayCommandContext BuildCommandContext()
+        {
+            return new GameplayCommandContext
+            {
+                HouseholdManager = householdManager,
+                EconomyInventorySystem = economyInventorySystem,
+                DigitalLifeSystem = digitalLifeSystem,
+                JusticeSystem = justiceSystem,
+                VampireDepthSystem = vampireDepthSystem,
+                MentalHealthEngine = psychologicalGrowthMentalHealthEngine,
+                EducationInstitutionSystem = educationInstitutionSystem,
+                PaperTrailSystem = paperTrailSystem,
+                RelationshipMemorySystem = relationshipMemorySystem,
+                ContractBoardSystem = contractBoardSystem,
+                LocationManager = locationManager
+            };
+        }
+
+        private IGameplayCommand BuildAcceptContractCommand(CharacterCore activeCharacter)
+        {
+            IReadOnlyList<AnimalSightingContract> contracts = contractBoardSystem != null ? contractBoardSystem.Contracts : null;
+            if (contracts == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < contracts.Count; i++)
+            {
+                AnimalSightingContract contract = contracts[i];
+                if (contract != null && contract.State == ContractState.Available && !string.IsNullOrWhiteSpace(contract.ContractId))
+                {
+                    return new AcceptContractCommand
+                    {
+                        ContractId = contract.ContractId,
+                        Actor = activeCharacter
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        private string GetSocialTargetCharacterId(string activeCharacterId)
+        {
+            if (householdManager == null || householdManager.Members == null || householdManager.Members.Count == 0)
+            {
+                return "npc_neighbor";
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member != null && !string.Equals(member.CharacterId, activeCharacterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return member.CharacterId;
+                }
+            }
+
+            return "npc_neighbor";
         }
 
         public void CancelAction()
