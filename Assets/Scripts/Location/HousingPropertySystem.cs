@@ -22,8 +22,10 @@ namespace Survivebest.Location
         [Min(1)] public int Bathrooms = 1;
         [Min(20)] public int FloorArea = 70;
         public string FurnitureStyle = "practical";
+        public string GrassStyle = "cool_season";
         public List<string> RoomTypes = new();
         public List<HomeExpansionOption> ExpansionOptions = new();
+        public List<YardDecorRecord> YardDecor = new();
         [Min(0)] public int RentPerDay;
         [Min(0)] public int MortgagePerDay;
         [Min(0)] public int ElectricityBillPerDay;
@@ -106,6 +108,16 @@ namespace Survivebest.Location
         Kitchen,
         Decor,
         Utility
+    }
+
+    [Serializable]
+    public class YardDecorRecord
+    {
+        public string DecorId;
+        public string Label;
+        public string DecorType;
+        public string MaterialTag;
+        [Range(0f, 100f)] public float DecorContribution = 4f;
     }
 
     [Serializable]
@@ -509,6 +521,8 @@ namespace Survivebest.Location
             List<FurniturePlacementRecord> furniture = BuildFurnitureLayout(blueprintType, furnitureStyle);
             List<string> roomTypes = BuildRoomTypes(blueprintType);
             List<HomeExpansionOption> expansionOptions = BuildExpansionOptions(lot, blueprintType);
+            string grassStyle = ResolveGrassStyle(plotType, lot);
+            List<YardDecorRecord> yardDecor = BuildYardDecor(plotType, grassStyle);
             float decorBonus = Mathf.Clamp(furniture.Count * 2.5f, 0f, 30f);
             float comfortBonus = Mathf.Clamp(furniture.Count * 2f, 0f, 28f);
 
@@ -525,8 +539,10 @@ namespace Survivebest.Location
                 Bathrooms = bathrooms,
                 FloorArea = floorArea,
                 FurnitureStyle = furnitureStyle,
+                GrassStyle = grassStyle,
                 RoomTypes = roomTypes,
                 ExpansionOptions = expansionOptions,
+                YardDecor = yardDecor,
                 RentPerDay = Mathf.RoundToInt(12 + lot.Wealth * 24f + bedrooms * 2),
                 MortgagePerDay = Mathf.RoundToInt(8 + lot.Wealth * 18f + floorArea * 0.04f),
                 ElectricityBillPerDay = Mathf.RoundToInt(3 + floorArea * 0.04f),
@@ -697,7 +713,14 @@ namespace Survivebest.Location
                 CreateFurniture("stove", "Stove", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 2f),
                 CreateFurniture("wardrobe", "Wardrobe", FurnitureCategory.Storage, "bedroom", styleTag, 2f, 4f),
                 CreateFurniture("bed_primary", "Primary Bed", FurnitureCategory.Sleeping, "bedroom", styleTag, 9f, 5f),
+                CreateFurniture("sink_vanity", "Bathroom Sink", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f),
                 CreateFurniture("bath_vanity", "Bath Vanity", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f),
+                CreateFurniture("toilet", "Toilet", FurnitureCategory.Bath, "bathroom", styleTag, 1f, 2f),
+                CreateFurniture("shower", "Shower", FurnitureCategory.Bath, "bathroom", styleTag, 3f, 3f),
+                CreateFurniture("tub", "Bathtub", FurnitureCategory.Bath, "bathroom", styleTag, 4f, 4f),
+                CreateFurniture("hygiene_cart", "Hygiene Cart", FurnitureCategory.Utility, "bathroom", styleTag, 2f, 3f),
+                CreateFurniture("toothbrush_station", "Toothbrush Station", FurnitureCategory.Utility, "bathroom", styleTag, 1f, 2f),
+                CreateFurniture("linen_cabinet", "Linen Cabinet", FurnitureCategory.Storage, "bathroom", styleTag, 1f, 3f),
                 CreateFurniture("washer", "Washer", FurnitureCategory.Utility, "utility", styleTag, 1f, 1f)
             };
 
@@ -736,6 +759,17 @@ namespace Survivebest.Location
                 furniture.Add(CreateFurniture("fireplace", "Fireplace", FurnitureCategory.Decor, "living_room", styleTag, 5f, 9f));
             }
 
+            if (blueprintType is HouseBlueprintType.SplitLevelHome or HouseBlueprintType.EstateManor or HouseBlueprintType.HillsideRetreat)
+            {
+                furniture.Add(CreateFurniture("indoor_plant", "Indoor Plant", FurnitureCategory.Decor, "living_room", styleTag, 1f, 6f));
+                furniture.Add(CreateFurniture("stone_planter", "Stone Planter", FurnitureCategory.Decor, "outdoor", styleTag, 1f, 5f));
+            }
+
+            if (blueprintType is HouseBlueprintType.RuralFarmhouse or HouseBlueprintType.EstateManor)
+            {
+                furniture.Add(CreateFurniture("garden_shower", "Outdoor Rinse Shower", FurnitureCategory.Bath, "outdoor", styleTag, 2f, 2f));
+            }
+
             return furniture;
         }
 
@@ -758,6 +792,7 @@ namespace Survivebest.Location
             {
                 rooms.Add("guest_room");
                 rooms.Add("balcony");
+                rooms.Add("powder_room");
             }
 
             if (blueprintType is HouseBlueprintType.EstateManor or HouseBlueprintType.RuralFarmhouse)
@@ -810,6 +845,17 @@ namespace Survivebest.Location
                     AddedBathrooms = 0,
                     RequiredPlotSize = ResidentialPlotSize.Large
                 });
+
+                options.Add(new HomeExpansionOption
+                {
+                    ExpansionId = "exp_pool",
+                    Label = "Install Backyard Pool",
+                    Cost = 6200,
+                    AddedFloorArea = 16,
+                    AddedBedrooms = 0,
+                    AddedBathrooms = 0,
+                    RequiredPlotSize = ResidentialPlotSize.Large
+                });
             }
 
             if (size >= ResidentialPlotSize.Estate || blueprintType == HouseBlueprintType.EstateManor)
@@ -824,9 +870,64 @@ namespace Survivebest.Location
                     AddedBathrooms = 1,
                     RequiredPlotSize = ResidentialPlotSize.Estate
                 });
+
+                options.Add(new HomeExpansionOption
+                {
+                    ExpansionId = "exp_hot_tub",
+                    Label = "Add Hot Tub Patio",
+                    Cost = 3400,
+                    AddedFloorArea = 8,
+                    AddedBedrooms = 0,
+                    AddedBathrooms = 0,
+                    RequiredPlotSize = ResidentialPlotSize.Estate
+                });
             }
 
+            options.Add(new HomeExpansionOption
+            {
+                ExpansionId = "exp_bath_remodel",
+                Label = "Bathroom Remodel (Shower + Tub)",
+                Cost = 2800,
+                AddedFloorArea = 6,
+                AddedBedrooms = 0,
+                AddedBathrooms = 1,
+                RequiredPlotSize = ResidentialPlotSize.Small
+            });
+
             return options;
+        }
+
+        private static string ResolveGrassStyle(HomePlotType plotType, LotDefinition lot)
+        {
+            if (plotType is HomePlotType.TinyInfillLot or HomePlotType.CompactUrbanLot) return "ornamental_turf";
+            if (plotType == HomePlotType.RuralHomestead) return "native_meadow";
+            if (plotType == HomePlotType.WaterfrontParcel) return "salt_tolerant";
+            if (plotType == HomePlotType.EstateParcel) return "premium_blend";
+            if (lot != null && lot.PlotSize >= ResidentialPlotSize.Large) return "warm_season";
+            return "cool_season";
+        }
+
+        private static List<YardDecorRecord> BuildYardDecor(HomePlotType plotType, string grassStyle)
+        {
+            List<YardDecorRecord> decor = new()
+            {
+                CreateYardDecor("grass_zone", "Grass Turf", "grass", grassStyle, 3f),
+                CreateYardDecor("river_stone_edge", "River Stone Border", "stone", "smooth", 4f),
+                CreateYardDecor("flower_box", "Flower Planter", "plant", "seasonal", 5f)
+            };
+
+            if (plotType is HomePlotType.SuburbanLot or HomePlotType.EstateParcel or HomePlotType.WaterfrontParcel)
+            {
+                decor.Add(CreateYardDecor("pool", "Swimming Pool", "pool", "tile", 9f));
+            }
+
+            if (plotType == HomePlotType.EstateParcel)
+            {
+                decor.Add(CreateYardDecor("hot_tub", "Hot Tub", "hot_tub", "cedar", 8f));
+                decor.Add(CreateYardDecor("zen_stones", "Zen Stone Garden", "stone", "granite", 7f));
+            }
+
+            return decor;
         }
 
         private static FurniturePlacementRecord CreateFurniture(string furnitureId, string label, FurnitureCategory category, string roomTag, string styleTag, float comfort, float decor)
@@ -840,6 +941,18 @@ namespace Survivebest.Location
                 StyleTag = styleTag,
                 ComfortContribution = comfort,
                 DecorContribution = decor
+            };
+        }
+
+        private static YardDecorRecord CreateYardDecor(string decorId, string label, string decorType, string materialTag, float decorContribution)
+        {
+            return new YardDecorRecord
+            {
+                DecorId = decorId,
+                Label = label,
+                DecorType = decorType,
+                MaterialTag = materialTag,
+                DecorContribution = decorContribution
             };
         }
 
