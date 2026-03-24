@@ -296,6 +296,8 @@ namespace Survivebest.Catalog
             AddIfMissing(CreateIngredient("Kimchi", IngredientGroup.Vegetable, IngredientCategory.PreparedFoods, new List<string> { "fermented", "spicy", "preserved" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 720f, calories: 23f, carbs: 4f, hydration: 88f));
             AddIfMissing(CreateIngredient("Sesame oil", IngredientGroup.Pantry, IngredientCategory.Oils, new List<string> { "oil", "nutty", "asian" }, isPerishable: false, spoilHours: 2400f, fat: 100f));
             AddIfMissing(CreateIngredient("Tahini", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "sesame", "creamy", "sauce" }, isPerishable: false, spoilHours: 1440f, calories: 595f, protein: 17f, fat: 53f, carbs: 21f));
+            AddIfMissing(CreateIngredient("Nori", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "seaweed", "umami", "japanese" }, isPerishable: false, spoilHours: 4320f, calories: 35f, protein: 6f, carbs: 5f));
+            AddIfMissing(CreateIngredient("Panko", IngredientGroup.Grain, IngredientCategory.BakingIngredients, new List<string> { "breadcrumbs", "crispy", "coating" }, isPerishable: false, spoilHours: 4320f, calories: 395f, protein: 13f, carbs: 73f));
         }
 
         private void AddIfMissing(IngredientItem item)
