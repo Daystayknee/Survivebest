@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Appearance;
@@ -139,6 +140,48 @@ namespace Survivebest.UI
         public string BuildPortraitVariationSummary()
         {
             return $"Portrait variation estimate: {EstimateUniquePortraitCombinationCount():N0} combinations (requirement: > 10,000).";
+        }
+
+        public IReadOnlyList<string> BuildMappedSpriteRoster()
+        {
+            List<string> roster = new();
+            AppendMappedSprites(faceSprites, item => item.FaceShape.ToString(), item => item.Sprite, "Face", roster);
+            AppendMappedSprites(eyeSprites, item => item.EyeShape.ToString(), item => item.Sprite, "Eyes", roster);
+            AppendMappedSprites(hairSprites, item => item.HairStyle.ToString(), item => item.Sprite, "Hair", roster);
+            AppendMappedSprites(bodySprites, item => item.BodyType.ToString(), item => item.Sprite, "Body", roster);
+            AppendMappedSprites(clothingSprites, item => item.ClothingStyle.ToString(), item => item.Sprite, "Clothing", roster);
+            if (missingPortraitFallback != null)
+            {
+                roster.Add($"Fallback|MissingPortrait|{missingPortraitFallback.name}");
+            }
+
+            roster.Sort(StringComparer.OrdinalIgnoreCase);
+            return roster;
+        }
+
+        public string BuildMappedSpriteRosterReport()
+        {
+            IReadOnlyList<string> roster = BuildMappedSpriteRoster();
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine($"Mapped sprite roster entries: {roster.Count}");
+            for (int i = 0; i < roster.Count; i++)
+            {
+                builder.AppendLine($"- {roster[i]}");
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        public IReadOnlyList<string> BuildExpectedSpriteRosterKeys()
+        {
+            List<string> expected = new();
+            AppendExpectedEnumKeys<FaceShapeType>("Face", expected);
+            AppendExpectedEnumKeys<EyeShapeType>("Eyes", expected);
+            AppendExpectedEnumKeys<HairStyleType>("Hair", expected);
+            AppendExpectedEnumKeys<BodyType>("Body", expected);
+            AppendExpectedEnumKeys<ClothingStyleType>("Clothing", expected);
+            expected.Sort(StringComparer.OrdinalIgnoreCase);
+            return expected;
         }
 
         [ContextMenu("Refresh Portrait")]
@@ -381,6 +424,51 @@ namespace Survivebest.UI
                 .Count();
 
             return Mathf.Max(1, mapped > 0 ? mapped : fallback);
+        }
+
+        private static void AppendMappedSprites<TEntry>(IEnumerable<TEntry> entries, Func<TEntry, string> keySelector, Func<TEntry, Sprite> spriteSelector, string category, List<string> output)
+        {
+            if (entries == null || output == null)
+            {
+                return;
+            }
+
+            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            foreach (TEntry entry in entries)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                string key = keySelector != null ? keySelector(entry) : "Unknown";
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    key = "Unknown";
+                }
+
+                Sprite sprite = spriteSelector != null ? spriteSelector(entry) : null;
+                string spriteName = sprite != null ? sprite.name : "UNASSIGNED";
+                string line = $"{category}|{key}|{spriteName}";
+                if (seen.Add(line))
+                {
+                    output.Add(line);
+                }
+            }
+        }
+
+        private static void AppendExpectedEnumKeys<TEnum>(string category, List<string> output) where TEnum : Enum
+        {
+            if (output == null)
+            {
+                return;
+            }
+
+            string[] names = Enum.GetNames(typeof(TEnum));
+            for (int i = 0; i < names.Length; i++)
+            {
+                output.Add($"{category}|{names[i]}");
+            }
         }
     }
 }
