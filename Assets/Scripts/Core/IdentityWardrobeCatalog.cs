@@ -1,0 +1,276 @@
+using System;
+using System.Collections.Generic;
+
+namespace Survivebest.Core
+{
+    public enum StylePresentation
+    {
+        Feminine,
+        Masculine,
+        Androgynous
+    }
+
+    public enum WardrobeCategory
+    {
+        Tops,
+        Bottoms,
+        Underwear,
+        FullBody,
+        Shoes,
+        Accessories
+    }
+
+    [Serializable]
+    public sealed class BodyCompositionProfile
+    {
+        public string ProfileId;
+        public string Label;
+        public string Description;
+        public float FrameScale;
+        public float BodyFatLevel;
+        public float MuscleLevel;
+        public LifeStage MinLifeStage;
+        public LifeStage MaxLifeStage;
+    }
+
+    public static class IdentityWardrobeCatalog
+    {
+        private static readonly string[] UniversalTops =
+        {
+            "Basic tee", "Long-sleeve crew", "Thermal layer", "Hoodie", "Overshirt", "Knit sweater", "Rain shell", "Puffer vest", "Light blazer", "Button-up oxford"
+        };
+
+        private static readonly string[] UniversalBottoms =
+        {
+            "Straight jeans", "Relaxed jeans", "Joggers", "Cargo pants", "Tailored trousers", "Athletic shorts", "Chino pants", "Corduroy pants", "Sweatpants", "Utility shorts"
+        };
+
+        private static readonly string[] UniversalUnderwear =
+        {
+            "Cotton basics", "Performance moisture-wick set", "Ribbed comfort set", "Thermal underwear", "Seamless set", "Breathable mesh set", "Boxer brief set", "Brief set", "High-waist brief set", "Bralette + brief set"
+        };
+
+        private static readonly string[] UniversalFullBody =
+        {
+            "Jumpsuit", "Coveralls", "Overalls", "Formal suit set", "Lounge onesie", "Workout unitard", "Rain coverall", "Ceremony outfit"
+        };
+
+        private static readonly string[] UniversalShoes =
+        {
+            "Daily sneakers", "Running shoes", "Slip-ons", "Boots", "Loafers", "Sandals", "Waterproof shoes", "Canvas trainers", "House slippers", "Formal shoes"
+        };
+
+        private static readonly string[] UniversalAccessories =
+        {
+            "Backpack", "Crossbody bag", "Beanie", "Baseball cap", "Belt", "Watch", "Sunglasses", "Scarf", "Minimal necklace", "Bracelet stack", "Ring set", "Hair clip set"
+        };
+
+        private static readonly Dictionary<LifeStage, string[]> StageTops = new()
+        {
+            { LifeStage.Baby, new[] { "Snap onesie top", "Soft bib top", "Wrap cardigan", "Sleep top", "Weather knit top" } },
+            { LifeStage.Infant, new[] { "Printed daycare top", "Soft henley", "Cozy fleece top", "Play top", "Weather shield top" } },
+            { LifeStage.Toddler, new[] { "Story-time top", "Playground hoodie", "Color-block tee", "Mini polo", "Messy-art smock top" } },
+            { LifeStage.Child, new[] { "School uniform shirt", "Sports team tee", "Club activity top", "Rain-day pullover", "Graphic story tee" } },
+            { LifeStage.Preteen, new[] { "Rec-center tank", "Coding club hoodie", "Debate team shirt", "Weekend layered top", "Music practice tee" } },
+            { LifeStage.Teen, new[] { "Street oversized tee", "Exam-week hoodie", "Band rehearsal shirt", "Date-night top", "Trend knit polo" } },
+            { LifeStage.YoungAdult, new[] { "Workplace blouse/shirt", "Night-out top", "Gym crop/tee", "Interview shirt", "Creator livestream top", "Apartment lounge top" } },
+            { LifeStage.Adult, new[] { "Office staple shirt", "Parent utility top", "Business knit", "Dinner date top", "Weekend layering top", "Shift-ready top" } },
+            { LifeStage.OlderAdult, new[] { "Garden utility top", "Warm knit button top", "Walking club pullover", "Celebration shirt", "Comfort polo" } },
+            { LifeStage.Elder, new[] { "Soft cardigan set top", "Easy-closure shirt", "Sunday blouse/shirt", "Warm lounge top", "Family gathering knit top" } }
+        };
+
+        private static readonly Dictionary<StylePresentation, string[]> PresentationTops = new()
+        {
+            { StylePresentation.Feminine, new[] { "Ruffle blouse", "Fitted rib top", "Wrap top", "Puff-sleeve top", "Soft lace camisole", "Peplum top", "Off-shoulder knit", "Tie-front blouse" } },
+            { StylePresentation.Masculine, new[] { "Boxy tee", "Workwear flannel", "Rugby shirt", "Structured overshirt", "Henley top", "Muscle tank", "Utility button-up", "Heavyweight sweatshirt" } },
+            { StylePresentation.Androgynous, new[] { "Box-cut knit top", "Gender-neutral mock neck", "Minimal drape tee", "Relaxed camp shirt", "Cropped box tee", "Asymmetric top", "Layered tunic top", "Technical zip top" } }
+        };
+
+        private static readonly Dictionary<StylePresentation, string[]> PresentationBottoms = new()
+        {
+            { StylePresentation.Feminine, new[] { "Pleated skirt", "A-line skirt", "Wide-leg trousers", "Flared jeans", "Paperbag waist pants", "Biker shorts", "Soft culottes", "High-rise denim" } },
+            { StylePresentation.Masculine, new[] { "Tapered work pants", "Athletic fit jeans", "Loose cargos", "Track pants", "Tailored slacks", "Denim shorts", "Heavy twill pants", "Utility joggers" } },
+            { StylePresentation.Androgynous, new[] { "Straight-leg slacks", "Wide cargo pants", "Drop-crotch pants", "Neutral midi skirt", "Technical nylon pants", "Relaxed pleated trousers", "Convertible zip-off pants", "Clean denim cut" } }
+        };
+
+        private static readonly Dictionary<StylePresentation, string[]> PresentationUnderwear = new()
+        {
+            { StylePresentation.Feminine, new[] { "Support bra + brief set", "Sports bra set", "Lace comfort set", "Wire-free contour set", "Boyshort + bralette set", "Shaping set" } },
+            { StylePresentation.Masculine, new[] { "Athletic boxer set", "Compression boxer set", "Classic boxer set", "Support brief set", "Long-leg boxer set", "Thermal base set" } },
+            { StylePresentation.Androgynous, new[] { "Neutral support set", "Seamless short set", "Binder-friendly base layer", "Flat-front comfort set", "Unisex lounge set", "Compression-neutral set" } }
+        };
+
+        private static readonly Dictionary<StylePresentation, string[]> PresentationFullBody = new()
+        {
+            { StylePresentation.Feminine, new[] { "Flow dress", "Bodycon dress", "Wrap dress", "Formal gown", "Casual romper", "Soft jumpsuit", "Maxi dress", "Cocktail dress" } },
+            { StylePresentation.Masculine, new[] { "Two-piece suit", "Utility coverall", "Tailored tux set", "Casual matching set", "Track matching set", "Mechanic overalls", "Chef whites", "Field uniform set" } },
+            { StylePresentation.Androgynous, new[] { "Structured jumpsuit", "Minimal longline set", "Avant one-piece", "Tailored neutral suit", "Relaxed shirt-and-trouser set", "Street matching set", "Festival one-piece", "Layered robe set" } }
+        };
+
+        private static readonly Dictionary<StylePresentation, string[]> PresentationShoes = new()
+        {
+            { StylePresentation.Feminine, new[] { "Ballet flats", "Low heels", "Platform sneakers", "Ankle boots", "Strappy sandals", "Court shoes", "Fashion clogs", "Chunky loafers" } },
+            { StylePresentation.Masculine, new[] { "Work boots", "Athletic trainers", "Leather oxfords", "Skate shoes", "Hiking boots", "High-top sneakers", "Moc toe boots", "Slip-resistant shoes" } },
+            { StylePresentation.Androgynous, new[] { "Neutral sneakers", "Combat boots", "Square-toe loafers", "Minimal sandals", "Tech runners", "Platform boots", "Retro trainers", "Low profile canvas shoes" } }
+        };
+
+        private static readonly Dictionary<StylePresentation, string[]> PresentationAccessories = new()
+        {
+            { StylePresentation.Feminine, new[] { "Layered necklace", "Pearl studs", "Silk scarf", "Statement earrings", "Mini shoulder bag", "Hair bow set", "Charm bracelet", "Fashion ring stack" } },
+            { StylePresentation.Masculine, new[] { "Leather strap watch", "Chain necklace", "Bandana", "Heavy ring", "Messenger bag", "Wallet chain", "Tie clip", "Beanie" } },
+            { StylePresentation.Androgynous, new[] { "Neutral tote", "Geometric earrings", "Mixed-metal chain", "Tech sling bag", "Cuff bracelet", "Minimal cap", "Pattern scarf", "Utility belt bag" } }
+        };
+
+        private static readonly List<BodyCompositionProfile> BodyProfiles = new()
+        {
+            CreateProfile("baby_soft", "Baby Soft", "Infant-safe soft frame with minimal muscle definition.", 0.35f, 0.55f, 0.05f, LifeStage.Baby, LifeStage.Infant),
+            CreateProfile("toddler_lean", "Toddler Lean", "Small frame with energetic movement.", 0.4f, 0.34f, 0.1f, LifeStage.Toddler, LifeStage.Child),
+            CreateProfile("child_average", "Child Average", "Balanced child frame.", 0.46f, 0.3f, 0.14f, LifeStage.Child, LifeStage.Preteen),
+            CreateProfile("preteen_soft", "Preteen Soft", "Early growth with soft tissue dominance.", 0.5f, 0.42f, 0.15f, LifeStage.Preteen, LifeStage.Teen),
+            CreateProfile("teen_skinny", "Teen Skinny", "Low body fat with long-limb look.", 0.56f, 0.17f, 0.16f, LifeStage.Teen, LifeStage.YoungAdult),
+            CreateProfile("teen_lithe", "Teen Lithe", "Slim and flexible build.", 0.58f, 0.2f, 0.24f, LifeStage.Teen, LifeStage.YoungAdult),
+            CreateProfile("youngadult_ectomorph", "Ectomorph", "Thin frame and low muscle gain tendency.", 0.62f, 0.14f, 0.22f, LifeStage.YoungAdult, LifeStage.Adult),
+            CreateProfile("youngadult_endomorph", "Endomorph", "Broader frame with softer mass distribution.", 0.69f, 0.55f, 0.28f, LifeStage.YoungAdult, LifeStage.Adult),
+            CreateProfile("youngadult_mesomorph", "Mesomorph", "Athletic wedge frame with easy muscle definition.", 0.67f, 0.24f, 0.66f, LifeStage.YoungAdult, LifeStage.Adult),
+            CreateProfile("adult_skinny", "Adult Skinny", "Low-fat mature profile.", 0.63f, 0.12f, 0.24f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_average", "Adult Average", "Common balanced body composition.", 0.68f, 0.29f, 0.37f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_soft", "Adult Soft", "Moderate frame with softer contours.", 0.71f, 0.44f, 0.26f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_muscular", "Adult Muscular", "High muscle profile with low-mid fat.", 0.72f, 0.22f, 0.79f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_no_muscle", "Adult Low Muscle", "Deconditioned profile with low muscle tone.", 0.66f, 0.36f, 0.08f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_burly", "Adult Burly", "Large frame and high absolute strength appearance.", 0.81f, 0.4f, 0.72f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_pear", "Adult Pear", "Mass distribution concentrated in hips/thighs.", 0.72f, 0.46f, 0.3f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_apple", "Adult Apple", "Mass distribution concentrated in midsection/chest.", 0.73f, 0.5f, 0.29f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_fat", "Adult Fat", "Higher body fat profile across trunk and limbs.", 0.84f, 0.74f, 0.24f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("adult_powerlift", "Power Build", "Dense muscular profile with thicker core.", 0.83f, 0.34f, 0.86f, LifeStage.Adult, LifeStage.OlderAdult),
+            CreateProfile("olderadult_skinny", "Older Skinny", "Aging profile with reduced mass.", 0.62f, 0.16f, 0.16f, LifeStage.OlderAdult, LifeStage.Elder),
+            CreateProfile("olderadult_average", "Older Average", "Balanced older-adult profile.", 0.67f, 0.31f, 0.24f, LifeStage.OlderAdult, LifeStage.Elder),
+            CreateProfile("olderadult_soft", "Older Soft", "Softer profile with moderate mobility.", 0.71f, 0.49f, 0.19f, LifeStage.OlderAdult, LifeStage.Elder),
+            CreateProfile("elder_light", "Elder Light", "Lower frame volume and muscle retention.", 0.58f, 0.27f, 0.11f, LifeStage.Elder, LifeStage.Elder),
+            CreateProfile("elder_sturdy", "Elder Sturdy", "Heavier but functional elder frame.", 0.73f, 0.53f, 0.2f, LifeStage.Elder, LifeStage.Elder)
+        };
+
+        public static IReadOnlyList<BodyCompositionProfile> GetBodyCompositionProfiles()
+        {
+            return BodyProfiles;
+        }
+
+        public static IReadOnlyList<string> GetWardrobeOptions(LifeStage lifeStage, StylePresentation presentation, WardrobeCategory category)
+        {
+            List<string> options = new();
+            AddRange(options, GetUniversalCategory(category));
+            AddRange(options, ResolveStageCategory(lifeStage, category));
+            AddRange(options, ResolvePresentationCategory(presentation, category));
+            return options;
+        }
+
+        public static int CountWardrobeOptions(LifeStage lifeStage, StylePresentation presentation)
+        {
+            int count = 0;
+            foreach (WardrobeCategory category in Enum.GetValues(typeof(WardrobeCategory)))
+            {
+                count += GetWardrobeOptions(lifeStage, presentation, category).Count;
+            }
+
+            return count;
+        }
+
+        public static string BuildCoverageSummary()
+        {
+            int combinations = 0;
+            int aggregateChoices = 0;
+            foreach (LifeStage stage in Enum.GetValues(typeof(LifeStage)))
+            {
+                foreach (StylePresentation presentation in Enum.GetValues(typeof(StylePresentation)))
+                {
+                    combinations++;
+                    aggregateChoices += CountWardrobeOptions(stage, presentation);
+                }
+            }
+
+            return $"Identity wardrobe coverage: {aggregateChoices} options across {combinations} life-stage/presentation combinations, {BodyProfiles.Count} body composition profiles.";
+        }
+
+        private static BodyCompositionProfile CreateProfile(
+            string id,
+            string label,
+            string description,
+            float frameScale,
+            float bodyFat,
+            float muscle,
+            LifeStage minStage,
+            LifeStage maxStage)
+        {
+            return new BodyCompositionProfile
+            {
+                ProfileId = id,
+                Label = label,
+                Description = description,
+                FrameScale = frameScale,
+                BodyFatLevel = bodyFat,
+                MuscleLevel = muscle,
+                MinLifeStage = minStage,
+                MaxLifeStage = maxStage
+            };
+        }
+
+        private static IReadOnlyList<string> GetUniversalCategory(WardrobeCategory category)
+        {
+            return category switch
+            {
+                WardrobeCategory.Tops => UniversalTops,
+                WardrobeCategory.Bottoms => UniversalBottoms,
+                WardrobeCategory.Underwear => UniversalUnderwear,
+                WardrobeCategory.FullBody => UniversalFullBody,
+                WardrobeCategory.Shoes => UniversalShoes,
+                WardrobeCategory.Accessories => UniversalAccessories,
+                _ => Array.Empty<string>()
+            };
+        }
+
+        private static IReadOnlyList<string> ResolveStageCategory(LifeStage lifeStage, WardrobeCategory category)
+        {
+            if (category != WardrobeCategory.Tops)
+            {
+                return Array.Empty<string>();
+            }
+
+            return StageTops.TryGetValue(lifeStage, out string[] options) ? options : Array.Empty<string>();
+        }
+
+        private static IReadOnlyList<string> ResolvePresentationCategory(StylePresentation presentation, WardrobeCategory category)
+        {
+            return category switch
+            {
+                WardrobeCategory.Tops => ResolvePresentation(PresentationTops, presentation),
+                WardrobeCategory.Bottoms => ResolvePresentation(PresentationBottoms, presentation),
+                WardrobeCategory.Underwear => ResolvePresentation(PresentationUnderwear, presentation),
+                WardrobeCategory.FullBody => ResolvePresentation(PresentationFullBody, presentation),
+                WardrobeCategory.Shoes => ResolvePresentation(PresentationShoes, presentation),
+                WardrobeCategory.Accessories => ResolvePresentation(PresentationAccessories, presentation),
+                _ => Array.Empty<string>()
+            };
+        }
+
+        private static IReadOnlyList<string> ResolvePresentation(Dictionary<StylePresentation, string[]> map, StylePresentation presentation)
+        {
+            return map != null && map.TryGetValue(presentation, out string[] options) ? options : Array.Empty<string>();
+        }
+
+        private static void AddRange(List<string> target, IReadOnlyList<string> values)
+        {
+            if (target == null || values == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                string value = values[i];
+                if (!string.IsNullOrWhiteSpace(value) && !target.Contains(value))
+                {
+                    target.Add(value);
+                }
+            }
+        }
+    }
+}
