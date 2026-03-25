@@ -7,6 +7,7 @@ using Survivebest.Location;
 using Survivebest.World;
 using Survivebest.Events;
 using Survivebest.Core;
+using Survivebest.Society;
 
 namespace Survivebest.UI
 {
@@ -51,6 +52,15 @@ namespace Survivebest.UI
         Frontier
     }
 
+    public enum PoliticalFocus
+    {
+        CivicServices,
+        PublicSafety,
+        WelfareAndHealthcare,
+        GrowthAndIndustry,
+        PlanetaryStewardship
+    }
+
     [Serializable]
     public class WorldCreatorSettings
     {
@@ -80,6 +90,14 @@ namespace Survivebest.UI
         [Range(0f, 1f)] public float CrimeStrictness = 0.65f;
         public bool Permadeath = true;
         [Range(0f, 1f)] public float PrisonHarshness = 0.6f;
+        public GovernanceScope GovernanceScope = GovernanceScope.City;
+        public PoliticalFocus PoliticalFocus = PoliticalFocus.CivicServices;
+        public bool EnablePoliticalCareers = true;
+        public bool EnablePlayerRulemaking = true;
+        public Color PlanetSurfacePrimaryColor = new(0.42f, 0.56f, 0.36f, 1f);
+        public Color PlanetSurfaceSecondaryColor = new(0.35f, 0.45f, 0.7f, 1f);
+        public List<string> GrassTypes = new() { "Temperate Grass", "Tall Prairie", "Wetland Reed" };
+        public List<string> OreTypes = new() { "Iron", "Copper", "Quartz" };
 
         public StartingOrigin StartingOrigin = StartingOrigin.Settler;
 
@@ -143,7 +161,19 @@ namespace Survivebest.UI
             ApplyBalanceModeFromSettings();
 
             List<WorldAreaTemplate> templates = BuildTemplatesFromSettings();
-            worldCreatorManager.SetWorldMetadata(settings.WorldName, settings.MasterSeed, settings.RegionId, settings.SettlementDensity.ToString(), settings.EconomyFocus.ToString(), settings.GovernmentStyle.ToString());
+            worldCreatorManager.SetWorldMetadataDetailed(
+                settings.WorldName,
+                settings.MasterSeed,
+                settings.RegionId,
+                settings.SettlementDensity.ToString(),
+                settings.EconomyFocus.ToString(),
+                settings.GovernmentStyle.ToString(),
+                settings.GovernanceScope.ToString(),
+                settings.PoliticalFocus.ToString(),
+                ColorUtility.ToHtmlStringRGB(settings.PlanetSurfacePrimaryColor),
+                ColorUtility.ToHtmlStringRGB(settings.PlanetSurfaceSecondaryColor),
+                BuildPaletteSummary(settings.GrassTypes, 4),
+                BuildPaletteSummary(settings.OreTypes, 4));
             worldCreatorManager.BuildWorldFromTemplates(templates);
             RefreshText();
         }
@@ -371,6 +401,7 @@ namespace Survivebest.UI
                 case EconomyFocus.Tourism:
                     templates.Add(CreateTemplate("Festival Pier", LocationTheme.StoreInterior, lawStrict * 0.7f, violence * 0.62f, policeFunding * 0.82f, prisonReform, healthcare * 0.88f));
                     templates.Add(CreateTemplate("Starlight Amphitheater", LocationTheme.Civic, lawStrict * 0.76f, violence * 0.66f, policeFunding * 0.8f, prisonReform, healthcare * 0.82f));
+                    templates.Add(CreateTemplate("Boardwalk Amusement Park", LocationTheme.StoreInterior, lawStrict * 0.72f, violence * 0.67f, policeFunding * 0.84f, prisonReform, healthcare * 0.83f));
                     break;
                 case EconomyFocus.Industrial:
                     templates.Add(CreateTemplate("Night Shift Diner", LocationTheme.StoreInterior, lawStrict * 0.78f, violence * 0.72f, policeFunding * 0.88f, prisonReform, healthcare * 0.86f));
@@ -383,11 +414,27 @@ namespace Survivebest.UI
                 case EconomyFocus.Rural:
                     templates.Add(CreateTemplate("Harvest Fairgrounds", LocationTheme.Nature, lawStrict * 0.52f, violence * 0.55f, policeFunding * 0.76f, prisonReform, healthcare * 0.74f));
                     templates.Add(CreateTemplate("Orchard Kitchen", LocationTheme.StoreInterior, lawStrict * 0.78f, violence * 0.66f, policeFunding * 0.84f, prisonReform, healthcare * 0.82f));
+                    templates.Add(CreateTemplate("Family Farmland", LocationTheme.Nature, lawStrict * 0.58f, violence * 0.57f, policeFunding * 0.78f, prisonReform, healthcare * 0.76f));
                     break;
                 default:
                     templates.Add(CreateTemplate("Sunset Plaza", LocationTheme.Civic, lawStrict * 0.84f, violence * 0.68f, policeFunding * 0.85f, prisonReform, healthcare * 0.86f));
                     templates.Add(CreateTemplate("Lantern Walk", LocationTheme.StoreInterior, lawStrict * 0.8f, violence * 0.69f, policeFunding * 0.84f, prisonReform, healthcare * 0.85f));
                     break;
+            }
+
+            if (settings.OreTypes != null && settings.OreTypes.Count > 0)
+            {
+                templates.Add(CreateTemplate("Mining Basin", LocationTheme.Workplace, lawStrict * 0.68f, violence * 0.83f, policeFunding * 0.86f, prisonReform * 0.82f, healthcare * 0.76f));
+            }
+
+            if (settings.GrassTypes != null && settings.GrassTypes.Count >= 2)
+            {
+                templates.Add(CreateTemplate("Grassland Reserve", LocationTheme.Nature, lawStrict * 0.55f, violence * 0.52f, policeFunding * 0.78f, prisonReform, healthcare * 0.8f));
+            }
+
+            if (settings.GovernanceScope == GovernanceScope.Planet)
+            {
+                templates.Add(CreateTemplate("Orbital Governance Hub", LocationTheme.Civic, lawStrict * 0.92f, violence * 0.7f, policeFunding, prisonReform, healthcare * 0.94f));
             }
         }
 
@@ -537,8 +584,13 @@ namespace Survivebest.UI
             builder.AppendLine($"Region: {settings.RegionId}");
             builder.AppendLine($"Settlement: {settings.SettlementDensity} / {settings.EconomyFocus}");
             builder.AppendLine($"Government: {settings.GovernmentStyle}");
+            builder.AppendLine($"Governance Scope: {settings.GovernanceScope}");
+            builder.AppendLine($"Political Focus: {settings.PoliticalFocus}");
             builder.AppendLine($"Biome: {settings.BiomeTheme}");
             builder.AppendLine($"Climate: {(settings.ClimateHarshness > 0.6f ? "Harsh" : "Temperate")}");
+            builder.AppendLine($"Planet Colors: #{ColorUtility.ToHtmlStringRGB(settings.PlanetSurfacePrimaryColor)} / #{ColorUtility.ToHtmlStringRGB(settings.PlanetSurfaceSecondaryColor)}");
+            builder.AppendLine($"Grass Types: {BuildPaletteSummary(settings.GrassTypes, 3)}");
+            builder.AppendLine($"Ore Types: {BuildPaletteSummary(settings.OreTypes, 3)}");
             builder.AppendLine($"NPC Density: {Mathf.RoundToInt(settings.NpcPopulation * 500f)}");
             builder.AppendLine($"Animals: {Mathf.RoundToInt(settings.AnimalPopulation * 500f)} ({Mathf.RoundToInt(settings.PredatorRatio * 100f)}% predators)");
             builder.AppendLine($"Gov Strictness: {Mathf.RoundToInt(settings.GovernmentStrictness * 100f)}");
@@ -562,9 +614,33 @@ namespace Survivebest.UI
             builder.AppendLine($"Fatigue: {(settings.EnableFatigue ? "On" : "Off")}");
             builder.AppendLine($"Permadeath: {(settings.Permadeath ? "On" : "Off")}");
             builder.AppendLine($"Experience: {(settings.SandboxExperience ? "Sandbox" : "Standard")}");
+            builder.AppendLine($"Political Careers: {(settings.EnablePoliticalCareers ? "On" : "Off")} / Player Rulemaking: {(settings.EnablePlayerRulemaking ? "On" : "Off")}");
+            builder.AppendLine($"Rule Scope: {settings.GovernanceScope}");
             builder.AppendLine("USA Jobs: healthcare, office ladders, trades, nightlife, retail, logistics, media, care work, bus/train/plane crews, trucking, dispatch, and delivery");
+            builder.AppendLine("Political Jobs: city council, mayor, governor, senator, cabinet, planetary envoy");
             builder.AppendLine("USA Skills: driving, customer service, office politics, dispatch timing, trade certifications, healthcare, teaching, food service, logistics, and transportation ops");
             return builder.ToString().TrimEnd();
+        }
+
+        private static string BuildPaletteSummary(List<string> entries, int maxCount)
+        {
+            if (entries == null || entries.Count == 0 || maxCount <= 0)
+            {
+                return "None";
+            }
+
+            int count = Mathf.Min(maxCount, entries.Count);
+            List<string> trimmed = new(count);
+            for (int i = 0; i < count; i++)
+            {
+                string value = entries[i];
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    trimmed.Add(value.Trim());
+                }
+            }
+
+            return trimmed.Count == 0 ? "None" : string.Join(", ", trimmed);
         }
 
         private void ApplyBalanceModeFromSettings()
