@@ -33,6 +33,14 @@ namespace Survivebest.Society
         Steroid
     }
 
+    public enum GovernanceScope
+    {
+        City,
+        State,
+        Country,
+        Planet
+    }
+
     [Serializable]
     public class SubstanceLaw
     {
@@ -52,9 +60,20 @@ namespace Survivebest.Society
         [Range(0f, 1f)] public float HealthcareCoverage = 0.5f;
     }
 
+    [Serializable]
+    public class GovernanceRuleRecord
+    {
+        public GovernanceScope Scope = GovernanceScope.City;
+        public string JurisdictionName = "Default";
+        public string RuleName = "Standard Rule";
+        [TextArea] public string RuleDescription = "Default governance rule.";
+        public int EnactedDay;
+    }
+
     public class LawSystem : MonoBehaviour
     {
         [SerializeField] private List<AreaLawProfile> areaProfiles = new();
+        [SerializeField] private List<GovernanceRuleRecord> governanceRules = new();
         [SerializeField] private string currentAreaName = "Default";
         [SerializeField] private GameEventHub gameEventHub;
 
@@ -64,6 +83,7 @@ namespace Survivebest.Society
         public string CurrentAreaName => currentAreaName;
         public AreaLawProfile CurrentProfile => GetProfile(currentAreaName);
         public IReadOnlyList<AreaLawProfile> AreaProfiles => areaProfiles;
+        public IReadOnlyList<GovernanceRuleRecord> GovernanceRules => governanceRules;
 
         public void SetAreaProfiles(List<AreaLawProfile> profiles)
         {
@@ -158,6 +178,74 @@ namespace Survivebest.Society
             });
 
             return true;
+        }
+
+        public bool EnactJurisdictionRule(
+            GovernanceScope scope,
+            string jurisdictionName,
+            string ruleName,
+            string ruleDescription,
+            float policeBudgetDelta,
+            float prisonReformDelta,
+            float healthcareDelta,
+            int enactedDay = 0)
+        {
+            string resolvedJurisdiction = string.IsNullOrWhiteSpace(jurisdictionName) ? "Default" : jurisdictionName.Trim();
+            string resolvedRuleName = string.IsNullOrWhiteSpace(ruleName) ? $"{scope} Rule" : ruleName.Trim();
+            string resolvedDescription = string.IsNullOrWhiteSpace(ruleDescription) ? "Custom policy package enacted." : ruleDescription.Trim();
+
+            if (!ApplyPolicyShift(BuildScopeAreaKey(scope, resolvedJurisdiction), policeBudgetDelta, prisonReformDelta, healthcareDelta))
+            {
+                return false;
+            }
+
+            governanceRules.Add(new GovernanceRuleRecord
+            {
+                Scope = scope,
+                JurisdictionName = resolvedJurisdiction,
+                RuleName = resolvedRuleName,
+                RuleDescription = resolvedDescription,
+                EnactedDay = enactedDay
+            });
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.LawVoteResolved,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(LawSystem),
+                ChangeKey = $"{scope}:{resolvedJurisdiction}:{resolvedRuleName}",
+                Reason = $"Rule enacted in {scope} governance",
+                Magnitude = Mathf.Abs(policeBudgetDelta) + Mathf.Abs(prisonReformDelta) + Mathf.Abs(healthcareDelta)
+            });
+
+            return true;
+        }
+
+        public List<GovernanceRuleRecord> GetRulesForScope(GovernanceScope scope, string jurisdictionName = null)
+        {
+            List<GovernanceRuleRecord> results = new();
+            for (int i = 0; i < governanceRules.Count; i++)
+            {
+                GovernanceRuleRecord record = governanceRules[i];
+                if (record == null || record.Scope != scope)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(jurisdictionName) && !string.Equals(record.JurisdictionName, jurisdictionName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                results.Add(record);
+            }
+
+            return results;
+        }
+
+        private static string BuildScopeAreaKey(GovernanceScope scope, string jurisdictionName)
+        {
+            return $"{scope}:{(string.IsNullOrWhiteSpace(jurisdictionName) ? "Default" : jurisdictionName.Trim())}";
         }
 
         private AreaLawProfile GetProfile(string areaName)

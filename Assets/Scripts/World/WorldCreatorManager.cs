@@ -30,6 +30,12 @@ namespace Survivebest.World
         public string WorldFootprint = "Neighborhood";
         public string EconomyFocus = "Balanced";
         public string GovernmentStyle = "Balanced";
+        public string GovernanceScope = "City";
+        public string PoliticalFocus = "Civic Services";
+        public string PlanetSurfacePrimaryHex = "#6A8F5D";
+        public string PlanetSurfaceSecondaryHex = "#5B7AA5";
+        public string GrassPaletteSummary = "Temperate Grass";
+        public string OrePaletteSummary = "Iron, Copper";
         public int TotalAreas;
         public int ResidentialAreas;
         public int CivicAreas;
@@ -84,6 +90,35 @@ namespace Survivebest.World
             lastGeneratedSummary.SettlementDensity = string.IsNullOrWhiteSpace(settlementDensity) ? "Town" : settlementDensity;
             lastGeneratedSummary.EconomyFocus = string.IsNullOrWhiteSpace(economyFocus) ? "Balanced" : economyFocus;
             lastGeneratedSummary.GovernmentStyle = string.IsNullOrWhiteSpace(governmentStyle) ? "Balanced" : governmentStyle;
+            lastGeneratedSummary.GovernanceScope = "City";
+            lastGeneratedSummary.PoliticalFocus = "Civic Services";
+            lastGeneratedSummary.PlanetSurfacePrimaryHex = "#6A8F5D";
+            lastGeneratedSummary.PlanetSurfaceSecondaryHex = "#5B7AA5";
+            lastGeneratedSummary.GrassPaletteSummary = "Temperate Grass";
+            lastGeneratedSummary.OrePaletteSummary = "Iron, Copper";
+        }
+
+        public void SetWorldMetadataDetailed(
+            string worldName,
+            int masterSeed,
+            string regionId,
+            string settlementDensity,
+            string economyFocus,
+            string governmentStyle,
+            string governanceScope,
+            string politicalFocus,
+            string planetSurfacePrimaryHex,
+            string planetSurfaceSecondaryHex,
+            string grassPaletteSummary,
+            string orePaletteSummary)
+        {
+            SetWorldMetadata(worldName, masterSeed, regionId, settlementDensity, economyFocus, governmentStyle);
+            lastGeneratedSummary.GovernanceScope = string.IsNullOrWhiteSpace(governanceScope) ? "City" : governanceScope;
+            lastGeneratedSummary.PoliticalFocus = string.IsNullOrWhiteSpace(politicalFocus) ? "Civic Services" : politicalFocus;
+            lastGeneratedSummary.PlanetSurfacePrimaryHex = string.IsNullOrWhiteSpace(planetSurfacePrimaryHex) ? "#6A8F5D" : planetSurfacePrimaryHex;
+            lastGeneratedSummary.PlanetSurfaceSecondaryHex = string.IsNullOrWhiteSpace(planetSurfaceSecondaryHex) ? "#5B7AA5" : planetSurfaceSecondaryHex;
+            lastGeneratedSummary.GrassPaletteSummary = string.IsNullOrWhiteSpace(grassPaletteSummary) ? "Temperate Grass" : grassPaletteSummary;
+            lastGeneratedSummary.OrePaletteSummary = string.IsNullOrWhiteSpace(orePaletteSummary) ? "Iron, Copper" : orePaletteSummary;
         }
 
         public void GenerateWorldWithDefaults()
@@ -116,7 +151,13 @@ namespace Survivebest.World
                 SettlementDensity = lastGeneratedSummary.SettlementDensity,
                 WorldFootprint = ResolveWorldFootprint(normalizedTemplates.Count),
                 EconomyFocus = lastGeneratedSummary.EconomyFocus,
-                GovernmentStyle = lastGeneratedSummary.GovernmentStyle
+                GovernmentStyle = lastGeneratedSummary.GovernmentStyle,
+                GovernanceScope = lastGeneratedSummary.GovernanceScope,
+                PoliticalFocus = lastGeneratedSummary.PoliticalFocus,
+                PlanetSurfacePrimaryHex = lastGeneratedSummary.PlanetSurfacePrimaryHex,
+                PlanetSurfaceSecondaryHex = lastGeneratedSummary.PlanetSurfaceSecondaryHex,
+                GrassPaletteSummary = lastGeneratedSummary.GrassPaletteSummary,
+                OrePaletteSummary = lastGeneratedSummary.OrePaletteSummary
             };
 
             for (int i = 0; i < normalizedTemplates.Count; i++)
