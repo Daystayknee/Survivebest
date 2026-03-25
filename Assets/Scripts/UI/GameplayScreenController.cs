@@ -210,7 +210,7 @@ namespace Survivebest.UI
 
             if (worldMapLabelText != null)
             {
-                worldMapLabelText.text = room.RoomName;
+                worldMapLabelText.text = BuildCurrentLotLabel(room.RoomName);
             }
 
             if (locationNavigatorText != null)
@@ -302,6 +302,26 @@ namespace Survivebest.UI
 
         private string BuildLocationList(string current)
         {
+            if (townSimulationSystem != null && townSimulationSystem.Lots != null && townSimulationSystem.Lots.Count > 0)
+            {
+                builder.Clear();
+                IReadOnlyList<LotDefinition> lots = townSimulationSystem.Lots;
+                for (int i = 0; i < lots.Count; i++)
+                {
+                    LotDefinition lot = lots[i];
+                    if (lot == null)
+                    {
+                        continue;
+                    }
+
+                    bool isCurrent = string.Equals(lot.DisplayName, current, System.StringComparison.OrdinalIgnoreCase);
+                    string marker = isCurrent ? "●" : "○";
+                    builder.AppendLine($"{marker} {lot.DisplayName} [{lot.Zone}] {lot.PlotWidth}x{lot.PlotDepth}m  {lot.PlotSize} plot");
+                }
+
+                return builder.ToString().TrimEnd();
+            }
+
             if (locationManager == null || locationManager.Rooms == null)
             {
                 return "No locations";
@@ -322,6 +342,26 @@ namespace Survivebest.UI
             }
 
             return builder.ToString().TrimEnd();
+        }
+
+        private string BuildCurrentLotLabel(string roomName)
+        {
+            if (townSimulationSystem != null && townSimulationSystem.Lots != null)
+            {
+                IReadOnlyList<LotDefinition> lots = townSimulationSystem.Lots;
+                for (int i = 0; i < lots.Count; i++)
+                {
+                    LotDefinition lot = lots[i];
+                    if (lot == null || !string.Equals(lot.DisplayName, roomName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    return $"{lot.DisplayName} • {lot.Zone} • Plot {lot.PlotWidth}x{lot.PlotDepth}m ({lot.PlotSize})";
+                }
+            }
+
+            return roomName;
         }
 
         private void RefreshResources()

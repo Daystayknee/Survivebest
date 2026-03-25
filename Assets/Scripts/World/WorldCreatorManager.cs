@@ -30,6 +30,12 @@ namespace Survivebest.World
         public string WorldFootprint = "Neighborhood";
         public string EconomyFocus = "Balanced";
         public string GovernmentStyle = "Balanced";
+        public string GovernanceScope = "City";
+        public string PoliticalFocus = "Civic Services";
+        public string PlanetSurfacePrimaryHex = "#6A8F5D";
+        public string PlanetSurfaceSecondaryHex = "#5B7AA5";
+        public string GrassPaletteSummary = "Temperate Grass";
+        public string OrePaletteSummary = "Iron, Copper";
         public int TotalAreas;
         public int ResidentialAreas;
         public int CivicAreas;
@@ -84,6 +90,35 @@ namespace Survivebest.World
             lastGeneratedSummary.SettlementDensity = string.IsNullOrWhiteSpace(settlementDensity) ? "Town" : settlementDensity;
             lastGeneratedSummary.EconomyFocus = string.IsNullOrWhiteSpace(economyFocus) ? "Balanced" : economyFocus;
             lastGeneratedSummary.GovernmentStyle = string.IsNullOrWhiteSpace(governmentStyle) ? "Balanced" : governmentStyle;
+            lastGeneratedSummary.GovernanceScope = "City";
+            lastGeneratedSummary.PoliticalFocus = "Civic Services";
+            lastGeneratedSummary.PlanetSurfacePrimaryHex = "#6A8F5D";
+            lastGeneratedSummary.PlanetSurfaceSecondaryHex = "#5B7AA5";
+            lastGeneratedSummary.GrassPaletteSummary = "Temperate Grass";
+            lastGeneratedSummary.OrePaletteSummary = "Iron, Copper";
+        }
+
+        public void SetWorldMetadataDetailed(
+            string worldName,
+            int masterSeed,
+            string regionId,
+            string settlementDensity,
+            string economyFocus,
+            string governmentStyle,
+            string governanceScope,
+            string politicalFocus,
+            string planetSurfacePrimaryHex,
+            string planetSurfaceSecondaryHex,
+            string grassPaletteSummary,
+            string orePaletteSummary)
+        {
+            SetWorldMetadata(worldName, masterSeed, regionId, settlementDensity, economyFocus, governmentStyle);
+            lastGeneratedSummary.GovernanceScope = string.IsNullOrWhiteSpace(governanceScope) ? "City" : governanceScope;
+            lastGeneratedSummary.PoliticalFocus = string.IsNullOrWhiteSpace(politicalFocus) ? "Civic Services" : politicalFocus;
+            lastGeneratedSummary.PlanetSurfacePrimaryHex = string.IsNullOrWhiteSpace(planetSurfacePrimaryHex) ? "#6A8F5D" : planetSurfacePrimaryHex;
+            lastGeneratedSummary.PlanetSurfaceSecondaryHex = string.IsNullOrWhiteSpace(planetSurfaceSecondaryHex) ? "#5B7AA5" : planetSurfaceSecondaryHex;
+            lastGeneratedSummary.GrassPaletteSummary = string.IsNullOrWhiteSpace(grassPaletteSummary) ? "Temperate Grass" : grassPaletteSummary;
+            lastGeneratedSummary.OrePaletteSummary = string.IsNullOrWhiteSpace(orePaletteSummary) ? "Iron, Copper" : orePaletteSummary;
         }
 
         public void GenerateWorldWithDefaults()
@@ -116,7 +151,13 @@ namespace Survivebest.World
                 SettlementDensity = lastGeneratedSummary.SettlementDensity,
                 WorldFootprint = ResolveWorldFootprint(normalizedTemplates.Count),
                 EconomyFocus = lastGeneratedSummary.EconomyFocus,
-                GovernmentStyle = lastGeneratedSummary.GovernmentStyle
+                GovernmentStyle = lastGeneratedSummary.GovernmentStyle,
+                GovernanceScope = lastGeneratedSummary.GovernanceScope,
+                PoliticalFocus = lastGeneratedSummary.PoliticalFocus,
+                PlanetSurfacePrimaryHex = lastGeneratedSummary.PlanetSurfacePrimaryHex,
+                PlanetSurfaceSecondaryHex = lastGeneratedSummary.PlanetSurfaceSecondaryHex,
+                GrassPaletteSummary = lastGeneratedSummary.GrassPaletteSummary,
+                OrePaletteSummary = lastGeneratedSummary.OrePaletteSummary
             };
 
             for (int i = 0; i < normalizedTemplates.Count; i++)
@@ -242,7 +283,7 @@ namespace Survivebest.World
                 int openHour = ResolveOpenHour(template, zone);
                 int closeHour = ResolveCloseHour(template, zone);
                 ResidentialPlotSize plotSize = ResolvePlotSize(template, zone, tags);
-                Vector2Int plotDimensions = ResolvePlotDimensions(plotSize);
+                Vector2Int plotDimensions = ResolvePlotDimensions(template, zone, plotSize, tags);
 
                 lots.Add(new LotDefinition
                 {
@@ -608,7 +649,15 @@ namespace Survivebest.World
         private static ZoneType MapZone(WorldAreaTemplate template)
         {
             string areaName = template.AreaName.Trim().ToLowerInvariant();
-            if (areaName.Contains("cinema") || areaName.Contains("arcade") || areaName.Contains("amphitheater") || areaName.Contains("festival") || areaName.Contains("boardwalk") || areaName.Contains("lantern"))
+            if (areaName.Contains("cinema") ||
+                areaName.Contains("arcade") ||
+                areaName.Contains("amphitheater") ||
+                areaName.Contains("festival") ||
+                areaName.Contains("boardwalk") ||
+                areaName.Contains("amusement") ||
+                areaName.Contains("theme park") ||
+                areaName.Contains("carnival") ||
+                areaName.Contains("lantern"))
             {
                 return ZoneType.Entertainment;
             }
@@ -709,8 +758,48 @@ namespace Survivebest.World
             return ResidentialPlotSize.Medium;
         }
 
-        private static Vector2Int ResolvePlotDimensions(ResidentialPlotSize plotSize)
+        private static Vector2Int ResolvePlotDimensions(WorldAreaTemplate template, ZoneType zone, ResidentialPlotSize plotSize, List<string> tags)
         {
+            string areaName = template.AreaName.Trim().ToLowerInvariant();
+            bool isFarm = areaName.Contains("farm") || areaName.Contains("orchard") || areaName.Contains("ranch");
+            bool isAmusement = areaName.Contains("amusement") || areaName.Contains("theme park") || areaName.Contains("carnival");
+            bool isLargeIndustrial = areaName.Contains("factory") || areaName.Contains("warehouse") || areaName.Contains("rail yard") || areaName.Contains("mining");
+
+            if (isFarm)
+            {
+                return new Vector2Int(64, 84);
+            }
+
+            if (isAmusement || zone == ZoneType.Entertainment)
+            {
+                return isAmusement ? new Vector2Int(58, 68) : new Vector2Int(44, 52);
+            }
+
+            if (zone == ZoneType.Park)
+            {
+                return new Vector2Int(52, 62);
+            }
+
+            if (zone == ZoneType.Industrial)
+            {
+                return isLargeIndustrial ? new Vector2Int(52, 62) : new Vector2Int(34, 42);
+            }
+
+            if (zone == ZoneType.Medical)
+            {
+                return new Vector2Int(34, 40);
+            }
+
+            if (zone == ZoneType.Civic)
+            {
+                return new Vector2Int(30, 36);
+            }
+
+            if (zone == ZoneType.Commercial)
+            {
+                return new Vector2Int(28, 34);
+            }
+
             return plotSize switch
             {
                 ResidentialPlotSize.Tiny => new Vector2Int(10, 12),
@@ -735,6 +824,8 @@ namespace Survivebest.World
             if (zone == ZoneType.Entertainment || areaName.Contains("diner") || areaName.Contains("lantern")) tags.Add("nightlife");
             if (areaName.Contains("transit") || areaName.Contains("depot")) tags.Add("transit");
             if (areaName.Contains("waterfront") || areaName.Contains("pier") || areaName.Contains("boardwalk")) tags.Add("waterfront");
+            if (areaName.Contains("farm") || areaName.Contains("orchard") || areaName.Contains("ranch")) tags.Add("farmland");
+            if (areaName.Contains("amusement") || areaName.Contains("theme park") || areaName.Contains("carnival")) tags.Add("amusement");
             if (areaName.Contains("library") || areaName.Contains("hall") || areaName.Contains("plaza") || areaName.Contains("square") || areaName.Contains("amphitheater")) tags.Add("landmark");
             return tags;
         }
