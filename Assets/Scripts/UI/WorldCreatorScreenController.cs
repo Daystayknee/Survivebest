@@ -401,6 +401,7 @@ namespace Survivebest.UI
                 case EconomyFocus.Tourism:
                     templates.Add(CreateTemplate("Festival Pier", LocationTheme.StoreInterior, lawStrict * 0.7f, violence * 0.62f, policeFunding * 0.82f, prisonReform, healthcare * 0.88f));
                     templates.Add(CreateTemplate("Starlight Amphitheater", LocationTheme.Civic, lawStrict * 0.76f, violence * 0.66f, policeFunding * 0.8f, prisonReform, healthcare * 0.82f));
+                    templates.Add(CreateTemplate("Boardwalk Amusement Park", LocationTheme.StoreInterior, lawStrict * 0.72f, violence * 0.67f, policeFunding * 0.84f, prisonReform, healthcare * 0.83f));
                     break;
                 case EconomyFocus.Industrial:
                     templates.Add(CreateTemplate("Night Shift Diner", LocationTheme.StoreInterior, lawStrict * 0.78f, violence * 0.72f, policeFunding * 0.88f, prisonReform, healthcare * 0.86f));
@@ -413,6 +414,7 @@ namespace Survivebest.UI
                 case EconomyFocus.Rural:
                     templates.Add(CreateTemplate("Harvest Fairgrounds", LocationTheme.Nature, lawStrict * 0.52f, violence * 0.55f, policeFunding * 0.76f, prisonReform, healthcare * 0.74f));
                     templates.Add(CreateTemplate("Orchard Kitchen", LocationTheme.StoreInterior, lawStrict * 0.78f, violence * 0.66f, policeFunding * 0.84f, prisonReform, healthcare * 0.82f));
+                    templates.Add(CreateTemplate("Family Farmland", LocationTheme.Nature, lawStrict * 0.58f, violence * 0.57f, policeFunding * 0.78f, prisonReform, healthcare * 0.76f));
                     break;
                 default:
                     templates.Add(CreateTemplate("Sunset Plaza", LocationTheme.Civic, lawStrict * 0.84f, violence * 0.68f, policeFunding * 0.85f, prisonReform, healthcare * 0.86f));
