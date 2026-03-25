@@ -123,6 +123,8 @@ namespace Survivebest.Food
     {
         public string Id;
         public string Name;
+        public string SpriteId;
+        public Sprite IconSprite;
         public List<string> IngredientRequirements = new();
         public List<string> Steps = new();
         public CookingMethod CookingMethod;
@@ -142,7 +144,12 @@ namespace Survivebest.Food
     public class FoodItem
     {
         public string Name;
+        public string SpriteId;
+        public Sprite IconSprite;
         public FoodCategory Category;
+        public bool IsEdible = true;
+        public bool CanEatRaw;
+        public bool CanEatCooked = true;
         [Range(0f, 100f)] public float HungerRestore;
         [Range(-50f, 50f)] public float EnergyDelta;
         [Range(-20f, 20f)] public float MoodDelta;
@@ -289,6 +296,7 @@ namespace Survivebest.Food
         private void Awake()
         {
             EnsureExpandedGameplayCoverage();
+            EnsureVisualAndConsumableMetadata();
         }
 
         public FoodItem GetRandomFood()
@@ -404,6 +412,221 @@ namespace Survivebest.Food
             AddRecipeIfMissing(CreateRecipe("rice_cooker_congee", "Rice Cooker Congee", new List<string> { "Rice", "Chicken stock", "Ginger", "Egg", "Sea salt" }, new List<string> { "Cook rice with extra stock until silky", "Add ginger and season", "Top with soft egg" }, CookingMethod.Steam, KitchenEquipment.RiceCooker, CuisineType.Chinese, ServingTemperature.Hot, 10f, 6, 28, new List<string> { "comfort", "savory", "gentle" }, new List<string> { "breakfast", "rice", "comfort" }, 320f, 12f, 6f, 52f, hydration: 14f, salt: 3f));
             AddRecipeIfMissing(CreateRecipe("kimchi_fried_rice", "Kimchi Fried Rice", new List<string> { "Kimchi", "Rice", "Egg", "Soy Sauce", "Sesame oil" }, new List<string> { "Stir-fry kimchi in sesame oil", "Add rice and soy sauce", "Finish with egg and serve hot" }, CookingMethod.Fry, KitchenEquipment.Stove, CuisineType.Korean, ServingTemperature.Hot, 13f, 8, 10, new List<string> { "tangy", "savory", "umami" }, new List<string> { "takeout", "fermented", "rice" }, 540f, 17f, 16f, 76f, salt: 4f));
             AddRecipeIfMissing(CreateRecipe("party_slider_trio", "Party Slider Trio", new List<string> { "Ground beef", "Burger bun", "Cheddar", "Onion", "Sea salt" }, new List<string> { "Form and season mini patties", "Grill and top with cheddar", "Serve on buns with onion" }, CookingMethod.Grill, KitchenEquipment.Grill, CuisineType.American, ServingTemperature.Hot, 12f, 10, 12, new List<string> { "savory", "rich", "shareable" }, new List<string> { "party-food", "shareable", "fast-food" }, 690f, 31f, 34f, 58f, salt: 6f));
+
+            // Realism expansion: water states, frozen foods, and bar/liquor options.
+            AddFoodIfMissing(CreateFood("Ice Water", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 6f, 2f, 1f, 2f, 8f, tags: new List<string> { "water", "hydration", "ice" }, calories: 0f, hydration: 30f));
+            AddFoodIfMissing(CreateFood("Sparkling Water", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 6f, 2f, 1f, 2f, 8f, tags: new List<string> { "water", "carbonated", "hydration" }, calories: 0f, hydration: 28f));
+            AddFoodIfMissing(CreateFood("Crushed Ice Slush", FoodCategory.Drink, CuisineType.American, CookingMethod.Blend, ServingTemperature.Cold, 8f, 2f, 2f, 1f, 12f, tags: new List<string> { "ice", "slush", "cooling" }, calories: 30f, carbs: 7f, hydration: 24f));
+            AddFoodIfMissing(CreateFood("Frozen Berry Smoothie", FoodCategory.Drink, CuisineType.Mediterranean, CookingMethod.Blend, ServingTemperature.Cold, 18f, 5f, 4f, 3f, 24f, tags: new List<string> { "frozen", "smoothie", "fruit" }, calories: 210f, carbs: 36f, hydration: 20f, vitamins: 10f));
+            AddFoodIfMissing(CreateFood("Frozen Tropical Smoothie", FoodCategory.Drink, CuisineType.Mediterranean, CookingMethod.Blend, ServingTemperature.Cold, 20f, 5f, 5f, 3f, 26f, tags: new List<string> { "frozen", "smoothie", "tropical" }, calories: 230f, carbs: 40f, hydration: 22f, vitamins: 11f));
+            AddFoodIfMissing(CreateFood("Frozen Fruit Bowl", FoodCategory.Breakfast, CuisineType.Mediterranean, CookingMethod.Assemble, ServingTemperature.Cold, 24f, 4f, 4f, 3f, 28f, tags: new List<string> { "frozen", "fruit", "breakfast" }, calories: 260f, protein: 6f, carbs: 44f, hydration: 16f, vitamins: 12f));
+            AddFoodIfMissing(CreateFood("Frozen Veggie Stir Fry", FoodCategory.HomeCooked, CuisineType.Chinese, CookingMethod.Fry, ServingTemperature.Hot, 28f, 4f, 3f, 4f, 34f, tags: new List<string> { "frozen", "vegetable", "stir-fry" }, calories: 310f, protein: 9f, fat: 8f, carbs: 50f, vitamins: 10f));
+            AddFoodIfMissing(CreateFood("Frozen Pizza Bake", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Bake, ServingTemperature.Hot, 34f, 4f, 6f, 1f, 60f, tags: new List<string> { "frozen", "pizza", "takeout" }, calories: 540f, protein: 20f, fat: 20f, carbs: 62f, salt: 5f));
+            AddFoodIfMissing(CreateFood("Frozen Burrito Plate", FoodCategory.StreetFood, CuisineType.Mexican, CookingMethod.Bake, ServingTemperature.Hot, 32f, 4f, 5f, 2f, 54f, tags: new List<string> { "frozen", "burrito", "quick" }, calories: 500f, protein: 17f, fat: 16f, carbs: 58f, salt: 5f));
+            AddFoodIfMissing(CreateFood("Frozen Meal Tray", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Bake, ServingTemperature.Hot, 35f, 3f, 2f, 1f, 38f, tags: new List<string> { "frozen", "meal", "microwave" }, calories: 480f, protein: 20f, fat: 16f, carbs: 62f, salt: 6f));
+            AddFoodIfMissing(CreateFood("Iced Coffee", FoodCategory.Drink, CuisineType.American, CookingMethod.Brew, ServingTemperature.Cold, 10f, 8f, 2f, 1f, 14f, tags: new List<string> { "coffee", "iced", "caffeine" }, calories: 90f, carbs: 14f, hydration: 16f));
+            AddFoodIfMissing(CreateFood("Iced Tea", FoodCategory.Drink, CuisineType.American, CookingMethod.Brew, ServingTemperature.Cold, 10f, 4f, 2f, 1f, 12f, tags: new List<string> { "tea", "iced", "refreshing" }, calories: 70f, carbs: 12f, hydration: 18f));
+            AddFoodIfMissing(CreateFood("Herbal Tea", FoodCategory.Drink, CuisineType.Mediterranean, CookingMethod.Brew, ServingTemperature.Hot, 8f, 2f, 3f, 2f, 16f, tags: new List<string> { "tea", "hot", "calming" }, calories: 10f, hydration: 16f));
+            AddFoodIfMissing(CreateFood("Sports Hydration Mix", FoodCategory.Drink, CuisineType.American, CookingMethod.Mix, ServingTemperature.Cold, 12f, 5f, 1f, 3f, 12f, tags: new List<string> { "sports", "hydration", "electrolytes" }, calories: 80f, carbs: 18f, hydration: 24f));
+            AddFoodIfMissing(CreateFood("Beer Flight", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 8f, -2f, 5f, -2f, 20f, tags: new List<string> { "alcohol", "beer", "bar" }, calories: 180f, carbs: 14f, hydration: 8f));
+            AddFoodIfMissing(CreateFood("Red Wine Glass", FoodCategory.Drink, CuisineType.French, CookingMethod.Assemble, ServingTemperature.Warm, 6f, -2f, 6f, -2f, 24f, tags: new List<string> { "alcohol", "wine", "bar" }, calories: 125f, carbs: 4f, hydration: 6f));
+            AddFoodIfMissing(CreateFood("Whiskey on Ice", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 4f, -3f, 7f, -3f, 26f, tags: new List<string> { "alcohol", "spirit", "bar" }, calories: 105f, hydration: 4f));
+            AddFoodIfMissing(CreateFood("Vodka Soda", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 5f, -3f, 5f, -3f, 20f, tags: new List<string> { "alcohol", "spirit", "carbonated" }, calories: 96f, hydration: 8f));
+            AddFoodIfMissing(CreateFood("Gin and Tonic", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 6f, -3f, 6f, -3f, 22f, tags: new List<string> { "alcohol", "spirit", "mixer" }, calories: 120f, carbs: 8f, hydration: 8f));
+            AddFoodIfMissing(CreateFood("Rum and Cola", FoodCategory.Drink, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 6f, -3f, 6f, -3f, 22f, tags: new List<string> { "alcohol", "spirit", "sweet" }, calories: 160f, carbs: 16f, hydration: 8f));
+            AddFoodIfMissing(CreateFood("Margarita", FoodCategory.Drink, CuisineType.Mexican, CookingMethod.Mix, ServingTemperature.Cold, 6f, -3f, 7f, -3f, 24f, tags: new List<string> { "alcohol", "cocktail", "citrus" }, calories: 170f, carbs: 14f, hydration: 7f));
+
+            AddRecipeIfMissing(CreateRecipe("ice_water", "Ice Water", new List<string> { "Water", "Ice cubes" }, new List<string> { "Fill a glass with ice", "Pour chilled water" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "clean", "cold" }, new List<string> { "water", "hydration" }, 0f, 0f, 0f, 0f, hydration: 30f));
+            AddRecipeIfMissing(CreateRecipe("sparkling_water", "Sparkling Water", new List<string> { "Sparkling water", "Ice cubes" }, new List<string> { "Serve sparkling water over ice" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "clean", "crisp" }, new List<string> { "water", "carbonated" }, 0f, 0f, 0f, 0f, hydration: 28f));
+            AddRecipeIfMissing(CreateRecipe("crushed_ice_slush", "Crushed Ice Slush", new List<string> { "Crushed ice", "Sugar", "Lime" }, new List<string> { "Blend crushed ice with sugar and lime", "Serve immediately" }, CookingMethod.Blend, KitchenEquipment.Blender, CuisineType.American, ServingTemperature.Cold, 4f, 3, 1, new List<string> { "sweet", "cold" }, new List<string> { "ice", "slush" }, 30f, 0f, 0f, 7f, hydration: 24f));
+            AddRecipeIfMissing(CreateRecipe("frozen_berry_smoothie", "Frozen Berry Smoothie", new List<string> { "Frozen blueberry", "Frozen strawberry", "Yogurt", "Ice cubes" }, new List<string> { "Blend frozen berries and yogurt", "Add ice for thickness", "Serve cold" }, CookingMethod.Blend, KitchenEquipment.Blender, CuisineType.Mediterranean, ServingTemperature.Cold, 6f, 4, 2, new List<string> { "sweet", "tart", "cold" }, new List<string> { "frozen", "smoothie", "fruit" }, 210f, 8f, 4f, 36f, hydration: 20f, vitamins: 10f));
+            AddRecipeIfMissing(CreateRecipe("frozen_tropical_smoothie", "Frozen Tropical Smoothie", new List<string> { "Frozen mango", "Banana", "Coconut water", "Ice cubes" }, new List<string> { "Blend frozen mango and banana", "Thin with coconut water", "Serve chilled" }, CookingMethod.Blend, KitchenEquipment.Blender, CuisineType.Mediterranean, ServingTemperature.Cold, 6f, 4, 2, new List<string> { "sweet", "tropical" }, new List<string> { "frozen", "smoothie", "tropical" }, 230f, 3f, 1f, 40f, hydration: 22f, vitamins: 11f));
+            AddRecipeIfMissing(CreateRecipe("frozen_fruit_bowl", "Frozen Fruit Bowl", new List<string> { "Frozen mango", "Frozen blueberry", "Frozen strawberry", "Oats" }, new List<string> { "Partially thaw fruit", "Layer in a bowl", "Top with oats" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 6f, 4, 0, new List<string> { "sweet", "fresh" }, new List<string> { "frozen", "breakfast", "fruit" }, 260f, 6f, 3f, 44f, hydration: 16f, vitamins: 12f));
+            AddRecipeIfMissing(CreateRecipe("frozen_veggie_stir_fry", "Frozen Veggie Stir Fry", new List<string> { "Frozen mixed vegetables", "Rice", "Soy Sauce", "Sesame oil" }, new List<string> { "Sauté frozen vegetables", "Add cooked rice", "Season with soy and sesame oil" }, CookingMethod.Fry, KitchenEquipment.Stove, CuisineType.Chinese, ServingTemperature.Hot, 10f, 6, 12, new List<string> { "savory", "umami" }, new List<string> { "frozen", "vegetable", "stir-fry" }, 310f, 9f, 8f, 50f, vitamins: 10f));
+            AddRecipeIfMissing(CreateRecipe("frozen_pizza_bake", "Frozen Pizza Bake", new List<string> { "Frozen pizza" }, new List<string> { "Bake frozen pizza until crust is crisp", "Slice and serve hot" }, CookingMethod.Bake, KitchenEquipment.Oven, CuisineType.FastFood, ServingTemperature.Hot, 6f, 2, 18, new List<string> { "savory", "cheesy" }, new List<string> { "frozen", "pizza", "quick" }, 540f, 20f, 20f, 62f, salt: 5f));
+            AddRecipeIfMissing(CreateRecipe("frozen_burrito_plate", "Frozen Burrito Plate", new List<string> { "Frozen burrito", "Sea salt" }, new List<string> { "Heat burrito until hot center", "Plate and finish with salt" }, CookingMethod.Bake, KitchenEquipment.Microwave, CuisineType.Mexican, ServingTemperature.Hot, 5f, 2, 5, new List<string> { "savory", "hearty" }, new List<string> { "frozen", "burrito", "quick" }, 500f, 17f, 16f, 58f, salt: 5f));
+            AddRecipeIfMissing(CreateRecipe("frozen_meal_tray", "Frozen Meal Tray", new List<string> { "Frozen meal tray" }, new List<string> { "Microwave meal tray per instructions", "Rest briefly and serve" }, CookingMethod.Bake, KitchenEquipment.Microwave, CuisineType.American, ServingTemperature.Hot, 4f, 1, 6, new List<string> { "savory", "quick" }, new List<string> { "frozen", "meal", "microwave" }, 480f, 20f, 16f, 62f, salt: 6f));
+            AddRecipeIfMissing(CreateRecipe("iced_coffee", "Iced Coffee", new List<string> { "Coffee", "Ice cubes", "Milk" }, new List<string> { "Brew coffee", "Chill over ice", "Add milk" }, CookingMethod.Brew, KitchenEquipment.CoffeeMachine, CuisineType.American, ServingTemperature.Cold, 4f, 2, 3, new List<string> { "bitter", "cool" }, new List<string> { "coffee", "iced", "caffeine" }, 90f, 3f, 3f, 14f, hydration: 16f));
+            AddRecipeIfMissing(CreateRecipe("iced_tea", "Iced Tea", new List<string> { "Tea", "Ice cubes", "Sugar" }, new List<string> { "Brew tea", "Cool and pour over ice", "Sweeten lightly" }, CookingMethod.Brew, KitchenEquipment.Kettle, CuisineType.American, ServingTemperature.Cold, 3f, 2, 4, new List<string> { "light", "refreshing" }, new List<string> { "tea", "iced" }, 70f, 0f, 0f, 12f, hydration: 18f));
+            AddRecipeIfMissing(CreateRecipe("herbal_tea", "Herbal Tea", new List<string> { "Tea", "Water" }, new List<string> { "Steep tea in hot water", "Serve warm" }, CookingMethod.Brew, KitchenEquipment.Kettle, CuisineType.Mediterranean, ServingTemperature.Hot, 2f, 1, 4, new List<string> { "calming", "light" }, new List<string> { "tea", "hot" }, 10f, 0f, 0f, 0f, hydration: 16f));
+            AddRecipeIfMissing(CreateRecipe("sports_hydration_mix", "Sports Hydration Mix", new List<string> { "Sports drink", "Water", "Ice cubes" }, new List<string> { "Mix drink with cold water", "Serve over ice" }, CookingMethod.Mix, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 1, new List<string> { "sweet", "electrolyte" }, new List<string> { "sports", "hydration" }, 80f, 0f, 0f, 18f, hydration: 24f));
+            AddRecipeIfMissing(CreateRecipe("beer_flight", "Beer Flight", new List<string> { "Beer", "Crushed ice" }, new List<string> { "Pour beer samples", "Serve on an iced board" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 2, 0, new List<string> { "malty", "bitter" }, new List<string> { "alcohol", "beer", "bar" }, 180f, 2f, 0f, 14f, hydration: 8f));
+            AddRecipeIfMissing(CreateRecipe("red_wine_glass", "Red Wine Glass", new List<string> { "Red wine" }, new List<string> { "Pour into a stem glass", "Serve at cellar temperature" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.French, ServingTemperature.Warm, 1f, 1, 0, new List<string> { "fruity", "dry" }, new List<string> { "alcohol", "wine", "bar" }, 125f, 0f, 0f, 4f, hydration: 6f));
+            AddRecipeIfMissing(CreateRecipe("whiskey_on_ice", "Whiskey on Ice", new List<string> { "Whiskey", "Ice cubes" }, new List<string> { "Add whiskey to a rocks glass", "Drop in ice cubes" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "oak", "strong" }, new List<string> { "alcohol", "spirit", "bar" }, 105f, 0f, 0f, 0f, hydration: 4f));
+            AddRecipeIfMissing(CreateRecipe("vodka_soda", "Vodka Soda", new List<string> { "Vodka", "Sparkling water", "Lime" }, new List<string> { "Combine vodka and sparkling water", "Garnish with lime" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "clean", "citrus" }, new List<string> { "alcohol", "spirit", "cocktail" }, 96f, 0f, 0f, 1f, hydration: 8f));
+            AddRecipeIfMissing(CreateRecipe("gin_and_tonic", "Gin and Tonic", new List<string> { "Gin", "Tonic water", "Lime" }, new List<string> { "Pour gin over ice", "Top with tonic and lime" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "botanical", "bitter" }, new List<string> { "alcohol", "cocktail", "bar" }, 120f, 0f, 0f, 8f, hydration: 8f));
+            AddRecipeIfMissing(CreateRecipe("rum_and_cola", "Rum and Cola", new List<string> { "Rum", "Cola", "Ice cubes" }, new List<string> { "Pour rum into glass", "Top with cola and ice" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "sweet", "caramel" }, new List<string> { "alcohol", "cocktail", "bar" }, 160f, 0f, 0f, 16f, hydration: 8f));
+            AddRecipeIfMissing(CreateRecipe("margarita", "Margarita", new List<string> { "Tequila", "Lime", "Crushed ice", "Sugar" }, new List<string> { "Shake tequila with lime", "Blend with crushed ice", "Rim and serve" }, CookingMethod.Mix, KitchenEquipment.Blender, CuisineType.Mexican, ServingTemperature.Cold, 4f, 2, 2, new List<string> { "citrus", "tart" }, new List<string> { "alcohol", "cocktail", "bar" }, 170f, 0f, 0f, 14f, hydration: 7f));
+
+            // Additional "all types" foods for broader realism spread.
+            AddFoodIfMissing(CreateFood("Trail Mix Cup", FoodCategory.QuickSnack, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 16f, 4f, 2f, 2f, 20f, tags: new List<string> { "snack", "nuts", "portable" }, calories: 240f, protein: 7f, fat: 14f, carbs: 24f));
+            AddFoodIfMissing(CreateFood("Protein Bar Snack", FoodCategory.QuickSnack, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 14f, 4f, 1f, 2f, 16f, tags: new List<string> { "snack", "protein", "portable" }, calories: 210f, protein: 20f, fat: 8f, carbs: 24f));
+            AddFoodIfMissing(CreateFood("Jerky and Nuts", FoodCategory.QuickSnack, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 20f, 4f, 1f, 2f, 24f, tags: new List<string> { "snack", "protein", "gas-station" }, calories: 260f, protein: 18f, fat: 12f, carbs: 14f));
+            AddFoodIfMissing(CreateFood("Berry Yogurt Parfait", FoodCategory.Breakfast, CuisineType.Mediterranean, CookingMethod.Assemble, ServingTemperature.Cold, 24f, 4f, 4f, 3f, 28f, tags: new List<string> { "breakfast", "fruit", "quick" }, calories: 280f, protein: 12f, fat: 8f, carbs: 38f));
+            AddFoodIfMissing(CreateFood("Vegan Chickpea Salad", FoodCategory.Healthy, CuisineType.Mediterranean, CookingMethod.Assemble, ServingTemperature.Cold, 28f, 4f, 3f, 4f, 30f, tags: new List<string> { "vegan", "legume", "healthy" }, calories: 320f, protein: 12f, fat: 11f, carbs: 42f));
+            AddFoodIfMissing(CreateFood("Split Pea Soup", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Boil, ServingTemperature.Hot, 30f, 4f, 3f, 4f, 42f, tags: new List<string> { "soup", "legume", "comfort" }, calories: 350f, protein: 17f, fat: 7f, carbs: 52f, hydration: 16f));
+            AddFoodIfMissing(CreateFood("Roasted Brussels Bowl", FoodCategory.Healthy, CuisineType.Mediterranean, CookingMethod.Roast, ServingTemperature.Hot, 26f, 4f, 3f, 4f, 32f, tags: new List<string> { "vegetable", "roasted", "fiber" }, calories: 300f, protein: 9f, fat: 11f, carbs: 38f, vitamins: 10f));
+            AddFoodIfMissing(CreateFood("Eggplant Pasta", FoodCategory.HomeCooked, CuisineType.Italian, CookingMethod.Boil, ServingTemperature.Hot, 34f, 4f, 4f, 3f, 46f, tags: new List<string> { "vegetarian", "pasta", "weeknight" }, calories: 450f, protein: 13f, fat: 14f, carbs: 64f));
+            AddFoodIfMissing(CreateFood("Pistachio Oat Bowl", FoodCategory.Breakfast, CuisineType.American, CookingMethod.Boil, ServingTemperature.Warm, 26f, 4f, 3f, 3f, 36f, tags: new List<string> { "breakfast", "nuts", "oats" }, calories: 360f, protein: 12f, fat: 15f, carbs: 44f));
+            AddFoodIfMissing(CreateFood("Mint Citrus Water", FoodCategory.Drink, CuisineType.Mediterranean, CookingMethod.Assemble, ServingTemperature.Cold, 8f, 2f, 2f, 2f, 12f, tags: new List<string> { "water", "mint", "hydration" }, calories: 5f, hydration: 24f));
+            AddFoodIfMissing(CreateFood("Coconut Electrolyte Drink", FoodCategory.Drink, CuisineType.Mediterranean, CookingMethod.Mix, ServingTemperature.Cold, 10f, 3f, 2f, 3f, 12f, tags: new List<string> { "drink", "electrolytes", "hydration" }, calories: 50f, carbs: 12f, hydration: 24f));
+            AddFoodIfMissing(CreateFood("Energy Shot Mix", FoodCategory.Drink, CuisineType.American, CookingMethod.Mix, ServingTemperature.Cold, 8f, 10f, 1f, 1f, 8f, tags: new List<string> { "drink", "energy", "caffeine" }, calories: 70f, carbs: 14f, hydration: 8f));
+            AddFoodIfMissing(CreateFood("Hot Cocoa", FoodCategory.Drink, CuisineType.American, CookingMethod.Brew, ServingTemperature.Hot, 14f, 3f, 5f, 2f, 30f, tags: new List<string> { "drink", "sweet", "comfort" }, calories: 220f, protein: 6f, fat: 7f, carbs: 32f));
+            AddFoodIfMissing(CreateFood("Donut and Coffee", FoodCategory.Breakfast, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Warm, 24f, 6f, 6f, 0f, 48f, tags: new List<string> { "bakery", "coffee", "sweet" }, calories: 410f, protein: 6f, fat: 16f, carbs: 58f, sugar: 24f));
+            AddFoodIfMissing(CreateFood("Cookie Ice Cream Sandwich", FoodCategory.Dessert, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 20f, 5f, 8f, -1f, 70f, tags: new List<string> { "dessert", "frozen", "sweet" }, calories: 390f, protein: 5f, fat: 18f, carbs: 52f, sugar: 30f));
+            AddFoodIfMissing(CreateFood("White Wine Glass", FoodCategory.Drink, CuisineType.French, CookingMethod.Assemble, ServingTemperature.Cold, 6f, -2f, 6f, -2f, 24f, tags: new List<string> { "alcohol", "wine", "bar" }, calories: 120f, carbs: 4f, hydration: 6f));
+            AddFoodIfMissing(CreateFood("Tequila Soda", FoodCategory.Drink, CuisineType.Mexican, CookingMethod.Assemble, ServingTemperature.Cold, 6f, -3f, 6f, -3f, 22f, tags: new List<string> { "alcohol", "tequila", "cocktail" }, calories: 110f, carbs: 2f, hydration: 8f));
+            AddFoodIfMissing(CreateFood("Gin Berry Cooler", FoodCategory.Drink, CuisineType.American, CookingMethod.Mix, ServingTemperature.Cold, 8f, -3f, 7f, -3f, 24f, tags: new List<string> { "alcohol", "berry", "cocktail" }, calories: 150f, carbs: 11f, hydration: 8f));
+
+            AddRecipeIfMissing(CreateRecipe("trail_mix_cup", "Trail Mix Cup", new List<string> { "Trail mix" }, new List<string> { "Portion trail mix into a cup", "Serve immediately" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "nutty", "sweet" }, new List<string> { "snack", "portable" }, 240f, 7f, 14f, 24f));
+            AddRecipeIfMissing(CreateRecipe("protein_bar_snack", "Protein Bar Snack", new List<string> { "Protein bar" }, new List<string> { "Unwrap and eat" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "sweet", "dense" }, new List<string> { "snack", "protein" }, 210f, 20f, 8f, 24f));
+            AddRecipeIfMissing(CreateRecipe("jerky_and_nuts", "Jerky and Nuts", new List<string> { "Jerky", "Almond" }, new List<string> { "Pair jerky with almonds", "Serve as a high-protein snack" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "savory", "salty" }, new List<string> { "snack", "protein", "gas-station" }, 260f, 18f, 12f, 14f));
+            AddRecipeIfMissing(CreateRecipe("berry_yogurt_parfait", "Berry Yogurt Parfait", new List<string> { "Yogurt", "Blueberry", "Strawberry", "Oats" }, new List<string> { "Layer yogurt with berries", "Top with oats" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 4f, 3, 0, new List<string> { "sweet", "tart" }, new List<string> { "breakfast", "quick" }, 280f, 12f, 8f, 38f, vitamins: 8f));
+            AddRecipeIfMissing(CreateRecipe("vegan_chickpea_salad", "Vegan Chickpea Salad", new List<string> { "Chickpeas", "Cucumber", "Tomato", "Olive oil", "Lemon", "Sea salt" }, new List<string> { "Rinse chickpeas", "Chop vegetables", "Toss with oil, lemon, and salt" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 7f, 8, 0, new List<string> { "fresh", "bright" }, new List<string> { "vegan", "healthy" }, 320f, 12f, 11f, 42f, vitamins: 10f));
+            AddRecipeIfMissing(CreateRecipe("split_pea_soup", "Split Pea Soup", new List<string> { "Split peas", "Carrot", "Onion", "Garlic", "Vegetable stock", "Sea salt" }, new List<string> { "Sauté aromatics", "Simmer split peas with stock and vegetables", "Blend lightly and season" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Hot, 12f, 10, 32, new List<string> { "earthy", "savory" }, new List<string> { "soup", "comfort" }, 350f, 17f, 7f, 52f, hydration: 16f));
+            AddRecipeIfMissing(CreateRecipe("roasted_brussels_bowl", "Roasted Brussels Bowl", new List<string> { "Brussels sprouts", "Olive oil", "Sea salt", "Black Pepper", "Rice" }, new List<string> { "Roast brussels sprouts", "Season and serve over rice" }, CookingMethod.Roast, KitchenEquipment.Oven, CuisineType.Mediterranean, ServingTemperature.Hot, 10f, 8, 18, new List<string> { "savory", "roasted" }, new List<string> { "vegetable", "healthy" }, 300f, 9f, 11f, 38f, vitamins: 10f));
+            AddRecipeIfMissing(CreateRecipe("eggplant_pasta", "Eggplant Pasta", new List<string> { "Pasta", "Eggplant", "Tomato", "Garlic", "Olive oil", "Oregano", "Sea salt" }, new List<string> { "Boil pasta", "Sauté eggplant and garlic", "Add tomato and seasoning", "Toss with pasta" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.Italian, ServingTemperature.Hot, 12f, 10, 14, new List<string> { "savory", "herby" }, new List<string> { "vegetarian", "pasta" }, 450f, 13f, 14f, 64f, vitamins: 7f));
+            AddRecipeIfMissing(CreateRecipe("pistachio_oat_bowl", "Pistachio Oat Bowl", new List<string> { "Oats", "Milk", "Pistachio", "Cinnamon" }, new List<string> { "Cook oats in milk", "Top with pistachios and cinnamon" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Warm, 7f, 4, 8, new List<string> { "nutty", "warm" }, new List<string> { "breakfast", "nuts" }, 360f, 12f, 15f, 44f));
+            AddRecipeIfMissing(CreateRecipe("mint_citrus_water", "Mint Citrus Water", new List<string> { "Water", "Mint", "Lemon", "Ice cubes" }, new List<string> { "Infuse water with mint and lemon", "Serve over ice" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 1f, 2, 0, new List<string> { "fresh", "light" }, new List<string> { "water", "hydration" }, 5f, 0f, 0f, 1f, hydration: 24f));
+            AddRecipeIfMissing(CreateRecipe("coconut_electrolyte_drink", "Coconut Electrolyte Drink", new List<string> { "Coconut water", "Mineral water", "Ice cubes" }, new List<string> { "Mix coconut and mineral water", "Serve cold over ice" }, CookingMethod.Mix, KitchenEquipment.Toaster, CuisineType.Mediterranean, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "clean", "light-sweet" }, new List<string> { "drink", "hydration" }, 50f, 0f, 0f, 12f, hydration: 24f));
+            AddRecipeIfMissing(CreateRecipe("energy_shot_mix", "Energy Shot Mix", new List<string> { "Energy drink", "Ice cubes" }, new List<string> { "Chill energy drink over ice", "Serve in a small glass" }, CookingMethod.Mix, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "sweet", "sharp" }, new List<string> { "drink", "energy" }, 70f, 0f, 0f, 14f, hydration: 8f));
+            AddRecipeIfMissing(CreateRecipe("hot_cocoa", "Hot Cocoa", new List<string> { "Milk", "Sugar", "Cinnamon" }, new List<string> { "Warm milk", "Whisk in sugar and cinnamon", "Serve hot" }, CookingMethod.Brew, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Hot, 5f, 3, 6, new List<string> { "sweet", "warm" }, new List<string> { "drink", "comfort" }, 220f, 6f, 7f, 32f, sugar: 24f));
+            AddRecipeIfMissing(CreateRecipe("donut_and_coffee", "Donut and Coffee", new List<string> { "Donut", "Coffee" }, new List<string> { "Plate donut", "Serve with hot coffee" }, CookingMethod.Assemble, KitchenEquipment.CoffeeMachine, CuisineType.American, ServingTemperature.Warm, 2f, 1, 2, new List<string> { "sweet", "bitter" }, new List<string> { "breakfast", "bakery" }, 410f, 6f, 16f, 58f, sugar: 24f));
+            AddRecipeIfMissing(CreateRecipe("cookie_ice_cream_sandwich", "Cookie Ice Cream Sandwich", new List<string> { "Cookie", "Ice cream" }, new List<string> { "Place ice cream between cookies", "Serve immediately" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 2, 0, new List<string> { "sweet", "cold" }, new List<string> { "dessert", "frozen" }, 390f, 5f, 18f, 52f, sugar: 30f));
+            AddRecipeIfMissing(CreateRecipe("white_wine_glass", "White Wine Glass", new List<string> { "White wine" }, new List<string> { "Chill and pour into a wine glass" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.French, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "fruity", "crisp" }, new List<string> { "alcohol", "wine", "bar" }, 120f, 0f, 0f, 4f, hydration: 6f));
+            AddRecipeIfMissing(CreateRecipe("tequila_soda", "Tequila Soda", new List<string> { "Tequila", "Sparkling water", "Lime", "Ice cubes" }, new List<string> { "Combine tequila and sparkling water", "Squeeze lime and serve over ice" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mexican, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "citrus", "clean" }, new List<string> { "alcohol", "cocktail" }, 110f, 0f, 0f, 2f, hydration: 8f));
+            AddRecipeIfMissing(CreateRecipe("gin_berry_cooler", "Gin Berry Cooler", new List<string> { "Gin", "Frozen blueberry", "Sparkling water", "Crushed ice" }, new List<string> { "Muddle berries lightly", "Add gin, sparkling water, and crushed ice", "Stir and serve" }, CookingMethod.Mix, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 4f, 3, 0, new List<string> { "berry", "botanical" }, new List<string> { "alcohol", "cocktail", "berry" }, 150f, 0f, 0f, 11f, hydration: 8f));
+
+            GenerateProceduralVariantCoverage();
+            EnsureCommonUsRecipeCoverage();
+        }
+
+        private void GenerateProceduralVariantCoverage()
+        {
+            string[] proteins = { "Chicken", "Beef", "Tofu", "Salmon", "Chickpeas" };
+            string[] proteinLabels = { "Chicken", "Beef", "Tofu", "Salmon", "Chickpea" };
+            string[] bases = { "Rice", "Noodles", "Pasta" };
+            string[] styles = { "Garlic Herb", "Smoky", "Spicy", "Lemon Pepper", "Ginger Soy" };
+
+            for (int i = 0; i < proteins.Length; i++)
+            {
+                for (int j = 0; j < bases.Length; j++)
+                {
+                    for (int k = 0; k < styles.Length; k++)
+                    {
+                        bool vegan = proteins[i] == "Tofu" || proteins[i] == "Chickpeas";
+                        string name = $"{styles[k]} {proteinLabels[i]} {bases[j]} Bowl";
+                        string id = NormalizeId(name);
+                        List<string> ingredients = new List<string> { proteins[i], bases[j], "Garlic", "Sea salt" };
+                        List<string> tags = new List<string> { "variant", "bowl", vegan ? "vegan" : "protein" };
+
+                        switch (styles[k])
+                        {
+                            case "Smoky":
+                                ingredients.Add("Paprika");
+                                break;
+                            case "Spicy":
+                                ingredients.Add("Chili powder");
+                                break;
+                            case "Lemon Pepper":
+                                ingredients.Add("Lemon");
+                                ingredients.Add("Black Pepper");
+                                break;
+                            case "Ginger Soy":
+                                ingredients.Add("Ginger");
+                                ingredients.Add("Soy Sauce");
+                                break;
+                            default:
+                                ingredients.Add("Olive oil");
+                                break;
+                        }
+
+                        AddFoodIfMissing(CreateFood(
+                            name,
+                            FoodCategory.HomeCooked,
+                            vegan ? CuisineType.Mediterranean : CuisineType.American,
+                            CookingMethod.Boil,
+                            ServingTemperature.Hot,
+                            hungerRestore: 38f,
+                            energyDelta: 5f,
+                            moodDelta: 4f,
+                            vitalityDelta: 4f,
+                            comfortValue: 50f,
+                            tags: tags,
+                            calories: 520f,
+                            protein: vegan ? 18f : 28f,
+                            fat: 12f,
+                            carbs: 62f,
+                            vitamins: 8f));
+
+                        AddRecipeIfMissing(CreateRecipe(
+                            id,
+                            name,
+                            ingredients,
+                            new List<string> { "Prep all ingredients", "Cook base until tender", "Cook protein with seasoning", "Combine and serve hot" },
+                            CookingMethod.Boil,
+                            KitchenEquipment.Stove,
+                            vegan ? CuisineType.Mediterranean : CuisineType.American,
+                            ServingTemperature.Hot,
+                            difficulty: 14f,
+                            prepMinutes: 8,
+                            cookMinutes: 16,
+                            tasteProfile: new List<string> { "savory", "balanced" },
+                            tags: tags,
+                            calories: 520f,
+                            protein: vegan ? 18f : 28f,
+                            fat: 12f,
+                            carbs: 62f,
+                            vitamins: 8f,
+                            salt: 3f));
+                    }
+                }
+            }
+        }
+
+        private void EnsureCommonUsRecipeCoverage()
+        {
+            AddFoodIfMissing(CreateFood("PB and J Sandwich", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 22f, 4f, 4f, 2f, 40f, tags: new List<string> { "usa-common", "sandwich", "budget" }, calories: 360f, protein: 12f, fat: 14f, carbs: 46f));
+            AddFoodIfMissing(CreateFood("Ham and Cheese Sandwich", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 26f, 4f, 3f, 2f, 44f, tags: new List<string> { "usa-common", "sandwich", "lunch" }, calories: 390f, protein: 20f, fat: 14f, carbs: 38f));
+            AddFoodIfMissing(CreateFood("Turkey Club Sandwich", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 32f, 4f, 4f, 2f, 52f, tags: new List<string> { "usa-common", "sandwich", "deli" }, calories: 480f, protein: 28f, fat: 20f, carbs: 40f));
+            AddFoodIfMissing(CreateFood("BLT Sandwich", FoodCategory.HomeCooked, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Warm, 28f, 4f, 4f, 2f, 50f, tags: new List<string> { "usa-common", "sandwich", "bacon" }, calories: 430f, protein: 16f, fat: 22f, carbs: 38f));
+            AddFoodIfMissing(CreateFood("Cheeseburger", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Grill, ServingTemperature.Hot, 40f, 4f, 6f, 1f, 68f, tags: new List<string> { "usa-common", "fast-food", "burger" }, calories: 680f, protein: 31f, fat: 36f, carbs: 50f));
+            AddFoodIfMissing(CreateFood("Chili Dog", FoodCategory.StreetFood, CuisineType.FastFood, CookingMethod.Grill, ServingTemperature.Hot, 36f, 3f, 5f, 1f, 60f, tags: new List<string> { "usa-common", "fast-food", "hotdog" }, calories: 620f, protein: 22f, fat: 34f, carbs: 52f));
+            AddFoodIfMissing(CreateFood("Chicken Quesadilla", FoodCategory.StreetFood, CuisineType.Mexican, CookingMethod.Fry, ServingTemperature.Hot, 34f, 4f, 5f, 2f, 58f, tags: new List<string> { "usa-common", "tex-mex", "cheesy" }, calories: 560f, protein: 28f, fat: 24f, carbs: 48f));
+            AddFoodIfMissing(CreateFood("Beef Burrito", FoodCategory.StreetFood, CuisineType.Mexican, CookingMethod.Assemble, ServingTemperature.Warm, 42f, 4f, 4f, 2f, 56f, tags: new List<string> { "usa-common", "tex-mex", "handheld" }, calories: 640f, protein: 29f, fat: 20f, carbs: 72f));
+            AddFoodIfMissing(CreateFood("Loaded Nachos", FoodCategory.PartyFood, CuisineType.Mexican, CookingMethod.Assemble, ServingTemperature.Hot, 36f, 3f, 6f, 0f, 66f, tags: new List<string> { "usa-common", "party-food", "shareable" }, calories: 710f, protein: 24f, fat: 35f, carbs: 72f));
+            AddFoodIfMissing(CreateFood("Spaghetti Meat Sauce", FoodCategory.HomeCooked, CuisineType.Italian, CookingMethod.Boil, ServingTemperature.Hot, 40f, 4f, 5f, 3f, 62f, tags: new List<string> { "usa-common", "pasta", "family-meal" }, calories: 620f, protein: 27f, fat: 18f, carbs: 82f));
+            AddFoodIfMissing(CreateFood("Baked Ziti", FoodCategory.HomeCooked, CuisineType.Italian, CookingMethod.Bake, ServingTemperature.Hot, 42f, 4f, 6f, 2f, 68f, tags: new List<string> { "usa-common", "pasta", "baked" }, calories: 670f, protein: 30f, fat: 24f, carbs: 80f));
+            AddFoodIfMissing(CreateFood("Mashed Potato Gravy", FoodCategory.Comfort, CuisineType.American, CookingMethod.Boil, ServingTemperature.Hot, 30f, 3f, 4f, 3f, 76f, tags: new List<string> { "usa-common", "side", "comfort" }, calories: 340f, protein: 7f, fat: 14f, carbs: 48f));
+            AddFoodIfMissing(CreateFood("Chicken Caesar Wrap", FoodCategory.StreetFood, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 32f, 4f, 4f, 2f, 48f, tags: new List<string> { "usa-common", "wrap", "lunch" }, calories: 520f, protein: 30f, fat: 22f, carbs: 44f));
+            AddFoodIfMissing(CreateFood("Cobb Salad", FoodCategory.Healthy, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 34f, 4f, 4f, 4f, 42f, tags: new List<string> { "usa-common", "salad", "protein" }, calories: 490f, protein: 31f, fat: 30f, carbs: 18f));
+            AddFoodIfMissing(CreateFood("Ranch Veggie Tray", FoodCategory.Healthy, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 24f, 2f, 3f, 3f, 28f, tags: new List<string> { "usa-common", "veggie", "party-food" }, calories: 240f, protein: 6f, fat: 13f, carbs: 24f, vitamins: 12f));
+            AddFoodIfMissing(CreateFood("Pretzel Snack", FoodCategory.QuickSnack, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 14f, 2f, 1f, 1f, 14f, tags: new List<string> { "usa-common", "snack", "gas-station" }, calories: 190f, protein: 5f, fat: 1f, carbs: 40f));
+            AddFoodIfMissing(CreateFood("Crackers and Cheese", FoodCategory.QuickSnack, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 18f, 2f, 2f, 1f, 24f, tags: new List<string> { "usa-common", "snack", "quick" }, calories: 260f, protein: 9f, fat: 12f, carbs: 28f));
+            AddFoodIfMissing(CreateFood("Bagel Cream Cheese", FoodCategory.Breakfast, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Cold, 24f, 3f, 3f, 2f, 40f, tags: new List<string> { "usa-common", "breakfast", "bakery" }, calories: 360f, protein: 11f, fat: 12f, carbs: 50f));
+            AddFoodIfMissing(CreateFood("Mac and Cheese Bites", FoodCategory.Comfort, CuisineType.American, CookingMethod.Bake, ServingTemperature.Hot, 28f, 3f, 4f, 1f, 64f, tags: new List<string> { "usa-common", "comfort", "kids" }, calories: 420f, protein: 14f, fat: 18f, carbs: 48f));
+            AddFoodIfMissing(CreateFood("Buffalo Chicken Wrap", FoodCategory.StreetFood, CuisineType.American, CookingMethod.Assemble, ServingTemperature.Warm, 34f, 4f, 5f, 2f, 54f, tags: new List<string> { "usa-common", "wrap", "spicy" }, calories: 560f, protein: 31f, fat: 24f, carbs: 46f));
+
+            AddRecipeIfMissing(CreateRecipe("pb_and_j_sandwich", "PB and J Sandwich", new List<string> { "Bread", "Peanut butter", "Jam" }, new List<string> { "Spread peanut butter on bread", "Add jam", "Close sandwich and serve" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 3f, 2, 0, new List<string> { "sweet", "nutty" }, new List<string> { "usa-common", "sandwich" }, 360f, 12f, 14f, 46f));
+            AddRecipeIfMissing(CreateRecipe("ham_and_cheese_sandwich", "Ham and Cheese Sandwich", new List<string> { "Ham", "Bread", "Cheddar", "Mayonnaise" }, new List<string> { "Layer ham and cheese on bread", "Add mayonnaise and close sandwich" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 4f, 3, 0, new List<string> { "savory", "creamy" }, new List<string> { "usa-common", "sandwich" }, 390f, 20f, 14f, 38f));
+            AddRecipeIfMissing(CreateRecipe("turkey_club_sandwich", "Turkey Club Sandwich", new List<string> { "Turkey", "Bread", "Bacon", "Lettuce", "Tomato", "Mayonnaise" }, new List<string> { "Cook bacon crisp", "Layer turkey, bacon, lettuce, and tomato", "Spread mayo and close sandwich" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 8f, 6, 8, new List<string> { "savory", "crispy" }, new List<string> { "usa-common", "deli" }, 480f, 28f, 20f, 40f));
+            AddRecipeIfMissing(CreateRecipe("blt_sandwich", "BLT Sandwich", new List<string> { "Bacon", "Bread", "Lettuce", "Tomato", "Mayonnaise" }, new List<string> { "Cook bacon", "Assemble with lettuce and tomato", "Spread mayo and serve" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Warm, 6f, 4, 8, new List<string> { "savory", "fresh" }, new List<string> { "usa-common", "sandwich" }, 430f, 16f, 22f, 38f));
+            AddRecipeIfMissing(CreateRecipe("cheeseburger", "Cheeseburger", new List<string> { "Ground beef", "Burger bun", "Cheddar", "Onion", "Pickle", "Ketchup", "Mustard" }, new List<string> { "Form and grill beef patty", "Melt cheddar on patty", "Assemble bun with toppings and condiments" }, CookingMethod.Grill, KitchenEquipment.Grill, CuisineType.FastFood, ServingTemperature.Hot, 10f, 10, 12, new List<string> { "savory", "juicy" }, new List<string> { "usa-common", "burger", "fast-food" }, 680f, 31f, 36f, 50f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("chili_dog", "Chili Dog", new List<string> { "Sausage", "Burger bun", "Ground beef", "Tomato", "Chili powder", "Mustard" }, new List<string> { "Grill sausage", "Simmer quick chili with beef, tomato, and chili powder", "Top bun with sausage, chili, and mustard" }, CookingMethod.Grill, KitchenEquipment.Grill, CuisineType.FastFood, ServingTemperature.Hot, 9f, 8, 10, new List<string> { "savory", "spiced" }, new List<string> { "usa-common", "hotdog", "fast-food" }, 620f, 22f, 34f, 52f, salt: 5f));
+            AddRecipeIfMissing(CreateRecipe("chicken_quesadilla", "Chicken Quesadilla", new List<string> { "Chicken", "Tortilla", "Cheddar", "Onion", "Jalapeño" }, new List<string> { "Cook chicken with onion", "Fill tortilla with chicken and cheddar", "Toast until crispy and serve" }, CookingMethod.Fry, KitchenEquipment.Stove, CuisineType.Mexican, ServingTemperature.Hot, 10f, 8, 10, new List<string> { "savory", "cheesy" }, new List<string> { "usa-common", "tex-mex" }, 560f, 28f, 24f, 48f));
+            AddRecipeIfMissing(CreateRecipe("beef_burrito", "Beef Burrito", new List<string> { "Ground beef", "Tortilla", "Rice", "Black beans", "Cheddar", "Tomato" }, new List<string> { "Cook beef and season", "Warm tortilla", "Fill with rice, beans, beef, and cheddar then roll" }, CookingMethod.Assemble, KitchenEquipment.Stove, CuisineType.Mexican, ServingTemperature.Warm, 10f, 10, 12, new List<string> { "savory", "hearty" }, new List<string> { "usa-common", "tex-mex" }, 640f, 29f, 20f, 72f));
+            AddRecipeIfMissing(CreateRecipe("loaded_nachos", "Loaded Nachos", new List<string> { "Tortilla chips", "Ground beef", "Cheddar", "Jalapeño", "Tomato", "Onion" }, new List<string> { "Brown beef", "Layer chips and toppings", "Melt cheddar and serve" }, CookingMethod.Assemble, KitchenEquipment.Microwave, CuisineType.Mexican, ServingTemperature.Hot, 9f, 8, 6, new List<string> { "savory", "spicy" }, new List<string> { "usa-common", "party-food" }, 710f, 24f, 35f, 72f, salt: 5f));
+            AddRecipeIfMissing(CreateRecipe("spaghetti_meat_sauce", "Spaghetti Meat Sauce", new List<string> { "Pasta", "Ground beef", "Tomato", "Onion", "Garlic", "Oregano", "Sea salt" }, new List<string> { "Boil pasta", "Cook beef with onion and garlic", "Add tomato and oregano", "Combine with pasta" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.Italian, ServingTemperature.Hot, 12f, 10, 18, new List<string> { "savory", "tomato" }, new List<string> { "usa-common", "pasta", "family" }, 620f, 27f, 18f, 82f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("baked_ziti", "Baked Ziti", new List<string> { "Pasta", "Ground beef", "Tomato", "Mozzarella", "Parmesan", "Sea salt" }, new List<string> { "Cook pasta and beef sauce", "Layer with mozzarella and parmesan", "Bake until bubbly" }, CookingMethod.Bake, KitchenEquipment.Oven, CuisineType.Italian, ServingTemperature.Hot, 14f, 14, 24, new List<string> { "savory", "cheesy" }, new List<string> { "usa-common", "pasta", "baked" }, 670f, 30f, 24f, 80f, salt: 4f));
+            AddRecipeIfMissing(CreateRecipe("mashed_potato_gravy", "Mashed Potato Gravy", new List<string> { "Potato", "Milk", "Butter", "Sea salt", "Black Pepper" }, new List<string> { "Boil and mash potatoes", "Stir in butter and milk", "Season and serve warm" }, CookingMethod.Boil, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Hot, 8f, 6, 16, new List<string> { "creamy", "savory" }, new List<string> { "usa-common", "side", "comfort" }, 340f, 7f, 14f, 48f));
+            AddRecipeIfMissing(CreateRecipe("chicken_caesar_wrap", "Chicken Caesar Wrap", new List<string> { "Chicken breast", "Tortilla", "Lettuce", "Parmesan", "Ranch dressing" }, new List<string> { "Cook chicken breast", "Slice and combine with lettuce, parmesan, and dressing", "Wrap in tortilla" }, CookingMethod.Assemble, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Cold, 8f, 8, 8, new List<string> { "savory", "creamy" }, new List<string> { "usa-common", "wrap", "lunch" }, 520f, 30f, 22f, 44f));
+            AddRecipeIfMissing(CreateRecipe("cobb_salad", "Cobb Salad", new List<string> { "Chicken breast", "Egg", "Bacon", "Lettuce", "Tomato", "Ranch dressing" }, new List<string> { "Cook chicken, bacon, and egg", "Chop lettuce and tomato", "Arrange and dress salad" }, CookingMethod.Assemble, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Cold, 10f, 10, 10, new List<string> { "savory", "fresh" }, new List<string> { "usa-common", "salad", "protein" }, 490f, 31f, 30f, 18f));
+            AddRecipeIfMissing(CreateRecipe("ranch_veggie_tray", "Ranch Veggie Tray", new List<string> { "Carrot", "Celery", "Cucumber", "Bell pepper", "Ranch dressing" }, new List<string> { "Slice vegetables", "Arrange with ranch dip", "Serve chilled" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 4f, 8, 0, new List<string> { "fresh", "crisp" }, new List<string> { "usa-common", "veggie", "party-food" }, 240f, 6f, 13f, 24f, vitamins: 12f));
+            AddRecipeIfMissing(CreateRecipe("pretzel_snack", "Pretzel Snack", new List<string> { "Pretzel", "Mustard" }, new List<string> { "Serve pretzel with mustard dip" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "salty", "tangy" }, new List<string> { "usa-common", "snack" }, 190f, 5f, 1f, 40f));
+            AddRecipeIfMissing(CreateRecipe("crackers_and_cheese", "Crackers and Cheese", new List<string> { "Cracker", "Cheddar" }, new List<string> { "Arrange crackers and cheddar slices", "Serve as snack plate" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 1f, 2, 0, new List<string> { "savory", "crunchy" }, new List<string> { "usa-common", "snack" }, 260f, 9f, 12f, 28f));
+            AddRecipeIfMissing(CreateRecipe("bagel_cream_cheese", "Bagel Cream Cheese", new List<string> { "Bread", "Cream cheese" }, new List<string> { "Toast bread halves", "Spread cream cheese and serve" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 2f, 2, 2, new List<string> { "creamy", "savory" }, new List<string> { "usa-common", "breakfast" }, 360f, 11f, 12f, 50f));
+            AddRecipeIfMissing(CreateRecipe("mac_and_cheese_bites", "Mac and Cheese Bites", new List<string> { "Pasta", "Cheddar", "Milk", "Butter", "Panko" }, new List<string> { "Cook mac and cheese", "Shape into bites and coat with panko", "Bake until crisp" }, CookingMethod.Bake, KitchenEquipment.Oven, CuisineType.American, ServingTemperature.Hot, 12f, 12, 20, new List<string> { "cheesy", "crispy" }, new List<string> { "usa-common", "comfort", "kids" }, 420f, 14f, 18f, 48f));
+            AddRecipeIfMissing(CreateRecipe("buffalo_chicken_wrap", "Buffalo Chicken Wrap", new List<string> { "Chicken breast", "Tortilla", "Lettuce", "Hot sauce", "Ranch dressing" }, new List<string> { "Cook chicken and toss with hot sauce", "Fill tortilla with chicken, lettuce, and ranch", "Roll and serve warm" }, CookingMethod.Assemble, KitchenEquipment.Stove, CuisineType.American, ServingTemperature.Warm, 10f, 8, 10, new List<string> { "spicy", "savory" }, new List<string> { "usa-common", "wrap", "spicy" }, 560f, 31f, 24f, 46f));
         }
 
         private void AddFoodIfMissing(FoodItem item)
@@ -424,6 +647,48 @@ namespace Survivebest.Food
             }
 
             recipeDefinitions.Add(recipe);
+        }
+
+        private void EnsureVisualAndConsumableMetadata()
+        {
+            for (int i = 0; i < foods.Count; i++)
+            {
+                FoodItem item = foods[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.Name))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(item.SpriteId))
+                {
+                    item.SpriteId = NormalizeId(item.Name);
+                }
+
+                item.CanEatCooked = true;
+                if (item.CookingMethod == CookingMethod.Assemble || item.CookingMethod == CookingMethod.Blend || item.CookingMethod == CookingMethod.Mix)
+                {
+                    item.CanEatRaw = true;
+                }
+            }
+
+            for (int i = 0; i < recipeDefinitions.Count; i++)
+            {
+                FoodRecipeDefinition recipe = recipeDefinitions[i];
+                if (recipe == null || string.IsNullOrWhiteSpace(recipe.Name))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(recipe.Id))
+                {
+                    recipe.Id = NormalizeId(recipe.Name);
+                }
+
+                if (string.IsNullOrWhiteSpace(recipe.SpriteId))
+                {
+                    recipe.SpriteId = recipe.Id;
+                }
+            }
         }
 
         private static FoodItem CreateFood(
@@ -453,7 +718,11 @@ namespace Survivebest.Food
             return new FoodItem
             {
                 Name = name,
+                SpriteId = NormalizeId(name),
                 Category = category,
+                IsEdible = true,
+                CanEatRaw = cookingMethod == CookingMethod.Assemble || cookingMethod == CookingMethod.Blend || cookingMethod == CookingMethod.Mix,
+                CanEatCooked = true,
                 HungerRestore = hungerRestore,
                 EnergyDelta = energyDelta,
                 MoodDelta = moodDelta,
@@ -509,6 +778,7 @@ namespace Survivebest.Food
             {
                 Id = id,
                 Name = name,
+                SpriteId = string.IsNullOrWhiteSpace(id) ? NormalizeId(name) : id,
                 IngredientRequirements = ingredientRequirements,
                 Steps = steps,
                 CookingMethod = cookingMethod,
@@ -533,6 +803,11 @@ namespace Survivebest.Food
                     Salt = salt
                 }
             };
+        }
+
+        private static string NormalizeId(string value)
+        {
+            return value?.Trim().ToLowerInvariant().Replace(" ", "_");
         }
 
         private static MealPurpose InferMealPurpose(FoodCategory category, List<string> tags)
