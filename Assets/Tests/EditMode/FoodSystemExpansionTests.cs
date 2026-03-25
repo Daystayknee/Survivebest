@@ -267,7 +267,25 @@ namespace Survivebest.Tests.EditMode
                 "Vodka Soda",
                 "Gin and Tonic",
                 "Rum and Cola",
-                "Margarita"
+                "Margarita",
+                "Trail Mix Cup",
+                "Protein Bar Snack",
+                "Jerky and Nuts",
+                "Berry Yogurt Parfait",
+                "Vegan Chickpea Salad",
+                "Split Pea Soup",
+                "Roasted Brussels Bowl",
+                "Eggplant Pasta",
+                "Pistachio Oat Bowl",
+                "Mint Citrus Water",
+                "Coconut Electrolyte Drink",
+                "Energy Shot Mix",
+                "Hot Cocoa",
+                "Donut and Coffee",
+                "Cookie Ice Cream Sandwich",
+                "White Wine Glass",
+                "Tequila Soda",
+                "Gin Berry Cooler"
             };
 
             for (int i = 0; i < expectedFoods.Length; i++)
