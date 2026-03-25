@@ -94,6 +94,30 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void IngredientCatalog_Awake_AssignsSpriteIdsAndRawCookedSafety()
+        {
+            GameObject go = new GameObject("IngredientCatalogRawCooked");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            IngredientItem apple = catalog.GetIngredient("Apple");
+            IngredientItem chicken = catalog.GetIngredient("Chicken");
+            IngredientItem salmon = catalog.GetIngredient("Salmon");
+
+            Assert.IsNotNull(apple);
+            Assert.IsNotNull(chicken);
+            Assert.IsNotNull(salmon);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(apple.SpriteId));
+            Assert.IsTrue(apple.IsSafeRaw);
+            Assert.IsFalse(chicken.IsSafeRaw);
+            Assert.IsTrue(salmon.IsSafeRaw);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void RecipeSystem_DiscoverRecipeFromIngredients_AddsRecipe()
         {
             GameObject go = new GameObject("RecipeSystem");
@@ -163,6 +187,30 @@ namespace Survivebest.Tests.EditMode
                 Assert.IsNotNull(database.GetFood(expected[i]), $"Missing expanded food: {expected[i]}");
                 Assert.IsNotNull(database.GetRecipe(expected[i]), $"Missing expanded recipe: {expected[i]}");
             }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_Awake_AssignsSpriteIdsAndRawCookedFlags()
+        {
+            GameObject go = new GameObject("FoodSpriteAndRawCooked");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            FoodItem sushi = database.GetFood("Sushi Roll");
+            FoodItem chili = database.GetFood("Chili");
+            FoodRecipeDefinition sushiRecipe = database.GetRecipe("Sushi Roll");
+
+            Assert.IsNotNull(sushi);
+            Assert.IsNotNull(chili);
+            Assert.IsNotNull(sushiRecipe);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(sushi.SpriteId));
+            Assert.IsTrue(sushi.CanEatRaw);
+            Assert.IsFalse(chili.CanEatRaw);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(sushiRecipe.SpriteId));
 
             Object.DestroyImmediate(go);
         }

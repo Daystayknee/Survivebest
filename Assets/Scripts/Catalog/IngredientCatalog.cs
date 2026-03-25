@@ -71,11 +71,16 @@ namespace Survivebest.Catalog
     {
         public string Id;
         public string Name;
+        public string SpriteId;
+        public Sprite IconSprite;
         public IngredientGroup Group;
         public IngredientCategory Category;
         public IngredientLifecycleState LifecycleState;
         public IngredientPurpose Purpose;
         public List<string> Tags = new();
+        public bool IsEdible = true;
+        public bool IsSafeRaw = false;
+        public bool IsSafeCooked = true;
         public bool IsPerishable = true;
         [Min(1f)] public float SpoilTimeHours = 72f;
         [Range(0f, 3000f)] public float Calories = 40f;
@@ -98,8 +103,8 @@ namespace Survivebest.Catalog
             CreateIngredient("Duck", IngredientGroup.Meat, IngredientCategory.Meats, new List<string> { "protein", "savory", "rich" }, calories: 337f, protein: 19f, fat: 28f, spoilHours: 72f),
             CreateIngredient("Bacon", IngredientGroup.Meat, IngredientCategory.Meats, new List<string> { "protein", "savory", "smoky" }, isPerishable: false, spoilHours: 240f, calories: 541f, protein: 37f, fat: 42f),
             CreateIngredient("Sausage", IngredientGroup.Meat, IngredientCategory.Meats, new List<string> { "protein", "savory", "spiced" }, spoilHours: 96f, calories: 301f, protein: 14f, fat: 27f),
-            CreateIngredient("Salmon", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "omega3" }, calories: 208f, protein: 20f, fat: 13f, spoilHours: 60f),
-            CreateIngredient("Tuna", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "lean" }, calories: 132f, protein: 28f, fat: 1f, spoilHours: 60f),
+            CreateIngredient("Salmon", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "omega3", "sushi-safe" }, calories: 208f, protein: 20f, fat: 13f, spoilHours: 60f),
+            CreateIngredient("Tuna", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "lean", "sushi-safe" }, calories: 132f, protein: 28f, fat: 1f, spoilHours: 60f),
             CreateIngredient("Cod", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "lean" }, calories: 82f, protein: 18f, fat: 1f, spoilHours: 60f),
             CreateIngredient("Shrimp", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "quick-cook" }, calories: 99f, protein: 24f, fat: 1f, spoilHours: 48f),
             CreateIngredient("Egg", IngredientGroup.Meat, IngredientCategory.Dairy, new List<string> { "protein", "breakfast", "binder" }, calories: 155f, protein: 13f, fat: 11f, carbs: 1f, spoilHours: 336f),
@@ -180,7 +185,12 @@ namespace Survivebest.Catalog
 
                 if (string.IsNullOrWhiteSpace(item.Id))
                 {
-                    item.Id = item.Name?.Trim().ToLowerInvariant().Replace(" ", "_");
+                    item.Id = NormalizeId(item.Name);
+                }
+
+                if (string.IsNullOrWhiteSpace(item.SpriteId))
+                {
+                    item.SpriteId = item.Id;
                 }
 
                 if (item.Tags == null || item.Tags.Count == 0)
@@ -197,6 +207,8 @@ namespace Survivebest.Catalog
                 {
                     item.LifecycleState = InferLifecycleState(item);
                 }
+
+                ApplyRawCookedDefaults(item);
             }
 
             EnsureRealismEssentials();
@@ -316,11 +328,16 @@ namespace Survivebest.Catalog
             }
 
             item.Id = item.Name.Trim().ToLowerInvariant().Replace(" ", "_");
+            if (string.IsNullOrWhiteSpace(item.SpriteId))
+            {
+                item.SpriteId = item.Id;
+            }
             if (item.Tags == null || item.Tags.Count == 0)
             {
                 item.Tags = BuildDefaultTags(item.Group);
             }
 
+            ApplyRawCookedDefaults(item);
             ingredients.Add(item);
         }
 
@@ -356,6 +373,41 @@ namespace Survivebest.Catalog
                 Carbs = carbs,
                 Hydration = vitamins ? Mathf.Max(hydration, 5f) : hydration
             };
+        }
+
+        private static void ApplyRawCookedDefaults(IngredientItem item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            if (!item.IsEdible)
+            {
+                item.IsSafeRaw = false;
+                item.IsSafeCooked = false;
+                return;
+            }
+
+            if (item.Group == IngredientGroup.Fruit || item.Group == IngredientGroup.Vegetable || item.Group == IngredientGroup.NutSeed)
+            {
+                item.IsSafeRaw = true;
+            }
+
+            if (item.Group == IngredientGroup.Meat && item.Category == IngredientCategory.Seafood)
+            {
+                item.IsSafeRaw = HasAnyTag(item, "sushi-safe", "sashimi-safe");
+            }
+
+            if (item.Group == IngredientGroup.Meat && item.Category != IngredientCategory.Seafood)
+            {
+                item.IsSafeRaw = false;
+            }
+        }
+
+        private static string NormalizeId(string value)
+        {
+            return value?.Trim().ToLowerInvariant().Replace(" ", "_");
         }
 
         private static IngredientPurpose InferPurpose(IngredientItem item)

@@ -123,6 +123,8 @@ namespace Survivebest.Food
     {
         public string Id;
         public string Name;
+        public string SpriteId;
+        public Sprite IconSprite;
         public List<string> IngredientRequirements = new();
         public List<string> Steps = new();
         public CookingMethod CookingMethod;
@@ -142,7 +144,12 @@ namespace Survivebest.Food
     public class FoodItem
     {
         public string Name;
+        public string SpriteId;
+        public Sprite IconSprite;
         public FoodCategory Category;
+        public bool IsEdible = true;
+        public bool CanEatRaw;
+        public bool CanEatCooked = true;
         [Range(0f, 100f)] public float HungerRestore;
         [Range(-50f, 50f)] public float EnergyDelta;
         [Range(-20f, 20f)] public float MoodDelta;
@@ -289,6 +296,7 @@ namespace Survivebest.Food
         private void Awake()
         {
             EnsureExpandedGameplayCoverage();
+            EnsureVisualAndConsumableMetadata();
         }
 
         public FoodItem GetRandomFood()
@@ -426,6 +434,48 @@ namespace Survivebest.Food
             recipeDefinitions.Add(recipe);
         }
 
+        private void EnsureVisualAndConsumableMetadata()
+        {
+            for (int i = 0; i < foods.Count; i++)
+            {
+                FoodItem item = foods[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.Name))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(item.SpriteId))
+                {
+                    item.SpriteId = NormalizeId(item.Name);
+                }
+
+                item.CanEatCooked = true;
+                if (item.CookingMethod == CookingMethod.Assemble || item.CookingMethod == CookingMethod.Blend || item.CookingMethod == CookingMethod.Mix)
+                {
+                    item.CanEatRaw = true;
+                }
+            }
+
+            for (int i = 0; i < recipeDefinitions.Count; i++)
+            {
+                FoodRecipeDefinition recipe = recipeDefinitions[i];
+                if (recipe == null || string.IsNullOrWhiteSpace(recipe.Name))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(recipe.Id))
+                {
+                    recipe.Id = NormalizeId(recipe.Name);
+                }
+
+                if (string.IsNullOrWhiteSpace(recipe.SpriteId))
+                {
+                    recipe.SpriteId = recipe.Id;
+                }
+            }
+        }
+
         private static FoodItem CreateFood(
             string name,
             FoodCategory category,
@@ -453,7 +503,11 @@ namespace Survivebest.Food
             return new FoodItem
             {
                 Name = name,
+                SpriteId = NormalizeId(name),
                 Category = category,
+                IsEdible = true,
+                CanEatRaw = cookingMethod == CookingMethod.Assemble || cookingMethod == CookingMethod.Blend || cookingMethod == CookingMethod.Mix,
+                CanEatCooked = true,
                 HungerRestore = hungerRestore,
                 EnergyDelta = energyDelta,
                 MoodDelta = moodDelta,
@@ -509,6 +563,7 @@ namespace Survivebest.Food
             {
                 Id = id,
                 Name = name,
+                SpriteId = string.IsNullOrWhiteSpace(id) ? NormalizeId(name) : id,
                 IngredientRequirements = ingredientRequirements,
                 Steps = steps,
                 CookingMethod = cookingMethod,
@@ -533,6 +588,11 @@ namespace Survivebest.Food
                     Salt = salt
                 }
             };
+        }
+
+        private static string NormalizeId(string value)
+        {
+            return value?.Trim().ToLowerInvariant().Replace(" ", "_");
         }
 
         private static MealPurpose InferMealPurpose(FoodCategory category, List<string> tags)
