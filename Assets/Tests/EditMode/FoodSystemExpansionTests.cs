@@ -94,6 +94,51 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void IngredientCatalog_Awake_AssignsSpriteIdsAndRawCookedSafety()
+        {
+            GameObject go = new GameObject("IngredientCatalogRawCooked");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            IngredientItem apple = catalog.GetIngredient("Apple");
+            IngredientItem chicken = catalog.GetIngredient("Chicken");
+            IngredientItem salmon = catalog.GetIngredient("Salmon");
+
+            Assert.IsNotNull(apple);
+            Assert.IsNotNull(chicken);
+            Assert.IsNotNull(salmon);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(apple.SpriteId));
+            Assert.IsTrue(apple.IsSafeRaw);
+            Assert.IsFalse(chicken.IsSafeRaw);
+            Assert.IsTrue(salmon.IsSafeRaw);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void IngredientCatalog_Awake_AddsLiquidFrozenAlcoholAndDrugCoverage()
+        {
+            GameObject go = new GameObject("IngredientCatalogRealismCoverage");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            Assert.IsNotNull(catalog.GetIngredient("Ice cubes"));
+            Assert.IsNotNull(catalog.GetIngredient("Frozen pizza"));
+            Assert.IsNotNull(catalog.GetIngredient("Vodka"));
+            IngredientItem drug = catalog.GetIngredient("Cannabis flower");
+            Assert.IsNotNull(drug);
+            Assert.IsFalse(drug.IsEdible);
+            Assert.IsFalse(drug.IsSafeRaw);
+            Assert.IsFalse(drug.IsSafeCooked);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void RecipeSystem_DiscoverRecipeFromIngredients_AddsRecipe()
         {
             GameObject go = new GameObject("RecipeSystem");
@@ -163,6 +208,120 @@ namespace Survivebest.Tests.EditMode
                 Assert.IsNotNull(database.GetFood(expected[i]), $"Missing expanded food: {expected[i]}");
                 Assert.IsNotNull(database.GetRecipe(expected[i]), $"Missing expanded recipe: {expected[i]}");
             }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_Awake_AssignsSpriteIdsAndRawCookedFlags()
+        {
+            GameObject go = new GameObject("FoodSpriteAndRawCooked");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            FoodItem sushi = database.GetFood("Sushi Roll");
+            FoodItem chili = database.GetFood("Chili");
+            FoodRecipeDefinition sushiRecipe = database.GetRecipe("Sushi Roll");
+
+            Assert.IsNotNull(sushi);
+            Assert.IsNotNull(chili);
+            Assert.IsNotNull(sushiRecipe);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(sushi.SpriteId));
+            Assert.IsTrue(sushi.CanEatRaw);
+            Assert.IsFalse(chili.CanEatRaw);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(sushiRecipe.SpriteId));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_Awake_AddsRealismExpansionRecipesForWaterFrozenAndLiquor()
+        {
+            GameObject go = new GameObject("FoodRealismExpansion");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            string[] expectedFoods =
+            {
+                "Ice Water",
+                "Sparkling Water",
+                "Crushed Ice Slush",
+                "Frozen Berry Smoothie",
+                "Frozen Tropical Smoothie",
+                "Frozen Fruit Bowl",
+                "Frozen Veggie Stir Fry",
+                "Frozen Pizza Bake",
+                "Frozen Burrito Plate",
+                "Frozen Meal Tray",
+                "Iced Coffee",
+                "Iced Tea",
+                "Herbal Tea",
+                "Sports Hydration Mix",
+                "Beer Flight",
+                "Red Wine Glass",
+                "Whiskey on Ice",
+                "Vodka Soda",
+                "Gin and Tonic",
+                "Rum and Cola",
+                "Margarita",
+                "Trail Mix Cup",
+                "Protein Bar Snack",
+                "Jerky and Nuts",
+                "Berry Yogurt Parfait",
+                "Vegan Chickpea Salad",
+                "Split Pea Soup",
+                "Roasted Brussels Bowl",
+                "Eggplant Pasta",
+                "Pistachio Oat Bowl",
+                "Mint Citrus Water",
+                "Coconut Electrolyte Drink",
+                "Energy Shot Mix",
+                "Hot Cocoa",
+                "Donut and Coffee",
+                "Cookie Ice Cream Sandwich",
+                "White Wine Glass",
+                "Tequila Soda",
+                "Gin Berry Cooler"
+            };
+
+            for (int i = 0; i < expectedFoods.Length; i++)
+            {
+                Assert.IsNotNull(database.GetFood(expectedFoods[i]), $"Missing realism food: {expectedFoods[i]}");
+                Assert.IsNotNull(database.GetRecipe(expectedFoods[i]), $"Missing realism recipe: {expectedFoods[i]}");
+            }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_Awake_GeneratesProceduralVariantBowls_AcrossAllTypes()
+        {
+            GameObject go = new GameObject("FoodVariantGeneration");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            string[] expectedVariants =
+            {
+                "Garlic Herb Chicken Rice Bowl",
+                "Smoky Beef Noodles Bowl",
+                "Spicy Tofu Pasta Bowl",
+                "Lemon Pepper Salmon Rice Bowl",
+                "Ginger Soy Chickpea Noodles Bowl"
+            };
+
+            for (int i = 0; i < expectedVariants.Length; i++)
+            {
+                Assert.IsNotNull(database.GetFood(expectedVariants[i]), $"Missing generated food variant: {expectedVariants[i]}");
+                Assert.IsNotNull(database.GetRecipe(expectedVariants[i]), $"Missing generated recipe variant: {expectedVariants[i]}");
+            }
+
+            Assert.GreaterOrEqual(database.Foods.Count, 180, "Expected procedural generation to significantly expand food count.");
 
             Object.DestroyImmediate(go);
         }
