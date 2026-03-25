@@ -381,6 +381,22 @@ namespace Survivebest.Catalog
             AddIfMissing(CreateIngredient("Donut", IngredientGroup.Dessert, IngredientCategory.PreparedFoods, new List<string> { "dessert", "sweet", "bakery" }, spoilHours: 72f, fat: 15f, carbs: 51f));
             AddIfMissing(CreateIngredient("Cookie", IngredientGroup.Dessert, IngredientCategory.PreparedFoods, new List<string> { "dessert", "sweet", "snack" }, spoilHours: 120f, fat: 14f, carbs: 64f));
             AddIfMissing(CreateIngredient("Ice cream", IngredientGroup.Dessert, IngredientCategory.FrozenFoods, new List<string> { "dessert", "frozen", "sweet" }, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, fat: 11f, carbs: 24f));
+            AddIfMissing(CreateIngredient("Ketchup", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "savory", "tomato" }, isPerishable: false, spoilHours: 1440f, carbs: 26f));
+            AddIfMissing(CreateIngredient("Mustard", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "savory", "tangy" }, isPerishable: false, spoilHours: 1440f, carbs: 6f));
+            AddIfMissing(CreateIngredient("Mayonnaise", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "creamy", "sandwich" }, spoilHours: 720f, fat: 75f, carbs: 1f));
+            AddIfMissing(CreateIngredient("Ranch dressing", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "creamy", "salad" }, spoilHours: 720f, fat: 45f, carbs: 9f));
+            AddIfMissing(CreateIngredient("Hot sauce", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "spicy", "sauce" }, isPerishable: false, spoilHours: 1440f, carbs: 2f));
+            AddIfMissing(CreateIngredient("BBQ sauce", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "smoky", "sweet" }, isPerishable: false, spoilHours: 1440f, carbs: 35f));
+            AddIfMissing(CreateIngredient("Pickle", IngredientGroup.Vegetable, IngredientCategory.PreparedFoods, new List<string> { "pickle", "acidic", "sandwich" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 1440f, carbs: 4f, hydration: 92f));
+            AddIfMissing(CreateIngredient("Relish", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "condiment", "pickle", "sweet" }, isPerishable: false, spoilHours: 1440f, carbs: 18f));
+            AddIfMissing(CreateIngredient("Tortilla chips", IngredientGroup.Snack, IngredientCategory.Snacks, new List<string> { "snack", "chips", "mexican" }, isPerishable: false, spoilHours: 1440f, fat: 22f, carbs: 63f));
+            AddIfMissing(CreateIngredient("Pretzel", IngredientGroup.Snack, IngredientCategory.Snacks, new List<string> { "snack", "salty", "baked" }, isPerishable: false, spoilHours: 720f, carbs: 80f));
+            AddIfMissing(CreateIngredient("Cracker", IngredientGroup.Snack, IngredientCategory.Snacks, new List<string> { "snack", "crunchy", "pantry" }, isPerishable: false, spoilHours: 1440f, carbs: 71f));
+            AddIfMissing(CreateIngredient("Peanut butter", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "spread", "nuts", "sandwich" }, isPerishable: false, spoilHours: 2400f, protein: 25f, fat: 50f, carbs: 20f));
+            AddIfMissing(CreateIngredient("Jam", IngredientGroup.Pantry, IngredientCategory.Condiments, new List<string> { "spread", "sweet", "fruit" }, isPerishable: false, spoilHours: 1440f, carbs: 65f));
+            AddIfMissing(CreateIngredient("Cream cheese", IngredientGroup.Dairy, IngredientCategory.Dairy, new List<string> { "dairy", "spread", "creamy" }, spoilHours: 336f, protein: 6f, fat: 34f, carbs: 4f));
+            AddIfMissing(CreateIngredient("Mozzarella", IngredientGroup.Dairy, IngredientCategory.Dairy, new List<string> { "dairy", "cheese", "melty" }, spoilHours: 336f, protein: 22f, fat: 22f, carbs: 3f));
+            AddIfMissing(CreateIngredient("Parmesan", IngredientGroup.Dairy, IngredientCategory.Dairy, new List<string> { "dairy", "cheese", "savory" }, isPerishable: false, spoilHours: 720f, protein: 35f, fat: 25f, carbs: 3f));
 
             // Liquor coverage for realistic store/restaurants systems
             AddIfMissing(CreateIngredient("Beer", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "drink", "bar" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 4320f, carbs: 4f, hydration: 82f));

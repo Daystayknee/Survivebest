@@ -285,7 +285,17 @@ namespace Survivebest.Tests.EditMode
                 "Cookie Ice Cream Sandwich",
                 "White Wine Glass",
                 "Tequila Soda",
-                "Gin Berry Cooler"
+                "Gin Berry Cooler",
+                "PB and J Sandwich",
+                "Ham and Cheese Sandwich",
+                "Turkey Club Sandwich",
+                "BLT Sandwich",
+                "Cheeseburger",
+                "Chicken Quesadilla",
+                "Spaghetti Meat Sauce",
+                "Cobb Salad",
+                "Bagel Cream Cheese",
+                "Buffalo Chicken Wrap"
             };
 
             for (int i = 0; i < expectedFoods.Length; i++)
