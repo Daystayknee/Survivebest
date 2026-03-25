@@ -496,6 +496,91 @@ namespace Survivebest.Food
             AddRecipeIfMissing(CreateRecipe("white_wine_glass", "White Wine Glass", new List<string> { "White wine" }, new List<string> { "Chill and pour into a wine glass" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.French, ServingTemperature.Cold, 1f, 1, 0, new List<string> { "fruity", "crisp" }, new List<string> { "alcohol", "wine", "bar" }, 120f, 0f, 0f, 4f, hydration: 6f));
             AddRecipeIfMissing(CreateRecipe("tequila_soda", "Tequila Soda", new List<string> { "Tequila", "Sparkling water", "Lime", "Ice cubes" }, new List<string> { "Combine tequila and sparkling water", "Squeeze lime and serve over ice" }, CookingMethod.Assemble, KitchenEquipment.Toaster, CuisineType.Mexican, ServingTemperature.Cold, 2f, 1, 0, new List<string> { "citrus", "clean" }, new List<string> { "alcohol", "cocktail" }, 110f, 0f, 0f, 2f, hydration: 8f));
             AddRecipeIfMissing(CreateRecipe("gin_berry_cooler", "Gin Berry Cooler", new List<string> { "Gin", "Frozen blueberry", "Sparkling water", "Crushed ice" }, new List<string> { "Muddle berries lightly", "Add gin, sparkling water, and crushed ice", "Stir and serve" }, CookingMethod.Mix, KitchenEquipment.Toaster, CuisineType.American, ServingTemperature.Cold, 4f, 3, 0, new List<string> { "berry", "botanical" }, new List<string> { "alcohol", "cocktail", "berry" }, 150f, 0f, 0f, 11f, hydration: 8f));
+
+            GenerateProceduralVariantCoverage();
+        }
+
+        private void GenerateProceduralVariantCoverage()
+        {
+            string[] proteins = { "Chicken", "Beef", "Tofu", "Salmon", "Chickpeas" };
+            string[] proteinLabels = { "Chicken", "Beef", "Tofu", "Salmon", "Chickpea" };
+            string[] bases = { "Rice", "Noodles", "Pasta" };
+            string[] styles = { "Garlic Herb", "Smoky", "Spicy", "Lemon Pepper", "Ginger Soy" };
+
+            for (int i = 0; i < proteins.Length; i++)
+            {
+                for (int j = 0; j < bases.Length; j++)
+                {
+                    for (int k = 0; k < styles.Length; k++)
+                    {
+                        bool vegan = proteins[i] == "Tofu" || proteins[i] == "Chickpeas";
+                        string name = $"{styles[k]} {proteinLabels[i]} {bases[j]} Bowl";
+                        string id = NormalizeId(name);
+                        List<string> ingredients = new List<string> { proteins[i], bases[j], "Garlic", "Sea salt" };
+                        List<string> tags = new List<string> { "variant", "bowl", vegan ? "vegan" : "protein" };
+
+                        switch (styles[k])
+                        {
+                            case "Smoky":
+                                ingredients.Add("Paprika");
+                                break;
+                            case "Spicy":
+                                ingredients.Add("Chili powder");
+                                break;
+                            case "Lemon Pepper":
+                                ingredients.Add("Lemon");
+                                ingredients.Add("Black Pepper");
+                                break;
+                            case "Ginger Soy":
+                                ingredients.Add("Ginger");
+                                ingredients.Add("Soy Sauce");
+                                break;
+                            default:
+                                ingredients.Add("Olive oil");
+                                break;
+                        }
+
+                        AddFoodIfMissing(CreateFood(
+                            name,
+                            FoodCategory.HomeCooked,
+                            vegan ? CuisineType.Mediterranean : CuisineType.American,
+                            CookingMethod.Boil,
+                            ServingTemperature.Hot,
+                            hungerRestore: 38f,
+                            energyDelta: 5f,
+                            moodDelta: 4f,
+                            vitalityDelta: 4f,
+                            comfortValue: 50f,
+                            tags: tags,
+                            calories: 520f,
+                            protein: vegan ? 18f : 28f,
+                            fat: 12f,
+                            carbs: 62f,
+                            vitamins: 8f));
+
+                        AddRecipeIfMissing(CreateRecipe(
+                            id,
+                            name,
+                            ingredients,
+                            new List<string> { "Prep all ingredients", "Cook base until tender", "Cook protein with seasoning", "Combine and serve hot" },
+                            CookingMethod.Boil,
+                            KitchenEquipment.Stove,
+                            vegan ? CuisineType.Mediterranean : CuisineType.American,
+                            ServingTemperature.Hot,
+                            difficulty: 14f,
+                            prepMinutes: 8,
+                            cookMinutes: 16,
+                            tasteProfile: new List<string> { "savory", "balanced" },
+                            tags: tags,
+                            calories: 520f,
+                            protein: vegan ? 18f : 28f,
+                            fat: 12f,
+                            carbs: 62f,
+                            vitamins: 8f,
+                            salt: 3f));
+                    }
+                }
+            }
         }
 
         private void AddFoodIfMissing(FoodItem item)

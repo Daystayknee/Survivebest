@@ -298,6 +298,35 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void FoodDatabase_Awake_GeneratesProceduralVariantBowls_AcrossAllTypes()
+        {
+            GameObject go = new GameObject("FoodVariantGeneration");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            string[] expectedVariants =
+            {
+                "Garlic Herb Chicken Rice Bowl",
+                "Smoky Beef Noodles Bowl",
+                "Spicy Tofu Pasta Bowl",
+                "Lemon Pepper Salmon Rice Bowl",
+                "Ginger Soy Chickpea Noodles Bowl"
+            };
+
+            for (int i = 0; i < expectedVariants.Length; i++)
+            {
+                Assert.IsNotNull(database.GetFood(expectedVariants[i]), $"Missing generated food variant: {expectedVariants[i]}");
+                Assert.IsNotNull(database.GetRecipe(expectedVariants[i]), $"Missing generated recipe variant: {expectedVariants[i]}");
+            }
+
+            Assert.GreaterOrEqual(database.Foods.Count, 180, "Expected procedural generation to significantly expand food count.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void DrinkDatabase_Awake_AddsExpandedDrinkCoverage()
         {
             GameObject go = new GameObject("ExpandedDrinkDb");
