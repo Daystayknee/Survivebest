@@ -118,6 +118,27 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void IngredientCatalog_Awake_AddsLiquidFrozenAlcoholAndDrugCoverage()
+        {
+            GameObject go = new GameObject("IngredientCatalogRealismCoverage");
+            IngredientCatalog catalog = go.AddComponent<IngredientCatalog>();
+
+            MethodInfo awake = typeof(IngredientCatalog).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(catalog, null);
+
+            Assert.IsNotNull(catalog.GetIngredient("Ice cubes"));
+            Assert.IsNotNull(catalog.GetIngredient("Frozen pizza"));
+            Assert.IsNotNull(catalog.GetIngredient("Vodka"));
+            IngredientItem drug = catalog.GetIngredient("Cannabis flower");
+            Assert.IsNotNull(drug);
+            Assert.IsFalse(drug.IsEdible);
+            Assert.IsFalse(drug.IsSafeRaw);
+            Assert.IsFalse(drug.IsSafeCooked);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
         public void RecipeSystem_DiscoverRecipeFromIngredients_AddsRecipe()
         {
             GameObject go = new GameObject("RecipeSystem");
@@ -211,6 +232,49 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(sushi.CanEatRaw);
             Assert.IsFalse(chili.CanEatRaw);
             Assert.IsFalse(string.IsNullOrWhiteSpace(sushiRecipe.SpriteId));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void FoodDatabase_Awake_AddsRealismExpansionRecipesForWaterFrozenAndLiquor()
+        {
+            GameObject go = new GameObject("FoodRealismExpansion");
+            FoodDatabase database = go.AddComponent<FoodDatabase>();
+
+            MethodInfo awake = typeof(FoodDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(database, null);
+
+            string[] expectedFoods =
+            {
+                "Ice Water",
+                "Sparkling Water",
+                "Crushed Ice Slush",
+                "Frozen Berry Smoothie",
+                "Frozen Tropical Smoothie",
+                "Frozen Fruit Bowl",
+                "Frozen Veggie Stir Fry",
+                "Frozen Pizza Bake",
+                "Frozen Burrito Plate",
+                "Frozen Meal Tray",
+                "Iced Coffee",
+                "Iced Tea",
+                "Herbal Tea",
+                "Sports Hydration Mix",
+                "Beer Flight",
+                "Red Wine Glass",
+                "Whiskey on Ice",
+                "Vodka Soda",
+                "Gin and Tonic",
+                "Rum and Cola",
+                "Margarita"
+            };
+
+            for (int i = 0; i < expectedFoods.Length; i++)
+            {
+                Assert.IsNotNull(database.GetFood(expectedFoods[i]), $"Missing realism food: {expectedFoods[i]}");
+                Assert.IsNotNull(database.GetRecipe(expectedFoods[i]), $"Missing realism recipe: {expectedFoods[i]}");
+            }
 
             Object.DestroyImmediate(go);
         }
