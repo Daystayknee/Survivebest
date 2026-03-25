@@ -71,11 +71,16 @@ namespace Survivebest.Catalog
     {
         public string Id;
         public string Name;
+        public string SpriteId;
+        public Sprite IconSprite;
         public IngredientGroup Group;
         public IngredientCategory Category;
         public IngredientLifecycleState LifecycleState;
         public IngredientPurpose Purpose;
         public List<string> Tags = new();
+        public bool IsEdible = true;
+        public bool IsSafeRaw = false;
+        public bool IsSafeCooked = true;
         public bool IsPerishable = true;
         [Min(1f)] public float SpoilTimeHours = 72f;
         [Range(0f, 3000f)] public float Calories = 40f;
@@ -98,8 +103,8 @@ namespace Survivebest.Catalog
             CreateIngredient("Duck", IngredientGroup.Meat, IngredientCategory.Meats, new List<string> { "protein", "savory", "rich" }, calories: 337f, protein: 19f, fat: 28f, spoilHours: 72f),
             CreateIngredient("Bacon", IngredientGroup.Meat, IngredientCategory.Meats, new List<string> { "protein", "savory", "smoky" }, isPerishable: false, spoilHours: 240f, calories: 541f, protein: 37f, fat: 42f),
             CreateIngredient("Sausage", IngredientGroup.Meat, IngredientCategory.Meats, new List<string> { "protein", "savory", "spiced" }, spoilHours: 96f, calories: 301f, protein: 14f, fat: 27f),
-            CreateIngredient("Salmon", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "omega3" }, calories: 208f, protein: 20f, fat: 13f, spoilHours: 60f),
-            CreateIngredient("Tuna", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "lean" }, calories: 132f, protein: 28f, fat: 1f, spoilHours: 60f),
+            CreateIngredient("Salmon", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "omega3", "sushi-safe" }, calories: 208f, protein: 20f, fat: 13f, spoilHours: 60f),
+            CreateIngredient("Tuna", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "lean", "sushi-safe" }, calories: 132f, protein: 28f, fat: 1f, spoilHours: 60f),
             CreateIngredient("Cod", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "lean" }, calories: 82f, protein: 18f, fat: 1f, spoilHours: 60f),
             CreateIngredient("Shrimp", IngredientGroup.Meat, IngredientCategory.Seafood, new List<string> { "protein", "seafood", "quick-cook" }, calories: 99f, protein: 24f, fat: 1f, spoilHours: 48f),
             CreateIngredient("Egg", IngredientGroup.Meat, IngredientCategory.Dairy, new List<string> { "protein", "breakfast", "binder" }, calories: 155f, protein: 13f, fat: 11f, carbs: 1f, spoilHours: 336f),
@@ -180,7 +185,12 @@ namespace Survivebest.Catalog
 
                 if (string.IsNullOrWhiteSpace(item.Id))
                 {
-                    item.Id = item.Name?.Trim().ToLowerInvariant().Replace(" ", "_");
+                    item.Id = NormalizeId(item.Name);
+                }
+
+                if (string.IsNullOrWhiteSpace(item.SpriteId))
+                {
+                    item.SpriteId = item.Id;
                 }
 
                 if (item.Tags == null || item.Tags.Count == 0)
@@ -197,6 +207,8 @@ namespace Survivebest.Catalog
                 {
                     item.LifecycleState = InferLifecycleState(item);
                 }
+
+                ApplyRawCookedDefaults(item);
             }
 
             EnsureRealismEssentials();
@@ -244,6 +256,7 @@ namespace Survivebest.Catalog
             AddIfMissing(CreateIngredient("Peanut", IngredientGroup.NutSeed, IngredientCategory.Nuts, new List<string> { "protein", "fat", "crunchy" }, isPerishable: false, spoilHours: 4320f, calories: 567f, protein: 26f, fat: 49f, carbs: 16f));
             AddIfMissing(CreateIngredient("Almond", IngredientGroup.NutSeed, IngredientCategory.Nuts, new List<string> { "protein", "fat", "crunchy" }, isPerishable: false, spoilHours: 4320f, calories: 579f, protein: 21f, fat: 50f, carbs: 22f));
             EnsureMegaGroceryCoverage();
+            EnsureLiquidFrozenAndSubstanceCoverage();
         }
 
         private void EnsureMegaGroceryCoverage()
@@ -300,6 +313,103 @@ namespace Survivebest.Catalog
             AddIfMissing(CreateIngredient("Panko", IngredientGroup.Grain, IngredientCategory.BakingIngredients, new List<string> { "breadcrumbs", "crispy", "coating" }, isPerishable: false, spoilHours: 4320f, calories: 395f, protein: 13f, carbs: 73f));
         }
 
+        private void EnsureLiquidFrozenAndSubstanceCoverage()
+        {
+            // Water states / frozen states / beverage bases
+            AddIfMissing(CreateIngredient("Ice cubes", IngredientGroup.Pantry, IngredientCategory.Liquids, new List<string> { "water-state", "frozen", "cooling" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 100f));
+            AddIfMissing(CreateIngredient("Crushed ice", IngredientGroup.Pantry, IngredientCategory.Liquids, new List<string> { "water-state", "frozen", "slush" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 100f));
+            AddIfMissing(CreateIngredient("Sparkling water", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "water", "carbonated" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 4320f, hydration: 100f));
+            AddIfMissing(CreateIngredient("Mineral water", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "water", "mineral" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 4320f, hydration: 100f));
+            AddIfMissing(CreateIngredient("Coconut water", IngredientGroup.Fruit, IngredientCategory.Beverages, new List<string> { "drink", "hydration", "electrolytes" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, carbs: 5f, hydration: 94f));
+            AddIfMissing(CreateIngredient("Tonic water", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "mixer", "carbonated" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 720f, carbs: 9f, hydration: 90f));
+            AddIfMissing(CreateIngredient("Cola", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "sweet", "carbonated" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 720f, carbs: 11f, hydration: 86f));
+            AddIfMissing(CreateIngredient("Sports drink", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "electrolytes", "hydration" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 720f, carbs: 6f, hydration: 92f));
+            AddIfMissing(CreateIngredient("Energy drink", IngredientGroup.Pantry, IngredientCategory.Beverages, new List<string> { "drink", "caffeine", "sweet" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 720f, carbs: 12f, hydration: 84f));
+
+            // Frozen foods and smoothie-ready ingredients
+            AddIfMissing(CreateIngredient("Frozen blueberry", IngredientGroup.Fruit, IngredientCategory.FrozenFoods, new List<string> { "frozen", "berry", "smoothie" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, carbs: 14f, hydration: 70f));
+            AddIfMissing(CreateIngredient("Frozen strawberry", IngredientGroup.Fruit, IngredientCategory.FrozenFoods, new List<string> { "frozen", "berry", "smoothie" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, carbs: 8f, hydration: 72f));
+            AddIfMissing(CreateIngredient("Frozen mango", IngredientGroup.Fruit, IngredientCategory.FrozenFoods, new List<string> { "frozen", "tropical", "smoothie" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, carbs: 15f, hydration: 70f));
+            AddIfMissing(CreateIngredient("Frozen mixed vegetables", IngredientGroup.Vegetable, IngredientCategory.FrozenFoods, new List<string> { "frozen", "vegetable", "stir-fry" }, purpose: IngredientPurpose.FreshProduce, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, protein: 4f, carbs: 12f, hydration: 65f));
+            AddIfMissing(CreateIngredient("Frozen fries", IngredientGroup.Snack, IngredientCategory.FrozenFoods, new List<string> { "frozen", "fast-food", "potato" }, purpose: IngredientPurpose.StapleCarb, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, fat: 14f, carbs: 41f));
+            AddIfMissing(CreateIngredient("Frozen pizza", IngredientGroup.Pantry, IngredientCategory.FrozenFoods, new List<string> { "frozen", "meal", "pizza" }, purpose: IngredientPurpose.StapleCarb, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, protein: 14f, fat: 12f, carbs: 38f));
+            AddIfMissing(CreateIngredient("Frozen burrito", IngredientGroup.Pantry, IngredientCategory.FrozenFoods, new List<string> { "frozen", "meal", "handheld" }, purpose: IngredientPurpose.StapleCarb, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, protein: 12f, fat: 10f, carbs: 35f));
+            AddIfMissing(CreateIngredient("Frozen meal tray", IngredientGroup.Pantry, IngredientCategory.FrozenFoods, new List<string> { "frozen", "meal", "microwave" }, purpose: IngredientPurpose.StapleCarb, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, protein: 16f, fat: 14f, carbs: 42f));
+            AddIfMissing(CreateIngredient("Frozen waffle", IngredientGroup.Grain, IngredientCategory.FrozenFoods, new List<string> { "frozen", "breakfast", "sweet" }, purpose: IngredientPurpose.StapleCarb, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, protein: 6f, carbs: 36f));
+
+            // Extra "all types" breadth for fruits/vegetables/legumes/nuts/spices/liquids/store coverage.
+            AddIfMissing(CreateIngredient("Raspberry", IngredientGroup.Fruit, IngredientCategory.Produce, new List<string> { "berry", "fresh", "sweet" }, carbs: 12f, hydration: 86f, spoilHours: 96f));
+            AddIfMissing(CreateIngredient("Blackberry", IngredientGroup.Fruit, IngredientCategory.Produce, new List<string> { "berry", "fresh", "sweet" }, carbs: 10f, hydration: 88f, spoilHours: 96f));
+            AddIfMissing(CreateIngredient("Kiwi", IngredientGroup.Fruit, IngredientCategory.Produce, new List<string> { "fruit", "tart", "fresh" }, carbs: 15f, hydration: 83f, spoilHours: 120f));
+            AddIfMissing(CreateIngredient("Pomegranate", IngredientGroup.Fruit, IngredientCategory.Produce, new List<string> { "fruit", "tart", "seeded" }, carbs: 19f, hydration: 78f, spoilHours: 240f));
+            AddIfMissing(CreateIngredient("Cherry", IngredientGroup.Fruit, IngredientCategory.Produce, new List<string> { "fruit", "sweet", "snack" }, carbs: 16f, hydration: 82f, spoilHours: 120f));
+            AddIfMissing(CreateIngredient("Cranberry", IngredientGroup.Fruit, IngredientCategory.Produce, new List<string> { "fruit", "tart", "juice" }, carbs: 12f, hydration: 87f, spoilHours: 144f));
+
+            AddIfMissing(CreateIngredient("Beet", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "root", "earthy", "vegetable" }, carbs: 10f, spoilHours: 336f));
+            AddIfMissing(CreateIngredient("Radish", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "root", "peppery", "vegetable" }, carbs: 3f, hydration: 95f, spoilHours: 120f));
+            AddIfMissing(CreateIngredient("Brussels sprouts", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "cruciferous", "vegetable", "fiber" }, protein: 3f, carbs: 9f, spoilHours: 120f));
+            AddIfMissing(CreateIngredient("Eggplant", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "vegetable", "soft", "versatile" }, carbs: 6f, hydration: 92f, spoilHours: 120f));
+            AddIfMissing(CreateIngredient("Artichoke", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "vegetable", "fiber", "mediterranean" }, carbs: 11f, spoilHours: 144f));
+            AddIfMissing(CreateIngredient("Pumpkin", IngredientGroup.Vegetable, IngredientCategory.Produce, new List<string> { "vegetable", "squash", "seasonal" }, carbs: 7f, spoilHours: 336f));
+
+            AddIfMissing(CreateIngredient("Navy beans", IngredientGroup.Legume, IngredientCategory.Legumes, new List<string> { "legume", "protein", "fiber" }, isPerishable: false, spoilHours: 4320f, protein: 22f, carbs: 61f));
+            AddIfMissing(CreateIngredient("Cannellini beans", IngredientGroup.Legume, IngredientCategory.Legumes, new List<string> { "legume", "protein", "fiber" }, isPerishable: false, spoilHours: 4320f, protein: 23f, carbs: 60f));
+            AddIfMissing(CreateIngredient("Split peas", IngredientGroup.Legume, IngredientCategory.Legumes, new List<string> { "legume", "protein", "soup" }, isPerishable: false, spoilHours: 4320f, protein: 24f, carbs: 60f));
+            AddIfMissing(CreateIngredient("Soy milk", IngredientGroup.Legume, IngredientCategory.Beverages, new List<string> { "milk-alt", "plant-based", "drink" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, protein: 3f, carbs: 4f, hydration: 90f));
+
+            AddIfMissing(CreateIngredient("Pistachio", IngredientGroup.NutSeed, IngredientCategory.Nuts, new List<string> { "nuts", "crunchy", "protein" }, isPerishable: false, spoilHours: 4320f, protein: 20f, fat: 45f, carbs: 28f));
+            AddIfMissing(CreateIngredient("Pecan", IngredientGroup.NutSeed, IngredientCategory.Nuts, new List<string> { "nuts", "crunchy", "fat" }, isPerishable: false, spoilHours: 4320f, protein: 9f, fat: 72f, carbs: 14f));
+            AddIfMissing(CreateIngredient("Hazelnut", IngredientGroup.NutSeed, IngredientCategory.Nuts, new List<string> { "nuts", "crunchy", "fat" }, isPerishable: false, spoilHours: 4320f, protein: 15f, fat: 61f, carbs: 17f));
+            AddIfMissing(CreateIngredient("Macadamia", IngredientGroup.NutSeed, IngredientCategory.Nuts, new List<string> { "nuts", "rich", "fat" }, isPerishable: false, spoilHours: 4320f, protein: 8f, fat: 76f, carbs: 14f));
+
+            AddIfMissing(CreateIngredient("Coriander", IngredientGroup.Spice, IngredientCategory.Spices, new List<string> { "spice", "citrus", "seasoning" }, isPerishable: false, spoilHours: 8760f));
+            AddIfMissing(CreateIngredient("Nutmeg", IngredientGroup.Spice, IngredientCategory.Spices, new List<string> { "spice", "warm", "baking" }, isPerishable: false, spoilHours: 8760f));
+            AddIfMissing(CreateIngredient("Clove", IngredientGroup.Spice, IngredientCategory.Spices, new List<string> { "spice", "warm", "aromatic" }, isPerishable: false, spoilHours: 8760f));
+            AddIfMissing(CreateIngredient("Cardamom", IngredientGroup.Spice, IngredientCategory.Spices, new List<string> { "spice", "aromatic", "sweet" }, isPerishable: false, spoilHours: 8760f));
+            AddIfMissing(CreateIngredient("Thyme", IngredientGroup.Spice, IngredientCategory.Herbs, new List<string> { "herb", "savory", "woodsy" }, spoilHours: 168f));
+            AddIfMissing(CreateIngredient("Mint", IngredientGroup.Spice, IngredientCategory.Herbs, new List<string> { "herb", "fresh", "cooling" }, spoilHours: 96f));
+
+            AddIfMissing(CreateIngredient("Oat milk", IngredientGroup.Grain, IngredientCategory.Beverages, new List<string> { "milk-alt", "plant-based", "drink" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, carbs: 7f, hydration: 90f));
+            AddIfMissing(CreateIngredient("Almond milk", IngredientGroup.NutSeed, IngredientCategory.Beverages, new List<string> { "milk-alt", "plant-based", "drink" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, fat: 2f, carbs: 1f, hydration: 90f));
+            AddIfMissing(CreateIngredient("Rice milk", IngredientGroup.Grain, IngredientCategory.Beverages, new List<string> { "milk-alt", "plant-based", "drink" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, carbs: 10f, hydration: 90f));
+            AddIfMissing(CreateIngredient("Cashew milk", IngredientGroup.NutSeed, IngredientCategory.Beverages, new List<string> { "milk-alt", "plant-based", "drink" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, fat: 3f, carbs: 2f, hydration: 90f));
+            AddIfMissing(CreateIngredient("Pea milk", IngredientGroup.Legume, IngredientCategory.Beverages, new List<string> { "milk-alt", "plant-based", "drink" }, purpose: IngredientPurpose.LiquidBase, spoilHours: 240f, protein: 8f, carbs: 2f, hydration: 90f));
+
+            AddIfMissing(CreateIngredient("Jerky", IngredientGroup.Meat, IngredientCategory.Snacks, new List<string> { "snack", "protein", "gas-station" }, isPerishable: false, spoilHours: 1440f, protein: 33f, fat: 3f, carbs: 11f));
+            AddIfMissing(CreateIngredient("Protein bar", IngredientGroup.Snack, IngredientCategory.Snacks, new List<string> { "snack", "protein", "portable" }, isPerishable: false, spoilHours: 1440f, protein: 20f, fat: 8f, carbs: 24f));
+            AddIfMissing(CreateIngredient("Trail mix", IngredientGroup.Snack, IngredientCategory.Snacks, new List<string> { "snack", "nuts", "portable" }, isPerishable: false, spoilHours: 1440f, protein: 9f, fat: 16f, carbs: 30f));
+            AddIfMissing(CreateIngredient("Donut", IngredientGroup.Dessert, IngredientCategory.PreparedFoods, new List<string> { "dessert", "sweet", "bakery" }, spoilHours: 72f, fat: 15f, carbs: 51f));
+            AddIfMissing(CreateIngredient("Cookie", IngredientGroup.Dessert, IngredientCategory.PreparedFoods, new List<string> { "dessert", "sweet", "snack" }, spoilHours: 120f, fat: 14f, carbs: 64f));
+            AddIfMissing(CreateIngredient("Ice cream", IngredientGroup.Dessert, IngredientCategory.FrozenFoods, new List<string> { "dessert", "frozen", "sweet" }, lifecycleState: IngredientLifecycleState.Preserved, spoilHours: 4320f, fat: 11f, carbs: 24f));
+
+            // Liquor coverage for realistic store/restaurants systems
+            AddIfMissing(CreateIngredient("Beer", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "drink", "bar" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 4320f, carbs: 4f, hydration: 82f));
+            AddIfMissing(CreateIngredient("Red wine", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "wine", "bar" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 4320f, carbs: 3f, hydration: 84f));
+            AddIfMissing(CreateIngredient("White wine", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "wine", "bar" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 4320f, carbs: 3f, hydration: 84f));
+            AddIfMissing(CreateIngredient("Vodka", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "spirit", "bar" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 70f));
+            AddIfMissing(CreateIngredient("Whiskey", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "spirit", "barrel" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 68f));
+            AddIfMissing(CreateIngredient("Rum", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "spirit", "sugarcane" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 69f));
+            AddIfMissing(CreateIngredient("Tequila", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "spirit", "agave" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 69f));
+            AddIfMissing(CreateIngredient("Gin", IngredientGroup.Pantry, IngredientCategory.Alcohol, new List<string> { "alcohol", "spirit", "botanical" }, purpose: IngredientPurpose.LiquidBase, isPerishable: false, spoilHours: 8760f, hydration: 69f));
+
+            // Drug / substance items intentionally marked as non-edible for realism systems.
+            AddIfMissing(CreateIngredient("Cannabis flower", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "cannabis" }, isPerishable: false, spoilHours: 4320f, isEdible: false));
+            AddIfMissing(CreateIngredient("Hash oil", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "cannabis" }, isPerishable: false, spoilHours: 4320f, isEdible: false));
+            AddIfMissing(CreateIngredient("Psilocybin mushroom", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "psychedelic" }, spoilHours: 336f, isEdible: false));
+            AddIfMissing(CreateIngredient("LSD blotter", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "psychedelic" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Cocaine powder", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "stimulant" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Meth crystal", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "stimulant" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Heroin powder", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "opioid" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Fentanyl patch", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "opioid" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Prescription opioid", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "opioid" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Benzodiazepine tablet", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "depressant" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Stimulant tablet", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "stimulant" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Sleep aid tablet", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "sedative" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+            AddIfMissing(CreateIngredient("Tobacco leaf", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "nicotine" }, isPerishable: false, spoilHours: 4320f, isEdible: false));
+            AddIfMissing(CreateIngredient("Nicotine vape juice", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "drug", "nicotine" }, isPerishable: false, spoilHours: 4320f, isEdible: false));
+            AddIfMissing(CreateIngredient("Caffeine tablet", IngredientGroup.Pantry, IngredientCategory.PreparedFoods, new List<string> { "substance", "stimulant", "legal" }, isPerishable: false, spoilHours: 8760f, isEdible: false));
+        }
+
         private void AddIfMissing(IngredientItem item)
         {
             if (item == null || string.IsNullOrWhiteSpace(item.Name))
@@ -316,11 +426,16 @@ namespace Survivebest.Catalog
             }
 
             item.Id = item.Name.Trim().ToLowerInvariant().Replace(" ", "_");
+            if (string.IsNullOrWhiteSpace(item.SpriteId))
+            {
+                item.SpriteId = item.Id;
+            }
             if (item.Tags == null || item.Tags.Count == 0)
             {
                 item.Tags = BuildDefaultTags(item.Group);
             }
 
+            ApplyRawCookedDefaults(item);
             ingredients.Add(item);
         }
 
@@ -338,7 +453,8 @@ namespace Survivebest.Catalog
             float fat = 0f,
             float carbs = 0f,
             float hydration = 0f,
-            bool vitamins = false)
+            bool vitamins = false,
+            bool isEdible = true)
         {
             return new IngredientItem
             {
@@ -348,6 +464,7 @@ namespace Survivebest.Catalog
                 Purpose = purpose,
                 LifecycleState = lifecycleState,
                 Tags = tags,
+                IsEdible = isEdible,
                 IsPerishable = isPerishable,
                 SpoilTimeHours = spoilHours,
                 Calories = calories,
@@ -356,6 +473,41 @@ namespace Survivebest.Catalog
                 Carbs = carbs,
                 Hydration = vitamins ? Mathf.Max(hydration, 5f) : hydration
             };
+        }
+
+        private static void ApplyRawCookedDefaults(IngredientItem item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            if (!item.IsEdible)
+            {
+                item.IsSafeRaw = false;
+                item.IsSafeCooked = false;
+                return;
+            }
+
+            if (item.Group == IngredientGroup.Fruit || item.Group == IngredientGroup.Vegetable || item.Group == IngredientGroup.NutSeed)
+            {
+                item.IsSafeRaw = true;
+            }
+
+            if (item.Group == IngredientGroup.Meat && item.Category == IngredientCategory.Seafood)
+            {
+                item.IsSafeRaw = HasAnyTag(item, "sushi-safe", "sashimi-safe");
+            }
+
+            if (item.Group == IngredientGroup.Meat && item.Category != IngredientCategory.Seafood)
+            {
+                item.IsSafeRaw = false;
+            }
+        }
+
+        private static string NormalizeId(string value)
+        {
+            return value?.Trim().ToLowerInvariant().Replace(" ", "_");
         }
 
         private static IngredientPurpose InferPurpose(IngredientItem item)
