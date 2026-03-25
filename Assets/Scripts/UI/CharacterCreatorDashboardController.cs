@@ -236,6 +236,7 @@ namespace Survivebest.UI
         private bool isDraggingPreview;
         private readonly StringBuilder summaryBuilder = new();
         private readonly CharacterCreatorDetailState detailState = new();
+        private string ageAppropriateSafetyNote = "All enabled";
 
         private void OnEnable()
         {
@@ -503,7 +504,7 @@ namespace Survivebest.UI
         public void SetBreastVolumeSlider(float value)
         {
             creatorMode = CreatorGeneticsMode.DnaEdit;
-            float normalized = Mathf.Clamp01(value);
+            float normalized = ClampForAgeSensitiveBodyFeature(value);
             SetGeneticScalar(profile =>
             {
                 Gene chestGene = profile.FindGene("chest_bust_potential");
@@ -522,7 +523,7 @@ namespace Survivebest.UI
         public void SetChestMassSlider(float value)
         {
             creatorMode = CreatorGeneticsMode.DnaEdit;
-            float normalized = Mathf.Clamp01(value);
+            float normalized = ClampForAgeSensitiveBodyFeature(value);
             SetGeneticScalar(profile =>
             {
                 profile.ChestBustPotential = normalized;
@@ -568,7 +569,9 @@ namespace Survivebest.UI
 
         public void SetPimpleIntensity(float value)
         {
-            detailState.Pimples = Mathf.Clamp01(value);
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            float cap = active != null && active.CurrentLifeStage <= LifeStage.Preteen ? 0.35f : 1f;
+            detailState.Pimples = Mathf.Clamp(value, 0f, cap);
             SetGeneValue("acne_tendency", detailState.Pimples);
             if (appearanceManager != null)
             {
@@ -627,7 +630,17 @@ namespace Survivebest.UI
 
         public void SetPiercingSet(int setIndex)
         {
-            detailState.PiercingSet = Mathf.Clamp(setIndex, 0, 11);
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null && active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                detailState.PiercingSet = 0;
+                ageAppropriateSafetyNote = "Piercings limited for child/preteen stages";
+            }
+            else
+            {
+                detailState.PiercingSet = Mathf.Clamp(setIndex, 0, 11);
+            }
+
             PublishUiEvent("PiercingSet", $"Piercing set changed to {detailState.PiercingSet}", detailState.PiercingSet);
             RefreshPreview();
         }
@@ -641,7 +654,17 @@ namespace Survivebest.UI
 
         public void SetHeelsHeight(float value)
         {
-            detailState.HeelsHeight = Mathf.Clamp01(value);
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null && active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                detailState.HeelsHeight = 0f;
+                ageAppropriateSafetyNote = "Heels disabled for child/preteen stages";
+            }
+            else
+            {
+                detailState.HeelsHeight = Mathf.Clamp01(value);
+            }
+
             SetGeneticScalar(profile => profile.BodyGenome.PostureTendency = Mathf.Clamp01(Mathf.Lerp(profile.BodyGenome.PostureTendency, 0.5f + detailState.HeelsHeight * 0.5f, 0.5f)));
         }
 
@@ -683,6 +706,28 @@ namespace Survivebest.UI
             }
 
             PublishUiEvent("GenderCatalogOutfit", $"Outfit catalog {detailState.OutfitGenderCatalog} option {detailState.OutfitCatalogIndex}", detailState.OutfitCatalogIndex);
+            RefreshPreview();
+        }
+
+        public void SetMakeupIntensity(float value)
+        {
+            if (appearanceManager == null || appearanceManager.CurrentProfile == null)
+            {
+                return;
+            }
+
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            float clamped = Mathf.Clamp01(value);
+            if (active != null && active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                clamped = 0f;
+                ageAppropriateSafetyNote = "Makeup disabled for child/preteen stages";
+            }
+
+            Color makeup = appearanceManager.CurrentProfile.MakeupColor;
+            makeup.a = clamped;
+            appearanceManager.CurrentProfile.MakeupColor = makeup;
+            appearanceManager.ApplyAppearance(appearanceManager.CurrentProfile);
             RefreshPreview();
         }
 
@@ -1480,7 +1525,7 @@ namespace Survivebest.UI
                 summaryBuilder.Append("No explicit talents");
             }
 
-            summaryBuilder.Append($" | freckles {detailState.Freckles:0.00}, moles {detailState.Moles:0.00}, vitiligo {detailState.Vitiligo:0.00}, birthmarks {detailState.Birthmarks:0.00}, pimples {detailState.Pimples:0.00}, lashes {detailState.EyelashLength:0.00}, browType {detailState.EyebrowType}, hooded {detailState.HoodedEyelids}, monolid {detailState.MonolidEyelids}, piercings {detailState.PiercingSet}, jewelry {detailState.JewelrySet}, heels {detailState.HeelsHeight:0.00}");
+            summaryBuilder.Append($" | freckles {detailState.Freckles:0.00}, moles {detailState.Moles:0.00}, vitiligo {detailState.Vitiligo:0.00}, birthmarks {detailState.Birthmarks:0.00}, pimples {detailState.Pimples:0.00}, lashes {detailState.EyelashLength:0.00}, browType {detailState.EyebrowType}, hooded {detailState.HoodedEyelids}, monolid {detailState.MonolidEyelids}, piercings {detailState.PiercingSet}, jewelry {detailState.JewelrySet}, heels {detailState.HeelsHeight:0.00}, safety {ageAppropriateSafetyNote}");
 
             if (personalityMatrixSystem != null)
             {
@@ -1560,6 +1605,31 @@ namespace Survivebest.UI
                 1 => masculine,
                 _ => androgynous
             };
+        }
+
+        private float ClampForAgeSensitiveBodyFeature(float value)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            float normalized = Mathf.Clamp01(value);
+            if (active == null)
+            {
+                return normalized;
+            }
+
+            if (active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                ageAppropriateSafetyNote = "Chest/breast growth blocked for child/preteen stages";
+                return 0f;
+            }
+
+            if (active.CurrentLifeStage == LifeStage.Teen)
+            {
+                ageAppropriateSafetyNote = "Teen chest/breast growth range constrained";
+                return Mathf.Clamp01(normalized * 0.45f);
+            }
+
+            ageAppropriateSafetyNote = "All enabled";
+            return normalized;
         }
 
 
