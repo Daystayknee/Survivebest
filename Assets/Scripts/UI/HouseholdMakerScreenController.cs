@@ -234,12 +234,16 @@ namespace Survivebest.UI
         [SerializeField, Min(1)] private int adoptionPoolSize = 36;
         [SerializeField] private List<string> petCreatorSpeciesCatalog = new()
         {
-            "Dog","Cat","Rabbit","Bird","Hamster","Guinea Pig","Ferret","Turtle","Lizard","Mini Pig","Goat","Horse"
+            "Dog","Cat","Rabbit","Bird","Hamster","Guinea Pig","Ferret","Turtle","Lizard","Mini Pig","Goat","Horse",
+            "Parrot","Chinchilla","Gecko","Iguana","Snake","Duck","Chicken","Hedgehog","Rat","Mouse","Axolotl","Pony"
         };
         [SerializeField] private List<string> petCreatorBreedCatalog = new()
         {
             "Mixed Rescue","Labrador","Golden Retriever","Shiba Inu","Corgi","German Shepherd","Maine Coon","Ragdoll","Siamese","Domestic Shorthair",
-            "Holland Lop","Mini Rex","Cockatiel","Parakeet","Syrian Hamster","Abyssinian Guinea Pig","Standard Ferret","Painted Turtle","Leopard Gecko","Miniature Pig"
+            "Holland Lop","Mini Rex","Cockatiel","Parakeet","Syrian Hamster","Abyssinian Guinea Pig","Standard Ferret","Painted Turtle","Leopard Gecko","Miniature Pig",
+            "Border Collie","Australian Shepherd","Dachshund","Pomeranian","Bengal","Sphynx","Persian","Norwegian Forest","Angora Rabbit","Lionhead Rabbit",
+            "African Grey","Macaw","Budgie","Canary","Crested Gecko","Bearded Dragon","Corn Snake","Ball Python","Silkie Chicken","Pekin Duck",
+            "Mini Lop","Rex Rat","Fancy Mouse","African Pygmy Hedgehog","American Pony","Icelandic Horse","Mini Donkey","Cockapoo","Cavapoo","Street Mix"
         };
         [SerializeField] private int petCreatorSpeciesIndex;
         [SerializeField] private int petCreatorBreedIndex;
