@@ -35,6 +35,24 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSentimentalObject()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEverydayCarryItem()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHumanExperienceMoment()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickBodyDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHygieneMaintenanceDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTinyHomeLifeDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFoodEmotionDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickMoneyStressDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEmotionalMicroState()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickRelationshipRealismDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickPresentTenseWorldDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTimePressureDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickIdentityDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickMemoryThroughObjectsDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSurvivalButHumanDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTravelDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickShoppingDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickClothingDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickBedAndSleepDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickWeatherLifeDetail()));
         }
 
         [Test]
@@ -45,7 +63,7 @@ namespace Survivebest.Tests.EditMode
 
             Assert.GreaterOrEqual(total, 220);
             StringAssert.Contains(total.ToString(), summary);
-            StringAssert.Contains("20 activity pools", summary);
+            StringAssert.Contains("41 activity pools", summary);
         }
     }
 }
