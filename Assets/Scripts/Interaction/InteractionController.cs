@@ -6,9 +6,24 @@ using Survivebest.Minigames;
 using Survivebest.Health;
 using Survivebest.Food;
 using Survivebest.UI;
+using Survivebest.Events;
+using System.Collections.Generic;
 
 namespace Survivebest.Interaction
 {
+    [Serializable]
+    public class CinematicInteractionPackage
+    {
+        public string PackageId;
+        public string Label;
+        [TextArea] public string FlavorText;
+        public float MoodDelta = 2f;
+        public float EnergyDelta;
+        public float RelationshipDelta = 4f;
+        public bool SupportsAnimals;
+        public bool SupportsNpc;
+    }
+
     public class InteractionController : MonoBehaviour
     {
         [SerializeField] private Camera gameplayCamera;
@@ -16,6 +31,22 @@ namespace Survivebest.Interaction
         [SerializeField] private FoodDatabase foodDatabase;
         [SerializeField] private DrinkDatabase drinkDatabase;
         [SerializeField] private BuildModeManager buildModeManager;
+        [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private List<CinematicInteractionPackage> characterInteractionPackages = new()
+        {
+            new() { PackageId = "char_cinematic_checkin", Label = "Cinematic Check-In", FlavorText = "Close-up conversation with dynamic reaction shots and memory callbacks.", MoodDelta = 3f, RelationshipDelta = 6f, SupportsNpc = true },
+            new() { PackageId = "char_story_duet", Label = "Story Duet", FlavorText = "Shared flashback montage and branching dialogue beats.", MoodDelta = 2f, RelationshipDelta = 8f, SupportsNpc = true },
+            new() { PackageId = "char_city_walk_talk", Label = "City Walk-and-Talk", FlavorText = "Long-form tracking sequence through active neighborhoods.", MoodDelta = 2f, EnergyDelta = -1f, RelationshipDelta = 5f, SupportsNpc = true },
+            new() { PackageId = "char_ambition_pitch", Label = "Ambition Pitch Session", FlavorText = "One character pitches a life plan while the other pressure-tests it.", MoodDelta = 1f, RelationshipDelta = 4f, SupportsNpc = true },
+            new() { PackageId = "char_conflict_mediation", Label = "Conflict Mediation", FlavorText = "Multi-step conflict resolution with emotional de-escalation.", MoodDelta = 1f, RelationshipDelta = 7f, SupportsNpc = true }
+        };
+        [SerializeField] private List<CinematicInteractionPackage> animalInteractionPackages = new()
+        {
+            new() { PackageId = "pet_training_montage", Label = "Training Montage", FlavorText = "High-production obedience and trust-building sequence.", MoodDelta = 4f, EnergyDelta = -2f, RelationshipDelta = 5f, SupportsAnimals = true },
+            new() { PackageId = "pet_vet_care_loop", Label = "Care Loop", FlavorText = "Focused wellness routine with checkups, grooming, and reward cycles.", MoodDelta = 2f, RelationshipDelta = 4f, SupportsAnimals = true },
+            new() { PackageId = "pet_playtime_setpiece", Label = "Playtime Setpiece", FlavorText = "Toy-chasing setpiece with crowd reactions and ambient score hits.", MoodDelta = 5f, EnergyDelta = -1f, RelationshipDelta = 6f, SupportsAnimals = true },
+            new() { PackageId = "pet_comfort_scene", Label = "Comfort Scene", FlavorText = "Quiet couch sequence that stabilizes stress and mood.", MoodDelta = 3f, RelationshipDelta = 4f, SupportsAnimals = true }
+        };
 
         public event Action<Interactable, CharacterCore> OnInteractableClicked;
         public event Action<CharacterCore, CharacterCore> OnCharacterInteractionRequested;
@@ -94,6 +125,7 @@ namespace Survivebest.Interaction
                     CharacterCore targetCharacter = interactable.GetComponent<CharacterCore>();
                     if (targetCharacter != null)
                     {
+                        ApplyCinematicCharacterInteraction(activeCharacter, targetCharacter);
                         OnCharacterInteractionRequested?.Invoke(activeCharacter, targetCharacter);
                         householdManager.SetActiveCharacter(targetCharacter);
                     }
@@ -194,9 +226,108 @@ namespace Survivebest.Interaction
                     break;
                 case InteractableType.Pet:
                     activeCharacter.transform.position = interactable.transform.position;
-                    needs.ModifyMood(2f);
+                    ApplyCinematicAnimalInteraction(activeCharacter, interactable);
                     break;
             }
+        }
+
+        private void ApplyCinematicCharacterInteraction(CharacterCore actor, CharacterCore target)
+        {
+            if (actor == null || target == null)
+            {
+                return;
+            }
+
+            SocialSystem actorSocial = actor.GetComponent<SocialSystem>();
+            NeedsSystem actorNeeds = actor.GetComponent<NeedsSystem>();
+            bool targetIsNpc = !target.IsPlayerControlled;
+            CinematicInteractionPackage package = PickInteractionPackage(characterInteractionPackages, supportsNpc: targetIsNpc, supportsAnimals: false);
+            if (package == null)
+            {
+                return;
+            }
+
+            actorNeeds?.ModifyMood(package.MoodDelta);
+            actorNeeds?.ModifyEnergy(package.EnergyDelta);
+            actorSocial?.UpdateRelationship(target.CharacterId, Mathf.RoundToInt(package.RelationshipDelta));
+            PublishInteractionEvent(actor, target.CharacterId, package, "character_to_character");
+        }
+
+        private void ApplyCinematicAnimalInteraction(CharacterCore actor, Interactable petInteractable)
+        {
+            if (actor == null || petInteractable == null)
+            {
+                return;
+            }
+
+            NeedsSystem actorNeeds = actor.GetComponent<NeedsSystem>();
+            CinematicInteractionPackage package = PickInteractionPackage(animalInteractionPackages, supportsNpc: false, supportsAnimals: true);
+            if (package == null)
+            {
+                return;
+            }
+
+            actorNeeds?.ModifyMood(package.MoodDelta);
+            actorNeeds?.ModifyEnergy(package.EnergyDelta);
+            householdManager?.InteractWithPet(petInteractable.name, package.RelationshipDelta * 2f, -4f, package.MoodDelta * 6f);
+            PublishInteractionEvent(actor, petInteractable.name, package, "character_to_animal");
+        }
+
+        private static CinematicInteractionPackage PickInteractionPackage(List<CinematicInteractionPackage> packages, bool supportsNpc, bool supportsAnimals)
+        {
+            if (packages == null || packages.Count == 0)
+            {
+                return null;
+            }
+
+            List<CinematicInteractionPackage> filtered = new();
+            for (int i = 0; i < packages.Count; i++)
+            {
+                CinematicInteractionPackage candidate = packages[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                if (supportsAnimals && !candidate.SupportsAnimals)
+                {
+                    continue;
+                }
+
+                if (supportsNpc && !candidate.SupportsNpc)
+                {
+                    continue;
+                }
+
+                filtered.Add(candidate);
+            }
+
+            if (filtered.Count == 0)
+            {
+                return packages[UnityEngine.Random.Range(0, packages.Count)];
+            }
+
+            return filtered[UnityEngine.Random.Range(0, filtered.Count)];
+        }
+
+        private void PublishInteractionEvent(CharacterCore actor, string targetId, CinematicInteractionPackage package, string key)
+        {
+            if (actor == null || package == null)
+            {
+                return;
+            }
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityStarted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(InteractionController),
+                SourceCharacterId = actor.CharacterId,
+                TargetCharacterId = targetId,
+                ChangeKey = key,
+                Reason = $"{package.Label}: {package.FlavorText}",
+                Magnitude = package.RelationshipDelta
+            });
         }
     }
 }
