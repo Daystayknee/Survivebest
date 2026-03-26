@@ -30,6 +30,32 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void AccessoriesShoesPiercingsHatsAndTattoos_AreExpandedForAllStagesAndPresentations()
+        {
+            string[] ancestryTags = { "AfricanDiaspora", "EastAsian", "SouthAsian", "Latinx", "MiddleEastern", "Indigenous", "MixedHeritage", "Global" };
+
+            foreach (LifeStage stage in System.Enum.GetValues(typeof(LifeStage)))
+            {
+                foreach (StylePresentation presentation in System.Enum.GetValues(typeof(StylePresentation)))
+                {
+                    int accessoryCount = IdentityWardrobeCatalog.GetWardrobeOptions(stage, presentation, WardrobeCategory.Accessories).Count;
+                    int shoeCount = IdentityWardrobeCatalog.GetWardrobeOptions(stage, presentation, WardrobeCategory.Shoes).Count;
+
+                    Assert.GreaterOrEqual(accessoryCount, 40, $"Expected expanded accessories for {stage}/{presentation}.");
+                    Assert.GreaterOrEqual(shoeCount, 40, $"Expected expanded shoes for {stage}/{presentation}.");
+
+                    for (int i = 0; i < ancestryTags.Length; i++)
+                    {
+                        string ancestryTag = ancestryTags[i];
+                        Assert.GreaterOrEqual(IdentityWardrobeCatalog.GetPiercingOptions(stage, presentation, ancestryTag).Count, 12);
+                        Assert.GreaterOrEqual(IdentityWardrobeCatalog.GetHatOptions(stage, presentation, ancestryTag).Count, 14);
+                        Assert.GreaterOrEqual(IdentityWardrobeCatalog.GetTattooOptions(stage, presentation, ancestryTag).Count, 12);
+                    }
+                }
+            }
+        }
+
+        [Test]
         public void BodyProfiles_ContainFatSkinnyMuscularAndLowMuscleOptions()
         {
             var profiles = IdentityWardrobeCatalog.GetBodyCompositionProfiles();

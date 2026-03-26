@@ -65,6 +65,21 @@ namespace Survivebest.Core
             "Backpack", "Crossbody bag", "Beanie", "Baseball cap", "Belt", "Watch", "Sunglasses", "Scarf", "Minimal necklace", "Bracelet stack", "Ring set", "Hair clip set"
         };
 
+        private static readonly string[] UniversalPiercings =
+        {
+            "Single lobe stud", "Double lobe stack", "Helix ring", "Tragus stud", "Conch hoop", "Nostril stud", "Septum ring", "Brow bar", "Lip ring", "Medusa stud", "Industrial bar", "Navel ring"
+        };
+
+        private static readonly string[] UniversalHats =
+        {
+            "Dad cap", "Fitted cap", "Beanie", "Beret", "Bucket hat", "Wide-brim sun hat", "Cowboy hat", "Fedora", "Newsboy cap", "Visor", "Head wrap", "Turban-style wrap", "Kufi cap", "Top hat"
+        };
+
+        private static readonly string[] UniversalTattooStyles =
+        {
+            "Fine-line floral", "Geometric mandala", "Traditional flash rose", "Neo-traditional tiger", "Lettering script", "Tribal-inspired bands", "Watercolor gradient", "Dotwork constellation", "Blackwork sleeve patch", "Micro realism portrait", "Symbolic protection sigil", "Abstract brushstroke"
+        };
+
         private static readonly Dictionary<LifeStage, string[]> StageTops = new()
         {
             { LifeStage.Baby, new[] { "Snap onesie top", "Soft bib top", "Wrap cardigan", "Sleep top", "Weather knit top" } },
@@ -148,8 +163,8 @@ namespace Survivebest.Core
             { WardrobeCategory.Bottoms, new[] { "Denim Cut", "Pleated Trouser", "Soft Jogger", "Cargo Bottom", "Track Pant", "Cord Pant", "Weekend Short", "Studio Legging", "Relax Pant", "Formal Trouser", "Field Pant", "Pocket Short", "Commuter Pant", "Camp Short", "Cozy Pant", "School Bottom", "Travel Pant", "Classic Jean", "Heritage Trouser", "Rain Trouser", "Active Short", "Straight Pant", "Blend Skirt", "Daily Bottom" } },
             { WardrobeCategory.Underwear, new[] { "Comfort Base Set", "Moisture Base Set", "Support Base Set", "Daily Core Set", "Soft Lounge Set", "Thermal Base Layer", "Athletic Layer Set", "Breathable Core Set", "Seamless Core Set", "Recovery Base Set", "Sleep Base Set", "Training Base Set", "Airflow Base Set", "Weekend Core Set", "Long-Wear Set", "Travel Base Set", "Quick-Dry Set", "Stretch Base Set", "Essential Set", "Routine Base Set", "Cozy Core Set", "Mesh Base Set", "Cloud Base Set", "Anchor Base Set" } },
             { WardrobeCategory.FullBody, new[] { "City Set", "Ceremony Set", "Work Set", "Garden Set", "Travel Set", "Formal Set", "Festival Set", "Athletic Set", "Rain Set", "Lounge Set", "Studio Set", "Celebration Set", "Utility Set", "Heritage Set", "Commuter Set", "Weekend Set", "Sleep Set", "Performance Set", "Outdoor Set", "Artisan Set", "School Set", "Roleplay Set", "Story Set", "Parade Set" } },
-            { WardrobeCategory.Shoes, new[] { "Runner", "Walker", "Trail Shoe", "Comfort Sneaker", "Canvas Shoe", "Slip Shoe", "Daily Boot", "Field Boot", "Studio Shoe", "Court Shoe", "Weekend Sneaker", "Commuter Shoe", "Rain Boot", "Training Shoe", "Indoor Shoe", "Outdoor Shoe", "Classic Loafer", "Travel Sneaker", "Support Shoe", "Heritage Boot", "Craft Shoe", "Play Shoe", "Cozy Slipper", "Smart Shoe" } },
-            { WardrobeCategory.Accessories, new[] { "Carry Bag", "Crossbody", "Belt", "Bracelet", "Chain", "Scarf", "Cap", "Beanie", "Hair Tie", "Sling Bag", "Charm", "Ring", "Watch", "Pin Set", "Glasses", "Bandana", "Wallet", "Pouch", "Neckwear", "Earring Set", "Hand Wrap", "Arm Cuff", "Pocket Charm", "Brooch" } }
+            { WardrobeCategory.Shoes, new[] { "Runner", "Walker", "Trail Shoe", "Comfort Sneaker", "Canvas Shoe", "Slip Shoe", "Daily Boot", "Field Boot", "Studio Shoe", "Court Shoe", "Weekend Sneaker", "Commuter Shoe", "Rain Boot", "Training Shoe", "Indoor Shoe", "Outdoor Shoe", "Classic Loafer", "Travel Sneaker", "Support Shoe", "Heritage Boot", "Craft Shoe", "Play Shoe", "Cozy Slipper", "Smart Shoe", "Wedge Sneaker", "Hybrid Boot", "Retro Runner", "Hospital Clog", "Chef Slip-On", "Dance Sneaker", "Combat Boot", "Marathon Shoe", "Minimalist Trainer", "Cross-Training Shoe", "Hiking Sandal", "Protective Work Boot" } },
+            { WardrobeCategory.Accessories, new[] { "Carry Bag", "Crossbody", "Belt", "Bracelet", "Chain", "Scarf", "Cap", "Beanie", "Hair Tie", "Sling Bag", "Charm", "Ring", "Watch", "Pin Set", "Glasses", "Bandana", "Wallet", "Pouch", "Neckwear", "Earring Set", "Hand Wrap", "Arm Cuff", "Pocket Charm", "Brooch", "Anklet", "Layer Necklace", "Phone Lanyard", "Shoulder Strap", "Silk Hair Wrap", "Headband", "Pocket Square", "Statement Cuff", "Festival Beads", "Key Clip", "Waist Chain", "Leather Wristband" } }
         };
 
         private static readonly Dictionary<string, string[]> GeneratedCapsuleCache = new();
@@ -206,6 +221,21 @@ namespace Survivebest.Core
             }
 
             return count;
+        }
+
+        public static IReadOnlyList<string> GetPiercingOptions(LifeStage lifeStage, StylePresentation presentation, string ancestryTag = "global")
+        {
+            return BuildInclusiveAdornments(UniversalPiercings, lifeStage, presentation, ancestryTag, "Piercing");
+        }
+
+        public static IReadOnlyList<string> GetHatOptions(LifeStage lifeStage, StylePresentation presentation, string ancestryTag = "global")
+        {
+            return BuildInclusiveAdornments(UniversalHats, lifeStage, presentation, ancestryTag, "Hat");
+        }
+
+        public static IReadOnlyList<string> GetTattooOptions(LifeStage lifeStage, StylePresentation presentation, string ancestryTag = "global")
+        {
+            return BuildInclusiveAdornments(UniversalTattooStyles, lifeStage, presentation, ancestryTag, "Tattoo");
         }
 
         public static string BuildCoverageSummary()
@@ -313,6 +343,25 @@ namespace Survivebest.Core
 
             GeneratedCapsuleCache[key] = generated;
             return generated;
+        }
+
+        private static IReadOnlyList<string> BuildInclusiveAdornments(string[] baseStyles, LifeStage lifeStage, StylePresentation presentation, string ancestryTag, string label)
+        {
+            if (baseStyles == null ||
+                !StageAudienceLabel.TryGetValue(lifeStage, out string stageLabel) ||
+                !PresentationAudienceLabel.TryGetValue(presentation, out string presentationLabel))
+            {
+                return Array.Empty<string>();
+            }
+
+            string ancestry = string.IsNullOrWhiteSpace(ancestryTag) ? "Global" : ancestryTag.Trim();
+            List<string> options = new(baseStyles.Length);
+            for (int i = 0; i < baseStyles.Length; i++)
+            {
+                options.Add($"{stageLabel} {presentationLabel} {ancestry} {label}: {baseStyles[i]}");
+            }
+
+            return options;
         }
 
         private static void AddRange(List<string> target, IReadOnlyList<string> values)
