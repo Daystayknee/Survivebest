@@ -35,6 +35,8 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSentimentalObject()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEverydayCarryItem()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHumanExperienceMoment()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickBodyDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHygieneMaintenanceDetail()));
         }
 
         [Test]
@@ -45,7 +47,7 @@ namespace Survivebest.Tests.EditMode
 
             Assert.GreaterOrEqual(total, 220);
             StringAssert.Contains(total.ToString(), summary);
-            StringAssert.Contains("20 activity pools", summary);
+            StringAssert.Contains("25 activity pools", summary);
         }
     }
 }
