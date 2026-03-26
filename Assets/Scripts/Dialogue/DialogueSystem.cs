@@ -61,6 +61,10 @@ namespace Survivebest.Dialogue
         public string MoodTag;
         public string SituationTag;
         public string MemoryTag;
+        public string VibeTag;
+        public string HierarchyTag;
+        public string DatingStyleTag;
+        public string MilestoneTag;
         public string SpeakerSpecies;
         public string SpeakerBreed;
         public bool IsPetInteraction;
@@ -81,6 +85,10 @@ namespace Survivebest.Dialogue
         public string MoodTag;
         public string SituationTag;
         public string MemoryTag;
+        public string VibeTag;
+        public string HierarchyTag;
+        public string DatingStyleTag;
+        public string MilestoneTag;
         public string SpeakerSpecies;
         public string SpeakerBreed;
         public string InnerThought;
@@ -94,6 +102,12 @@ namespace Survivebest.Dialogue
         public string SituationTag;
         public string ForcedMoodTag;
         public string MemoryTag;
+        public string VibeTag;
+        public string HierarchyTag;
+        public string DatingStyleTag;
+        public string SharedMilestoneTag;
+        [Range(-1f, 1f)] public float RespectDelta;
+        public bool DisregardHierarchy;
         public string SpeakerSpecies;
         public string SpeakerBreed;
         public string TopicHint;
@@ -154,16 +168,29 @@ namespace Survivebest.Dialogue
             }
 
             float beliefModifier = mindStateSystem != null && owner != null ? mindStateSystem.GetDialogueModifier(owner.CharacterId, target.CharacterId) : 1f;
-            float successChance = Mathf.Clamp01((0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty - distortionPenalty + ((attachmentModifier - 1f) * 0.2f)) * beliefModifier);
+            float moodVolatilityPenalty = ResolveMoodVolatilityPenalty(context);
+            float respectModifier = context != null ? context.RespectDelta * 0.08f : 0f;
+            float hierarchyModifier = ResolveHierarchyModifier(context);
+            float milestoneModifier = ResolveMilestoneModifier(intent, context);
+            float successChance = Mathf.Clamp01((0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty - distortionPenalty - moodVolatilityPenalty + ((attachmentModifier - 1f) * 0.2f) + respectModifier + hierarchyModifier + milestoneModifier) * beliefModifier);
             bool success = UnityEngine.Random.value <= successChance;
 
             int finalDelta = success ? baseRelationshipDelta : -Mathf.Max(1, Mathf.Abs(baseRelationshipDelta));
+            if (context != null)
+            {
+                finalDelta += Mathf.RoundToInt(context.RespectDelta * 2f);
+                if (!string.IsNullOrWhiteSpace(context.SharedMilestoneTag) && success &&
+                    (intent == DialogueIntent.FriendlyChat || intent == DialogueIntent.Comfort || intent == DialogueIntent.Flirt))
+                {
+                    finalDelta += 2;
+                }
+            }
             socialSystem.UpdateRelationship(target.CharacterId, finalDelta);
 
             ApplyEmotionIntent(intent, success);
 
             DialogueGeneratedLine contextualLine = ResolveContextAwareLine(intent, target, context);
-            string line = contextualLine != null ? contextualLine.Line : GetLine(intent);
+            string line = contextualLine != null ? contextualLine.Line : BuildDynamicContextualLine(intent, target, context);
             OnDialogueResolved?.Invoke(line, success);
             OnDialoguePresentationReady?.Invoke(new DialoguePresentationPayload
             {
@@ -178,6 +205,10 @@ namespace Survivebest.Dialogue
                 MoodTag = contextualLine != null ? contextualLine.MoodTag : ResolveMoodTag(context),
                 SituationTag = contextualLine != null ? contextualLine.SituationTag : ResolveSituationTag(context),
                 MemoryTag = contextualLine != null ? contextualLine.MemoryTag : ResolveMemoryTag(target, context),
+                VibeTag = contextualLine != null ? contextualLine.VibeTag : context != null ? context.VibeTag : "ambient",
+                HierarchyTag = contextualLine != null ? contextualLine.HierarchyTag : context != null ? context.HierarchyTag : "peer",
+                DatingStyleTag = contextualLine != null ? contextualLine.DatingStyleTag : context != null ? context.DatingStyleTag : "unspecified",
+                MilestoneTag = contextualLine != null ? contextualLine.MilestoneTag : context != null ? context.SharedMilestoneTag : null,
                 SpeakerSpecies = contextualLine != null ? contextualLine.SpeakerSpecies : ResolveSpeakerSpeciesKey(context),
                 SpeakerBreed = contextualLine != null ? contextualLine.SpeakerBreed : context != null ? context.SpeakerBreed : null,
                 InnerThought = BuildMindAwareSelfTalk(owner, context != null ? context.TopicHint : null, context != null ? context.SpeakerSpecies : null, target),
@@ -375,6 +406,10 @@ namespace Survivebest.Dialogue
                 MoodTag = ResolveMoodTag(null),
                 SituationTag = resolvedSituation,
                 MemoryTag = "shared_meal",
+                VibeTag = "functional",
+                HierarchyTag = "service",
+                DatingStyleTag = "n/a",
+                MilestoneTag = null,
                 SpeakerSpecies = ResolveSpeakerSpeciesKey(null),
                 SpeakerBreed = null,
                 InnerThought = BuildMindAwareSelfTalk(actor != null ? actor : owner, resolvedSituation, null, null),
@@ -415,6 +450,10 @@ namespace Survivebest.Dialogue
                 MoodTag = selected.MoodTag,
                 SituationTag = string.IsNullOrWhiteSpace(situationTag) ? selected.SituationTag : situationTag,
                 MemoryTag = selected.MemoryTag,
+                VibeTag = selected.VibeTag,
+                HierarchyTag = selected.HierarchyTag,
+                DatingStyleTag = selected.DatingStyleTag,
+                MilestoneTag = selected.MilestoneTag,
                 SpeakerSpecies = selected.SpeakerSpecies,
                 SpeakerBreed = breed,
                 InnerThought = innerThought,
@@ -450,6 +489,39 @@ namespace Survivebest.Dialogue
         {
             return generatedLines.FindAll(x => x != null && x.IsPetInteraction &&
                 string.Equals(x.SpeakerSpecies, species, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public List<string> BuildContextualConversationBurst(DialogueIntent intent, CharacterCore target, DialogueContext context, int seed, int count = 12)
+        {
+            List<string> burst = new();
+            int total = Mathf.Clamp(count, 1, 64);
+            System.Random rng = new System.Random(seed);
+            for (int i = 0; i < total; i++)
+            {
+                DialogueContext remixed = context != null
+                    ? new DialogueContext
+                    {
+                        SituationTag = context.SituationTag,
+                        ForcedMoodTag = context.ForcedMoodTag,
+                        MemoryTag = context.MemoryTag,
+                        VibeTag = context.VibeTag,
+                        HierarchyTag = context.HierarchyTag,
+                        DatingStyleTag = context.DatingStyleTag,
+                        SharedMilestoneTag = context.SharedMilestoneTag,
+                        RespectDelta = Mathf.Clamp(context.RespectDelta + ((float)rng.NextDouble() - 0.5f) * 0.2f, -1f, 1f),
+                        DisregardHierarchy = context.DisregardHierarchy && rng.NextDouble() > 0.4,
+                        SpeakerSpecies = context.SpeakerSpecies,
+                        SpeakerBreed = context.SpeakerBreed,
+                        TopicHint = context.TopicHint,
+                        IsPetInteraction = context.IsPetInteraction
+                    }
+                    : new DialogueContext();
+
+                DialogueGeneratedLine matched = ResolveContextAwareLine(intent, target, remixed);
+                burst.Add(matched != null ? matched.Line : BuildDynamicContextualLine(intent, target, remixed));
+            }
+
+            return burst;
         }
 
         public string BuildAiSelfTalk(CharacterCore actor, string topicHint = null, string animalSpecies = null, CharacterCore target = null)
@@ -548,9 +620,13 @@ namespace Survivebest.Dialogue
             string[] moods = { "calm", "happy", "tense", "sad", "romantic", "awkward" };
             string[] situations = { "home", "work", "street", "hospital", "market", "school", "nightlife", "safehouse" };
             string[] memories = { "first_meeting", "shared_meal", "big_argument", "helped_me", "festival_night", "storm_day", "secret_kept", "late_night_confession" };
+            string[] vibes = { "playful", "guarded", "magnetic", "resentful", "cozy", "uncertain", "chaotic", "tender" };
+            string[] hierarchies = { "peer", "mentor", "boss", "elder", "family", "coworker", "outsider", "rival" };
+            string[] datingStyles = { "slow_burn", "direct", "friends_to_lovers", "situationship", "traditional", "chaotic", "rebound", "strategic" };
+            string[] milestones = { "moving_in", "engaged", "marriage_talk", "coparenting_plan", "define_relationship", "dating_reset", "friendship_repair", "none" };
 
-            SeedSpeciesDialogue("human", moods, situations, memories, BuildHumanDialogueFragments());
-            SeedSpeciesDialogue("vampire", moods, situations, memories, BuildVampireDialogueFragments());
+            SeedSpeciesDialogue("human", moods, situations, memories, vibes, hierarchies, datingStyles, milestones, BuildHumanDialogueFragments());
+            SeedSpeciesDialogue("vampire", moods, situations, memories, vibes, hierarchies, datingStyles, milestones, BuildVampireDialogueFragments());
 
             EnsureMinimumPerMood(moods);
             EnsureMinimumPerSituation(situations);
@@ -560,7 +636,7 @@ namespace Survivebest.Dialogue
         }
 
 
-        private void SeedSpeciesDialogue(string speakerSpecies, string[] moods, string[] situations, string[] memories, Dictionary<DialogueIntent, string[]> fragments)
+        private void SeedSpeciesDialogue(string speakerSpecies, string[] moods, string[] situations, string[] memories, string[] vibes, string[] hierarchies, string[] datingStyles, string[] milestones, Dictionary<DialogueIntent, string[]> fragments)
         {
             if (fragments == null || fragments.Count == 0)
             {
@@ -584,6 +660,10 @@ namespace Survivebest.Dialogue
                         MoodTag = moods[i % moods.Length],
                         SituationTag = situations[(i + (int)intent) % situations.Length],
                         MemoryTag = memories[(i + (speakerSpecies == "vampire" ? 2 : 0) + (int)intent) % memories.Length],
+                        VibeTag = vibes[(i + (int)intent) % vibes.Length],
+                        HierarchyTag = hierarchies[(i + (int)intent + (speakerSpecies == "vampire" ? 1 : 0)) % hierarchies.Length],
+                        DatingStyleTag = datingStyles[(i + (int)intent) % datingStyles.Length],
+                        MilestoneTag = milestones[(i + (int)intent) % milestones.Length],
                         SpeakerSpecies = speakerSpecies,
                         IsPetInteraction = false,
                         Line = lines[i]
@@ -767,6 +847,10 @@ namespace Survivebest.Dialogue
                         MoodTag = "care",
                         SituationTag = "pet_home",
                         MemoryTag = "pet_bond",
+                        VibeTag = "gentle",
+                        HierarchyTag = "caretaker",
+                        DatingStyleTag = "n/a",
+                        MilestoneTag = "pet_bonding",
                         SpeakerSpecies = species[s],
                         IsPetInteraction = true,
                         Line = line
@@ -821,6 +905,10 @@ namespace Survivebest.Dialogue
                     MoodTag = mood,
                     SituationTag = situation,
                     MemoryTag = memory,
+                    VibeTag = "ambient",
+                    HierarchyTag = "peer",
+                    DatingStyleTag = "undefined",
+                    MilestoneTag = "none",
                     SpeakerSpecies = ResolveSpeakerSpeciesKey(null),
                     IsPetInteraction = false,
                     Line = $"(fallback) Let's keep talking about {memory} in {situation} while we're {mood}. #{i + 1}"
@@ -839,6 +927,10 @@ namespace Survivebest.Dialogue
             string desiredMood = ResolveMoodTag(context);
             string desiredSituation = ResolveSituationTag(context);
             string desiredMemory = ResolveMemoryTag(target, context);
+            string desiredVibe = context != null ? context.VibeTag : null;
+            string desiredHierarchy = context != null ? context.HierarchyTag : null;
+            string desiredDatingStyle = context != null ? context.DatingStyleTag : null;
+            string desiredMilestone = context != null ? context.SharedMilestoneTag : null;
             bool requirePet = context != null && context.IsPetInteraction;
             string desiredSpecies = ResolveSpeakerSpeciesKey(context);
 
@@ -861,6 +953,26 @@ namespace Survivebest.Dialogue
                 }
 
                 if (!string.IsNullOrWhiteSpace(desiredMemory) && string.Equals(candidate.MemoryTag, desiredMemory, StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 4;
+                }
+
+                if (!string.IsNullOrWhiteSpace(desiredVibe) && string.Equals(candidate.VibeTag, desiredVibe, StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 3;
+                }
+
+                if (!string.IsNullOrWhiteSpace(desiredHierarchy) && string.Equals(candidate.HierarchyTag, desiredHierarchy, StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 2;
+                }
+
+                if (!string.IsNullOrWhiteSpace(desiredDatingStyle) && string.Equals(candidate.DatingStyleTag, desiredDatingStyle, StringComparison.OrdinalIgnoreCase))
+                {
+                    score += 2;
+                }
+
+                if (!string.IsNullOrWhiteSpace(desiredMilestone) && string.Equals(candidate.MilestoneTag, desiredMilestone, StringComparison.OrdinalIgnoreCase))
                 {
                     score += 4;
                 }
@@ -893,6 +1005,92 @@ namespace Survivebest.Dialogue
             }
 
             return bestMatches[UnityEngine.Random.Range(0, bestMatches.Count)];
+        }
+
+        private float ResolveMoodVolatilityPenalty(DialogueContext context)
+        {
+            if (emotionSystem == null)
+            {
+                return 0f;
+            }
+
+            float volatility = Mathf.Clamp01((emotionSystem.Stress + emotionSystem.Anger + emotionSystem.Sadness) / 280f);
+            if (context != null && !string.IsNullOrWhiteSpace(context.ForcedMoodTag) &&
+                context.ForcedMoodTag.Contains("volatile", StringComparison.OrdinalIgnoreCase))
+            {
+                volatility = Mathf.Clamp01(volatility + 0.25f);
+            }
+
+            return volatility * 0.08f;
+        }
+
+        private static float ResolveHierarchyModifier(DialogueContext context)
+        {
+            if (context == null)
+            {
+                return 0f;
+            }
+
+            if (context.DisregardHierarchy)
+            {
+                return context.RespectDelta >= 0f ? -0.01f : -0.05f;
+            }
+
+            return string.IsNullOrWhiteSpace(context.HierarchyTag) ? 0f : 0.03f;
+        }
+
+        private static float ResolveMilestoneModifier(DialogueIntent intent, DialogueContext context)
+        {
+            if (context == null || string.IsNullOrWhiteSpace(context.SharedMilestoneTag))
+            {
+                return 0f;
+            }
+
+            bool connectiveIntent = intent == DialogueIntent.FriendlyChat || intent == DialogueIntent.Comfort || intent == DialogueIntent.Flirt || intent == DialogueIntent.Apologize;
+            return connectiveIntent ? 0.05f : -0.02f;
+        }
+
+        private string BuildDynamicContextualLine(DialogueIntent intent, CharacterCore target, DialogueContext context)
+        {
+            string mood = ResolveMoodTag(context);
+            string situation = ResolveSituationTag(context);
+            string memory = ResolveMemoryTag(target, context);
+            string vibe = context != null && !string.IsNullOrWhiteSpace(context.VibeTag) ? context.VibeTag : "mixed";
+            string hierarchy = context != null && !string.IsNullOrWhiteSpace(context.HierarchyTag) ? context.HierarchyTag : "peer";
+            string datingStyle = context != null && !string.IsNullOrWhiteSpace(context.DatingStyleTag) ? context.DatingStyleTag : "undefined";
+            string milestone = context != null ? context.SharedMilestoneTag : null;
+            string targetName = target != null && !string.IsNullOrWhiteSpace(target.DisplayName) ? target.DisplayName : "you";
+            float respect = context != null ? context.RespectDelta : 0f;
+
+            string moodClause = mood switch
+            {
+                "tense" => "the mood is sharp and reactive",
+                "sad" => "the room feels heavy and careful",
+                "romantic" => "chemistry keeps peeking through the pauses",
+                "awkward" => "every sentence lands slightly sideways",
+                _ => "the conversation feels open-ended"
+            };
+
+            string hierarchyClause = context != null && context.DisregardHierarchy
+                ? "they ignore the expected rank order for this topic"
+                : hierarchy == "mentor" || hierarchy == "boss" || hierarchy == "elder"
+                    ? $"they speak with {hierarchy}-coded respect"
+                    : "they treat each other like peers";
+
+            string respectClause = respect switch
+            {
+                > 0.35f => "respect is explicit in tone and word choice",
+                < -0.35f => "disrespect keeps leaking into the phrasing",
+                _ => "respect is unstable and context-dependent"
+            };
+
+            string milestoneClause = string.IsNullOrWhiteSpace(milestone)
+                ? "no formal milestone is named yet"
+                : $"they keep circling a shared milestone: {milestone.Replace("_", " ")}";
+
+            string line = $"[{intent}] With {targetName} at {situation}, {moodClause}; vibe={vibe}, memory={memory}. They use a {datingStyle.Replace("_", " ")} style, {hierarchyClause}, and {respectClause}; {milestoneClause}.";
+
+            return line;
         }
 
         private string ResolveSpeakerSpeciesKey(DialogueContext context)
