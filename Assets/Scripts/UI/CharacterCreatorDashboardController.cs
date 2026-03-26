@@ -8,6 +8,7 @@ using Survivebest.Events;
 using Survivebest.UI.ViewModels;
 using Survivebest.Tasks;
 using Survivebest.World;
+using System.Text;
 
 namespace Survivebest.UI
 {
@@ -87,6 +88,30 @@ namespace Survivebest.UI
         public HairProfile Hair = new();
         public FacialHairProfile FacialHair = new();
         public BodyHairProfile BodyHair = new();
+        public CharacterCreatorDetailState Details = new();
+    }
+
+    [Serializable]
+    public class CharacterCreatorDetailState
+    {
+        [Range(0f, 1f)] public float Freckles;
+        [Range(0f, 1f)] public float Moles;
+        [Range(0f, 1f)] public float Vitiligo;
+        [Range(0f, 1f)] public float Birthmarks;
+        [Range(0f, 1f)] public float Pimples;
+        [Range(0f, 1f)] public float EyelashLength = 0.5f;
+        [Range(0f, 1f)] public float EyebrowDensity = 0.5f;
+        [Range(0f, 1f)] public float NeckLength = 0.5f;
+        [Range(0f, 1f)] public float HeelsHeight;
+        public bool HoodedEyelids;
+        public bool MonolidEyelids;
+        public int EyebrowType;
+        public int PiercingSet;
+        public int JewelrySet;
+        public int HairstyleGenderCatalog;
+        public int HairstyleCatalogIndex;
+        public int OutfitGenderCatalog;
+        public int OutfitCatalogIndex;
     }
 
     [Serializable]
@@ -114,6 +139,7 @@ namespace Survivebest.UI
         [SerializeField] private MainMenuFlowController menuFlowController;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private TaskInteractionManager taskInteractionManager;
+        [SerializeField] private PersonalityMatrixSystem personalityMatrixSystem;
 
         [Header("Preview")]
         [SerializeField] private Camera characterPreviewCamera;
@@ -171,6 +197,32 @@ namespace Survivebest.UI
         [SerializeField] private Text bodyDetailsText;
         [SerializeField] private Text geneticsDetailsText;
 
+        [Header("Expanded Creator Catalogs")]
+        [SerializeField] private List<string> feminineHairstyleCatalog = new()
+        {
+            "fem_ballet_bun","fem_sleek_bob","fem_soft_waves","fem_crown_braid","fem_butterfly_layers","fem_high_ponytail","fem_wolf_cut","fem_coily_puff","fem_long_locs","fem_ribbon_braids"
+        };
+        [SerializeField] private List<string> masculineHairstyleCatalog = new()
+        {
+            "mas_fade_crop","mas_textured_quiff","mas_brushed_back","mas_curtain_cut","mas_short_locs","mas_twists","mas_buzz_lineup","mas_side_part","mas_bro_flow","mas_undercut_wave"
+        };
+        [SerializeField] private List<string> androgynousHairstyleCatalog = new()
+        {
+            "andro_shag_midi","andro_mullet_soft","andro_pixie_long","andro_short_bob","andro_loose_coils","andro_center_part","andro_micro_braids","andro_rounded_afro","andro_side_swept","andro_top_knot_low"
+        };
+        [SerializeField] private List<string> feminineOutfitCatalog = new()
+        {
+            "fit_wrap_dress","fit_power_suit_skirt","fit_street_crop_layered","fit_formal_gown","fit_medical_scrub_tailored","fit_active_set","fit_boho_maxi","fit_vintage_tea","fit_festival_glitter","fit_evening_minimal"
+        };
+        [SerializeField] private List<string> masculineOutfitCatalog = new()
+        {
+            "fit_tailored_suit","fit_utility_layers","fit_street_overshirt","fit_formal_tux","fit_medical_scrubs","fit_active_track","fit_outdoor_hiker","fit_vintage_denim","fit_festival_open_shirt","fit_evening_mono"
+        };
+        [SerializeField] private List<string> androgynousOutfitCatalog = new()
+        {
+            "fit_andro_oversize_blazer","fit_andro_mesh_layers","fit_andro_minimal_black","fit_andro_cyber_panel","fit_andro_prep_layers","fit_andro_lounge_set","fit_andro_utility_skirt_pant","fit_andro_vintage_mix","fit_andro_festival_neon","fit_andro_formal_drape"
+        };
+
         public CharacterCreatorDashboardTab CurrentTab { get; private set; }
         public CharacterCreatorPreviewFocus CurrentPreviewFocus { get; private set; }
         public CharacterCreatorBackgroundOption CurrentBackground { get; private set; }
@@ -182,6 +234,9 @@ namespace Survivebest.UI
 
         private CreatorGeneticsMode creatorMode = CreatorGeneticsMode.RandomPopulation;
         private bool isDraggingPreview;
+        private readonly StringBuilder summaryBuilder = new();
+        private readonly CharacterCreatorDetailState detailState = new();
+        private string ageAppropriateSafetyNote = "All enabled";
 
         private void OnEnable()
         {
@@ -433,6 +488,247 @@ namespace Survivebest.UI
         {
             creatorMode = CreatorGeneticsMode.DnaEdit;
             SetGeneValue("muscle_potential", value);
+        }
+
+        public void SetBodyFatSlider(float value) => SetGenomeBodyFat(value);
+
+        public void SetBodyMuscleSlider(float value) => SetGenomeMuscle(value);
+
+        public void SetChestShapeSlider(float value)
+        {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            float normalized = Mathf.Clamp01(value);
+            SetGeneValue("chest_bust_potential", normalized);
+        }
+
+        public void SetBreastVolumeSlider(float value)
+        {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            float normalized = ClampForAgeSensitiveBodyFeature(value);
+            SetGeneticScalar(profile =>
+            {
+                Gene chestGene = profile.FindGene("chest_bust_potential");
+                if (chestGene != null)
+                {
+                    chestGene.AlleleA.Value = normalized;
+                    chestGene.AlleleB.Value = Mathf.Lerp(chestGene.AlleleB.Value, normalized, 0.85f);
+                }
+
+                profile.ChestBustPotential = normalized;
+                profile.BodyGenome.ChestSizeTendency = normalized;
+                profile.Hormones.EstrogenAndrogenBalance = Mathf.Clamp01(Mathf.Lerp(profile.Hormones.EstrogenAndrogenBalance, normalized, 0.35f));
+            });
+        }
+
+        public void SetChestMassSlider(float value)
+        {
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            float normalized = ClampForAgeSensitiveBodyFeature(value);
+            SetGeneticScalar(profile =>
+            {
+                profile.ChestBustPotential = normalized;
+                profile.BodyGenome.ChestSizeTendency = normalized;
+                profile.BodyGenome.RibcageWidth = Mathf.Clamp01(Mathf.Lerp(profile.BodyGenome.RibcageWidth, normalized, 0.6f));
+            });
+        }
+
+        public void SetFreckleIntensity(float value)
+        {
+            detailState.Freckles = Mathf.Clamp01(value);
+            SetGeneValue("skin_freckles", detailState.Freckles);
+        }
+
+        public void SetMoleIntensity(float value)
+        {
+            detailState.Moles = Mathf.Clamp01(value);
+            SetGeneValue("skin_moles", detailState.Moles);
+        }
+
+        public void SetVitiligoIntensity(float value)
+        {
+            detailState.Vitiligo = Mathf.Clamp01(value);
+            SetGeneValue("skin_vitiligo", detailState.Vitiligo);
+            if (appearanceManager != null)
+            {
+                appearanceManager.SetSkinIssue(detailState.Vitiligo > 0.2f ? SkinIssueType.Vitiligo : appearanceManager.CurrentProfile.SkinIssue);
+            }
+        }
+
+        public void SetBirthmarkIntensity(float value)
+        {
+            detailState.Birthmarks = Mathf.Clamp01(value);
+            if (appearanceManager != null)
+            {
+                appearanceManager.SetBeautyMark(detailState.Birthmarks > 0.25f);
+                if (detailState.Birthmarks > 0.6f)
+                {
+                    appearanceManager.SetSkinIssue(SkinIssueType.Hyperpigmentation);
+                }
+            }
+        }
+
+        public void SetPimpleIntensity(float value)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            float cap = active != null && active.CurrentLifeStage <= LifeStage.Preteen ? 0.35f : 1f;
+            detailState.Pimples = Mathf.Clamp(value, 0f, cap);
+            SetGeneValue("acne_tendency", detailState.Pimples);
+            if (appearanceManager != null)
+            {
+                appearanceManager.SetSkinIssue(detailState.Pimples > 0.25f ? SkinIssueType.Acne : appearanceManager.CurrentProfile.SkinIssue);
+            }
+        }
+
+        public void SetEyelashLengthSlider(float value)
+        {
+            detailState.EyelashLength = Mathf.Clamp01(value);
+            SetGeneValue("eyelash_density", detailState.EyelashLength);
+        }
+
+        public void SetEyebrowDensitySlider(float value)
+        {
+            detailState.EyebrowDensity = Mathf.Clamp01(value);
+            SetGeneValue("brow_heaviness", detailState.EyebrowDensity);
+        }
+
+        public void SetEyebrowType(int eyebrowTypeIndex)
+        {
+            detailState.EyebrowType = Mathf.Clamp(eyebrowTypeIndex, 0, 11);
+            PublishUiEvent("EyebrowType", $"Eyebrow type set to {detailState.EyebrowType}", detailState.EyebrowType);
+            RefreshPreview();
+        }
+
+        public void SetHoodedEyelids(bool hooded)
+        {
+            detailState.HoodedEyelids = hooded;
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null)
+            {
+                EyeShapeType target = hooded ? EyeShapeType.Hooded : (detailState.MonolidEyelids ? EyeShapeType.Monolid : active.EyeShape);
+                active.SetPortraitData(active.FaceShape, target, active.CurrentBodyType, active.ClothingStyle);
+            }
+            RefreshPreview();
+        }
+
+        public void SetMonolidEyelids(bool monolid)
+        {
+            detailState.MonolidEyelids = monolid;
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null)
+            {
+                EyeShapeType target = monolid ? EyeShapeType.Monolid : (detailState.HoodedEyelids ? EyeShapeType.Hooded : active.EyeShape);
+                active.SetPortraitData(active.FaceShape, target, active.CurrentBodyType, active.ClothingStyle);
+            }
+            RefreshPreview();
+        }
+
+        public void SetNeckLengthSlider(float value)
+        {
+            detailState.NeckLength = Mathf.Clamp01(value);
+            SetGeneticScalar(profile => profile.BodyGenome.TorsoLength = Mathf.Clamp01(Mathf.Lerp(profile.BodyGenome.TorsoLength, detailState.NeckLength, 0.65f)));
+        }
+
+        public void SetPiercingSet(int setIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null && active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                detailState.PiercingSet = 0;
+                ageAppropriateSafetyNote = "Piercings limited for child/preteen stages";
+            }
+            else
+            {
+                detailState.PiercingSet = Mathf.Clamp(setIndex, 0, 11);
+            }
+
+            PublishUiEvent("PiercingSet", $"Piercing set changed to {detailState.PiercingSet}", detailState.PiercingSet);
+            RefreshPreview();
+        }
+
+        public void SetJewelrySet(int setIndex)
+        {
+            detailState.JewelrySet = Mathf.Clamp(setIndex, 0, 11);
+            PublishUiEvent("JewelrySet", $"Jewelry set changed to {detailState.JewelrySet}", detailState.JewelrySet);
+            RefreshPreview();
+        }
+
+        public void SetHeelsHeight(float value)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null && active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                detailState.HeelsHeight = 0f;
+                ageAppropriateSafetyNote = "Heels disabled for child/preteen stages";
+            }
+            else
+            {
+                detailState.HeelsHeight = Mathf.Clamp01(value);
+            }
+
+            SetGeneticScalar(profile => profile.BodyGenome.PostureTendency = Mathf.Clamp01(Mathf.Lerp(profile.BodyGenome.PostureTendency, 0.5f + detailState.HeelsHeight * 0.5f, 0.5f)));
+        }
+
+        public void SetGenderCatalogHairstyle(int genderCatalogIndex, int styleIndex)
+        {
+            detailState.HairstyleGenderCatalog = Mathf.Clamp(genderCatalogIndex, 0, 2);
+            List<string> catalog = ResolveCatalog(detailState.HairstyleGenderCatalog, feminineHairstyleCatalog, masculineHairstyleCatalog, androgynousHairstyleCatalog);
+            if (catalog == null || catalog.Count == 0)
+            {
+                return;
+            }
+
+            detailState.HairstyleCatalogIndex = Mathf.Clamp(styleIndex, 0, catalog.Count - 1);
+            string styleId = catalog[detailState.HairstyleCatalogIndex];
+            if (appearanceManager != null && !string.IsNullOrWhiteSpace(styleId))
+            {
+                appearanceManager.TryApplyHairstyleById(styleId);
+            }
+
+            PublishUiEvent("GenderCatalogHair", $"Hair catalog {detailState.HairstyleGenderCatalog} style {styleId}", detailState.HairstyleCatalogIndex);
+            RefreshPreview();
+        }
+
+        public void SetGenderCatalogOutfit(int genderCatalogIndex, int outfitIndex)
+        {
+            detailState.OutfitGenderCatalog = Mathf.Clamp(genderCatalogIndex, 0, 2);
+            List<string> catalog = ResolveCatalog(detailState.OutfitGenderCatalog, feminineOutfitCatalog, masculineOutfitCatalog, androgynousOutfitCatalog);
+            if (catalog == null || catalog.Count == 0)
+            {
+                return;
+            }
+
+            detailState.OutfitCatalogIndex = Mathf.Clamp(outfitIndex, 0, catalog.Count - 1);
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active != null)
+            {
+                int mapped = detailState.OutfitCatalogIndex % Enum.GetValues(typeof(ClothingStyleType)).Length;
+                active.SetPortraitData(active.FaceShape, active.EyeShape, active.CurrentBodyType, (ClothingStyleType)mapped);
+            }
+
+            PublishUiEvent("GenderCatalogOutfit", $"Outfit catalog {detailState.OutfitGenderCatalog} option {detailState.OutfitCatalogIndex}", detailState.OutfitCatalogIndex);
+            RefreshPreview();
+        }
+
+        public void SetMakeupIntensity(float value)
+        {
+            if (appearanceManager == null || appearanceManager.CurrentProfile == null)
+            {
+                return;
+            }
+
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            float clamped = Mathf.Clamp01(value);
+            if (active != null && active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                clamped = 0f;
+                ageAppropriateSafetyNote = "Makeup disabled for child/preteen stages";
+            }
+
+            Color makeup = appearanceManager.CurrentProfile.MakeupColor;
+            makeup.a = clamped;
+            appearanceManager.CurrentProfile.MakeupColor = makeup;
+            appearanceManager.ApplyAppearance(appearanceManager.CurrentProfile);
+            RefreshPreview();
         }
 
         public void SetGenomeCognition(float value)
@@ -800,7 +1096,8 @@ namespace Survivebest.UI
                 SkinTone = appearanceManager != null && appearanceManager.CurrentProfile != null ? (int)appearanceManager.CurrentProfile.SkinTone : 0,
                 Hair = CloneHair(appearanceManager.ScalpHairProfile),
                 FacialHair = CloneFacial(appearanceManager.FacialHairProfile),
-                BodyHair = CloneBody(appearanceManager.BodyHairProfile)
+                BodyHair = CloneBody(appearanceManager.BodyHairProfile),
+                Details = CloneDetailState(detailState)
             };
 
             PlayerPrefs.SetString(BuildDraftKey(slotId), JsonUtility.ToJson(snapshot));
@@ -885,6 +1182,7 @@ namespace Survivebest.UI
             SetGenomeDietEpigenetics(snapshot.GeneEditDiet);
             SetGenomeHormoneBalance(snapshot.GeneEditHormoneBalance);
             SetGenomeHairThickness(snapshot.GeneEditHairThickness);
+            ApplyDetailState(snapshot.Details);
 
             if (snapshot.Locked && !string.IsNullOrWhiteSpace(snapshot.CharacterId))
             {
@@ -968,20 +1266,29 @@ namespace Survivebest.UI
         {
             HairProfile hair = appearanceManager != null ? appearanceManager.ScalpHairProfile : null;
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            GeneticsSystem genetics = ResolveActiveGeneticsSystem();
+            string headFaceDepthSummary = active != null
+                ? $"Head/Face {active.FaceShape}, jaw {active.JawShape}, nose {active.NoseShape}, lips {active.LipShape}, eyes {active.EyeShape}"
+                : string.Empty;
+            string bodyDepthSummary = BuildBodyDepthSummary(genetics, active);
+            string clothesDepthSummary = active != null ? $"Clothing style {active.ClothingStyle}" : string.Empty;
+            string geneticsDepthSummary = BuildGeneticsDepthSummary(genetics);
+            string goalsSummary = BuildGoalsSummary(active);
+            string traitsSummary = BuildTraitsSummary(active);
             return new CharacterCreatorDashboardViewModel
             {
                 ActiveTab = CurrentTab.ToString(),
                 CreatorMode = creatorMode.ToString(),
-                PopulationRegion = ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId ?? string.Empty,
-                HormoneSummary = ResolveActiveGeneticsSystem() != null ? $"EA {ResolveActiveGeneticsSystem().Profile.Hormones.EstrogenAndrogenBalance:0.00} / GH {ResolveActiveGeneticsSystem().Profile.Hormones.GrowthHormoneSensitivity:0.00}" : string.Empty,
-                ReproductionSummary = ResolveActiveGeneticsSystem() != null ? $"fertility {ResolveActiveGeneticsSystem().Profile.Reproduction.FertilitySignal:0.00} / meiosis {ResolveActiveGeneticsSystem().Profile.Reproduction.MeioticStability:0.00}" : string.Empty,
+                PopulationRegion = genetics?.Profile?.PopulationRegionId ?? string.Empty,
+                HormoneSummary = genetics != null ? $"EA {genetics.Profile.Hormones.EstrogenAndrogenBalance:0.00} / GH {genetics.Profile.Hormones.GrowthHormoneSensitivity:0.00}" : string.Empty,
+                ReproductionSummary = genetics != null ? $"fertility {genetics.Profile.Reproduction.FertilitySignal:0.00} / meiosis {genetics.Profile.Reproduction.MeioticStability:0.00}" : string.Empty,
                 HairTextureFilter = hairTextureFilter.ToString(),
                 HairLengthFilter = hairLengthFilter.ToString(),
                 FacialHairFilter = facialHairFilter.ToString(),
                 FaceSummary = active != null ? $"{active.FaceShape} / {active.JawShape} / {active.NoseShape} / {active.LipShape}" : string.Empty,
                 BodySummary = active != null ? $"{active.CurrentBodyType} / {active.ClothingStyle}" : string.Empty,
                 GeneticsSummary = appearanceManager != null && appearanceManager.CurrentProfile != null
-                    ? $"{creatorMode} / {appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor} / {ResolveActiveGeneticsSystem()?.Profile?.PopulationRegionId} / HR {ResolveActiveGeneticsSystem()?.Profile?.Hormones.EstrogenAndrogenBalance:0.00}"
+                    ? $"{creatorMode} / {appearanceManager.CurrentProfile.SkinTone} / {appearanceManager.CurrentProfile.EyeColor} / {genetics?.Profile?.PopulationRegionId} / HR {genetics?.Profile?.Hormones.EstrogenAndrogenBalance:0.00}"
                     : string.Empty,
                 AvailableStyles = appearanceManager != null ? appearanceManager.GetHairstylesByFilter(hairTextureFilter, hairLengthFilter).Count : 0,
                 SavedPresetCount = savedHairPresets.Count,
@@ -991,7 +1298,13 @@ namespace Survivebest.UI
                 OmbreAmount = hair != null ? hair.OmbreAmount : 0f,
                 HighlightIntensity = hair != null ? hair.HighlightIntensity : 0f,
                 PreviewMode = CurrentPreviewFocus.ToString(),
-                PreviewBackground = CurrentBackground.ToString()
+                PreviewBackground = CurrentBackground.ToString(),
+                HeadFaceDepthSummary = headFaceDepthSummary,
+                BodyDepthSummary = bodyDepthSummary,
+                ClothesDepthSummary = clothesDepthSummary,
+                GeneticsDepthSummary = geneticsDepthSummary,
+                GoalsSummary = goalsSummary,
+                TraitsSummary = traitsSummary
             };
         }
 
@@ -1136,16 +1449,187 @@ namespace Survivebest.UI
 
             if (bodyDetailsText != null)
             {
-                bodyDetailsText.text = $"Body: {active.CurrentBodyType}\nLife Stage: {active.CurrentLifeStage}\nStyle: {active.ClothingStyle}";
+                string chestLine = "Chest/Breast: n/a";
+                if (genetics != null && genetics.Phenotype != null)
+                {
+                    chestLine = $"Chest/Breast: {genetics.Phenotype.Body.ChestBustPresentation:0.00} (hormone-weighted)";
+                }
+
+                bodyDetailsText.text = $"Body: {active.CurrentBodyType}\nLife Stage: {active.CurrentLifeStage}\nBody Fat: {(genetics != null ? genetics.Profile.FatDistribution : 0.5f):0.00}\nBody Muscle: {(genetics != null ? genetics.Profile.MusclePotential : 0.5f):0.00}\n{chestLine}\nStyle: {active.ClothingStyle}";
             }
 
             if (geneticsDetailsText != null && appearanceManager != null && appearanceManager.CurrentProfile != null)
             {
                 string advanced = genetics != null
-                    ? $"Mode: {creatorMode}\nRegion Pool: {genetics.Profile.PopulationRegionId}\nChromosomes: {genetics.Profile.ChromosomePairs.Count}\nMelanin Gene: {genetics.Profile.MelaninRange:0.00}\nHeight Gene: {genetics.Profile.HeightPotential:0.00}\nBody Fat Gene: {genetics.Profile.FatDistribution:0.00}\nMuscle Gene: {genetics.Profile.MusclePotential:0.00}\nOpenness/Cognition: {genetics.Profile.Psychology.BigFiveOpenness:0.00}\nStress Imprint: {genetics.Profile.Epigenetics.StressImprint:0.00}\nMutation Chain: {genetics.Profile.Mutations.InheritedMutationChain:0.00}"
+                    ? $"Mode: {creatorMode}\nRegion Pool: {genetics.Profile.PopulationRegionId}\nChromosomes: {genetics.Profile.ChromosomePairs.Count}\nMelanin Gene: {genetics.Profile.MelaninRange:0.00}\nHeight Gene: {genetics.Profile.HeightPotential:0.00}\nBody Fat Gene: {genetics.Profile.FatDistribution:0.00}\nMuscle Gene: {genetics.Profile.MusclePotential:0.00}\nBreast/Chest Potential: {genetics.Profile.ChestBustPotential:0.00}\nChest Width Bias: {genetics.Profile.BodyGenome.RibcageWidth:0.00}\nOpenness/Cognition: {genetics.Profile.Psychology.BigFiveOpenness:0.00}\nStress Imprint: {genetics.Profile.Epigenetics.StressImprint:0.00}\nMutation Chain: {genetics.Profile.Mutations.InheritedMutationChain:0.00}"
                     : "Genetics system unavailable.";
-                geneticsDetailsText.text = $"Skin Tone: {appearanceManager.CurrentProfile.SkinTone}\nEye Color: {appearanceManager.CurrentProfile.EyeColor}\nHair Texture: {hairTextureFilter}\nLocked: {(IsActiveCharacterLocked() ? "Yes" : "No")}\n{advanced}";
+                geneticsDetailsText.text = $"Skin Tone: {appearanceManager.CurrentProfile.SkinTone}\nEye Color: {appearanceManager.CurrentProfile.EyeColor}\nHair Texture: {hairTextureFilter}\nLocked: {(IsActiveCharacterLocked() ? "Yes" : "No")}\nTraits: {BuildTraitsSummary(active)}\nGoals: {BuildGoalsSummary(active)}\n{advanced}";
             }
+        }
+
+        private string BuildBodyDepthSummary(GeneticsSystem genetics, CharacterCore active)
+        {
+            if (active == null)
+            {
+                return string.Empty;
+            }
+
+            if (genetics == null)
+            {
+                return $"Body type {active.CurrentBodyType}";
+            }
+
+            return $"Body type {active.CurrentBodyType}, fat {genetics.Profile.FatDistribution:0.00}, muscle {genetics.Profile.MusclePotential:0.00}, breast/chest {genetics.Profile.ChestBustPotential:0.00}";
+        }
+
+        private string BuildGeneticsDepthSummary(GeneticsSystem genetics)
+        {
+            if (genetics == null)
+            {
+                return "Genetics unavailable";
+            }
+
+            return $"Region {genetics.Profile.PopulationRegionId}, melanin {genetics.Profile.MelaninRange:0.00}, height {genetics.Profile.HeightPotential:0.00}, hormone balance {genetics.Profile.Hormones.EstrogenAndrogenBalance:0.00}, mutation {genetics.Profile.Mutations.InheritedMutationChain:0.00}";
+        }
+
+        private string BuildGoalsSummary(CharacterCore active)
+        {
+            if (active == null)
+            {
+                return "No goals";
+            }
+
+            LifestyleBehaviorSystem lifestyle = active.GetComponent<LifestyleBehaviorSystem>();
+            return lifestyle != null ? lifestyle.BuildLifestyleDashboard() : "No lifestyle goals connected";
+        }
+
+        private string BuildTraitsSummary(CharacterCore active)
+        {
+            if (active == null)
+            {
+                return "No traits";
+            }
+
+            summaryBuilder.Clear();
+            if (active.Talents != null && active.Talents.Count > 0)
+            {
+                int talentCount = Mathf.Min(3, active.Talents.Count);
+                for (int i = 0; i < talentCount; i++)
+                {
+                    if (i > 0) summaryBuilder.Append(", ");
+                    summaryBuilder.Append(active.Talents[i]);
+                }
+            }
+            else
+            {
+                summaryBuilder.Append("No explicit talents");
+            }
+
+            summaryBuilder.Append($" | freckles {detailState.Freckles:0.00}, moles {detailState.Moles:0.00}, vitiligo {detailState.Vitiligo:0.00}, birthmarks {detailState.Birthmarks:0.00}, pimples {detailState.Pimples:0.00}, lashes {detailState.EyelashLength:0.00}, browType {detailState.EyebrowType}, hooded {detailState.HoodedEyelids}, monolid {detailState.MonolidEyelids}, piercings {detailState.PiercingSet}, jewelry {detailState.JewelrySet}, heels {detailState.HeelsHeight:0.00}, safety {ageAppropriateSafetyNote}");
+
+            if (personalityMatrixSystem != null)
+            {
+                string compact = personalityMatrixSystem.BuildCompactSummary(active.CharacterId);
+                if (!string.IsNullOrWhiteSpace(compact))
+                {
+                    summaryBuilder.Append(" | ");
+                    summaryBuilder.Append(compact.Replace('\n', ' '));
+                }
+            }
+
+            return summaryBuilder.ToString();
+        }
+
+        private void ApplyDetailState(CharacterCreatorDetailState state)
+        {
+            if (state == null)
+            {
+                return;
+            }
+
+            detailState.Freckles = state.Freckles;
+            detailState.Moles = state.Moles;
+            detailState.Vitiligo = state.Vitiligo;
+            detailState.Birthmarks = state.Birthmarks;
+            detailState.Pimples = state.Pimples;
+            detailState.EyelashLength = state.EyelashLength;
+            detailState.EyebrowDensity = state.EyebrowDensity;
+            detailState.NeckLength = state.NeckLength;
+            detailState.HeelsHeight = state.HeelsHeight;
+            detailState.HoodedEyelids = state.HoodedEyelids;
+            detailState.MonolidEyelids = state.MonolidEyelids;
+            detailState.EyebrowType = state.EyebrowType;
+            detailState.PiercingSet = state.PiercingSet;
+            detailState.JewelrySet = state.JewelrySet;
+            detailState.HairstyleGenderCatalog = state.HairstyleGenderCatalog;
+            detailState.HairstyleCatalogIndex = state.HairstyleCatalogIndex;
+            detailState.OutfitGenderCatalog = state.OutfitGenderCatalog;
+            detailState.OutfitCatalogIndex = state.OutfitCatalogIndex;
+        }
+
+        private static CharacterCreatorDetailState CloneDetailState(CharacterCreatorDetailState source)
+        {
+            if (source == null)
+            {
+                return new CharacterCreatorDetailState();
+            }
+
+            return new CharacterCreatorDetailState
+            {
+                Freckles = source.Freckles,
+                Moles = source.Moles,
+                Vitiligo = source.Vitiligo,
+                Birthmarks = source.Birthmarks,
+                Pimples = source.Pimples,
+                EyelashLength = source.EyelashLength,
+                EyebrowDensity = source.EyebrowDensity,
+                NeckLength = source.NeckLength,
+                HeelsHeight = source.HeelsHeight,
+                HoodedEyelids = source.HoodedEyelids,
+                MonolidEyelids = source.MonolidEyelids,
+                EyebrowType = source.EyebrowType,
+                PiercingSet = source.PiercingSet,
+                JewelrySet = source.JewelrySet,
+                HairstyleGenderCatalog = source.HairstyleGenderCatalog,
+                HairstyleCatalogIndex = source.HairstyleCatalogIndex,
+                OutfitGenderCatalog = source.OutfitGenderCatalog,
+                OutfitCatalogIndex = source.OutfitCatalogIndex
+            };
+        }
+
+        private static List<string> ResolveCatalog(int category, List<string> feminine, List<string> masculine, List<string> androgynous)
+        {
+            return category switch
+            {
+                0 => feminine,
+                1 => masculine,
+                _ => androgynous
+            };
+        }
+
+        private float ClampForAgeSensitiveBodyFeature(float value)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            float normalized = Mathf.Clamp01(value);
+            if (active == null)
+            {
+                return normalized;
+            }
+
+            if (active.CurrentLifeStage <= LifeStage.Preteen)
+            {
+                ageAppropriateSafetyNote = "Chest/breast growth blocked for child/preteen stages";
+                return 0f;
+            }
+
+            if (active.CurrentLifeStage == LifeStage.Teen)
+            {
+                ageAppropriateSafetyNote = "Teen chest/breast growth range constrained";
+                return Mathf.Clamp01(normalized * 0.45f);
+            }
+
+            ageAppropriateSafetyNote = "All enabled";
+            return normalized;
         }
 
 

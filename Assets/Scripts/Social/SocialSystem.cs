@@ -141,11 +141,15 @@ namespace Survivebest.Core
 
             relationship.RelationshipValue = Mathf.Clamp(relationship.RelationshipValue + ScaleSocialDelta(amount), -100f, 100f);
 
-            if (relationship.RelationshipValue > 80f && relationship.RelationshipType == RelationshipType.Roommate)
+            CharacterCore targetCharacter = ResolveCharacterById(targetCharacterId);
+            bool canBecomePartner = CanBecomePartner(owner, targetCharacter);
+            bool canBecomeLover = CanBecomeLover(owner, targetCharacter);
+
+            if (relationship.RelationshipValue > 80f && relationship.RelationshipType == RelationshipType.Roommate && canBecomePartner)
             {
                 relationship.RelationshipType = RelationshipType.Partner;
             }
-            else if (relationship.RelationshipValue > 95f)
+            else if (relationship.RelationshipValue > 95f && canBecomeLover)
             {
                 relationship.RelationshipType = RelationshipType.Lover;
             }
@@ -156,6 +160,50 @@ namespace Survivebest.Core
 
             OnRelationshipChanged?.Invoke(relationship);
             PublishRelationshipEvent(relationship, "Relationship value updated");
+        }
+
+        private static bool CanBecomePartner(CharacterCore a, CharacterCore b)
+        {
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
+            bool aTeen = a.CurrentLifeStage == LifeStage.Teen;
+            bool bTeen = b.CurrentLifeStage == LifeStage.Teen;
+            bool aAdult = a.CurrentLifeStage >= LifeStage.YoungAdult;
+            bool bAdult = b.CurrentLifeStage >= LifeStage.YoungAdult;
+            return (aTeen && bTeen) || (aAdult && bAdult);
+        }
+
+        private static bool CanBecomeLover(CharacterCore a, CharacterCore b)
+        {
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
+            return a.CurrentLifeStage >= LifeStage.YoungAdult && b.CurrentLifeStage >= LifeStage.YoungAdult;
+        }
+
+        private static CharacterCore ResolveCharacterById(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return null;
+            }
+
+            CharacterCore[] characters = UnityEngine.Object.FindObjectsOfType<CharacterCore>();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                CharacterCore candidate = characters[i];
+                if (candidate != null && string.Equals(candidate.CharacterId, characterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private void PublishRelationshipEvent(Relationship relationship, string reason)
