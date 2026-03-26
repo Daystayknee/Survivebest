@@ -399,3 +399,250 @@ Use this as a deeper all-systems closure pass:
 - Gameplay references: `Docs/Reference/*`
 
 If you follow this file sequentially while wiring/testing, you will cover architecture ownership, assets, systems, UI hookup, persistence, and QA closure in one pass.
+
+---
+
+## 11) Step-by-step “Use every part of the project” operator runbook
+
+This section is intentionally exhaustive and procedural so you can walk a new team member from empty scene to full-system validation without guessing.
+
+### Phase A — Preflight and project indexing
+
+1. Open Unity project and let package import complete.
+2. In **Project** window, verify these roots exist and are populated:
+   - `Assets/Scripts/Core`
+   - `Assets/Scripts/UI`
+   - `Assets/Scripts/World`
+   - `Assets/Scripts/Economy`
+   - `Assets/Scripts/Social`
+   - `Assets/Scripts/Utility`
+   - `Assets/Tests/EditMode`
+3. Open the following docs side-by-side (split editor or external):
+   - `README.md`
+   - `Docs/SceneContracts.md`
+   - `Docs/COMPLETE_GAMEPLAY_SYSTEM_AUDIT.md`
+   - `Docs/COMPLETE_GAME_CONTENT_GAP_AUDIT.md`
+   - `Docs/SAVE_CONTRACT_AUDIT_MATRIX.md`
+4. Create a temporary checklist note named `session_wiring_notes.md` (local/not committed) where you mark each subsystem as **Added / Wired / Smoke-tested / Save-verified**.
+
+### Phase B — Build a canonical bootstrap scene
+
+1. Create scene `Assets/Scenes/SimulationSandbox.unity` (or your canonical equivalent).
+2. Add empty GameObject `__SimulationRoot`.
+3. Add and configure in this order:
+   1. `GameEventHub`.
+   2. `WorldClock`.
+   3. `DaySliceManager`.
+   4. `GameBootstrapPipeline`.
+   5. `SimulationStabilityMonitor`.
+4. Add runtime world managers under `__World`:
+   - `WorldCreatorManager`
+   - `LocationManager`
+   - `WeatherManager`
+   - `WorldEventDirector`
+   - `WorldPersistenceCullingSystem`
+5. Add household and character roots:
+   - `HouseholdManager`
+   - `FamilyManager`
+   - at least one `CharacterCore` prefab/object with required systems.
+6. Add economy authorities:
+   - `EconomyManager`
+   - `InventoryManager`
+   - `EconomyInventorySystem`
+7. Add services and tooling for development scene only:
+   - `SimulationSceneBootstrapper`
+   - `ValidationToolkit`
+   - `AssetReadinessReporter`
+   - `IntegrationDryRunService`
+   - `BalanceTuningAdvisor`
+
+### Phase C — Wire one fully featured playable character
+
+For your first active character object:
+
+1. Core identity/progression:
+   - `CharacterCore`
+   - `LifeStageManager`
+   - `SkillSystem`
+   - `SkillTreeSystem`
+2. Needs/health/emotion:
+   - `NeedsSystem`
+   - `HealthSystem`
+   - `MedicalConditionSystem`
+   - `InjuryRecoverySystem`
+   - `AdvancedHealthRecoverySystem`
+   - `EmotionSystem`
+   - `ConflictSystem`
+3. Social and dialogue:
+   - `SocialSystem`
+   - `RelationshipMemorySystem`
+   - `DialogueSystem`
+   - `InteractionDialogueBridge`
+4. Daily behavior:
+   - `ActivitySystem`
+   - `DailyRoutineSystem`
+   - `LifestyleBehaviorSystem`
+5. Appearance/presentation:
+   - `AppearanceManager`
+   - `CharacterAppearanceEditor`
+   - `StyleIdentitySystem`
+   - `CharacterPortraitRenderer`
+6. Verify inspector references to global managers are all assigned.
+
+### Phase D — Bring up UI end-to-end
+
+1. Create `Canvas_MainUI` with EventSystem.
+2. Add top-level screen controllers:
+   - `SplashScreenController`
+   - `MainMenuFlowController`
+   - `WorldCreatorScreenController`
+   - `HouseholdMakerScreenController`
+   - `GameplayScreenController`
+   - `CharacterScreenController`
+   - `LoadGameScreenController`
+   - `SettingsPageController`
+3. Add gameplay HUD and overlays:
+   - `GameHUD`
+   - `CharacterRosterHUD`
+   - `JournalFeedUI`
+   - `ActionPopupController`
+   - `SidebarContextMenu`
+   - `DialogueOverlayController`
+   - `ZoneScenePanel`
+4. Wire presentation bridge:
+   - `GameplayPresentationStateCoordinator`
+   - `GameplayInteractionPresentationLayer`
+   - `UIEventFeedbackRouter`
+5. Verify button routing in Play Mode:
+   - Splash -> Main Menu
+   - New Game -> World Creator -> Character Creator/Household -> Gameplay
+   - Settings and Load Game are reachable and return correctly.
+
+### Phase E — Activate content and asset pipelines
+
+1. Sprite pipeline:
+   - Populate `SpriteAssetRegistry`.
+   - Confirm slot definitions in `SpriteRenderSlotCatalog`.
+   - Run `SpriteResolverValidator` checks.
+2. Portrait/paper-doll:
+   - Validate trait -> layer resolution through `AvatarPresentationStateResolver`.
+   - Confirm fallback sprite behavior in `CharacterPortraitRenderer`.
+3. Matrix and naming discipline:
+   - Fill `Docs/Art/MasterAssetMatrix.template.csv` for your build target.
+   - Apply `Docs/Art/ASSET_NAMING_CONVENTION.md` consistently.
+   - Track unresolved art in `ASSET_CHECKLIST.md`.
+4. Placeholder strategy:
+   - Use `PlaceholderGenerator` for any missing production slot.
+   - Replace placeholders without changing lookup keys.
+
+### Phase F — Exercise every gameplay domain at least once
+
+Run a smoke scenario where each subsystem emits at least one meaningful event:
+
+1. Time/weather: progress day slices and force weather changes.
+2. Needs/health: drive hunger/fatigue, apply condition, trigger treatment and recovery.
+3. Social: run dialogue, generate relationship memory, trigger conflict escalation.
+4. Economy: buy/sell/consume item, process grocery/order delivery.
+5. Housing/home loop: generate chores, clean/repair, apply utility/bill consequences.
+6. Crime/law: commit offense, evaluate justice outcome, process fine/custody/release.
+7. Story/progression: generate one autonomous incident and one long-term progression update.
+8. UI feedback: verify journal card + popup + HUD state all update for same underlying event.
+
+### Phase G — Save/load + migration reliability pass
+
+1. Save at three checkpoints:
+   - immediately after world setup,
+   - mid-day with active effects,
+   - after major consequences (justice, injury, relationship impact).
+2. Load each checkpoint and confirm:
+   - clock consistency,
+   - active character continuity,
+   - inventory/economy parity,
+   - NPC schedule continuity,
+   - UI panel state resilience.
+3. If you changed persistent structure, update migration handling and tests before merging.
+
+### Phase H — Readiness close-out and handoff
+
+1. Run readiness reporting (`AssetReadinessReporter`).
+2. Run integration dry run + balance recommendations.
+3. Ensure unresolved issues are captured in:
+   - `Docs/FullGameAfterCodingChecklist.md`
+   - `Docs/COMPLETE_GAME_CONTENT_GAP_AUDIT.md`
+4. Freeze scene wiring and publish a short “known gaps” note for art/content still placeholder.
+
+---
+
+## 12) Code-area usage map (how to use each folder intentionally)
+
+Use this as a “where do I touch code?” decision table.
+
+- `Assets/Scripts/Core`
+  - Use for orchestration, lifecycle, progression, save/load core contracts, and cross-domain simulation glue.
+  - Avoid UI-only logic here.
+- `Assets/Scripts/World`
+  - Use for global world state (clock, weather, genetics presentation resolution, world events, persistence culling).
+- `Assets/Scripts/Needs`, `Health`, `Emotion`
+  - Use for per-character physiological/psychological state machines and update rules.
+- `Assets/Scripts/Social`, `Dialogue`, `Story`
+  - Use for interaction outcomes, memory, narrative events, and directed/emergent social consequences.
+- `Assets/Scripts/Economy`, `Commerce`, `Catalog`, `Food`
+  - Use for authoritative item/money/content definitions and transactional operations.
+- `Assets/Scripts/NPC`, `Location`, `Society`, `Crime`
+  - Use for world actors, district/lot simulation, policy/governance, and legal-consequence loops.
+- `Assets/Scripts/UI`, `Interaction`, `View`
+  - Use for player-facing controllers and interaction surfaces that consume simulation outputs.
+- `Assets/Scripts/Utility`
+  - Use for validation, diagnostics, auto-wiring helpers, and readiness reporting (not core game rules).
+- `Assets/Tests/EditMode`
+  - Use for deterministic logic verification, contracts, regressions, and save/load guarantees.
+
+---
+
+## 13) UI feature-by-feature verification checklist
+
+Use this when you want confidence every major screen is operational.
+
+1. Splash + main flow
+   - Splash auto-advances and manual skip both work.
+   - Main menu buttons route and return correctly.
+2. World creation
+   - All tabs render.
+   - Generated data reaches runtime world managers.
+3. Character + household creation
+   - Tab switching, character switching, zoom/rotate preview, genetics validation, draft save/load all execute.
+4. Gameplay HUD
+   - Clock, needs, money, location, resource summaries refresh in response to simulation changes.
+5. Context menus/popups
+   - Contextual actions appear for map/lot/interactable state and execute with visible feedback.
+6. Journal/feed
+   - Important simulation events generate readable feed cards.
+7. Settings
+   - Audio, display, subtitles, UI scale, and theme changes persist across reload.
+8. Load game
+   - Slot metadata renders accurately and loading restores scene/session continuity.
+
+---
+
+## 14) Asset completeness checklist (art + data)
+
+1. Visual identity assets
+   - Portrait layer sets per life stage.
+   - Hair/facial accessories, tattoos, expression overlays.
+   - Fallback silhouettes/placeholders.
+2. Environment assets
+   - Lot/zone backdrops, weather variants, district signifiers.
+3. UI assets
+   - Icon packs for needs/status/currency/actions.
+   - Panel skins, button states, highlight/alert treatments.
+4. Audio assets
+   - UI click/confirm/error, ambient loops by zone/weather, major event stingers.
+5. Data assets/content tables
+   - Foods/drinks/ingredients/supplies complete enough for recipe + market loops.
+   - Law/policy presets, quest opportunities, dialogue sets, progression milestones.
+6. Technical validation
+   - All required matrix rows satisfied.
+   - Missing optional assets explicitly documented.
+   - No unresolved critical sprite keys in runtime logs.
+
+If this section is followed in order, you will have touched foundation code, gameplay systems, UI flows, and asset pipelines in one deliberate pass rather than ad-hoc scene tinkering.
