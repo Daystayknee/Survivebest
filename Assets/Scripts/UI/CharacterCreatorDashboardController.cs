@@ -200,27 +200,42 @@ namespace Survivebest.UI
         [Header("Expanded Creator Catalogs")]
         [SerializeField] private List<string> feminineHairstyleCatalog = new()
         {
-            "fem_ballet_bun","fem_sleek_bob","fem_soft_waves","fem_crown_braid","fem_butterfly_layers","fem_high_ponytail","fem_wolf_cut","fem_coily_puff","fem_long_locs","fem_ribbon_braids"
+            "fem_ballet_bun","fem_sleek_bob","fem_soft_waves","fem_crown_braid","fem_butterfly_layers","fem_high_ponytail","fem_wolf_cut","fem_coily_puff","fem_long_locs","fem_ribbon_braids",
+            "fem_buzz_cut_soft","fem_buzz_cut_design","fem_micro_bangs","fem_side_shave_wave","fem_angled_bob","fem_voluminous_curls","fem_half_up_twist","fem_french_braid_duo","fem_braided_bun_low","fem_blunt_lob",
+            "fem_pixie_textured","fem_waist_braids","fem_locs_updo","fem_deep_side_part","fem_beach_waves_long","fem_layered_bangs","fem_twisted_crown","fem_high_puff","fem_space_buns","fem_shaggy_layers",
+            "fem_vintage_rolls","fem_curtain_bangs_long","fem_soft_mohawk","fem_choppy_bob","fem_side_braid_pony","fem_halo_braid","fem_textured_buzz","fem_fade_design","fem_boho_braids","fem_wavy_lob"
         };
         [SerializeField] private List<string> masculineHairstyleCatalog = new()
         {
-            "mas_fade_crop","mas_textured_quiff","mas_brushed_back","mas_curtain_cut","mas_short_locs","mas_twists","mas_buzz_lineup","mas_side_part","mas_bro_flow","mas_undercut_wave"
+            "mas_fade_crop","mas_textured_quiff","mas_brushed_back","mas_curtain_cut","mas_short_locs","mas_twists","mas_buzz_lineup","mas_side_part","mas_bro_flow","mas_undercut_wave",
+            "mas_skin_fade_buzz","mas_high_top","mas_taper_curls","mas_caesar_cut","mas_mohawk_short","mas_braid_rows","mas_crew_cut","mas_messy_fringe","mas_slick_part","mas_drop_fade",
+            "mas_mid_length_locs","mas_pompadour","mas_flat_top","mas_wolf_cut_short","mas_shaved_sides_top_knot","mas_curly_fade","mas_french_crop","mas_lineup_waves","mas_mod_cut","mas_mullet_modern",
+            "mas_drop_fade_design","mas_low_fade_buzz","mas_high_mohawk","mas_layered_mullet","mas_braided_top","mas_long_wavy_tieback","mas_twist_out","mas_textured_spikes","mas_side_swept_medium","mas_underhawk"
         };
         [SerializeField] private List<string> androgynousHairstyleCatalog = new()
         {
-            "andro_shag_midi","andro_mullet_soft","andro_pixie_long","andro_short_bob","andro_loose_coils","andro_center_part","andro_micro_braids","andro_rounded_afro","andro_side_swept","andro_top_knot_low"
+            "andro_shag_midi","andro_mullet_soft","andro_pixie_long","andro_short_bob","andro_loose_coils","andro_center_part","andro_micro_braids","andro_rounded_afro","andro_side_swept","andro_top_knot_low",
+            "andro_buzz_clean","andro_buzz_pattern","andro_textured_crop","andro_blunt_bob","andro_long_layers_center","andro_soft_locs","andro_shoulder_twists","andro_half_shaved","andro_curtain_wave","andro_fauxhawk_soft",
+            "andro_micro_twists","andro_choppy_shag","andro_round_curls","andro_tapered_puff","andro_low_braid_tail","andro_slick_back","andro_layered_mullet","andro_fluffy_wolf","andro_short_locs","andro_coily_fade",
+            "andro_buzz_fade","andro_soft_mohawk","andro_long_braids","andro_shaved_pattern","andro_curly_mullet","andro_taper_locs","andro_wavy_undercut","andro_platinum_crop","andro_short_afro","andro_boho_waves"
         };
         [SerializeField] private List<string> feminineOutfitCatalog = new()
         {
-            "fit_wrap_dress","fit_power_suit_skirt","fit_street_crop_layered","fit_formal_gown","fit_medical_scrub_tailored","fit_active_set","fit_boho_maxi","fit_vintage_tea","fit_festival_glitter","fit_evening_minimal"
+            "fit_wrap_dress","fit_power_suit_skirt","fit_street_crop_layered","fit_formal_gown","fit_medical_scrub_tailored","fit_active_set","fit_boho_maxi","fit_vintage_tea","fit_festival_glitter","fit_evening_minimal",
+            "fit_fem_teacher_cardigan","fit_fem_barista_apron","fit_fem_construction_vest","fit_fem_security_uniform","fit_fem_fire_rescue","fit_fem_police_patrol","fit_fem_office_tailored","fit_fem_mechanic_coverall","fit_fem_cargo_utility","fit_fem_surgeon_scrubs",
+            "fit_fem_airline_uniform","fit_fem_journalist_field","fit_fem_social_worker","fit_fem_dispatch_console","fit_fem_chef_black","fit_fem_bartender_night","fit_fem_warehouse_shift","fit_fem_train_conductor","fit_fem_plumber_trade","fit_fem_pilot_formal"
         };
         [SerializeField] private List<string> masculineOutfitCatalog = new()
         {
-            "fit_tailored_suit","fit_utility_layers","fit_street_overshirt","fit_formal_tux","fit_medical_scrubs","fit_active_track","fit_outdoor_hiker","fit_vintage_denim","fit_festival_open_shirt","fit_evening_mono"
+            "fit_tailored_suit","fit_utility_layers","fit_street_overshirt","fit_formal_tux","fit_medical_scrubs","fit_active_track","fit_outdoor_hiker","fit_vintage_denim","fit_festival_open_shirt","fit_evening_mono",
+            "fit_masc_teacher_blazer","fit_masc_barista_apron","fit_masc_construction_vest","fit_masc_security_uniform","fit_masc_fire_rescue","fit_masc_police_patrol","fit_masc_office_tailored","fit_masc_mechanic_coverall","fit_masc_cargo_utility","fit_masc_surgeon_scrubs",
+            "fit_masc_airline_uniform","fit_masc_journalist_field","fit_masc_social_worker","fit_masc_dispatch_console","fit_masc_chef_black","fit_masc_bartender_night","fit_masc_warehouse_shift","fit_masc_train_conductor","fit_masc_plumber_trade","fit_masc_pilot_formal"
         };
         [SerializeField] private List<string> androgynousOutfitCatalog = new()
         {
-            "fit_andro_oversize_blazer","fit_andro_mesh_layers","fit_andro_minimal_black","fit_andro_cyber_panel","fit_andro_prep_layers","fit_andro_lounge_set","fit_andro_utility_skirt_pant","fit_andro_vintage_mix","fit_andro_festival_neon","fit_andro_formal_drape"
+            "fit_andro_oversize_blazer","fit_andro_mesh_layers","fit_andro_minimal_black","fit_andro_cyber_panel","fit_andro_prep_layers","fit_andro_lounge_set","fit_andro_utility_skirt_pant","fit_andro_vintage_mix","fit_andro_festival_neon","fit_andro_formal_drape",
+            "fit_andro_teacher_layered","fit_andro_barista_apron","fit_andro_construction_vest","fit_andro_security_uniform","fit_andro_fire_rescue","fit_andro_police_patrol","fit_andro_office_tailored","fit_andro_mechanic_coverall","fit_andro_cargo_utility","fit_andro_surgeon_scrubs",
+            "fit_andro_airline_uniform","fit_andro_journalist_field","fit_andro_social_worker","fit_andro_dispatch_console","fit_andro_chef_black","fit_andro_bartender_night","fit_andro_warehouse_shift","fit_andro_train_conductor","fit_andro_plumber_trade","fit_andro_pilot_formal"
         };
 
         public CharacterCreatorDashboardTab CurrentTab { get; private set; }

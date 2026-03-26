@@ -83,6 +83,13 @@ namespace Survivebest.NPC
     }
 
     [Serializable]
+    public class NpcSkillRating
+    {
+        public string SkillId;
+        [Range(0, 10)] public int Level;
+    }
+
+    [Serializable]
     public class NpcProfile
     {
         public string NpcId;
@@ -96,6 +103,9 @@ namespace Survivebest.NPC
         [Range(0f, 100f)] public float Health = 100f;
         [Range(0f, 100f)] public float Stress = 10f;
         public bool IsDead;
+        public string WorkOutfitId;
+        public string WorkOutfitStyle;
+        public List<NpcSkillRating> SkillRatings = new();
         public List<NpcScheduleBlock> Schedule = new();
         public List<NpcMemoryEntry> Memory = new();
         public List<string> RelationshipIds = new();
@@ -169,6 +179,11 @@ namespace Survivebest.NPC
                 CurrentLotId = homeLotId,
                 Schedule = BuildDefaultSchedule(job)
             });
+        }
+
+        public void ClearAllNpcs()
+        {
+            npcProfiles.Clear();
         }
 
         public void RememberInteraction(string npcId, string subjectId, string topic, int sentiment)
