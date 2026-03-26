@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.Location;
+using Survivebest.NPC;
 using Survivebest.Society;
 using Survivebest.Catalog;
 
@@ -45,6 +46,7 @@ namespace Survivebest.World
         public int HospitalAreas;
         public int DistrictCount;
         public int RouteCount;
+        public int PremadeNpcCount;
     }
 
     public class WorldCreatorManager : MonoBehaviour
@@ -63,11 +65,14 @@ namespace Survivebest.World
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private HousingPropertySystem housingPropertySystem;
+        [SerializeField] private NpcScheduleSystem npcScheduleSystem;
+        [SerializeField] private NpcCareerSystem npcCareerSystem;
         [SerializeField] private LawSystem lawSystem;
         [SerializeField] private SupplyCatalog supplyCatalog;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<WorldAreaTemplate> areaTemplates = new();
         [SerializeField] private bool useSensibleDefaultsOnStart = true;
+        [SerializeField] private bool autoGeneratePremadeResidents = true;
         [SerializeField] private WorldGenerationSummary lastGeneratedSummary = new();
 
         public event Action<int> OnWorldGenerated;
@@ -207,6 +212,11 @@ namespace Survivebest.World
             lawSystem?.SetAreaProfiles(profiles);
             locationManager?.SetRooms(rooms);
             BuildTownLayout(normalizedTemplates);
+            if (autoGeneratePremadeResidents)
+            {
+                summary.PremadeNpcCount = GeneratePremadeResidents(summary);
+            }
+            lastGeneratedSummary = summary;
 
             OnWorldGenerated?.Invoke(rooms.Count);
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
@@ -218,6 +228,188 @@ namespace Survivebest.World
                 Reason = $"World {summary.WorldName} generated with {rooms.Count} areas in {summary.RegionId}",
                 Magnitude = rooms.Count
             });
+        }
+
+        private int GeneratePremadeResidents(WorldGenerationSummary summary)
+        {
+            if (npcScheduleSystem == null || npcCareerSystem == null)
+            {
+                return 0;
+            }
+
+            IReadOnlyList<CareerRoleDefinition> roles = npcCareerSystem.RoleDefinitions;
+            if (roles == null || roles.Count == 0)
+            {
+                return 0;
+            }
+
+            System.Random rng = new(BuildWorldSeed() ^ 0x6C8E9CF5);
+            List<string> homeLots = BuildLotsByTheme(LocationTheme.Residential);
+            List<string> fallbackWorkLots = BuildNonResidentialLots();
+            npcScheduleSystem.ClearAllNpcs();
+            npcCareerSystem.ClearCareerRecords();
+
+            int created = 0;
+            for (int i = 0; i < roles.Count; i++)
+            {
+                CareerRoleDefinition role = roles[i];
+                if (role == null || role.Profession == ProfessionType.None)
+                {
+                    continue;
+                }
+
+                string npcId = $"premade_{role.Profession.ToString().ToLowerInvariant()}_{i:00}";
+                string displayName = BuildRandomName(rng);
+                string homeLot = PickLot(homeLots, rng, $"home_{i}");
+                string workLot = !string.IsNullOrWhiteSpace(role.WorkplaceLotId)
+                    ? role.WorkplaceLotId
+                    : PickLot(fallbackWorkLots, rng, $"work_{i}");
+
+                npcScheduleSystem.RegisterNpc(npcId, displayName, MapProfessionToJob(role.Profession), homeLot, workLot);
+                npcCareerSystem.AssignCareer(npcId, role.Profession);
+                NpcProfile profile = npcScheduleSystem.GetNpcProfile(npcId);
+                if (profile != null)
+                {
+                    profile.WorkLotId = workLot;
+                    profile.WorkOutfitId = BuildWorkOutfitVariant(role, rng);
+                    profile.WorkOutfitStyle = role.ShiftLabel;
+                    profile.SkillRatings = BuildRandomSkillRatingsForProfession(role, rng);
+                    profile.Reputation = Mathf.Clamp(rng.Next(-20, 36), -100, 100);
+                    profile.Stress = Mathf.Clamp(rng.Next(6, 48), 0, 100);
+                    profile.Health = Mathf.Clamp(rng.Next(62, 100), 0, 100);
+                }
+
+                created++;
+            }
+
+            if (created > 0)
+            {
+                (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                {
+                    Type = SimulationEventType.WorldCreated,
+                    Severity = SimulationEventSeverity.Info,
+                    SystemName = nameof(WorldCreatorManager),
+                    ChangeKey = "PremadeResidents",
+                    Reason = $"Generated {created} premade residents across common careers for {summary.WorldName}.",
+                    Magnitude = created
+                });
+            }
+
+            return created;
+        }
+
+        private List<string> BuildLotsByTheme(LocationTheme theme)
+        {
+            List<string> lots = new();
+            IReadOnlyList<Room> rooms = locationManager != null ? locationManager.Rooms : null;
+            if (rooms == null)
+            {
+                return lots;
+            }
+
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                Room room = rooms[i];
+                if (room == null || room.Theme != theme || string.IsNullOrWhiteSpace(room.RoomName))
+                {
+                    continue;
+                }
+
+                lots.Add(room.RoomName);
+            }
+
+            return lots;
+        }
+
+        private List<string> BuildNonResidentialLots()
+        {
+            List<string> lots = new();
+            IReadOnlyList<Room> rooms = locationManager != null ? locationManager.Rooms : null;
+            if (rooms == null)
+            {
+                return lots;
+            }
+
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                Room room = rooms[i];
+                if (room == null || room.Theme == LocationTheme.Residential || string.IsNullOrWhiteSpace(room.RoomName))
+                {
+                    continue;
+                }
+
+                lots.Add(room.RoomName);
+            }
+
+            return lots;
+        }
+
+        private static string PickLot(List<string> lots, System.Random rng, string fallback)
+        {
+            if (lots == null || lots.Count == 0)
+            {
+                return fallback;
+            }
+
+            return lots[rng.Next(lots.Count)];
+        }
+
+        private static string BuildRandomName(System.Random rng)
+        {
+            string[] firstNames = { "Alex", "Jordan", "Taylor", "Riley", "Cameron", "Morgan", "Casey", "Skyler", "Avery", "Quinn", "Robin", "Parker", "Blake", "Drew", "Emerson", "Logan" };
+            string[] lastNames = { "Reed", "Bennett", "Harper", "Diaz", "Walker", "Brooks", "Patel", "Kim", "Rivera", "Nguyen", "Young", "Flores", "Price", "Santos", "Miller", "Campbell" };
+            return $"{firstNames[rng.Next(firstNames.Length)]} {lastNames[rng.Next(lastNames.Length)]}";
+        }
+
+        private static string BuildWorkOutfitVariant(CareerRoleDefinition role, System.Random rng)
+        {
+            string baseUniform = !string.IsNullOrWhiteSpace(role?.UniformItemId) ? role.UniformItemId : "work_uniform";
+            string[] styleSuffixes = { "standard", "formal", "weatherproof", "night_shift", "field_ready", "lightweight" };
+            return $"{baseUniform}_{styleSuffixes[rng.Next(styleSuffixes.Length)]}";
+        }
+
+        private static List<NpcSkillRating> BuildRandomSkillRatingsForProfession(CareerRoleDefinition role, System.Random rng)
+        {
+            List<NpcSkillRating> ratings = new();
+            string[] universal = { "Communication", "Teamwork", "ProblemSolving" };
+            for (int i = 0; i < universal.Length; i++)
+            {
+                ratings.Add(new NpcSkillRating { SkillId = universal[i], Level = rng.Next(3, 9) });
+            }
+
+            string primary = role != null ? role.Domain switch
+            {
+                CareerDomain.Healthcare => "Medical",
+                CareerDomain.Education => "Teaching",
+                CareerDomain.PublicSafety => "CrisisResponse",
+                CareerDomain.Retail => "CustomerService",
+                CareerDomain.FoodService => "Cooking",
+                CareerDomain.Trades => "Repair",
+                CareerDomain.Logistics => "RoutePlanning",
+                CareerDomain.Office => "Administration",
+                CareerDomain.Transportation => "Navigation",
+                CareerDomain.Nightlife => "Performance",
+                CareerDomain.Media => "Storytelling",
+                CareerDomain.CareWork => "CaseManagement",
+                _ => "GeneralLabor"
+            } : "GeneralLabor";
+
+            ratings.Add(new NpcSkillRating { SkillId = primary, Level = rng.Next(5, 11) });
+            ratings.Add(new NpcSkillRating { SkillId = "WorkEthic", Level = rng.Next(4, 10) });
+            return ratings;
+        }
+
+        private static NpcJobType MapProfessionToJob(ProfessionType profession)
+        {
+            return profession switch
+            {
+                ProfessionType.Doctor or ProfessionType.Nurse or ProfessionType.Veterinarian => NpcJobType.Medic,
+                ProfessionType.Teacher or ProfessionType.Student => NpcJobType.Teacher,
+                ProfessionType.Police or ProfessionType.Firefighter or ProfessionType.SecurityGuard => NpcJobType.Guard,
+                ProfessionType.Chef or ProfessionType.Clerk or ProfessionType.RetailAssociate or ProfessionType.SalesAssociate or ProfessionType.Barber or ProfessionType.Bartender => NpcJobType.Shopkeeper,
+                ProfessionType.Mechanic or ProfessionType.Electrician or ProfessionType.ConstructionWorker or ProfessionType.Plumber => NpcJobType.Mechanic,
+                _ => NpcJobType.Unemployed
+            };
         }
 
         public void VoteLaw(string areaName, SubstanceType substanceType, bool stricter)

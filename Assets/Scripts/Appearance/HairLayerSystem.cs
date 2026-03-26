@@ -52,7 +52,17 @@ namespace Survivebest.Appearance
         SidePart,
         CenterPart,
         BangsHeavy,
-        Undercut
+        Undercut,
+        BuzzCut,
+        CrewCut,
+        Fade,
+        Mohawk,
+        WolfCut,
+        Mullet,
+        MicroBraids,
+        ProtectiveTwists,
+        AfroRounded,
+        AfroTapered
     }
 
     public enum HairGrowthStage
