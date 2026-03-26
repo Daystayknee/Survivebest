@@ -3,6 +3,17 @@
 Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.
 The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play. The current visual direction is explicitly a **2D paper-doll / live-portrait life sim**, with hidden simulation values resolving into layered sprites, tints, silhouette scales, expression presets, and family resemblance presentation.
 
+## Start Here (Complete + Organized Workflow)
+
+If your goal is to **complete and organize the game code with detailed how-to guidance**, start with:
+
+1. `Docs/COMPLETE_GAME_CODE_AND_OPERATIONS_GUIDE.md` (new practical operations manual)
+2. `Docs/DEEP_SYSTEMS_ASSETS_TUTORIAL.md` (implementation-level wiring/extension tutorial)
+3. `Docs/FullGameAfterCodingChecklist.md` (definition-of-done and endgame checklist)
+4. `Docs/COMPLETE_GAMEPLAY_SYSTEM_AUDIT.md` + `Docs/COMPLETE_GAME_CONTENT_GAP_AUDIT.md` (coverage/gap tracking)
+
+This order gives you a single execution path from project setup → system extension → validation → completion gating.
+
 ## Engine / Requirements
 
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
