@@ -141,6 +141,24 @@ namespace Survivebest.UI
     }
 
     [Serializable]
+    public class HouseholdDraftPetSnapshot
+    {
+        public string PetId;
+        public string DisplayName;
+        public string Species;
+        public string Breed;
+    }
+
+    [Serializable]
+    public class AdoptionIntentSnapshot
+    {
+        public string IntentId;
+        public string CandidateName;
+        public string Category;
+        public string Detail;
+    }
+
+    [Serializable]
     public class HouseholdDraftSnapshot
     {
         public string ActiveCharacterId;
@@ -164,6 +182,8 @@ namespace Survivebest.UI
         public string DailyRhythm;
         public List<HouseholdRoomPlan> RoomPlans = new();
         public List<HouseholdDraftMemberSnapshot> Members = new();
+        public List<HouseholdDraftPetSnapshot> Pets = new();
+        public List<AdoptionIntentSnapshot> AdoptionIntents = new();
     }
 
     public class HouseholdMakerScreenController : MonoBehaviour
@@ -196,6 +216,8 @@ namespace Survivebest.UI
         [SerializeField] private bool wantsChildrenSoon;
         [SerializeField] private bool includesPets;
         [SerializeField] private bool prioritizesCareerMobility = true;
+        [SerializeField] private bool supportsAdoption = true;
+        [SerializeField, Min(1)] private int adoptionPoolSize = 36;
         [SerializeField] private string generationalGoal = "Build a secure first generation foundation with enough savings to launch the next chapter.";
         [SerializeField] private HouseholdArchetype householdArchetype = HouseholdArchetype.LegacyBuilders;
         [SerializeField] private string commuteStrategy = "Live near transit and jobs to reduce stress and keep routines predictable.";
@@ -240,6 +262,7 @@ namespace Survivebest.UI
         public int ActiveArtPivotIndex => Mathf.Clamp(activeArtPivotIndex, 0, Mathf.Max(0, characterArtPivots.Count - 1));
 
         private readonly HashSet<string> lockedCharacterIds = new();
+        private readonly List<AdoptionIntentSnapshot> adoptionIntents = new();
         private bool familyDraftLocked;
 
         private void OnEnable()
@@ -251,6 +274,7 @@ namespace Survivebest.UI
             }
 
             RefreshTabUi();
+            EnsureAdoptionPoolSeeded();
             RefreshCreatorSummary();
         }
 
@@ -355,6 +379,12 @@ namespace Survivebest.UI
             RefreshCreatorSummary();
         }
 
+        public void SetSupportsAdoption(bool value)
+        {
+            supportsAdoption = value;
+            RefreshCreatorSummary();
+        }
+
         public void SetPrioritizesCareerMobility(bool value)
         {
             prioritizesCareerMobility = value;
@@ -406,6 +436,62 @@ namespace Survivebest.UI
             }
 
             roomPlans.RemoveAt(roomPlans.Count - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void AdoptRandomChild()
+        {
+            if (!supportsAdoption || householdManager == null)
+            {
+                return;
+            }
+
+            string childName = BuildRandomChildName();
+            string characterId = $"adopted_child_{Guid.NewGuid():N}".Substring(0, 22);
+            LifeStage stage = PickRandomChildLifeStage();
+            CharacterTalent talent = PickRandomTalent();
+
+            GameObject childObject = new($"Adopted_{childName.Replace(" ", string.Empty)}");
+            CharacterCore child = childObject.AddComponent<CharacterCore>();
+            child.Initialize(characterId, childName, stage, CharacterSpecies.Human);
+            child.SetTalents(new List<CharacterTalent> { talent });
+            child.SetBirthDate(1, UnityEngine.Random.Range(1, 12), UnityEngine.Random.Range(1, 28));
+            householdManager.AddMember(child);
+
+            adoptionIntents.Add(new AdoptionIntentSnapshot
+            {
+                IntentId = $"intent_child_{Guid.NewGuid():N}".Substring(0, 20),
+                CandidateName = childName,
+                Category = "Child Adoption",
+                Detail = $"{stage} • Talent: {talent}"
+            });
+
+            PublishAdoptionEvent($"Adopted child {childName} ({stage}).");
+            RefreshCreatorSummary();
+        }
+
+        public void AdoptRandomPet()
+        {
+            if (!supportsAdoption || householdManager == null)
+            {
+                return;
+            }
+
+            (string species, string breed) = PickRandomPetBreed();
+            string petName = BuildRandomPetName();
+            string petId = $"adopted_pet_{Guid.NewGuid():N}".Substring(0, 20);
+            householdManager.RegisterPet(petId, petName, species, breed);
+            includesPets = true;
+
+            adoptionIntents.Add(new AdoptionIntentSnapshot
+            {
+                IntentId = $"intent_pet_{Guid.NewGuid():N}".Substring(0, 20),
+                CandidateName = petName,
+                Category = "Pet Adoption",
+                Detail = $"{species} • {breed}"
+            });
+
+            PublishAdoptionEvent($"Adopted pet {petName} ({species}, {breed}).");
             RefreshCreatorSummary();
         }
 
@@ -647,6 +733,28 @@ namespace Survivebest.UI
                 snapshot.RoomPlans.AddRange(roomPlans);
             }
 
+            if (householdManager.Pets != null)
+            {
+                for (int i = 0; i < householdManager.Pets.Count; i++)
+                {
+                    HouseholdPetProfile pet = householdManager.Pets[i];
+                    if (pet == null)
+                    {
+                        continue;
+                    }
+
+                    snapshot.Pets.Add(new HouseholdDraftPetSnapshot
+                    {
+                        PetId = pet.PetId,
+                        DisplayName = pet.Name,
+                        Species = pet.Species,
+                        Breed = pet.Breed
+                    });
+                }
+            }
+
+            snapshot.AdoptionIntents = new List<AdoptionIntentSnapshot>(adoptionIntents);
+
             PlayerPrefs.SetString(BuildHouseholdDraftKey(slotId), JsonUtility.ToJson(snapshot));
             PlayerPrefs.Save();
             RefreshCreatorSummary();
@@ -719,6 +827,25 @@ namespace Survivebest.UI
             }
 
             roomPlans = snapshot.RoomPlans != null ? new List<HouseholdRoomPlan>(snapshot.RoomPlans) : new List<HouseholdRoomPlan>();
+            adoptionIntents.Clear();
+            if (snapshot.AdoptionIntents != null)
+            {
+                adoptionIntents.AddRange(snapshot.AdoptionIntents);
+            }
+
+            if (snapshot.Pets != null && householdManager != null)
+            {
+                for (int i = 0; i < snapshot.Pets.Count; i++)
+                {
+                    HouseholdDraftPetSnapshot pet = snapshot.Pets[i];
+                    if (pet == null || string.IsNullOrWhiteSpace(pet.PetId))
+                    {
+                        continue;
+                    }
+
+                    householdManager.RegisterPet(pet.PetId, pet.DisplayName, pet.Species, pet.Breed);
+                }
+            }
 
             lockedCharacterIds.Clear();
             for (int i = 0; i < snapshot.Members.Count; i++)
@@ -807,6 +934,7 @@ namespace Survivebest.UI
                 $"Conflict Approach: {conflictApproach}\n" +
                 $"Children Plan: {(wantsChildrenSoon ? "Trying Soon" : "Not Soon")}\n" +
                 $"Pet Plan: {(includesPets ? "Pet Friendly" : "No Pets Planned")}\n" +
+                $"Adoption: {(supportsAdoption ? "Enabled" : "Disabled")}\n" +
                 $"Career Mobility: {(prioritizesCareerMobility ? "High Priority" : "Balanced")}\n" +
                 $"Household Archetype: {householdArchetype}\n" +
                 $"Locked Characters: {lockedCharacterIds.Count}\n" +
@@ -817,7 +945,9 @@ namespace Survivebest.UI
                 $"Commute Strategy: {commuteStrategy}\n" +
                 $"Daily Rhythm: {dailyRhythm}\n" +
                 $"Room Blueprint:\n{BuildRoomPlanSummary()}\n" +
-                $"Household Composition:\n{BuildMemberCompositionSummary()}";
+                $"Household Composition:\n{BuildMemberCompositionSummary()}\n" +
+                $"Household Pets:\n{BuildPetCompositionSummary()}\n" +
+                $"Adoption Log:\n{BuildAdoptionIntentSummary()}";
 
             if (familyLockStateText != null)
             {
@@ -830,10 +960,8 @@ namespace Survivebest.UI
                     $"{familySurname} • {homeDistrict} • {lotType}\n" +
                     $"{originFocus} / {planningPriority} / {householdVibe} / {householdArchetype}\n" +
                     $"{householdStoryPrompt}\n" +
-                    $"Conflict: {conflictApproach} • Budget: {budgetTier} • Next Gen: {(wantsChildrenSoon ? "Soon" : "Later")}";
+                    $"Conflict: {conflictApproach} • Budget: {budgetTier} • Next Gen: {(wantsChildrenSoon ? "Soon" : "Later")} • Adoption: {(supportsAdoption ? "Ready" : "Off")}";
             }
-
-            return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
         }
 
         private string BuildRoomPlanSummary()
@@ -883,51 +1011,107 @@ namespace Survivebest.UI
             return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
         }
 
-        private string BuildRoomPlanSummary()
+        private string BuildPetCompositionSummary()
         {
-            if (roomPlans == null || roomPlans.Count == 0)
+            if (householdManager == null || householdManager.Pets == null || householdManager.Pets.Count == 0)
             {
-                return "- No room plans";
+                return "- No pets";
             }
 
             var lines = new List<string>();
-            for (int i = 0; i < roomPlans.Count; i++)
+            for (int i = 0; i < householdManager.Pets.Count; i++)
             {
-                HouseholdRoomPlan plan = roomPlans[i];
-                if (plan == null)
+                HouseholdPetProfile pet = householdManager.Pets[i];
+                if (pet == null)
                 {
                     continue;
                 }
 
-                string notes = string.IsNullOrWhiteSpace(plan.Notes) ? "No notes" : plan.Notes;
-                lines.Add($"- {plan.RoomType} | Style: {plan.StyleDirection} | Priority: {plan.Priority}/5 | {notes}");
+                string breed = string.IsNullOrWhiteSpace(pet.Breed) ? "Mixed" : pet.Breed;
+                lines.Add($"- {pet.Name} ({pet.Species}, {breed}) • Bond {pet.BondLevel:0}% • Happiness {pet.Happiness:0}%");
             }
 
-            return lines.Count > 0 ? string.Join("\n", lines) : "- No room plans";
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No pets";
         }
 
-        private string BuildMemberCompositionSummary()
+        private string BuildAdoptionIntentSummary()
         {
-            if (householdManager == null || householdManager.Members.Count == 0)
+            if (adoptionIntents.Count == 0)
             {
-                return "- No members";
+                return "- No adoption activity";
             }
 
             var lines = new List<string>();
-            for (int i = 0; i < householdManager.Members.Count; i++)
+            for (int i = 0; i < adoptionIntents.Count; i++)
             {
-                CharacterCore member = householdManager.Members[i];
-                if (member == null)
+                AdoptionIntentSnapshot intent = adoptionIntents[i];
+                if (intent == null)
                 {
                     continue;
                 }
 
-                string lockTag = !string.IsNullOrWhiteSpace(member.CharacterId) && lockedCharacterIds.Contains(member.CharacterId) ? "Locked" : "Editable";
-                string talent = member.Talents.Count > 0 ? member.Talents[0].ToString() : "None";
-                lines.Add($"- {member.DisplayName} ({member.CurrentLifeStage}, {member.Species}) • Talent: {talent} • {lockTag}");
+                lines.Add($"- {intent.Category}: {intent.CandidateName} • {intent.Detail}");
             }
 
-            return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No adoption activity";
+        }
+
+        private void EnsureAdoptionPoolSeeded()
+        {
+            adoptionPoolSize = Mathf.Max(1, adoptionPoolSize);
+        }
+
+        private static LifeStage PickRandomChildLifeStage()
+        {
+            LifeStage[] stages = { LifeStage.Baby, LifeStage.Infant, LifeStage.Toddler, LifeStage.Child, LifeStage.Preteen, LifeStage.Teen };
+            return stages[UnityEngine.Random.Range(0, stages.Length)];
+        }
+
+        private static CharacterTalent PickRandomTalent()
+        {
+            CharacterTalent[] talents = { CharacterTalent.Artistic, CharacterTalent.Athletic, CharacterTalent.Social, CharacterTalent.Academic, CharacterTalent.Musical, CharacterTalent.Technical, CharacterTalent.Culinary, CharacterTalent.Caregiving, CharacterTalent.Performer };
+            return talents[UnityEngine.Random.Range(0, talents.Length)];
+        }
+
+        private static string BuildRandomChildName()
+        {
+            string[] first = { "Avery", "Mila", "Noah", "Ezra", "Zoe", "Kai", "Luca", "Lina", "Ivy", "Mason", "Nia", "Owen", "Ruby", "Theo", "June", "Aria", "Nova", "Remy", "Skye", "Piper", "Rory", "Ellis", "Milo", "Sage", "Kira", "Quinn", "Rylan", "Lilah", "Cora", "Jules" };
+            string[] last = { "Rivera", "Nguyen", "Patel", "Jackson", "Diaz", "Kim", "Singh", "Morgan", "Parker", "Reed", "Bennett", "Flores", "Walker", "Young", "Santos", "Howard", "Bailey", "Mitchell", "Campbell", "Brooks" };
+            return $"{first[UnityEngine.Random.Range(0, first.Length)]} {last[UnityEngine.Random.Range(0, last.Length)]}";
+        }
+
+        private static string BuildRandomPetName()
+        {
+            string[] names = { "Mochi", "Biscuit", "Pepper", "Comet", "Noodle", "Maple", "Scout", "Luna", "Sparky", "Pudding", "Miso", "Pickles", "Juno", "Nori", "Otis", "Clover", "Waffles", "Ziggy", "Sunny", "Tofu", "Bean", "Echo", "Poppy", "Cosmo", "Pebble", "Mocha", "Bandit", "Pico", "Mango", "Nova" };
+            return names[UnityEngine.Random.Range(0, names.Length)];
+        }
+
+        private static (string species, string breed) PickRandomPetBreed()
+        {
+            (string species, string breed)[] options =
+            {
+                ("Dog", "Labrador"), ("Dog", "Shiba Inu"), ("Dog", "Corgi"), ("Dog", "Mixed Rescue"), ("Dog", "German Shepherd"),
+                ("Cat", "Domestic Shorthair"), ("Cat", "Maine Coon"), ("Cat", "Siamese"), ("Cat", "Ragdoll"), ("Cat", "British Shorthair"),
+                ("Rabbit", "Holland Lop"), ("Rabbit", "Mini Rex"), ("Bird", "Cockatiel"), ("Bird", "Parakeet"), ("Hamster", "Syrian"),
+                ("Guinea Pig", "Abyssinian"), ("Ferret", "Standard"), ("Turtle", "Painted Turtle"), ("Dog", "Poodle"), ("Cat", "Bengal"),
+                ("Dog", "Beagle"), ("Cat", "Sphynx"), ("Rabbit", "Lionhead"), ("Bird", "Canary"), ("Dog", "Husky"),
+                ("Dog", "Golden Retriever"), ("Cat", "Persian"), ("Dog", "Pit Mix"), ("Cat", "Tabby"), ("Dog", "Boxer")
+            };
+
+            return options[UnityEngine.Random.Range(0, options.Length)];
+        }
+
+        private void PublishAdoptionEvent(string reason)
+        {
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityCompleted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(HouseholdMakerScreenController),
+                ChangeKey = "Adoption",
+                Reason = reason,
+                Magnitude = adoptionIntents.Count
+            });
         }
 
         private void PublishTabEvent()
