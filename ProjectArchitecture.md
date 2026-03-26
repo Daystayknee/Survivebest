@@ -726,3 +726,74 @@ Any new persistent state must include serializable DTOs, schemaVersion handling,
 ```text
 Assume large town populations and long-running sessions. Avoid per-frame allocations, avoid full-list scans every tick, and include configurable update intervals and workload caps for simulation loops.
 ```
+
+## 11) Cognitive Depth Expansion Sequencing (Single-Owner Ground Rule)
+
+Ground rule before all phases:
+- Introduce new state only in a single true-owner system.
+- Expose downstream read models/events/adapters to consumers.
+- Avoid duplicate truth across dialogue/social/goals/memory layers.
+
+### Phase 1 (Sprint 1–2): Belief + Thought Stream Core
+- **True owner:** `MindStateSystem`.
+- Add canonical data:
+  - `BeliefRecord { key, confidence, valence, sourceEvidence[], lastUpdatedHour }`
+  - `ThoughtPulse { characterId, text, intensity, source(needs/memory/env/personality), expiresAtHour }`
+  - `IdentityState { selfWorth, purposeClarity, insecurity, egoStability }`
+- Integrate:
+  - Pull burnout/fatigue/hydration/mood stimulus from `NeedsSystem`.
+  - Feed dialogue modifiers + inner-thought path in `DialogueSystem`.
+  - Bridge/migrate legacy thought+identity from `HumanLifeExperienceLayerSystem`.
+- Definition of done:
+  - NPCs with similar needs can pick different actions because beliefs differ.
+
+### Phase 2 (Sprint 3–4): Unified Memory Kernel
+- **True owner:** `MemoryKernelSystem`.
+- Add canonical data:
+  - `MemoryItem { type(Core|Social|Environmental), affect, importance, distortion, decayRate, cues[], links[] }`
+- Add retrieval API:
+  - `RecallByCue(characterId, cueTag)`
+  - `RecallTop(characterId, context, limit)`
+  - `Reinforce(memoryId, magnitude)`
+- Integrate:
+  - Adapter path from `RelationshipMemorySystem` emotional/importance/distortion model.
+  - Keep compatibility with `NpcScheduleSystem` rumor/secret/grudge memory kinds.
+  - Social drama progressively reads/writes through kernel instead of local caches.
+- Definition of done:
+  - One memory can influence dialogue, reputation, and goals without manual duplication.
+
+### Phase 3 (Sprint 5–6): Perception + Reputation Graph Propagation
+- **True owner:** `SocialPerceptionGraphSystem`.
+- Add canonical data:
+  - Directed edges `A -> B { trust, fear, attraction, certainty }`
+  - Reputation channels `private/public/gossip/work/family/...`
+  - Propagation rules for witness strength, rumor mutation, and hop decay.
+- Integrate:
+  - Reuse existing multi-scope reputation concepts from relationship/drama systems.
+  - Publish outcomes for district pulse, incidents, and headline/story surfaces.
+- Definition of done:
+  - Friend-of-friend effects and gossip cascades emerge naturally.
+
+### Phase 4 (Sprint 7): Meaning / Fulfillment State
+- **True owner:** `MeaningPurposeSystem`.
+- Add canonical data:
+  - `MeaningState { fulfillment, emptiness, burnout, valueAlignment, belonging }`
+  - `LifeVector { values[], activeGoals[], enactedBehaviors[] }`
+  - Delta rule: value/behavior mismatch increases emptiness; match increases fulfillment.
+- Integrate:
+  - Read goals/archetypes/progression from `LongTermProgressionSystem` + `LifestyleBehaviorSystem`.
+  - Couple burnout/motivation with `NeedsSystem`.
+- Definition of done:
+  - Characters can be objectively successful but existentially empty, and behavior shifts.
+
+### Phase 5 (Sprint 8–9): Animal Cognition Mode
+- **True owner:** `AnimalCognitionSystem`.
+- Add canonical data:
+  - `AnimalPerception { smellMapSensitivity, hearingRadiusBias, threatDetection }`
+  - `BondState { trustByHumanId, loyalty, fearTriggers, safePlaces }`
+  - `InstinctStack { hunger, territory, pack, avoidance }`
+- Integrate:
+  - Connect pet interaction pathways and species/breed dialogue context.
+  - Connect household pet persistence/lifecycle records.
+- Definition of done:
+  - Animal POV/behavior feels fundamentally different from human control logic.
