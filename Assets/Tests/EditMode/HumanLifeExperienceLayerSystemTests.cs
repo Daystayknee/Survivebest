@@ -643,6 +643,52 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(shift.Contains("playable loop", System.StringComparison.OrdinalIgnoreCase));
             Assert.AreEqual("playable_job_loop", system.RecentThoughts[^1].Source);
             Assert.AreEqual("Delivery Driver", system.GetProfile<AmericanWorkLifeProfile>(character.CharacterId).JobTitle);
+            Assert.GreaterOrEqual(system.BuildCareerExecutionModes("delivery_driver").Count, 2);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void RichTeenElderLifeStageProfiles_AppearInSummaryAndPulse()
+        {
+            GameObject go = new GameObject("LifeStages");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("StageChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_stages", "Stages", LifeStage.Adult);
+
+            system.SetRichKidLifeStageProfile(character, new RichKidLifeStageProfile
+            {
+                PrivilegeShielding = 0.8f,
+                LegacyExpectationPressure = 0.7f,
+                EliteSchoolClubs = new System.Collections.Generic.List<string> { "debate society" }
+            });
+            system.SetTeenLifeStageProfile(character, new TeenLifeStageProfile
+            {
+                BullyingExposure = 0.7f,
+                CrushIntensity = 0.8f,
+                RebellionDrive = 0.75f,
+                CurfewConflict = 0.72f,
+                CollegeApplicationPressure = 0.85f
+            });
+            system.SetElderLifeStageProfile(character, new ElderLifeStageProfile
+            {
+                MenopauseLoad = 0.6f,
+                CognitiveDeclineConcern = 0.7f,
+                ElderLoneliness = 0.8f,
+                RegretLegacyPanic = 0.75f,
+                GrandparentInfluence = 0.9f
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string pulse = system.SimulateHumanTexturePulse(character, 19, 56);
+
+            StringAssert.Contains("Rich-kid weather", summary);
+            StringAssert.Contains("Teen pressure", summary);
+            StringAssert.Contains("Elder weather", summary);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(pulse));
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(charGo);
