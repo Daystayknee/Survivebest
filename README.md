@@ -64,6 +64,8 @@ _Last updated: current branch state._
 
 For the broader answer to "what is still missing after coding", see `Docs/FullGameAfterCodingChecklist.md`.
 
+For a full implementation-level tutorial covering where each system/asset pipeline lives, how to wire it, and where to extend it safely, see `Docs/DEEP_SYSTEMS_ASSETS_TUTORIAL.md`.
+
 - Added tooling to support these pending areas in-code: `AssetReadinessReporter` now includes `Report Optional UI Coverage` for scene/prefab hookup tracking and `Run Integration + Balance Dry Run` for profile-based integration/balance smoke checks.
 - Added `BalanceTuningAdvisor` + `Run Headless Pending-Work Audit` flow in `AssetReadinessReporter` to aggregate cross-profile dry-run scores/recommendations and prioritize non-Unity balancing work before PlayMode wiring.
 
