@@ -127,6 +127,7 @@ namespace Survivebest.NPC
         public event Action<NpcCareerRecord> OnCareerChanged;
 
         public IReadOnlyList<NpcCareerRecord> Records => records;
+        public IReadOnlyList<CareerRoleDefinition> RoleDefinitions => roleDefinitions;
 
         private void OnEnable()
         {
@@ -170,6 +171,17 @@ namespace Survivebest.NPC
             EnsureRoleEquipment(npcId, role);
             OnCareerChanged?.Invoke(record);
             PublishCareerEvent(record, "Career assigned/updated", SimulationEventSeverity.Info, record.CareerLevel);
+        }
+
+        public CareerRoleDefinition GetRoleDefinition(ProfessionType profession)
+        {
+            return roleDefinitions.Find(x => x != null && x.Profession == profession);
+        }
+
+        public void ClearCareerRecords()
+        {
+            records.Clear();
+            lastServiceOutageHourByRole.Clear();
         }
 
         public bool IsServiceAvailable(ProfessionType profession, string workplaceLotId, int hour)
