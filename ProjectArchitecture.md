@@ -535,3 +535,194 @@ Always-visible character presence:
 - `AdvancedHealthRecoverySystem` should model region-specific injury trajectories (severity/infection/medication/chronicity/relapse/scarring/disability) and treatment quality outcomes.
 - `HousingPropertySystem` should make homes systemic via ownership, rent/mortgage/bills, utilities, room quality metrics, storage limits, appliance degradation, and repair lifecycle flows.
 - `CraftingProfessionSystem` should deepen profession gameplay with stations, blueprints, tool gates, specialization, substitutions, and quality-weighted outputs.
+
+## 9) Detailed Implementation Standards (Use for all new systems)
+
+Use the following standards whenever generating or revising gameplay scripts so contributions are predictable, testable, and compatible with existing code.
+
+### 9.1 Script Header Expectations
+
+Every non-trivial script should begin with a short XML summary that clarifies:
+- its simulation responsibility,
+- what managers/systems it reads from,
+- what events it emits,
+- and whether it is authoritative state or presentation-only.
+
+Recommended template:
+
+```csharp
+/// <summary>
+/// Authoritative simulation system for [domain].
+/// Reads: [ManagerA], [ManagerB]
+/// Emits: [EventA], [EventB]
+/// Notes: [deterministic/non-deterministic], [save payload owner?]
+/// </summary>
+```
+
+### 9.2 Ownership & Authority Rules
+
+When multiple systems could reasonably own data, follow this tie-break order:
+1. **Single-domain manager** owns writes (e.g., economy balances in `EconomyManager`).
+2. **Coordinator/orchestrator** requests changes through public APIs only.
+3. **UI layer** never mutates simulation state directly.
+4. **Fallback utility scripts** may read state but should not commit gameplay state unless explicitly designated as authority.
+
+If you must add a new authority, define:
+- owner script name,
+- source-of-truth collections,
+- write API surface,
+- and read-only accessor policy.
+
+### 9.3 Event Contract Detail Standard
+
+Every emitted event should include:
+- `EventType` (string or enum-backed string),
+- `Timestamp` (world time + optionally realtime),
+- `ActorId` (primary subject),
+- `TargetId` (optional secondary subject),
+- `Severity` (`Info`, `Warning`, `Critical`),
+- `PayloadVersion` (integer for migration compatibility),
+- `Context` dictionary for optional metadata.
+
+Event naming convention:
+- `Domain.Action.PastTense` style, e.g. `Needs.Hunger.Changed`, `Justice.Sentence.Started`, `Weather.State.Changed`.
+- Use stable event names; avoid human-text sentence events as keys.
+
+### 9.4 Save/Load Contract Requirements
+
+For each system that persists state, define three explicit surfaces:
+1. **Runtime model** (active mutable objects)
+2. **Serializable DTO** (plain save payload)
+3. **Restore method** (`ApplyFromSave(payload)`)
+
+Save payload rules:
+- include `schemaVersion`,
+- include deterministic keys/IDs for list entries,
+- avoid storing duplicated derivable values unless needed for recovery speed,
+- provide migration path for each schema increment,
+- include null-safe defaults for missing legacy fields.
+
+### 9.5 Determinism & Reproducibility
+
+Where simulation outcomes matter for balancing/testing:
+- allow dependency injection of random service (`IRandomService`),
+- log seed used for procedural events,
+- avoid direct `UnityEngine.Random` in systems that should be replayable,
+- keep non-deterministic calls in edge adapters rather than core rules.
+
+### 9.6 Performance Budget Guidance
+
+For systems ticked hourly/minutely or per-frame:
+- cache lookups for manager references,
+- avoid allocation-heavy LINQ in hot loops,
+- gate expensive scans by interval (e.g., every X simulated minutes),
+- cap per-tick processing counts for large populations,
+- expose tuning knobs in inspector or config assets for budget control.
+
+Population-scale guidance:
+- use summary simulations for off-screen actors,
+- use fidelity tiers (active lot, nearby lot, remote lot),
+- defer non-critical updates when frame or simulation budget is exceeded.
+
+### 9.7 UI/Presentation Separation Detail
+
+For gameplay-connected UI scripts:
+- use view models or read-only snapshots where possible,
+- keep button handlers thin and delegate to façade/command layers,
+- translate simulation events into UX cues through dedicated routers,
+- never duplicate simulation formulas in UI controllers.
+
+Preferred pattern:
+- `Simulation System` -> `EventHub` -> `Presentation Adapter` -> `UI Controller`
+
+### 9.8 Validation & Guardrail Expectations
+
+All new systems should provide at least one of:
+- explicit `ValidateConfiguration()` method,
+- startup assertions with clear warnings,
+- compatibility checks in dry-run tooling.
+
+Validation should detect:
+- missing manager dependencies,
+- invalid enum/state combinations,
+- out-of-range tunables,
+- duplicate IDs in runtime dictionaries.
+
+### 9.9 Testing Detail Standard
+
+When adding or changing behavior, include or update EditMode tests that cover:
+- happy path behavior,
+- one edge case,
+- one failure/guard path,
+- serialization round-trip if persisted.
+
+Naming convention:
+- `{SystemName}_{Scenario}_{ExpectedBehavior}`
+
+Example:
+- `EconomyManager_ChargeWithDebtEnabled_AppliesNegativeBalance`
+
+### 9.10 Data Modeling Guidelines
+
+For catalogs (foods, jobs, traits, locations, etc.):
+- use stable IDs separate from display names,
+- include category/tags for filtering,
+- include optional rarity/availability controls,
+- include balancing metadata (cost, risk, quality tier),
+- preserve backward compatibility when extending records.
+
+### 9.11 Extending Existing Systems Safely
+
+Before introducing a brand-new manager, evaluate in this order:
+1. Can behavior be a module within an existing authoritative system?
+2. Can it be handled as data extension + existing pipeline hooks?
+3. Is a façade/adapter sufficient instead of a new authority?
+4. Only then create a new manager with clear ownership boundaries.
+
+Required documentation for a new manager:
+- purpose statement,
+- ownership boundaries,
+- emitted/consumed events,
+- save/load responsibilities,
+- dependencies,
+- test surface.
+
+### 9.12 Integration Review Checklist (Detailed)
+
+For each PR/feature increment, verify:
+- [ ] No gameplay logic duplicated in UI scripts.
+- [ ] Event names follow domain/action convention.
+- [ ] New save fields include schema migration handling.
+- [ ] Randomized outcomes can be seeded for tests.
+- [ ] At least one EditMode test covers new behavior.
+- [ ] Inspector-exposed tunables include sane defaults.
+- [ ] Null dependency handling logs actionable diagnostics.
+- [ ] Documentation references updated source-of-truth files.
+
+## 10) Detailed Prompt Add-Ons for Copilot/Codex
+
+Attach one of these add-ons to generation prompts when you need stricter outputs.
+
+### 10.1 Strict Integration Add-On
+
+```text
+Use existing Survivebest architecture patterns. Do not create duplicate authority over economy, inventory, schedule, or world time. Emit typed events through GameEventHub. Keep UI free of gameplay math. Include null-guard diagnostics and inspector-friendly configuration fields.
+```
+
+### 10.2 Strict Testability Add-On
+
+```text
+Design for EditMode testability: inject time/random dependencies, separate pure logic from MonoBehaviour glue, and expose deterministic methods for scenario evaluation. Include at least three test case recommendations (happy path, edge, guard/failure).
+```
+
+### 10.3 Strict Save-Compatibility Add-On
+
+```text
+Any new persistent state must include serializable DTOs, schemaVersion handling, and migration-safe defaults. Avoid breaking existing save slots. Document payload keys and add backward-compatible restore logic.
+```
+
+### 10.4 Strict Performance Add-On
+
+```text
+Assume large town populations and long-running sessions. Avoid per-frame allocations, avoid full-list scans every tick, and include configurable update intervals and workload caps for simulation loops.
+```
