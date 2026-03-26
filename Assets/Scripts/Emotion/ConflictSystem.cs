@@ -58,6 +58,16 @@ namespace Survivebest.Emotion
         Ranged
     }
 
+    public enum CombatEncounterType
+    {
+        StreetBrawl,
+        TavernMelee,
+        GangAmbush,
+        DomesticDisturbance,
+        Duel,
+        RiotClash
+    }
+
     [Serializable]
     public class CombatRoundResult
     {
@@ -98,6 +108,22 @@ namespace Survivebest.Emotion
         public string TargetTargetBodyPart;
         public string OwnerActionLabel;
         public string TargetActionLabel;
+        public string Summary;
+    }
+
+    [Serializable]
+    public class CombatEncounterResult
+    {
+        public CombatEncounterType EncounterType;
+        public int RoundsFought;
+        public int OwnerRoundsWon;
+        public int TargetRoundsWon;
+        public float OwnerTotalDamage;
+        public float TargetTotalDamage;
+        public bool PoliceDispatched;
+        public bool OwnerCaught;
+        public List<string> AngryWords = new();
+        public List<CombatRoundResult> Rounds = new();
         public string Summary;
     }
 
@@ -211,6 +237,19 @@ namespace Survivebest.Emotion
         private static readonly string[] HumanStylePrefixes = { "snap", "driving", "rising", "spinning", "sliding", "lunging", "feinting", "desperate", "tight-angle", "short-step" };
         private static readonly string[] CreatureStylePrefixes = { "skittering", "darting", "swarming", "lunging", "burrowing", "fluttering", "coiling", "ambush", "pack", "feral" };
         private static readonly string[] CombatContexts = { "duel", "bar fight", "street scrap", "ambush", "animal encounter", "monster nest", "arena clash", "raid defense", "escape attempt", "last stand" };
+        private static readonly string[] AngryWordPool =
+        {
+            "Back off!",
+            "You're done!",
+            "Stay down!",
+            "Not today!",
+            "This ends now!",
+            "Move and you lose!",
+            "You picked the wrong block!",
+            "Hands where I can see them!",
+            "You're surrounded!",
+            "Drop it now!"
+        };
 
         [SerializeField] private CharacterCore owner;
         [SerializeField] private EmotionSystem emotionSystem;
@@ -224,6 +263,7 @@ namespace Survivebest.Emotion
 
         public event Action<CharacterCore, CharacterCore, bool, ViolenceType> OnFightResolved;
         public event Action<CharacterCore, CombatRoundResult> OnCombatRoundResolved;
+        public event Action<CharacterCore, CombatEncounterResult> OnEncounterResolved;
 
         public bool TryStartFight(CharacterCore target, HealthSystem targetHealth)
         {
@@ -253,6 +293,64 @@ namespace Survivebest.Emotion
             OnFightResolved?.Invoke(owner, target, round.OwnerWonExchange, violenceType);
             PublishConflictEvent(target, violenceType, round.OwnerWonExchange, round.Summary);
             return true;
+        }
+
+        public CombatEncounterResult ResolveTurnBasedEncounter(CharacterCore target, HealthSystem targetHealth, CombatEncounterType encounterType, int maxRounds = 3)
+        {
+            if (target == null || targetHealth == null)
+            {
+                return null;
+            }
+
+            int roundsToRun = Mathf.Clamp(maxRounds, 1, 12);
+            CombatEncounterResult encounter = new CombatEncounterResult
+            {
+                EncounterType = encounterType
+            };
+
+            for (int roundIndex = 0; roundIndex < roundsToRun; roundIndex++)
+            {
+                CombatOption ownerOption = SelectEncounterOption(encounterType, isOwner: true, roundIndex);
+                CombatOption targetOption = SelectEncounterOption(encounterType, isOwner: false, roundIndex);
+                CombatRoundResult round = ResolveCombatRound(target, targetHealth, ownerOption, targetOption);
+                if (round == null)
+                {
+                    break;
+                }
+
+                encounter.Rounds.Add(round);
+                encounter.AngryWords.Add(BuildAngryWords(encounterType, roundIndex));
+                encounter.RoundsFought++;
+                encounter.OwnerTotalDamage += round.OwnerDamage;
+                encounter.TargetTotalDamage += round.TargetDamage;
+                if (round.OwnerWonExchange)
+                {
+                    encounter.OwnerRoundsWon++;
+                }
+                else
+                {
+                    encounter.TargetRoundsWon++;
+                }
+
+                if (targetHealth.Vitality <= 0.1f || (healthSystem != null && healthSystem.Vitality <= 0.1f))
+                {
+                    break;
+                }
+            }
+
+            float pursuitRisk = Mathf.Clamp01((encounter.RoundsFought * 0.14f) + (encounter.TargetTotalDamage * 0.02f) + GetEncounterPolicePressure(encounterType));
+            bool policeDispatched = crimeSystem != null && (crimeSystem.PendingInvestigations.Count > 0 || pursuitRisk >= 0.32f);
+            bool ownerCaught = policeDispatched && UnityEngine.Random.value <= pursuitRisk;
+            if (crimeSystem != null && encounter.RoundsFought > 0)
+            {
+                crimeSystem.CommitCrime(MapEncounterCrime(encounterType));
+            }
+            encounter.PoliceDispatched = policeDispatched;
+            encounter.OwnerCaught = ownerCaught;
+            encounter.Summary = $"Turn-based {encounterType} ended after {encounter.RoundsFought} rounds. Owner won {encounter.OwnerRoundsWon} rounds, target won {encounter.TargetRoundsWon}. Police dispatched: {encounter.PoliceDispatched}. Owner caught: {encounter.OwnerCaught}.";
+
+            OnEncounterResolved?.Invoke(target, encounter);
+            return encounter;
         }
 
         public List<string> BuildCombatActionCatalog(bool includeCreatureMoves = true)
@@ -523,6 +621,62 @@ namespace Survivebest.Emotion
                 ViolenceType.Kick => CombatOption.Guard,
                 ViolenceType.WeaponAttack => CombatOption.Flee,
                 _ => CombatOption.Grapple
+            };
+        }
+
+        private static CombatOption SelectEncounterOption(CombatEncounterType encounterType, bool isOwner, int roundIndex)
+        {
+            return encounterType switch
+            {
+                CombatEncounterType.StreetBrawl => isOwner ? (roundIndex % 2 == 0 ? CombatOption.Hook : CombatOption.Kick) : (roundIndex % 2 == 0 ? CombatOption.Cross : CombatOption.Grapple),
+                CombatEncounterType.TavernMelee => isOwner ? (roundIndex % 2 == 0 ? CombatOption.Elbow : CombatOption.Headbutt) : (roundIndex % 2 == 0 ? CombatOption.HeavySwing : CombatOption.Throw),
+                CombatEncounterType.GangAmbush => isOwner ? (roundIndex % 2 == 0 ? CombatOption.WeaponStrike : CombatOption.KneeStrike) : (roundIndex % 2 == 0 ? CombatOption.Trip : CombatOption.CounterStrike),
+                CombatEncounterType.DomesticDisturbance => isOwner ? (roundIndex % 2 == 0 ? CombatOption.Grapple : CombatOption.Deflect) : (roundIndex % 2 == 0 ? CombatOption.Guard : CombatOption.Flee),
+                CombatEncounterType.Duel => isOwner ? (roundIndex % 2 == 0 ? CombatOption.CounterStrike : CombatOption.Deflect) : (roundIndex % 2 == 0 ? CombatOption.WeaponStrike : CombatOption.ShieldBash),
+                CombatEncounterType.RiotClash => isOwner ? (roundIndex % 2 == 0 ? CombatOption.HeavySwing : CombatOption.Stomp) : (roundIndex % 2 == 0 ? CombatOption.Guard : CombatOption.Throw),
+                _ => isOwner ? CombatOption.HeavySwing : CombatOption.Grapple
+            };
+        }
+
+        private static string BuildAngryWords(CombatEncounterType encounterType, int roundIndex)
+        {
+            string tone = encounterType switch
+            {
+                CombatEncounterType.GangAmbush => "gang",
+                CombatEncounterType.DomesticDisturbance => "heated",
+                CombatEncounterType.Duel => "formal",
+                CombatEncounterType.RiotClash => "riot",
+                _ => "street"
+            };
+
+            string phrase = AngryWordPool[(roundIndex + (int)encounterType) % AngryWordPool.Length];
+            return $"[{tone}] {phrase}";
+        }
+
+        private static float GetEncounterPolicePressure(CombatEncounterType encounterType)
+        {
+            return encounterType switch
+            {
+                CombatEncounterType.StreetBrawl => 0.24f,
+                CombatEncounterType.TavernMelee => 0.3f,
+                CombatEncounterType.GangAmbush => 0.42f,
+                CombatEncounterType.DomesticDisturbance => 0.26f,
+                CombatEncounterType.Duel => 0.2f,
+                CombatEncounterType.RiotClash => 0.5f,
+                _ => 0.18f
+            };
+        }
+
+        private static CrimeType MapEncounterCrime(CombatEncounterType encounterType)
+        {
+            return encounterType switch
+            {
+                CombatEncounterType.GangAmbush => CrimeType.Assault,
+                CombatEncounterType.RiotClash => CrimeType.PublicDisorder,
+                CombatEncounterType.Duel => CrimeType.Assault,
+                CombatEncounterType.DomesticDisturbance => CrimeType.PublicDisorder,
+                CombatEncounterType.TavernMelee => CrimeType.PublicDisorder,
+                _ => CrimeType.Assault
             };
         }
 
