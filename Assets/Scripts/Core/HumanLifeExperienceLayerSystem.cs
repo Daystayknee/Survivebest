@@ -423,6 +423,19 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class PlayableJobLoopDefinition
+    {
+        public string RoleId;
+        public string RoleLabel;
+        public string CareerTrack;
+        public List<string> CoreLoopActions = new();
+        public List<string> CertificationSteps = new();
+        public List<string> PromotionLadder = new();
+        [Range(0f, 1f)] public float BurnoutLoad = 0.35f;
+        [Range(0f, 1f)] public float DisciplineRisk = 0.2f;
+    }
+
+    [Serializable]
     public class HumanLifeRuntimeState
     {
         public List<ThoughtMessage> RecentThoughts = new();
@@ -698,6 +711,7 @@ namespace Survivebest.Core
         [SerializeField] private List<MundaneEarthLifeProfile> mundaneEarthLifeProfiles = new();
         [SerializeField] private List<CollectionIdentityProfile> collectionIdentityProfiles = new();
         [SerializeField] private List<AmericanWorkLifeProfile> workLifeProfiles = new();
+        [SerializeField] private List<PlayableJobLoopDefinition> playableJobLoops = new();
         [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
         [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
         [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
@@ -737,6 +751,7 @@ namespace Survivebest.Core
         public IReadOnlyList<MundaneEarthLifeProfile> MundaneEarthLifeProfiles => mundaneEarthLifeProfiles;
         public IReadOnlyList<CollectionIdentityProfile> CollectionIdentityProfiles => collectionIdentityProfiles;
         public IReadOnlyList<AmericanWorkLifeProfile> WorkLifeProfiles => workLifeProfiles;
+        public IReadOnlyList<PlayableJobLoopDefinition> PlayableJobLoops => playableJobLoops;
         public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
         public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
         public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
@@ -2194,6 +2209,95 @@ namespace Survivebest.Core
             workLifeProfiles = runtimeState?.WorkLifeProfiles != null ? new List<AmericanWorkLifeProfile>(runtimeState.WorkLifeProfiles) : new List<AmericanWorkLifeProfile>();
         }
 
+        public string BuildEmotionalJournalBook(string characterId, int day)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No journal available.";
+            }
+
+            List<LifeTimelineEntry> timeline = GetRecentTimeline(characterId, 32);
+            List<ThoughtMessage> thoughts = GetRecentThoughts(characterId, 24);
+            List<MemoryMeaningRecord> memories = memoryMeaningRecords.FindAll(x => x != null && x.CharacterId == characterId);
+            CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
+            FriendshipConstellationProfile friendships = FindProfile(characterId, friendshipConstellationProfiles);
+
+            string whatHappened = timeline.Count > 0 ? timeline[0].Title + ": " + timeline[0].Body : "No major event logged.";
+            string whyItMattered = thoughts.Count > 0 ? thoughts[0].Body : "The day mattered because it changed how you feel about tomorrow.";
+            string strongestMemory = memories.Count > 0 ? memories[^1].Summary : "Nothing fully crystallized into a strongest memory yet.";
+            string peopleThought = thoughts.Find(x => x != null && x.Source == "social_impression")?.Body
+                                  ?? thoughts.Find(x => x != null && x.Body.Contains("with ", StringComparison.OrdinalIgnoreCase))?.Body
+                                  ?? "No focused thought about one specific person was captured.";
+            string keepsake = collection != null ? collection.FavoriteKeepsake : LifeActivityCatalog.PickSentimentalObject();
+            string favoritePlace = placeAttachments.Find(x => x != null && x.CharacterId == characterId && x.Attachment > 0.2f)?.PlaceId ?? "home";
+            string familyLore = friendships != null ? $"Family/friend lore still centers around {friendships.BestFriendNickname} and rituals like {string.Join(", ", friendships.SharedRituals.Take(1))}." : "Family lore is still forming through repeated stories.";
+
+            string milestoneFrame = BuildMilestoneFrame(timeline);
+            string timelineDigest = timeline.Count > 0
+                ? string.Join(" -> ", timeline.Take(5).Select(x => $"{x.Day:00}/{x.Hour:00} {x.Title}"))
+                : "No timeline entries.";
+
+            return $"Day {day} journal | what happened: {whatHappened} | why it mattered: {whyItMattered} | strongest memory: {strongestMemory} | thoughts about people: {peopleThought} | life timeline: {timelineDigest} | keepsakes/comfort objects: {keepsake} | favorite places: {favoritePlace} | family lore: {familyLore} | milestone framing: {milestoneFrame}";
+        }
+
+        public IReadOnlyList<PlayableJobLoopDefinition> EnsurePlayableJobLoopCatalog()
+        {
+            if (playableJobLoops.Count > 0)
+            {
+                return playableJobLoops;
+            }
+
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "diner_server", RoleLabel = "Diner Server", CareerTrack = "food_service", CoreLoopActions = new List<string> { "open_section", "take_order", "run_food", "close_checks" }, CertificationSteps = new List<string> { "food_handler_card" }, PromotionLadder = new List<string> { "server", "shift_lead", "floor_manager" }, BurnoutLoad = 0.45f, DisciplineRisk = 0.25f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "grocery_cashier_stocker", RoleLabel = "Grocery Cashier/Stocker", CareerTrack = "retail", CoreLoopActions = new List<string> { "cash_register_cycle", "aisle_restock", "returns_and_spills", "closing_count" }, CertificationSteps = new List<string> { "loss_prevention_basics" }, PromotionLadder = new List<string> { "cashier", "department_lead", "assistant_manager" }, BurnoutLoad = 0.4f, DisciplineRisk = 0.2f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "warehouse_picker", RoleLabel = "Warehouse Picker", CareerTrack = "logistics", CoreLoopActions = new List<string> { "scan_route", "pick_pack", "dock_handoff", "safety_check" }, CertificationSteps = new List<string> { "forklift_cert", "osha_10" }, PromotionLadder = new List<string> { "picker", "line_lead", "warehouse_supervisor" }, BurnoutLoad = 0.52f, DisciplineRisk = 0.33f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "office_admin", RoleLabel = "Office Admin", CareerTrack = "office", CoreLoopActions = new List<string> { "inbox_triage", "calendar_stack", "document_run", "vendor_calls" }, CertificationSteps = new List<string> { "excel_cert", "hr_compliance" }, PromotionLadder = new List<string> { "admin_assistant", "office_coordinator", "operations_manager" }, BurnoutLoad = 0.38f, DisciplineRisk = 0.18f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "cna_hospital_aide", RoleLabel = "CNA/Hospital Aide", CareerTrack = "healthcare", CoreLoopActions = new List<string> { "patient_rounds", "chart_update", "team_handoff", "supplies_reset" }, CertificationSteps = new List<string> { "cna_license", "bls_cert" }, PromotionLadder = new List<string> { "aide", "senior_aide", "lpn_track" }, BurnoutLoad = 0.57f, DisciplineRisk = 0.22f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "teacher_aide", RoleLabel = "Teacher Aide", CareerTrack = "education", CoreLoopActions = new List<string> { "classroom_setup", "student_support", "behavior_notes", "family_pickup" }, CertificationSteps = new List<string> { "paraprofessional_cert" }, PromotionLadder = new List<string> { "aide", "lead_aide", "teacher_track" }, BurnoutLoad = 0.44f, DisciplineRisk = 0.2f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "construction_helper", RoleLabel = "Construction Helper", CareerTrack = "trades", CoreLoopActions = new List<string> { "site_prep", "material_run", "tool_assist", "cleanup_lockout" }, CertificationSteps = new List<string> { "osha_10", "equipment_safety" }, PromotionLadder = new List<string> { "helper", "crew_member", "foreman_track" }, BurnoutLoad = 0.55f, DisciplineRisk = 0.32f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "salon_assistant", RoleLabel = "Salon Assistant", CareerTrack = "beauty", CoreLoopActions = new List<string> { "station_reset", "client_prep", "inventory_mix", "closing_sanitation" }, CertificationSteps = new List<string> { "state_cosmo_hours" }, PromotionLadder = new List<string> { "assistant", "junior_stylist", "stylist" }, BurnoutLoad = 0.4f, DisciplineRisk = 0.19f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "mechanic_helper", RoleLabel = "Mechanic Helper", CareerTrack = "automotive", CoreLoopActions = new List<string> { "intake_notes", "parts_run", "diagnostic_support", "bay_cleanup" }, CertificationSteps = new List<string> { "ase_entry" }, PromotionLadder = new List<string> { "helper", "tech", "lead_tech" }, BurnoutLoad = 0.47f, DisciplineRisk = 0.28f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "bartender_barista", RoleLabel = "Bartender/Barista", CareerTrack = "hospitality", CoreLoopActions = new List<string> { "bar_open", "rush_service", "cash_close", "conflict_deescalation" }, CertificationSteps = new List<string> { "responsible_beverage_service", "espresso_calibration" }, PromotionLadder = new List<string> { "bar_back", "bartender", "bar_manager" }, BurnoutLoad = 0.48f, DisciplineRisk = 0.24f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "daycare_worker", RoleLabel = "Daycare Worker", CareerTrack = "care_work", CoreLoopActions = new List<string> { "arrival_checkin", "activity_rotation", "incident_notes", "guardian_handoff" }, CertificationSteps = new List<string> { "cpr_child", "early_childhood_credential" }, PromotionLadder = new List<string> { "assistant", "lead_classroom", "center_admin" }, BurnoutLoad = 0.51f, DisciplineRisk = 0.21f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "delivery_driver", RoleLabel = "Delivery Driver", CareerTrack = "logistics", CoreLoopActions = new List<string> { "route_plan", "pickup_scan", "dropoff_window", "rating_followup" }, CertificationSteps = new List<string> { "defensive_driving" }, PromotionLadder = new List<string> { "driver", "route_lead", "dispatcher" }, BurnoutLoad = 0.46f, DisciplineRisk = 0.26f });
+
+            return playableJobLoops;
+        }
+
+        public string SimulatePlayableJobLoop(CharacterCore actor, string roleId, int seed)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(roleId))
+            {
+                return "No playable job loop available.";
+            }
+
+            EnsurePlayableJobLoopCatalog();
+            PlayableJobLoopDefinition loop = playableJobLoops.Find(x => x != null && string.Equals(x.RoleId, roleId, StringComparison.OrdinalIgnoreCase));
+            if (loop == null)
+            {
+                return "Role loop not found.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            string action = loop.CoreLoopActions[rng.Next(loop.CoreLoopActions.Count)];
+            string cert = loop.CertificationSteps[rng.Next(loop.CertificationSteps.Count)];
+            string ladder = loop.PromotionLadder[rng.Next(loop.PromotionLadder.Count)];
+
+            AmericanWorkLifeProfile work = FindProfile(actor.CharacterId, workLifeProfiles) ?? SetAmericanWorkLifeProfile(actor, new AmericanWorkLifeProfile());
+            work.JobTitle = loop.RoleLabel;
+            work.CareerDomain = loop.CareerTrack;
+            work.Burnout = Mathf.Clamp01(work.Burnout + loop.BurnoutLoad * 0.08f);
+            work.PromotionPressure = Mathf.Clamp01(work.PromotionPressure + 0.06f);
+            if (!work.Certifications.Contains(cert))
+            {
+                work.Certifications.Add(cert);
+            }
+
+            string line = $"{loop.RoleLabel} playable loop: {action}. Career ladder pressure points toward {ladder}; certification track highlights {cert}.";
+            AppendThought(actor, "playable_job_loop", line, Mathf.Clamp01(loop.BurnoutLoad + 0.2f), loop.CareerTrack);
+            RecordLifeTimelineEvent(actor, "Playable job shift", line, "playable_job_loop");
+            return line;
+        }
+
         public List<string> BuildEverydayLifeSuggestions(string characterId, int max = 3)
         {
             List<string> suggestions = new();
@@ -2675,6 +2779,35 @@ namespace Survivebest.Core
                 : string.Empty;
 
             return string.Join(" ", new[] { read, memoryHook, subtext, distortion }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        }
+
+        private static string BuildMilestoneFrame(List<LifeTimelineEntry> timeline)
+        {
+            if (timeline == null || timeline.Count == 0)
+            {
+                return "No major milestone framing yet.";
+            }
+
+            string[] highWeightMilestones = { "funeral", "first love", "recovery", "birthday", "eviction", "death" };
+            for (int i = 0; i < timeline.Count; i++)
+            {
+                LifeTimelineEntry entry = timeline[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                string joined = $"{entry.Title} {entry.Body}";
+                for (int m = 0; m < highWeightMilestones.Length; m++)
+                {
+                    if (joined.Contains(highWeightMilestones[m], StringComparison.OrdinalIgnoreCase))
+                    {
+                        return $"High-weight milestone active: {highWeightMilestones[m]} reframed the day.";
+                    }
+                }
+            }
+
+            return "Milestone framing is currently anchored in everyday progress rather than a crisis peak.";
         }
 
         private void AppendThought(CharacterCore actor, string source, string body, float intensity, string placeId)

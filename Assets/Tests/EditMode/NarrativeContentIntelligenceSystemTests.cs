@@ -58,6 +58,8 @@ namespace Survivebest.Tests.EditMode
 
             StringAssert.Contains("anniversary song", thought);
             StringAssert.Contains("anniversary song", journal);
+            StringAssert.Contains("what happened", journal);
+            StringAssert.Contains("strongest memory", journal);
             StringAssert.Contains("trust", compatibilityBlurb);
             StringAssert.Contains("district", townBlurb.ToLowerInvariant());
             StringAssert.Contains("Lockdown", prisonText);
