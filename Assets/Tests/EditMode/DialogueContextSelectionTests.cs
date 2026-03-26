@@ -174,5 +174,83 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(ownerGo);
         }
 
+        [Test]
+        public void PerformDialogue_ContextCarriesVibeHierarchyAndMilestoneTags()
+        {
+            GameObject root = new GameObject("ContextTags");
+            DialogueSystem dialogue = root.AddComponent<DialogueSystem>();
+            SocialSystem social = root.AddComponent<SocialSystem>();
+
+            GameObject ownerGo = new GameObject("OwnerTags");
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner_tags", "Owner", LifeStage.Adult);
+
+            GameObject targetGo = new GameObject("TargetTags");
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target_tags", "Target", LifeStage.Adult);
+
+            typeof(DialogueSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, owner);
+            typeof(DialogueSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, social);
+            typeof(DialogueSystem).GetField("generatedLines", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(dialogue, new List<DialogueGeneratedLine>());
+
+            DialoguePresentationPayload payload = null;
+            dialogue.OnDialoguePresentationReady += p => payload = p;
+
+            dialogue.PerformDialogue(target, DialogueIntent.FriendlyChat, new DialogueContext
+            {
+                SituationTag = "home",
+                ForcedMoodTag = "romantic",
+                VibeTag = "magnetic",
+                HierarchyTag = "mentor",
+                DatingStyleTag = "slow_burn",
+                SharedMilestoneTag = "moving_in",
+                RespectDelta = 0.7f
+            });
+
+            Assert.IsNotNull(payload);
+            Assert.AreEqual("magnetic", payload.VibeTag);
+            Assert.AreEqual("mentor", payload.HierarchyTag);
+            Assert.AreEqual("slow_burn", payload.DatingStyleTag);
+            Assert.AreEqual("moving_in", payload.MilestoneTag);
+            StringAssert.Contains("moving in", payload.Line);
+
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+        }
+
+        [Test]
+        public void BuildContextualConversationBurst_ReturnsManyVariedLines()
+        {
+            GameObject root = new GameObject("Burst");
+            DialogueSystem dialogue = root.AddComponent<DialogueSystem>();
+
+            GameObject targetGo = new GameObject("BurstTarget");
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("burst_target", "BurstTarget", LifeStage.Adult);
+
+            List<string> burst = dialogue.BuildContextualConversationBurst(
+                DialogueIntent.Flirt,
+                target,
+                new DialogueContext
+                {
+                    SituationTag = "nightlife",
+                    ForcedMoodTag = "romantic",
+                    VibeTag = "playful",
+                    HierarchyTag = "peer",
+                    DatingStyleTag = "situationship",
+                    SharedMilestoneTag = "define_relationship",
+                    RespectDelta = 0.2f
+                },
+                42,
+                18);
+
+            Assert.AreEqual(18, burst.Count);
+            Assert.Greater(new HashSet<string>(burst).Count, 1);
+
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(targetGo);
+        }
+
     }
 }
