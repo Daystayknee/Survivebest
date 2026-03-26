@@ -883,6 +883,53 @@ namespace Survivebest.UI
             return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
         }
 
+        private string BuildRoomPlanSummary()
+        {
+            if (roomPlans == null || roomPlans.Count == 0)
+            {
+                return "- No room plans";
+            }
+
+            var lines = new List<string>();
+            for (int i = 0; i < roomPlans.Count; i++)
+            {
+                HouseholdRoomPlan plan = roomPlans[i];
+                if (plan == null)
+                {
+                    continue;
+                }
+
+                string notes = string.IsNullOrWhiteSpace(plan.Notes) ? "No notes" : plan.Notes;
+                lines.Add($"- {plan.RoomType} | Style: {plan.StyleDirection} | Priority: {plan.Priority}/5 | {notes}");
+            }
+
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No room plans";
+        }
+
+        private string BuildMemberCompositionSummary()
+        {
+            if (householdManager == null || householdManager.Members.Count == 0)
+            {
+                return "- No members";
+            }
+
+            var lines = new List<string>();
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                string lockTag = !string.IsNullOrWhiteSpace(member.CharacterId) && lockedCharacterIds.Contains(member.CharacterId) ? "Locked" : "Editable";
+                string talent = member.Talents.Count > 0 ? member.Talents[0].ToString() : "None";
+                lines.Add($"- {member.DisplayName} ({member.CurrentLifeStage}, {member.Species}) • Talent: {talent} • {lockTag}");
+            }
+
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
+        }
+
         private void PublishTabEvent()
         {
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
