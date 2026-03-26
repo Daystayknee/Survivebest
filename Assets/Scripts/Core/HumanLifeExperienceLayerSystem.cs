@@ -599,6 +599,49 @@ namespace Survivebest.Core
         [Range(0f, 1f)] public float TruthRevealStrain = 0f;
     }
 
+    public enum LongTailAftermathType
+    {
+        Betrayal,
+        Embarrassment,
+        Grief,
+        Jealousy,
+        Pride,
+        Regret
+    }
+
+    [Serializable]
+    public class LongTailConsequenceProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float BetrayalLoad = 0f;
+        [Range(0f, 1f)] public float EmbarrassmentLoad = 0f;
+        [Range(0f, 1f)] public float GriefLoad = 0f;
+        [Range(0f, 1f)] public float JealousyLoad = 0f;
+        [Range(0f, 1f)] public float PrideLoad = 0f;
+        [Range(0f, 1f)] public float RegretLoad = 0f;
+        [Range(0f, 1f)] public float HabitStability = 0.5f;
+        [Range(0f, 1f)] public float RelapseRisk = 0f;
+        public string IdentityLabel = "unwritten";
+        public string PreviousIdentityLabel = "unwritten";
+        public string Worldview = "still forming";
+        public int LastMonthArc;
+    }
+
+    [Serializable]
+    public class SocialOpinionProfile
+    {
+        public string CharacterId;
+        public List<string> TrustedPeople = new();
+        public List<string> DistrustedPeople = new();
+        public List<string> FavoredPlaces = new();
+        public List<string> AvoidedNeighborhoods = new();
+        public List<string> AdmiredJobs = new();
+        public List<string> ResentedJobs = new();
+        [Range(0f, 1f)] public float GossipSensitivity = 0.3f;
+        [Range(0f, 1f)] public float PublicHumiliationScar = 0f;
+        [Range(0f, 1f)] public float PromiseMemory = 0.5f;
+    }
+
     public enum LifeReflectionType
     {
         Gratitude,
@@ -663,6 +706,8 @@ namespace Survivebest.Core
         [SerializeField] private List<VampireConditionProfile> vampireConditionProfiles = new();
         [SerializeField] private List<VampireNightWorldProfile> vampireNightWorldProfiles = new();
         [SerializeField] private List<HumanVampireRelationshipProfile> humanVampireRelationshipProfiles = new();
+        [SerializeField] private List<LongTailConsequenceProfile> longTailConsequenceProfiles = new();
+        [SerializeField] private List<SocialOpinionProfile> socialOpinionProfiles = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
         [SerializeField, Min(10)] private int maxMoments = 300;
         [SerializeField, Min(10)] private int maxTimelineEntries = 500;
@@ -700,6 +745,8 @@ namespace Survivebest.Core
         public IReadOnlyList<VampireConditionProfile> VampireConditionProfiles => vampireConditionProfiles;
         public IReadOnlyList<VampireNightWorldProfile> VampireNightWorldProfiles => vampireNightWorldProfiles;
         public IReadOnlyList<HumanVampireRelationshipProfile> HumanVampireRelationshipProfiles => humanVampireRelationshipProfiles;
+        public IReadOnlyList<LongTailConsequenceProfile> LongTailConsequenceProfiles => longTailConsequenceProfiles;
+        public IReadOnlyList<SocialOpinionProfile> SocialOpinionProfiles => socialOpinionProfiles;
         public IReadOnlyList<MemoryMeaningRecord> MemoryMeaningRecords => memoryMeaningRecords;
         public IReadOnlyList<DomesticIntimacyMoment> DomesticIntimacyMoments => domesticIntimacyMoments;
 
@@ -1157,6 +1204,16 @@ namespace Survivebest.Core
             return UpsertProfile(actor, profile, humanVampireRelationshipProfiles, () => new HumanVampireRelationshipProfile());
         }
 
+        public LongTailConsequenceProfile SetLongTailConsequenceProfile(CharacterCore actor, LongTailConsequenceProfile profile)
+        {
+            return UpsertProfile(actor, profile, longTailConsequenceProfiles, () => new LongTailConsequenceProfile());
+        }
+
+        public SocialOpinionProfile SetSocialOpinionProfile(CharacterCore actor, SocialOpinionProfile profile)
+        {
+            return UpsertProfile(actor, profile, socialOpinionProfiles, () => new SocialOpinionProfile());
+        }
+
         public string BuildVampireLifeLoopSummary(string characterId)
         {
             if (string.IsNullOrWhiteSpace(characterId))
@@ -1397,6 +1454,16 @@ namespace Survivebest.Core
                 return FindProfile(characterId, humanVampireRelationshipProfiles) as T;
             }
 
+            if (typeof(T) == typeof(LongTailConsequenceProfile))
+            {
+                return FindProfile(characterId, longTailConsequenceProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(SocialOpinionProfile))
+            {
+                return FindProfile(characterId, socialOpinionProfiles) as T;
+            }
+
             return null;
         }
 
@@ -1464,6 +1531,109 @@ namespace Survivebest.Core
             AppendThought(actor, "domestic_intimacy", $"{activity} {tone}.", moment.IntimacyWeight, null);
             RecordLifeTimelineEvent(actor, "Domestic moment", activity, "domestic_intimacy");
             return moment;
+        }
+
+        public LongTailConsequenceProfile RecordLongTailAftermath(CharacterCore actor, LongTailAftermathType aftermathType, float intensity, string summary)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(summary))
+            {
+                return null;
+            }
+
+            float amount = Mathf.Clamp01(intensity);
+            LongTailConsequenceProfile profile = FindProfile(actor.CharacterId, longTailConsequenceProfiles);
+            if (profile == null)
+            {
+                profile = new LongTailConsequenceProfile { CharacterId = actor.CharacterId };
+                longTailConsequenceProfiles.Add(profile);
+            }
+
+            switch (aftermathType)
+            {
+                case LongTailAftermathType.Betrayal:
+                    profile.BetrayalLoad = Mathf.Clamp01(profile.BetrayalLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Embarrassment:
+                    profile.EmbarrassmentLoad = Mathf.Clamp01(profile.EmbarrassmentLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Grief:
+                    profile.GriefLoad = Mathf.Clamp01(profile.GriefLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Jealousy:
+                    profile.JealousyLoad = Mathf.Clamp01(profile.JealousyLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Pride:
+                    profile.PrideLoad = Mathf.Clamp01(profile.PrideLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Regret:
+                    profile.RegretLoad = Mathf.Clamp01(profile.RegretLoad + amount * 0.45f);
+                    break;
+            }
+
+            profile.HabitStability = Mathf.Clamp01(profile.HabitStability + (profile.PrideLoad * 0.06f) - (profile.RegretLoad * 0.08f) - (profile.GriefLoad * 0.05f));
+            profile.RelapseRisk = Mathf.Clamp01(profile.RelapseRisk + (profile.RegretLoad * 0.09f) + (profile.GriefLoad * 0.08f) + (profile.BetrayalLoad * 0.05f) - (profile.PrideLoad * 0.06f));
+
+            string thought = $"{aftermathType} lingers: {summary}";
+            AppendThought(actor, "long_tail_aftermath", thought, amount, null);
+            RecordLifeTimelineEvent(actor, "Long-tail aftermath", summary, "long_tail_aftermath");
+            return profile;
+        }
+
+        public string SimulateMonthArc(CharacterCore actor, int monthIndex, int seed)
+        {
+            if (actor == null)
+            {
+                return "No actor available for month arc.";
+            }
+
+            LongTailConsequenceProfile consequence = FindProfile(actor.CharacterId, longTailConsequenceProfiles);
+            SocialOpinionProfile opinions = FindProfile(actor.CharacterId, socialOpinionProfiles);
+            if (consequence == null && opinions == null)
+            {
+                return "No long-tail profile found for month arc.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            List<string> beats = new();
+            if (consequence != null)
+            {
+                float heaviest = Mathf.Max(consequence.BetrayalLoad, consequence.EmbarrassmentLoad, consequence.GriefLoad, consequence.JealousyLoad, consequence.PrideLoad, consequence.RegretLoad);
+                if (heaviest > 0.35f)
+                {
+                    beats.Add($"Old emotional residue keeps spilling into ordinary decisions (load {heaviest:0.00}).");
+                }
+
+                if (consequence.RelapseRisk > 0.45f)
+                {
+                    beats.Add("Habit recovery stutters, and old patterns keep tempting a relapse.");
+                }
+            }
+
+            if (opinions != null)
+            {
+                if (opinions.PublicHumiliationScar > 0.4f || opinions.GossipSensitivity > 0.45f)
+                {
+                    beats.Add("Public memory still burns: gossip and side-eyes shape who feels safe.");
+                }
+
+                if (opinions.PromiseMemory > 0.55f)
+                {
+                    beats.Add("Remembered promises keep reframing trust, resentment, and obligation.");
+                }
+            }
+
+            string message = beats.Count > 0
+                ? beats[rng.Next(beats.Count)]
+                : "The month passes with subtle drift, but no major social aftershocks.";
+
+            if (consequence != null)
+            {
+                consequence.LastMonthArc = monthIndex;
+            }
+
+            AppendThought(actor, "month_arc", message, 0.55f, null);
+            RecordLifeTimelineEvent(actor, $"Month arc {monthIndex}", message, "month_arc");
+            return message;
         }
 
         public InterpersonalImpressionProfile GenerateInterpersonalImpression(CharacterCore actor, CharacterCore target, string contextTag, float pressure = 0.5f, float socialOpportunity = 0.5f)
@@ -1561,6 +1731,8 @@ namespace Survivebest.Core
             CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
             AmericanWorkLifeProfile workLife = FindProfile(characterId, workLifeProfiles);
             VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
+            LongTailConsequenceProfile longTail = FindProfile(characterId, longTailConsequenceProfiles);
+            SocialOpinionProfile opinions = FindProfile(characterId, socialOpinionProfiles);
 
             List<string> parts = new();
             if (sensory != null)
@@ -1652,6 +1824,22 @@ namespace Survivebest.Core
             if (masquerade != null && masquerade.Suspicion > 0.2f)
             {
                 parts.Add($"Masquerade tension: suspicion {masquerade.Suspicion:0.00}");
+            }
+
+            if (longTail != null)
+            {
+                float emotionalResidue = Mathf.Max(longTail.BetrayalLoad, longTail.EmbarrassmentLoad, longTail.GriefLoad, longTail.JealousyLoad, longTail.PrideLoad, longTail.RegretLoad);
+                if (emotionalResidue > 0.2f)
+                {
+                    parts.Add($"Long-tail residue: load {emotionalResidue:0.00} / habit {longTail.HabitStability:0.00} / relapse {longTail.RelapseRisk:0.00}");
+                }
+            }
+
+            if (opinions != null)
+            {
+                string trusted = opinions.TrustedPeople.Count > 0 ? opinions.TrustedPeople[0] : "nobody clearly";
+                string district = opinions.AvoidedNeighborhoods.Count > 0 ? opinions.AvoidedNeighborhoods[0] : "no district";
+                parts.Add($"Opinion map: trust {trusted} / avoid {district} / promise memory {opinions.PromiseMemory:0.00}");
             }
 
             return parts.Count > 0 ? string.Join(" | ", parts) : "Life texture is still being discovered.";
@@ -1780,6 +1968,18 @@ namespace Survivebest.Core
             {
                 string rumor = workLife.CoworkerRumors.Count > 0 ? workLife.CoworkerRumors[rng.Next(workLife.CoworkerRumors.Count)] : "someone's status in the workplace";
                 observations.Add($"{workLife.JobTitle} life won't stay in its lane: {rumor} is riding your {workLife.CommuteMode} commute home from {workLife.WorkplaceName}.");
+            }
+
+            LongTailConsequenceProfile longTail = FindProfile(actor.CharacterId, longTailConsequenceProfiles);
+            if (longTail != null && Mathf.Max(longTail.BetrayalLoad, longTail.EmbarrassmentLoad, longTail.GriefLoad, longTail.JealousyLoad, longTail.RegretLoad) > 0.45f)
+            {
+                observations.Add("Old betrayals, embarrassment, and regret keep leaking into today, long after the scene ended.");
+            }
+
+            SocialOpinionProfile opinions = FindProfile(actor.CharacterId, socialOpinionProfiles);
+            if (opinions != null && (opinions.PublicHumiliationScar > 0.45f || opinions.GossipSensitivity > 0.5f || opinions.PromiseMemory > 0.55f))
+            {
+                observations.Add("Social mess is still alive: mixed signals, remembered promises, and lingering gossip shape the room.");
             }
 
             if (observations.Count == 0)
