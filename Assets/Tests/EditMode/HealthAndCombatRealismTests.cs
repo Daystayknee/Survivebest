@@ -3,6 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Crime;
 using Survivebest.Emotion;
 using Survivebest.Health;
 using Survivebest.Minigames;
@@ -265,6 +266,88 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(result.OwnerDamage, 0f);
             Assert.IsTrue(medical.ActiveConditions.Any(c => !c.IsIllness));
             Assert.Greater(injuryRecovery.ActiveInjuries.Count, 0);
+
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(systemsGo);
+        }
+
+        [Test]
+        public void ConflictSystem_ResolveTurnBasedEncounter_RunsMultipleRoundsWithAngryWordsAndPoliceOutcome()
+        {
+            Random.InitState(20260326);
+            GameObject ownerGo = new GameObject("OwnerEncounter");
+            GameObject targetGo = new GameObject("TargetEncounter");
+            GameObject systemsGo = new GameObject("ConflictEncounter");
+
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner", "Owner", LifeStage.Adult);
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target", "Target", LifeStage.Adult);
+
+            ConflictSystem conflict = systemsGo.AddComponent<ConflictSystem>();
+            EmotionSystem emotion = systemsGo.AddComponent<EmotionSystem>();
+            SocialSystem social = systemsGo.AddComponent<SocialSystem>();
+            HealthSystem ownerHealth = systemsGo.AddComponent<HealthSystem>();
+            HealthSystem targetHealth = targetGo.AddComponent<HealthSystem>();
+            CrimeSystem crime = systemsGo.AddComponent<CrimeSystem>();
+
+            typeof(ConflictSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, owner);
+            typeof(ConflictSystem).GetField("emotionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, emotion);
+            typeof(ConflictSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, social);
+            typeof(ConflictSystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, ownerHealth);
+            typeof(ConflictSystem).GetField("crimeSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, crime);
+            typeof(CrimeSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(crime, owner);
+
+            CombatEncounterResult result = conflict.ResolveTurnBasedEncounter(target, targetHealth, CombatEncounterType.RiotClash, maxRounds: 4);
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual(CombatEncounterType.RiotClash, result.EncounterType);
+            Assert.GreaterOrEqual(result.RoundsFought, 1);
+            Assert.GreaterOrEqual(result.Rounds.Count, result.RoundsFought);
+            Assert.AreEqual(result.RoundsFought, result.AngryWords.Count);
+            Assert.IsTrue(result.AngryWords.All(x => x.Contains("[riot]")));
+            Assert.IsTrue(result.PoliceDispatched);
+            StringAssert.Contains("Turn-based RiotClash ended", result.Summary);
+
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(systemsGo);
+        }
+
+        [Test]
+        public void ConflictSystem_ResolveTurnBasedEncounter_UsesDifferentCombatProfilesByEncounterType()
+        {
+            Random.InitState(777);
+            GameObject ownerGo = new GameObject("OwnerEncounterTypes");
+            GameObject targetGo = new GameObject("TargetEncounterTypes");
+            GameObject systemsGo = new GameObject("ConflictEncounterTypes");
+
+            CharacterCore owner = ownerGo.AddComponent<CharacterCore>();
+            owner.Initialize("owner", "Owner", LifeStage.Adult);
+            CharacterCore target = targetGo.AddComponent<CharacterCore>();
+            target.Initialize("target", "Target", LifeStage.Adult);
+
+            ConflictSystem conflict = systemsGo.AddComponent<ConflictSystem>();
+            EmotionSystem emotion = systemsGo.AddComponent<EmotionSystem>();
+            SocialSystem social = systemsGo.AddComponent<SocialSystem>();
+            HealthSystem ownerHealth = systemsGo.AddComponent<HealthSystem>();
+            HealthSystem targetHealth = targetGo.AddComponent<HealthSystem>();
+
+            typeof(ConflictSystem).GetField("owner", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, owner);
+            typeof(ConflictSystem).GetField("emotionSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, emotion);
+            typeof(ConflictSystem).GetField("socialSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, social);
+            typeof(ConflictSystem).GetField("healthSystem", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(conflict, ownerHealth);
+
+            CombatEncounterResult duel = conflict.ResolveTurnBasedEncounter(target, targetHealth, CombatEncounterType.Duel, maxRounds: 1);
+            CombatEncounterResult street = conflict.ResolveTurnBasedEncounter(target, targetHealth, CombatEncounterType.StreetBrawl, maxRounds: 1);
+
+            Assert.IsNotNull(duel);
+            Assert.IsNotNull(street);
+            Assert.IsNotEmpty(duel.Rounds);
+            Assert.IsNotEmpty(street.Rounds);
+            Assert.AreEqual(CombatOption.CounterStrike, duel.Rounds[0].OwnerOption);
+            Assert.AreEqual(CombatOption.Hook, street.Rounds[0].OwnerOption);
 
             Object.DestroyImmediate(ownerGo);
             Object.DestroyImmediate(targetGo);
