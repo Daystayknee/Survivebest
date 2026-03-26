@@ -108,6 +108,7 @@ namespace Survivebest.Dialogue
         [SerializeField] private EmotionSystem emotionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
+        [SerializeField] private MindStateSystem mindStateSystem;
         [SerializeField] private List<DialogueLine> dialogueLines = new();
         [SerializeField] private List<DialogueGeneratedLine> generatedLines = new();
         [SerializeField, Min(12)] private int minimumLinesPerBucket = 24;
@@ -152,7 +153,8 @@ namespace Survivebest.Dialogue
                 distortionPenalty = distortion != null ? distortion.GetDominantIntensity() * 0.12f : 0f;
             }
 
-            float successChance = Mathf.Clamp01(0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty - distortionPenalty + ((attachmentModifier - 1f) * 0.2f));
+            float beliefModifier = mindStateSystem != null && owner != null ? mindStateSystem.GetDialogueModifier(owner.CharacterId, target.CharacterId) : 1f;
+            float successChance = Mathf.Clamp01((0.8f + relationshipBonus + memoryBonus - conflictPenalty - (failureModifier - 1f) * 0.22f - angerPenalty - stressPenalty - distortionPenalty + ((attachmentModifier - 1f) * 0.2f)) * beliefModifier);
             bool success = UnityEngine.Random.value <= successChance;
 
             int finalDelta = success ? baseRelationshipDelta : -Mathf.Max(1, Mathf.Abs(baseRelationshipDelta));
@@ -178,7 +180,7 @@ namespace Survivebest.Dialogue
                 MemoryTag = contextualLine != null ? contextualLine.MemoryTag : ResolveMemoryTag(target, context),
                 SpeakerSpecies = contextualLine != null ? contextualLine.SpeakerSpecies : ResolveSpeakerSpeciesKey(context),
                 SpeakerBreed = contextualLine != null ? contextualLine.SpeakerBreed : context != null ? context.SpeakerBreed : null,
-                InnerThought = BuildAiSelfTalk(owner, context != null ? context.TopicHint : null, context != null ? context.SpeakerSpecies : null, target),
+                InnerThought = BuildMindAwareSelfTalk(owner, context != null ? context.TopicHint : null, context != null ? context.SpeakerSpecies : null, target),
                 AnimalSoundText = context != null && context.IsPetInteraction ? BuildAnimalSoundText(context.SpeakerSpecies, context.SpeakerBreed, false) : string.Empty,
                 IsPetInteraction = contextualLine != null && contextualLine.IsPetInteraction
             });
@@ -375,7 +377,7 @@ namespace Survivebest.Dialogue
                 MemoryTag = "shared_meal",
                 SpeakerSpecies = ResolveSpeakerSpeciesKey(null),
                 SpeakerBreed = null,
-                InnerThought = BuildAiSelfTalk(actor != null ? actor : owner, resolvedSituation, null, null),
+                InnerThought = BuildMindAwareSelfTalk(actor != null ? actor : owner, resolvedSituation, null, null),
                 AnimalSoundText = string.Empty,
                 IsPetInteraction = false
             });
@@ -397,7 +399,7 @@ namespace Survivebest.Dialogue
 
             DialogueGeneratedLine selected = petLines[UnityEngine.Random.Range(0, petLines.Count)];
             string soundText = BuildAnimalSoundText(species, breed, false);
-            string innerThought = BuildAiSelfTalk(owner, situationTag, species, null);
+            string innerThought = BuildMindAwareSelfTalk(owner, situationTag, species, null);
             string line = BuildPetAiMoment(selected.Line, soundText, innerThought);
             OnDialogueResolved?.Invoke(line, true);
             OnDialoguePresentationReady?.Invoke(new DialoguePresentationPayload
@@ -474,6 +476,20 @@ namespace Survivebest.Dialogue
                 ? $"as {actorName} reads {targetName} during {topic}"
                 : $"as {actorName} studies the {animalSpecies.ToLowerInvariant()} during {topic}";
             return $"AI self-talk: {tone}, {counter}, {hook}.";
+        }
+
+        private string BuildMindAwareSelfTalk(CharacterCore actor, string topicHint = null, string animalSpecies = null, CharacterCore target = null)
+        {
+            if (actor != null && mindStateSystem != null)
+            {
+                string thought = mindStateSystem.BuildInnerThought(actor.CharacterId, topicHint);
+                if (!string.IsNullOrWhiteSpace(thought))
+                {
+                    return thought;
+                }
+            }
+
+            return BuildAiSelfTalk(actor, topicHint, animalSpecies, target);
         }
 
         public string BuildAnimalSoundText(string species, string breed = null, bool stressed = false)

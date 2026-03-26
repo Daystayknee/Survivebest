@@ -21,3 +21,15 @@
 
 ## Rule
 Any new simulation field must be added to exactly one true owner first, then exposed via events or orchestration projections.
+
+## Cognitive/Social Expansion Lock (Single-Owner Discipline)
+- New state introduced during cognitive, memory, social-perception, meaning, and animal phases must follow **one true owner system**.
+- Other systems consume read models/events/adapters only; they must not become duplicate truth stores.
+
+| System | Role | Owns State |
+|---|---|---|
+| `MindStateSystem` | True owner | `BeliefRecord`, `ThoughtPulse`, `IdentityState` |
+| `MemoryKernelSystem` | True owner | `MemoryItem` (Core/Social/Environmental), cue retrieval/reinforcement data |
+| `SocialPerceptionGraphSystem` | True owner | Directed social edges (trust/fear/attraction/certainty), channelized reputation propagation state |
+| `MeaningPurposeSystem` | True owner | `MeaningState`, `LifeVector`, value/behavior mismatch deltas |
+| `AnimalCognitionSystem` | True owner | `AnimalPerception`, `BondState`, `InstinctStack` |

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Survivebest.Events;
 using Survivebest.World;
+using Survivebest.Core;
 
 namespace Survivebest.Social
 {
@@ -91,6 +92,7 @@ namespace Survivebest.Social
     {
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private MemoryKernelSystem memoryKernelSystem;
         [SerializeField] private List<RelationshipMemory> memories = new();
         [SerializeField] private List<RelationshipProfile> profiles = new();
         [SerializeField] private List<ReputationEntry> reputations = new();
@@ -140,6 +142,15 @@ namespace Survivebest.Social
             };
 
             memories.Add(memory);
+            memoryKernelSystem?.AddMemory(
+                memory.SubjectCharacterId,
+                MemoryItemType.Social,
+                memory.Topic,
+                memory.Impact / 100f,
+                memory.Importance,
+                memory.Distortion,
+                memory.TriggerAssociations,
+                new[] { memory.TargetCharacterId, memory.ContextLotId });
             if (memories.Count > memorySoftCap)
             {
                 memories.RemoveAt(0);

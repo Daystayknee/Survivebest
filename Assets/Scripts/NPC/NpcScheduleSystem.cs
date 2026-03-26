@@ -109,6 +109,7 @@ namespace Survivebest.NPC
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
+        [SerializeField] private MemoryKernelSystem memoryKernelSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<NpcProfile> npcProfiles = new();
 
@@ -201,6 +202,7 @@ namespace Survivebest.NPC
                 existing.IsFirstImpression |= kind == NpcMemoryKind.FirstImpression;
                 existing.IsLegacyThread |= kind == NpcMemoryKind.Legacy;
                 existing.IsGrudge |= kind == NpcMemoryKind.Grudge || existing.Sentiment <= -40;
+                memoryKernelSystem?.UpsertNpcCompatibleMemory(npcId, topic, sourceId, kind.ToString(), existing.Sentiment, existing.Importance, existing.IsRumor, existing.IsSecret);
                 TrimNpcMemory(npc);
                 return;
             }
@@ -222,6 +224,7 @@ namespace Survivebest.NPC
                 IsGrudge = kind == NpcMemoryKind.Grudge || sentiment <= -40,
                 LastSeenHour = now
             });
+            memoryKernelSystem?.UpsertNpcCompatibleMemory(npcId, topic, sourceId, kind.ToString(), sentiment, importance, kind == NpcMemoryKind.Rumor, kind == NpcMemoryKind.Secret);
 
             TrimNpcMemory(npc);
         }

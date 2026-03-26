@@ -222,6 +222,20 @@ namespace Survivebest.Core
             return entry != null ? entry.Weight : 0f;
         }
 
+        public float GetIdentityStrength(string identityTag)
+        {
+            if (string.IsNullOrWhiteSpace(identityTag))
+            {
+                return 0f;
+            }
+
+            IdentityTrack track = identityTracks.Find(x =>
+                x != null &&
+                !string.IsNullOrWhiteSpace(x.IdentityTag) &&
+                string.Equals(x.IdentityTag, identityTag, StringComparison.OrdinalIgnoreCase));
+            return track != null ? Mathf.Clamp(track.Strength, 0f, 100f) : 0f;
+        }
+
         public bool ShouldAllowDiscretionarySpend(float amount)
         {
             float balance = economyManager != null ? economyManager.GetBalance("household") : 0f;
