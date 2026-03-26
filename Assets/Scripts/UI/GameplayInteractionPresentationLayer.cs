@@ -238,30 +238,30 @@ namespace Survivebest.UI
             switch (theme)
             {
                 case LocationTheme.Residential:
-                    packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry", "cuddle", "hookup_talk"));
-                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean", "meal_prep"));
-                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel", "skin_care_reset"));
-                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv", "plan_outfit"));
-                    packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote", "stream_setup", "dating_app", "pay_bills"));
-                    packs.Add(BuildPack("entryway", "Entryway", "check_delivery", "grab_keys", "leave_for_date", "prep_overnight_bag"));
-                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing", "doomscroll", "livestream"));
-                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect", "therapy_journal"));
-                    packs.Add(BuildPack("balcony", "Balcony", "voice_note_flirt", "sunset_photo_dump", "late_night_debrief", "coffee_scroll"));
+                    packs.Add(BuildPack("bed", "Bed", "sleep", "relax", "think", "cry", "cuddle", "hookup_talk", "dream_journal", "set_morning_intention"));
+                    packs.Add(BuildPack("kitchen", "Kitchen", "cook", "bake", "mix_drink", "snack", "clean", "meal_prep", "pack_lunchboxes", "budget_meal_planning"));
+                    packs.Add(BuildPack("bathroom", "Bathroom", "use_bathroom", "take_shower", "dry_off_towel", "skin_care_reset", "deep_grooming_reset", "self_esteem_mirror_talk"));
+                    packs.Add(BuildPack("closet", "Closet", "clothing_store", "read_book", "watch_tv", "plan_outfit", "seasonal_closet_swap", "donate_old_clothes"));
+                    packs.Add(BuildPack("desk", "Desk", "study", "plan", "work_remote", "stream_setup", "dating_app", "pay_bills", "apply_for_grant", "career_pivot_research"));
+                    packs.Add(BuildPack("entryway", "Entryway", "check_delivery", "grab_keys", "leave_for_date", "prep_overnight_bag", "drop_off_donation", "neighborhood_errand_loop"));
+                    packs.Add(BuildPack("tv", "TV Corner", "watch_tv", "watch_movie", "sing", "doomscroll", "livestream", "movie_club_watch_party", "console_tournament_night"));
+                    packs.Add(BuildPack("bookshelf", "Bookshelf", "read_book", "journal", "reflect", "therapy_journal", "family_memory_album", "learn_new_language"));
+                    packs.Add(BuildPack("balcony", "Balcony", "voice_note_flirt", "sunset_photo_dump", "late_night_debrief", "coffee_scroll", "garden_herb_maintenance", "call_a_friend_checkin"));
                     break;
                 case LocationTheme.Hospital:
-                    packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests", "therapy_consult", "refill_prescription"));
-                    packs.Add(BuildPack("recovery_bed", "Recovery Bed", "rest", "meditate", "call_family", "video_call_partner"));
+                    packs.Add(BuildPack("doctor_station", "Doctor Station", "talk_doctor", "request_tests", "therapy_consult", "refill_prescription", "second_opinion_request", "followup_care_plan"));
+                    packs.Add(BuildPack("recovery_bed", "Recovery Bed", "rest", "meditate", "call_family", "video_call_partner", "gratitude_note_to_caregiver", "recovery_goal_checkin"));
                     break;
                 case LocationTheme.Workplace:
-                    packs.Add(BuildPack("workstation", "Workstation", "work_shift", "focus_task", "leave_early", "pitch_side_hustle", "edit_content"));
-                    packs.Add(BuildPack("break_area", "Break Area", "take_break", "talk_coworker", "eat_snack", "doomscroll", "check_texts"));
+                    packs.Add(BuildPack("workstation", "Workstation", "work_shift", "focus_task", "leave_early", "pitch_side_hustle", "edit_content", "ask_for_feedback", "mentor_junior_teammate"));
+                    packs.Add(BuildPack("break_area", "Break Area", "take_break", "talk_coworker", "eat_snack", "doomscroll", "check_texts", "mental_reset_walk", "union_chat"));
                     break;
                 case LocationTheme.Civic:
-                    packs.Add(BuildPack("public_notice", "Public Notice Board", "join_town_meeting", "check_jobs", "report_issue", "check_gig_board"));
-                    packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form", "renew_id", "housing_question"));
+                    packs.Add(BuildPack("public_notice", "Public Notice Board", "join_town_meeting", "check_jobs", "report_issue", "check_gig_board", "sign_petition", "volunteer_signup"));
+                    packs.Add(BuildPack("service_desk", "Service Desk", "request_help", "file_form", "renew_id", "housing_question", "appeal_fee", "request_translation_support"));
                     break;
                 default:
-                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel", "nightlife_plan", "rideshare_shift"));
+                    packs.Add(BuildPack("street", "Street", "explore", "observe", "chat_stranger", "open_map_travel", "nightlife_plan", "rideshare_shift", "street_food_taste_test", "join_pop_up_event"));
                     break;
             }
 
