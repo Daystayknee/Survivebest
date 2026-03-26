@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Survivebest.Core;
+using Survivebest.Activity;
 using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Location;
@@ -82,6 +83,7 @@ namespace Survivebest.UI
         [SerializeField] private LocationManager locationManager;
         [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private GameplayVisionSystem gameplayVisionSystem;
+        [SerializeField] private RoutineChainSystem routineChainSystem;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
@@ -315,6 +317,11 @@ namespace Survivebest.UI
             suggestions.Add($"Money option: {LifeActivityCatalog.PickGigWorkActivity()}");
             suggestions.Add($"Phone/social beat: {LifeActivityCatalog.PickSocialFeedActivity()}");
             suggestions.Add($"Home glow-up: {LifeActivityCatalog.PickHomeUpgradeProject()}");
+            if (routineChainSystem != null)
+            {
+                suggestions.Add($"Quick chain: {routineChainSystem.BuildQuickRoutineLabel(RoutineChainType.MorningLaunch)}");
+                suggestions.Add($"Quick chain: {routineChainSystem.BuildQuickRoutineLabel(RoutineChainType.EveningReset)}");
+            }
             suggestions.Add(BuildScreenMoodSummary());
 
             if (lifestyleBehaviorSystem != null)

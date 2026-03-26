@@ -31,6 +31,7 @@ namespace Survivebest.Core
     public class MemoryKernelSystem : MonoBehaviour
     {
         [SerializeField] private List<MemoryItem> memories = new();
+        [SerializeField, Range(0f, 0.2f)] private float passiveDecayPerHour = 0.01f;
 
         public IReadOnlyList<MemoryItem> Memories => memories;
 
@@ -106,6 +107,35 @@ namespace Survivebest.Core
             memory.Importance = Mathf.Clamp01(memory.Importance + m * 0.1f);
             memory.DecayRate = Mathf.Clamp01(memory.DecayRate - m * 0.03f);
             memory.LastReinforcedHour = GetCurrentHour();
+        }
+
+        public void TickHour(string cue = null)
+        {
+            int now = GetCurrentHour();
+            for (int i = 0; i < memories.Count; i++)
+            {
+                MemoryItem memory = memories[i];
+                if (memory == null)
+                {
+                    continue;
+                }
+
+                bool cueMatch = !string.IsNullOrWhiteSpace(cue) && memory.Cues.Exists(c => c != null && c.IndexOf(cue, StringComparison.OrdinalIgnoreCase) >= 0);
+                if (cueMatch)
+                {
+                    Reinforce(memory.MemoryId, 0.35f);
+                    memory.Distortion = Mathf.Clamp01(memory.Distortion + 0.03f);
+                    continue;
+                }
+
+                int staleHours = Mathf.Max(0, now - memory.LastReinforcedHour);
+                float decay = (memory.DecayRate + passiveDecayPerHour) * Mathf.Clamp(staleHours / 24f, 0.15f, 1.5f);
+                memory.Importance = Mathf.Clamp01(memory.Importance - decay);
+                if (memory.Importance <= 0.01f)
+                {
+                    memory.Summary = $"faded::{memory.Type}";
+                }
+            }
         }
 
         public MemoryItem UpsertNpcCompatibleMemory(string characterId, string topic, string sourceId, string memoryKind, int sentiment, float importance, bool isRumor, bool isSecret)
