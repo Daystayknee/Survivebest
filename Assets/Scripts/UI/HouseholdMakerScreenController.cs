@@ -832,6 +832,8 @@ namespace Survivebest.UI
                     $"{householdStoryPrompt}\n" +
                     $"Conflict: {conflictApproach} • Budget: {budgetTier} • Next Gen: {(wantsChildrenSoon ? "Soon" : "Later")}";
             }
+
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
         }
 
         private string BuildRoomPlanSummary()
