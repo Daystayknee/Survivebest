@@ -41,6 +41,12 @@ namespace Survivebest.UI.ViewModels
         public string DyedHairHex;
         public float OmbreAmount;
         public float HighlightIntensity;
+        public string HeadFaceDepthSummary;
+        public string BodyDepthSummary;
+        public string ClothesDepthSummary;
+        public string GeneticsDepthSummary;
+        public string GoalsSummary;
+        public string TraitsSummary;
     }
 
     [Serializable] public class HouseholdMakerViewModel
