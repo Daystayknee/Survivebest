@@ -6,9 +6,24 @@ using Survivebest.Minigames;
 using Survivebest.Health;
 using Survivebest.Food;
 using Survivebest.UI;
+using Survivebest.Events;
+using System.Collections.Generic;
 
 namespace Survivebest.Interaction
 {
+    [Serializable]
+    public class CinematicInteractionPackage
+    {
+        public string PackageId;
+        public string Label;
+        [TextArea] public string FlavorText;
+        public float MoodDelta = 2f;
+        public float EnergyDelta;
+        public float RelationshipDelta = 4f;
+        public bool SupportsAnimals;
+        public bool SupportsNpc;
+    }
+
     public class InteractionController : MonoBehaviour
     {
         [SerializeField] private Camera gameplayCamera;
@@ -16,9 +31,33 @@ namespace Survivebest.Interaction
         [SerializeField] private FoodDatabase foodDatabase;
         [SerializeField] private DrinkDatabase drinkDatabase;
         [SerializeField] private BuildModeManager buildModeManager;
+        [SerializeField] private GameEventHub gameEventHub;
+        [Header("Fun Momentum")]
+        [SerializeField, Min(1f)] private float streakWindowSeconds = 18f;
+        [SerializeField, Range(0f, 1f)] private float cinematicSurpriseChance = 0.18f;
+        [SerializeField, Range(0f, 8f)] private float baseFunMoodBoost = 1.2f;
+        [SerializeField, Range(0f, 6f)] private float baseFunEnergyBoost = 0.6f;
+        [SerializeField] private List<CinematicInteractionPackage> characterInteractionPackages = new()
+        {
+            new() { PackageId = "char_cinematic_checkin", Label = "Cinematic Check-In", FlavorText = "Close-up conversation with dynamic reaction shots and memory callbacks.", MoodDelta = 3f, RelationshipDelta = 6f, SupportsNpc = true },
+            new() { PackageId = "char_story_duet", Label = "Story Duet", FlavorText = "Shared flashback montage and branching dialogue beats.", MoodDelta = 2f, RelationshipDelta = 8f, SupportsNpc = true },
+            new() { PackageId = "char_city_walk_talk", Label = "City Walk-and-Talk", FlavorText = "Long-form tracking sequence through active neighborhoods.", MoodDelta = 2f, EnergyDelta = -1f, RelationshipDelta = 5f, SupportsNpc = true },
+            new() { PackageId = "char_ambition_pitch", Label = "Ambition Pitch Session", FlavorText = "One character pitches a life plan while the other pressure-tests it.", MoodDelta = 1f, RelationshipDelta = 4f, SupportsNpc = true },
+            new() { PackageId = "char_conflict_mediation", Label = "Conflict Mediation", FlavorText = "Multi-step conflict resolution with emotional de-escalation.", MoodDelta = 1f, RelationshipDelta = 7f, SupportsNpc = true }
+        };
+        [SerializeField] private List<CinematicInteractionPackage> animalInteractionPackages = new()
+        {
+            new() { PackageId = "pet_training_montage", Label = "Training Montage", FlavorText = "High-production obedience and trust-building sequence.", MoodDelta = 4f, EnergyDelta = -2f, RelationshipDelta = 5f, SupportsAnimals = true },
+            new() { PackageId = "pet_vet_care_loop", Label = "Care Loop", FlavorText = "Focused wellness routine with checkups, grooming, and reward cycles.", MoodDelta = 2f, RelationshipDelta = 4f, SupportsAnimals = true },
+            new() { PackageId = "pet_playtime_setpiece", Label = "Playtime Setpiece", FlavorText = "Toy-chasing setpiece with crowd reactions and ambient score hits.", MoodDelta = 5f, EnergyDelta = -1f, RelationshipDelta = 6f, SupportsAnimals = true },
+            new() { PackageId = "pet_comfort_scene", Label = "Comfort Scene", FlavorText = "Quiet couch sequence that stabilizes stress and mood.", MoodDelta = 3f, RelationshipDelta = 4f, SupportsAnimals = true }
+        };
 
         public event Action<Interactable, CharacterCore> OnInteractableClicked;
         public event Action<CharacterCore, CharacterCore> OnCharacterInteractionRequested;
+
+        private int interactionFunStreak;
+        private float lastInteractionAt = -999f;
 
         private void Update()
         {
@@ -86,6 +125,7 @@ namespace Survivebest.Interaction
             }
 
             OnInteractableClicked?.Invoke(interactable, activeCharacter);
+            ApplyFunMomentum(activeCharacter, interactable.Type);
 
             switch (interactable.Type)
             {
@@ -94,6 +134,7 @@ namespace Survivebest.Interaction
                     CharacterCore targetCharacter = interactable.GetComponent<CharacterCore>();
                     if (targetCharacter != null)
                     {
+                        ApplyCinematicCharacterInteraction(activeCharacter, targetCharacter);
                         OnCharacterInteractionRequested?.Invoke(activeCharacter, targetCharacter);
                         householdManager.SetActiveCharacter(targetCharacter);
                     }
@@ -194,9 +235,172 @@ namespace Survivebest.Interaction
                     break;
                 case InteractableType.Pet:
                     activeCharacter.transform.position = interactable.transform.position;
-                    needs.ModifyMood(2f);
+                    ApplyCinematicAnimalInteraction(activeCharacter, interactable);
                     break;
             }
+        }
+
+        private void ApplyCinematicCharacterInteraction(CharacterCore actor, CharacterCore target)
+        {
+            if (actor == null || target == null)
+            {
+                return;
+            }
+
+            SocialSystem actorSocial = actor.GetComponent<SocialSystem>();
+            NeedsSystem actorNeeds = actor.GetComponent<NeedsSystem>();
+            bool targetIsNpc = !target.IsPlayerControlled;
+            CinematicInteractionPackage package = PickInteractionPackage(characterInteractionPackages, supportsNpc: targetIsNpc, supportsAnimals: false);
+            if (package == null)
+            {
+                return;
+            }
+
+            actorNeeds?.ModifyMood(package.MoodDelta);
+            actorNeeds?.ModifyEnergy(package.EnergyDelta);
+            actorSocial?.UpdateRelationship(target.CharacterId, Mathf.RoundToInt(package.RelationshipDelta));
+            MaybeTriggerCinematicSurprise(actorNeeds, package, "character");
+            PublishInteractionEvent(actor, target.CharacterId, package, "character_to_character");
+        }
+
+        private void ApplyCinematicAnimalInteraction(CharacterCore actor, Interactable petInteractable)
+        {
+            if (actor == null || petInteractable == null)
+            {
+                return;
+            }
+
+            NeedsSystem actorNeeds = actor.GetComponent<NeedsSystem>();
+            CinematicInteractionPackage package = PickInteractionPackage(animalInteractionPackages, supportsNpc: false, supportsAnimals: true);
+            if (package == null)
+            {
+                return;
+            }
+
+            actorNeeds?.ModifyMood(package.MoodDelta);
+            actorNeeds?.ModifyEnergy(package.EnergyDelta);
+            householdManager?.InteractWithPet(petInteractable.name, package.RelationshipDelta * 2f, -4f, package.MoodDelta * 6f);
+            MaybeTriggerCinematicSurprise(actorNeeds, package, "animal");
+            PublishInteractionEvent(actor, petInteractable.name, package, "character_to_animal");
+        }
+
+        private void ApplyFunMomentum(CharacterCore actor, InteractableType type)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            NeedsSystem needs = actor.GetComponent<NeedsSystem>();
+            if (needs == null)
+            {
+                return;
+            }
+
+            float now = Time.time;
+            interactionFunStreak = now - lastInteractionAt <= streakWindowSeconds ? interactionFunStreak + 1 : 1;
+            lastInteractionAt = now;
+
+            float streakBonus = Mathf.Clamp(interactionFunStreak * 0.25f, 0f, 4.5f);
+            float moodBoost = baseFunMoodBoost + streakBonus;
+            float energyBoost = baseFunEnergyBoost + (streakBonus * 0.45f);
+            if (type == InteractableType.Bed || type == InteractableType.Fridge || type == InteractableType.Pet)
+            {
+                moodBoost += 0.8f;
+            }
+
+            needs.ModifyMood(moodBoost);
+            needs.ModifyEnergy(energyBoost);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityStarted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(InteractionController),
+                SourceCharacterId = actor.CharacterId,
+                ChangeKey = "FunStreak",
+                Reason = $"Fun streak x{interactionFunStreak} from {type}",
+                Magnitude = moodBoost
+            });
+        }
+
+        private void MaybeTriggerCinematicSurprise(NeedsSystem needs, CinematicInteractionPackage package, string domain)
+        {
+            if (needs == null || package == null || UnityEngine.Random.value > cinematicSurpriseChance)
+            {
+                return;
+            }
+
+            float bonusMood = Mathf.Max(1.5f, package.MoodDelta * 0.9f);
+            needs.ModifyMood(bonusMood);
+            needs.ModifyEnergy(0.8f);
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.NarrativePromptGenerated,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(InteractionController),
+                ChangeKey = "CinematicSurprise",
+                Reason = $"High-budget {domain} setpiece triggered: {package.Label}",
+                Magnitude = bonusMood
+            });
+        }
+
+        private static CinematicInteractionPackage PickInteractionPackage(List<CinematicInteractionPackage> packages, bool supportsNpc, bool supportsAnimals)
+        {
+            if (packages == null || packages.Count == 0)
+            {
+                return null;
+            }
+
+            List<CinematicInteractionPackage> filtered = new();
+            for (int i = 0; i < packages.Count; i++)
+            {
+                CinematicInteractionPackage candidate = packages[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                if (supportsAnimals && !candidate.SupportsAnimals)
+                {
+                    continue;
+                }
+
+                if (supportsNpc && !candidate.SupportsNpc)
+                {
+                    continue;
+                }
+
+                filtered.Add(candidate);
+            }
+
+            if (filtered.Count == 0)
+            {
+                return packages[UnityEngine.Random.Range(0, packages.Count)];
+            }
+
+            return filtered[UnityEngine.Random.Range(0, filtered.Count)];
+        }
+
+        private void PublishInteractionEvent(CharacterCore actor, string targetId, CinematicInteractionPackage package, string key)
+        {
+            if (actor == null || package == null)
+            {
+                return;
+            }
+
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityStarted,
+                Severity = SimulationEventSeverity.Info,
+                SystemName = nameof(InteractionController),
+                SourceCharacterId = actor.CharacterId,
+                TargetCharacterId = targetId,
+                ChangeKey = key,
+                Reason = $"{package.Label}: {package.FlavorText}",
+                Magnitude = package.RelationshipDelta
+            });
         }
     }
 }
