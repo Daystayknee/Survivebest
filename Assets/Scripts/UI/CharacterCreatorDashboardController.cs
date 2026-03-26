@@ -472,6 +472,77 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public CharacterCore AddHumanFromCreator(string displayName = null, LifeStage stage = LifeStage.YoungAdult)
+        {
+            CharacterCore character = CreateCreatorCharacter(displayName ?? $"Human {UnityEngine.Random.Range(100, 999)}", CharacterSpecies.Human, stage);
+            if (character != null)
+            {
+                PublishUiEvent("CreatorAddHuman", $"Added human draft character {character.DisplayName}", 1f);
+            }
+
+            return character;
+        }
+
+        public CharacterCore AddVampireFromCreator(string displayName = null, LifeStage stage = LifeStage.YoungAdult)
+        {
+            CharacterCore character = CreateCreatorCharacter(displayName ?? $"Vampire {UnityEngine.Random.Range(100, 999)}", CharacterSpecies.Vampire, stage);
+            if (character != null)
+            {
+                PublishUiEvent("CreatorAddVampire", $"Added vampire draft character {character.DisplayName}", 1f);
+            }
+
+            return character;
+        }
+
+        public void AddPetFromCreator(string petSpecies = "dog", string petName = null, string petBreed = null)
+        {
+            if (householdManager == null)
+            {
+                return;
+            }
+
+            string species = string.IsNullOrWhiteSpace(petSpecies) ? "dog" : petSpecies.Trim().ToLowerInvariant();
+            string resolvedName = string.IsNullOrWhiteSpace(petName) ? $"{char.ToUpperInvariant(species[0])}{species.Substring(1)} {UnityEngine.Random.Range(10, 99)}" : petName.Trim();
+            string petId = $"pet_{species}_{Guid.NewGuid():N}";
+            householdManager.RegisterPet(petId, resolvedName, species, petBreed);
+            PublishUiEvent("CreatorAddPet", $"Added {species} pet {resolvedName}", 1f);
+        }
+
+        public bool ApplyGeneticsMixFromHousehold(int sourceMemberIndex = 1, float mutationChance = 0.08f)
+        {
+            if (householdManager == null || householdManager.ActiveCharacter == null)
+            {
+                return false;
+            }
+
+            if (householdManager.Members.Count <= sourceMemberIndex || sourceMemberIndex < 0)
+            {
+                return false;
+            }
+
+            CharacterCore active = householdManager.ActiveCharacter;
+            CharacterCore source = householdManager.Members[sourceMemberIndex];
+            if (source == null || source == active)
+            {
+                return false;
+            }
+
+            GeneticsSystem activeGenetics = active.GetComponent<GeneticsSystem>();
+            GeneticsSystem sourceGenetics = source.GetComponent<GeneticsSystem>();
+            if (activeGenetics == null || sourceGenetics == null || activeGenetics.Profile == null || sourceGenetics.Profile == null)
+            {
+                return false;
+            }
+
+            GeneticProfile mixed = InheritanceResolver.Inherit(activeGenetics.Profile, sourceGenetics.Profile, Mathf.Clamp01(mutationChance));
+            mixed.CreatorMode = CreatorGeneticsMode.DnaEdit;
+            activeGenetics.OverrideGenetics(mixed, true);
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            RefreshPreview();
+            PublishUiEvent("CreatorGeneticsMix", $"Mixed genetics of {active.DisplayName} with {source.DisplayName}", 1f);
+            return true;
+        }
+
         public void SetPopulationRegionTemplate(int regionIndex)
         {
             string[] regions = { "temperate_coastal", "equatorial_urban", "northern_highland", "continental_plains", "mixed_metro" };
@@ -1742,6 +1813,27 @@ namespace Survivebest.UI
                 Reason = reason,
                 Magnitude = magnitude
             });
+        }
+
+        private CharacterCore CreateCreatorCharacter(string displayName, CharacterSpecies species, LifeStage stage)
+        {
+            if (householdManager == null)
+            {
+                return null;
+            }
+
+            string safeName = string.IsNullOrWhiteSpace(displayName) ? "New Character" : displayName.Trim();
+            GameObject go = new GameObject($"Creator_{safeName.Replace(' ', '_')}");
+            CharacterCore created = go.AddComponent<CharacterCore>();
+            created.Initialize($"char_{Guid.NewGuid():N}", safeName, stage, species);
+
+            if (go.GetComponent<GeneticsSystem>() == null)
+            {
+                go.AddComponent<GeneticsSystem>();
+            }
+
+            householdManager.AddMember(created);
+            return created;
         }
 
         private static HairProfile CloneHair(HairProfile source)
