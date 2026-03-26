@@ -105,6 +105,8 @@ namespace Survivebest.Core
             {
                 builder.Append(" ");
                 builder.Append(humanLifeExperienceLayerSystem.FilterWorldExperience(characterId, "The day keeps asking who you are when nobody is clapping."));
+                builder.Append(" ");
+                builder.Append(humanLifeExperienceLayerSystem.BuildEmotionalJournalBook(characterId, day));
             }
 
             return builder.ToString().Trim();

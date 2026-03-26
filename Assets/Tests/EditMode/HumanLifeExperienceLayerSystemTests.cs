@@ -532,5 +532,188 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(targetGo);
         }
 
+        [Test]
+        public void RecordLongTailAftermath_UpdatesConsequenceProfileAndThoughts()
+        {
+            GameObject go = new GameObject("LongTailAftermath");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharAftermath");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_aftermath", "Aftermath", LifeStage.Adult);
+
+            LongTailConsequenceProfile profile = system.RecordLongTailAftermath(
+                character,
+                LongTailAftermathType.Betrayal,
+                0.9f,
+                "A broken promise keeps echoing in every new conversation.");
+
+            Assert.IsNotNull(profile);
+            Assert.Greater(profile.BetrayalLoad, 0f);
+            Assert.GreaterOrEqual(system.LongTailConsequenceProfiles.Count, 1);
+            Assert.AreEqual("long_tail_aftermath", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void SimulateMonthArc_UsesLongTailAndOpinionProfiles()
+        {
+            GameObject go = new GameObject("MonthArc");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharMonthArc");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_month_arc", "MonthArc", LifeStage.Adult);
+
+            system.SetLongTailConsequenceProfile(character, new LongTailConsequenceProfile
+            {
+                BetrayalLoad = 0.6f,
+                RegretLoad = 0.7f,
+                RelapseRisk = 0.8f
+            });
+            system.SetSocialOpinionProfile(character, new SocialOpinionProfile
+            {
+                GossipSensitivity = 0.7f,
+                PublicHumiliationScar = 0.8f,
+                PromiseMemory = 0.9f,
+                AvoidedNeighborhoods = new System.Collections.Generic.List<string> { "river_district" },
+                TrustedPeople = new System.Collections.Generic.List<string> { "cousin_jo" }
+            });
+
+            string arc = system.SimulateMonthArc(character, 5, 101);
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(arc));
+            StringAssert.Contains("Long-tail residue", summary);
+            StringAssert.Contains("Opinion map", summary);
+            Assert.AreEqual("month_arc", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void BuildEmotionalJournalBook_IncludesEmotionalSectionsAndMilestoneFraming()
+        {
+            GameObject go = new GameObject("EmotionalJournal");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("JournalChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_journal_book", "Journal", LifeStage.Adult);
+
+            system.SetCollectionIdentityProfile(character, new CollectionIdentityProfile
+            {
+                FavoriteKeepsake = "grandma necklace"
+            });
+            system.RecordLifeTimelineEvent(character, "Funeral", "Family funeral changed everything.", "milestone");
+            system.LogReflection(character, LifeReflectionType.Regret, 0.8f);
+            system.RecordMemoryMeaning(character, MemoryMeaningType.IdentityDefining, "First love ended at the bus stop.", 0.7f);
+
+            string journal = system.BuildEmotionalJournalBook(character.CharacterId, 12);
+
+            StringAssert.Contains("what happened", journal);
+            StringAssert.Contains("why it mattered", journal);
+            StringAssert.Contains("strongest memory", journal);
+            StringAssert.Contains("keepsakes/comfort objects", journal);
+            StringAssert.Contains("favorite places", journal);
+            StringAssert.Contains("milestone framing", journal);
+            StringAssert.Contains("funeral", journal.ToLowerInvariant());
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void EnsurePlayableJobLoopCatalog_AndSimulatePlayableJobLoop_CoversRequestedRoles()
+        {
+            GameObject go = new GameObject("PlayableJobs");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("JobChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_job_loops", "Job", LifeStage.Adult);
+
+            var loops = system.EnsurePlayableJobLoopCatalog();
+            string shift = system.SimulatePlayableJobLoop(character, "delivery_driver", 33);
+
+            Assert.GreaterOrEqual(loops.Count, 12);
+            Assert.IsTrue(shift.Contains("playable loop", System.StringComparison.OrdinalIgnoreCase));
+            Assert.AreEqual("playable_job_loop", system.RecentThoughts[^1].Source);
+            Assert.AreEqual("Delivery Driver", system.GetProfile<AmericanWorkLifeProfile>(character.CharacterId).JobTitle);
+            Assert.GreaterOrEqual(system.BuildCareerExecutionModes("delivery_driver").Count, 2);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void RichTeenElderLifeStageProfiles_AppearInSummaryAndPulse()
+        {
+            GameObject go = new GameObject("LifeStages");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("StageChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_stages", "Stages", LifeStage.Adult);
+
+            system.SetRichKidLifeStageProfile(character, new RichKidLifeStageProfile
+            {
+                PrivilegeShielding = 0.8f,
+                LegacyExpectationPressure = 0.7f,
+                EliteSchoolClubs = new System.Collections.Generic.List<string> { "debate society" }
+            });
+            system.SetTeenLifeStageProfile(character, new TeenLifeStageProfile
+            {
+                BullyingExposure = 0.7f,
+                CrushIntensity = 0.8f,
+                RebellionDrive = 0.75f,
+                CurfewConflict = 0.72f,
+                CollegeApplicationPressure = 0.85f
+            });
+            system.SetElderLifeStageProfile(character, new ElderLifeStageProfile
+            {
+                MenopauseLoad = 0.6f,
+                CognitiveDeclineConcern = 0.7f,
+                ElderLoneliness = 0.8f,
+                RegretLegacyPanic = 0.75f,
+                GrandparentInfluence = 0.9f
+            });
+
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+            string pulse = system.SimulateHumanTexturePulse(character, 19, 56);
+
+            StringAssert.Contains("Rich-kid weather", summary);
+            StringAssert.Contains("Teen pressure", summary);
+            StringAssert.Contains("Elder weather", summary);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(pulse));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void EnsureLifeStageGameplayPacks_AndSimulateLifeStageGameplayBeat_ProvideHeartyStageGameplay()
+        {
+            GameObject go = new GameObject("StageGameplayPacks");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject teenGo = new GameObject("TeenChar");
+            CharacterCore teen = teenGo.AddComponent<CharacterCore>();
+            teen.Initialize("char_teen_gameplay", "TeenGameplay", LifeStage.Teen);
+
+            var packs = system.EnsureLifeStageGameplayPacks();
+            string beat = system.SimulateLifeStageGameplayBeat(teen, 99, true);
+
+            Assert.GreaterOrEqual(packs.Count, 4);
+            StringAssert.Contains("Teen gameplay beat", beat);
+            Assert.AreEqual("life_stage_gameplay", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(teenGo);
+        }
+
     }
 }
