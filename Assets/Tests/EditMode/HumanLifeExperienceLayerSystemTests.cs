@@ -694,5 +694,26 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(charGo);
         }
 
+        [Test]
+        public void EnsureLifeStageGameplayPacks_AndSimulateLifeStageGameplayBeat_ProvideHeartyStageGameplay()
+        {
+            GameObject go = new GameObject("StageGameplayPacks");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject teenGo = new GameObject("TeenChar");
+            CharacterCore teen = teenGo.AddComponent<CharacterCore>();
+            teen.Initialize("char_teen_gameplay", "TeenGameplay", LifeStage.Teen);
+
+            var packs = system.EnsureLifeStageGameplayPacks();
+            string beat = system.SimulateLifeStageGameplayBeat(teen, 99, true);
+
+            Assert.GreaterOrEqual(packs.Count, 4);
+            StringAssert.Contains("Teen gameplay beat", beat);
+            Assert.AreEqual("life_stage_gameplay", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(teenGo);
+        }
+
     }
 }

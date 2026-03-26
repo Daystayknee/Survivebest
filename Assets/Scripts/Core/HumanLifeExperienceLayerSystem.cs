@@ -473,6 +473,16 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class LifeStageGameplayPack
+    {
+        public LifeStage Stage = LifeStage.Adult;
+        public List<string> CoreLoops = new();
+        public List<string> SocialConflicts = new();
+        public List<string> MilestoneHooks = new();
+        public List<string> OptionalRabbitHoleHooks = new();
+    }
+
+    [Serializable]
     public class HumanLifeRuntimeState
     {
         public List<ThoughtMessage> RecentThoughts = new();
@@ -752,6 +762,7 @@ namespace Survivebest.Core
         [SerializeField] private List<RichKidLifeStageProfile> richKidLifeStageProfiles = new();
         [SerializeField] private List<TeenLifeStageProfile> teenLifeStageProfiles = new();
         [SerializeField] private List<ElderLifeStageProfile> elderLifeStageProfiles = new();
+        [SerializeField] private List<LifeStageGameplayPack> lifeStageGameplayPacks = new();
         [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
         [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
         [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
@@ -795,6 +806,7 @@ namespace Survivebest.Core
         public IReadOnlyList<RichKidLifeStageProfile> RichKidLifeStageProfiles => richKidLifeStageProfiles;
         public IReadOnlyList<TeenLifeStageProfile> TeenLifeStageProfiles => teenLifeStageProfiles;
         public IReadOnlyList<ElderLifeStageProfile> ElderLifeStageProfiles => elderLifeStageProfiles;
+        public IReadOnlyList<LifeStageGameplayPack> LifeStageGameplayPacks => lifeStageGameplayPacks;
         public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
         public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
         public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
@@ -2430,6 +2442,78 @@ namespace Survivebest.Core
 
             modes.Add($"{loop.RoleLabel}: career focus includes certifications ({string.Join(", ", loop.CertificationSteps.Take(2))}) and ladder progression ({string.Join(" -> ", loop.PromotionLadder.Take(3))}).");
             return modes;
+        }
+
+        public IReadOnlyList<LifeStageGameplayPack> EnsureLifeStageGameplayPacks()
+        {
+            if (lifeStageGameplayPacks.Count > 0)
+            {
+                return lifeStageGameplayPacks;
+            }
+
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Child,
+                CoreLoops = new List<string> { "school day rhythm", "homework with help", "club exploration", "family routine play" },
+                SocialConflicts = new List<string> { "playground exclusion", "early bullying", "friendship repair" },
+                MilestoneHooks = new List<string> { "first club performance", "birthday rituals", "family move adjustment" },
+                OptionalRabbitHoleHooks = new List<string> { "after-school program", "sports practice" }
+            });
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Teen,
+                CoreLoops = new List<string> { "school clubs", "crush management", "curfew negotiation", "first job shift", "college applications" },
+                SocialConflicts = new List<string> { "bullying pressure", "rebellion fallout", "friend-group hierarchy fights" },
+                MilestoneHooks = new List<string> { "first love", "first breakup", "college acceptance/rejection", "driver license" },
+                OptionalRabbitHoleHooks = new List<string> { "exam cram weekend", "part-time shift block" }
+            });
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Adult,
+                CoreLoops = new List<string> { "career progression", "relationship commitments", "household budgeting", "caregiving logistics" },
+                SocialConflicts = new List<string> { "workplace politics", "co-parenting strain", "time-poverty burnout" },
+                MilestoneHooks = new List<string> { "moving in", "marriage", "eviction threat", "recovery arc" },
+                OptionalRabbitHoleHooks = new List<string> { "overtime sprint", "paperwork marathon" }
+            });
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Elder,
+                CoreLoops = new List<string> { "health management", "community routines", "grandparent mentoring", "legacy planning" },
+                SocialConflicts = new List<string> { "elder loneliness", "cognitive decline fears", "regret spirals" },
+                MilestoneHooks = new List<string> { "grandchild influence moments", "bereavement processing", "end-of-life planning", "late-life recovery" },
+                OptionalRabbitHoleHooks = new List<string> { "clinic day block", "quiet reflection day" }
+            });
+
+            return lifeStageGameplayPacks;
+        }
+
+        public string SimulateLifeStageGameplayBeat(CharacterCore actor, int seed, bool allowRabbitHole = true)
+        {
+            if (actor == null)
+            {
+                return "No actor available for life-stage gameplay.";
+            }
+
+            EnsureLifeStageGameplayPacks();
+            LifeStageGameplayPack pack = lifeStageGameplayPacks.Find(x => x != null && x.Stage == actor.CurrentLifeStage)
+                ?? lifeStageGameplayPacks.Find(x => x != null && x.Stage == LifeStage.Adult);
+            if (pack == null)
+            {
+                return "No life-stage gameplay pack found.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            string core = pack.CoreLoops[rng.Next(pack.CoreLoops.Count)];
+            string conflict = pack.SocialConflicts[rng.Next(pack.SocialConflicts.Count)];
+            string milestone = pack.MilestoneHooks[rng.Next(pack.MilestoneHooks.Count)];
+            string optional = allowRabbitHole && pack.OptionalRabbitHoleHooks.Count > 0
+                ? $" Optional rabbit-hole: {pack.OptionalRabbitHoleHooks[rng.Next(pack.OptionalRabbitHoleHooks.Count)]}."
+                : string.Empty;
+
+            string line = $"{actor.CurrentLifeStage} gameplay beat: core loop '{core}', conflict '{conflict}', milestone framing '{milestone}'.{optional}";
+            AppendThought(actor, "life_stage_gameplay", line, 0.68f, null);
+            RecordLifeTimelineEvent(actor, "Life-stage gameplay beat", line, "life_stage_gameplay");
+            return line;
         }
 
         public List<string> BuildEverydayLifeSuggestions(string characterId, int max = 3)
