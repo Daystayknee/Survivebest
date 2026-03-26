@@ -37,6 +37,9 @@ namespace Survivebest.Interaction
         [SerializeField, Range(0f, 1f)] private float cinematicSurpriseChance = 0.18f;
         [SerializeField, Range(0f, 8f)] private float baseFunMoodBoost = 1.2f;
         [SerializeField, Range(0f, 6f)] private float baseFunEnergyBoost = 0.6f;
+        [SerializeField] private List<int> streakMilestones = new() { 3, 6, 10 };
+        [SerializeField, Range(0f, 12f)] private float milestoneMoodBonus = 3f;
+        [SerializeField, Min(0)] private int milestoneFameReward = 4;
         [SerializeField] private List<CinematicInteractionPackage> characterInteractionPackages = new()
         {
             new() { PackageId = "char_cinematic_checkin", Label = "Cinematic Check-In", FlavorText = "Close-up conversation with dynamic reaction shots and memory callbacks.", MoodDelta = 3f, RelationshipDelta = 6f, SupportsNpc = true },
@@ -58,6 +61,7 @@ namespace Survivebest.Interaction
 
         private int interactionFunStreak;
         private float lastInteractionAt = -999f;
+        private int lastMilestoneRewarded;
 
         private void Update()
         {
@@ -259,6 +263,10 @@ namespace Survivebest.Interaction
             actorNeeds?.ModifyMood(package.MoodDelta);
             actorNeeds?.ModifyEnergy(package.EnergyDelta);
             actorSocial?.UpdateRelationship(target.CharacterId, Mathf.RoundToInt(package.RelationshipDelta));
+            if (targetIsNpc)
+            {
+                TriggerCrowdReaction(actorNeeds, target);
+            }
             MaybeTriggerCinematicSurprise(actorNeeds, package, "character");
             PublishInteractionEvent(actor, target.CharacterId, package, "character_to_character");
         }
@@ -298,7 +306,12 @@ namespace Survivebest.Interaction
             }
 
             float now = Time.time;
-            interactionFunStreak = now - lastInteractionAt <= streakWindowSeconds ? interactionFunStreak + 1 : 1;
+            bool continued = now - lastInteractionAt <= streakWindowSeconds;
+            interactionFunStreak = continued ? interactionFunStreak + 1 : 1;
+            if (!continued)
+            {
+                lastMilestoneRewarded = 0;
+            }
             lastInteractionAt = now;
 
             float streakBonus = Mathf.Clamp(interactionFunStreak * 0.25f, 0f, 4.5f);
@@ -311,6 +324,7 @@ namespace Survivebest.Interaction
 
             needs.ModifyMood(moodBoost);
             needs.ModifyEnergy(energyBoost);
+            ApplyStreakMilestoneRewards(actor, needs, type);
 
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
@@ -343,6 +357,61 @@ namespace Survivebest.Interaction
                 ChangeKey = "CinematicSurprise",
                 Reason = $"High-budget {domain} setpiece triggered: {package.Label}",
                 Magnitude = bonusMood
+            });
+        }
+
+        private void ApplyStreakMilestoneRewards(CharacterCore actor, NeedsSystem needs, InteractableType type)
+        {
+            if (actor == null || needs == null || streakMilestones == null || streakMilestones.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < streakMilestones.Count; i++)
+            {
+                int milestone = streakMilestones[i];
+                if (milestone <= lastMilestoneRewarded || interactionFunStreak < milestone)
+                {
+                    continue;
+                }
+
+                lastMilestoneRewarded = milestone;
+                needs.ModifyMood(milestoneMoodBonus + (milestone * 0.2f));
+                needs.ModifyEnergy(1f + (milestone * 0.08f));
+                LongTermProgressionSystem progression = actor.GetComponent<LongTermProgressionSystem>();
+                progression?.AddFame(milestoneFameReward + milestone, $"Fun streak milestone {milestone} from {type}");
+
+                (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                {
+                    Type = SimulationEventType.RewardEarned,
+                    Severity = SimulationEventSeverity.Info,
+                    SystemName = nameof(InteractionController),
+                    SourceCharacterId = actor.CharacterId,
+                    ChangeKey = "FunStreakMilestone",
+                    Reason = $"Milestone {milestone} reached via {type}",
+                    Magnitude = milestone
+                });
+            }
+        }
+
+        private void TriggerCrowdReaction(NeedsSystem needs, CharacterCore target)
+        {
+            if (needs == null || target == null)
+            {
+                return;
+            }
+
+            float reaction = UnityEngine.Random.Range(0.6f, 2.2f);
+            needs.ModifyMood(reaction);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.NarrativePromptGenerated,
+                Severity = SimulationEventSeverity.Info,
+                ChangeKey = "CrowdReaction",
+                SystemName = nameof(InteractionController),
+                TargetCharacterId = target.CharacterId,
+                Reason = $"NPC crowd reaction amplified the scene around {target.DisplayName}",
+                Magnitude = reaction
             });
         }
 
