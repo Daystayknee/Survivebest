@@ -423,6 +423,66 @@ namespace Survivebest.Core
     }
 
     [Serializable]
+    public class PlayableJobLoopDefinition
+    {
+        public string RoleId;
+        public string RoleLabel;
+        public string CareerTrack;
+        public List<string> CoreLoopActions = new();
+        public List<string> CertificationSteps = new();
+        public List<string> PromotionLadder = new();
+        public bool SupportsActiveMinigame = true;
+        public bool SupportsRabbitHoleFallback = true;
+        [Range(0f, 1f)] public float BurnoutLoad = 0.35f;
+        [Range(0f, 1f)] public float DisciplineRisk = 0.2f;
+    }
+
+    [Serializable]
+    public class RichKidLifeStageProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float PrivilegeShielding = 0.5f;
+        [Range(0f, 1f)] public float EntitlementFriction = 0.3f;
+        [Range(0f, 1f)] public float LegacyExpectationPressure = 0.4f;
+        public List<string> EliteSchoolClubs = new();
+        public List<string> FamilyInfluenceHooks = new();
+    }
+
+    [Serializable]
+    public class TeenLifeStageProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float BullyingExposure = 0f;
+        [Range(0f, 1f)] public float CrushIntensity = 0.2f;
+        [Range(0f, 1f)] public float RebellionDrive = 0.3f;
+        [Range(0f, 1f)] public float CurfewConflict = 0.2f;
+        [Range(0f, 1f)] public float FirstJobStress = 0.1f;
+        [Range(0f, 1f)] public float CollegeApplicationPressure = 0.2f;
+        public List<string> SchoolClubs = new();
+    }
+
+    [Serializable]
+    public class ElderLifeStageProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float MenopauseLoad = 0f;
+        [Range(0f, 1f)] public float CognitiveDeclineConcern = 0f;
+        [Range(0f, 1f)] public float ElderLoneliness = 0.3f;
+        [Range(0f, 1f)] public float RegretLegacyPanic = 0.2f;
+        [Range(0f, 1f)] public float GrandparentInfluence = 0.5f;
+    }
+
+    [Serializable]
+    public class LifeStageGameplayPack
+    {
+        public LifeStage Stage = LifeStage.Adult;
+        public List<string> CoreLoops = new();
+        public List<string> SocialConflicts = new();
+        public List<string> MilestoneHooks = new();
+        public List<string> OptionalRabbitHoleHooks = new();
+    }
+
+    [Serializable]
     public class HumanLifeRuntimeState
     {
         public List<ThoughtMessage> RecentThoughts = new();
@@ -599,6 +659,49 @@ namespace Survivebest.Core
         [Range(0f, 1f)] public float TruthRevealStrain = 0f;
     }
 
+    public enum LongTailAftermathType
+    {
+        Betrayal,
+        Embarrassment,
+        Grief,
+        Jealousy,
+        Pride,
+        Regret
+    }
+
+    [Serializable]
+    public class LongTailConsequenceProfile
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float BetrayalLoad = 0f;
+        [Range(0f, 1f)] public float EmbarrassmentLoad = 0f;
+        [Range(0f, 1f)] public float GriefLoad = 0f;
+        [Range(0f, 1f)] public float JealousyLoad = 0f;
+        [Range(0f, 1f)] public float PrideLoad = 0f;
+        [Range(0f, 1f)] public float RegretLoad = 0f;
+        [Range(0f, 1f)] public float HabitStability = 0.5f;
+        [Range(0f, 1f)] public float RelapseRisk = 0f;
+        public string IdentityLabel = "unwritten";
+        public string PreviousIdentityLabel = "unwritten";
+        public string Worldview = "still forming";
+        public int LastMonthArc;
+    }
+
+    [Serializable]
+    public class SocialOpinionProfile
+    {
+        public string CharacterId;
+        public List<string> TrustedPeople = new();
+        public List<string> DistrustedPeople = new();
+        public List<string> FavoredPlaces = new();
+        public List<string> AvoidedNeighborhoods = new();
+        public List<string> AdmiredJobs = new();
+        public List<string> ResentedJobs = new();
+        [Range(0f, 1f)] public float GossipSensitivity = 0.3f;
+        [Range(0f, 1f)] public float PublicHumiliationScar = 0f;
+        [Range(0f, 1f)] public float PromiseMemory = 0.5f;
+    }
+
     public enum LifeReflectionType
     {
         Gratitude,
@@ -655,6 +758,11 @@ namespace Survivebest.Core
         [SerializeField] private List<MundaneEarthLifeProfile> mundaneEarthLifeProfiles = new();
         [SerializeField] private List<CollectionIdentityProfile> collectionIdentityProfiles = new();
         [SerializeField] private List<AmericanWorkLifeProfile> workLifeProfiles = new();
+        [SerializeField] private List<PlayableJobLoopDefinition> playableJobLoops = new();
+        [SerializeField] private List<RichKidLifeStageProfile> richKidLifeStageProfiles = new();
+        [SerializeField] private List<TeenLifeStageProfile> teenLifeStageProfiles = new();
+        [SerializeField] private List<ElderLifeStageProfile> elderLifeStageProfiles = new();
+        [SerializeField] private List<LifeStageGameplayPack> lifeStageGameplayPacks = new();
         [SerializeField] private List<VampireBloodEconomyProfile> vampireBloodProfiles = new();
         [SerializeField] private List<VampireMasqueradeProfile> vampireMasqueradeProfiles = new();
         [SerializeField] private List<VampireSocietyProfile> vampireSocietyProfiles = new();
@@ -663,6 +771,8 @@ namespace Survivebest.Core
         [SerializeField] private List<VampireConditionProfile> vampireConditionProfiles = new();
         [SerializeField] private List<VampireNightWorldProfile> vampireNightWorldProfiles = new();
         [SerializeField] private List<HumanVampireRelationshipProfile> humanVampireRelationshipProfiles = new();
+        [SerializeField] private List<LongTailConsequenceProfile> longTailConsequenceProfiles = new();
+        [SerializeField] private List<SocialOpinionProfile> socialOpinionProfiles = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
         [SerializeField, Min(10)] private int maxMoments = 300;
         [SerializeField, Min(10)] private int maxTimelineEntries = 500;
@@ -692,6 +802,11 @@ namespace Survivebest.Core
         public IReadOnlyList<MundaneEarthLifeProfile> MundaneEarthLifeProfiles => mundaneEarthLifeProfiles;
         public IReadOnlyList<CollectionIdentityProfile> CollectionIdentityProfiles => collectionIdentityProfiles;
         public IReadOnlyList<AmericanWorkLifeProfile> WorkLifeProfiles => workLifeProfiles;
+        public IReadOnlyList<PlayableJobLoopDefinition> PlayableJobLoops => playableJobLoops;
+        public IReadOnlyList<RichKidLifeStageProfile> RichKidLifeStageProfiles => richKidLifeStageProfiles;
+        public IReadOnlyList<TeenLifeStageProfile> TeenLifeStageProfiles => teenLifeStageProfiles;
+        public IReadOnlyList<ElderLifeStageProfile> ElderLifeStageProfiles => elderLifeStageProfiles;
+        public IReadOnlyList<LifeStageGameplayPack> LifeStageGameplayPacks => lifeStageGameplayPacks;
         public IReadOnlyList<VampireBloodEconomyProfile> VampireBloodProfiles => vampireBloodProfiles;
         public IReadOnlyList<VampireMasqueradeProfile> VampireMasqueradeProfiles => vampireMasqueradeProfiles;
         public IReadOnlyList<VampireSocietyProfile> VampireSocietyProfiles => vampireSocietyProfiles;
@@ -700,6 +815,8 @@ namespace Survivebest.Core
         public IReadOnlyList<VampireConditionProfile> VampireConditionProfiles => vampireConditionProfiles;
         public IReadOnlyList<VampireNightWorldProfile> VampireNightWorldProfiles => vampireNightWorldProfiles;
         public IReadOnlyList<HumanVampireRelationshipProfile> HumanVampireRelationshipProfiles => humanVampireRelationshipProfiles;
+        public IReadOnlyList<LongTailConsequenceProfile> LongTailConsequenceProfiles => longTailConsequenceProfiles;
+        public IReadOnlyList<SocialOpinionProfile> SocialOpinionProfiles => socialOpinionProfiles;
         public IReadOnlyList<MemoryMeaningRecord> MemoryMeaningRecords => memoryMeaningRecords;
         public IReadOnlyList<DomesticIntimacyMoment> DomesticIntimacyMoments => domesticIntimacyMoments;
 
@@ -1105,6 +1222,21 @@ namespace Survivebest.Core
             return stored;
         }
 
+        public RichKidLifeStageProfile SetRichKidLifeStageProfile(CharacterCore actor, RichKidLifeStageProfile profile)
+        {
+            return UpsertProfile(actor, profile, richKidLifeStageProfiles, () => new RichKidLifeStageProfile());
+        }
+
+        public TeenLifeStageProfile SetTeenLifeStageProfile(CharacterCore actor, TeenLifeStageProfile profile)
+        {
+            return UpsertProfile(actor, profile, teenLifeStageProfiles, () => new TeenLifeStageProfile());
+        }
+
+        public ElderLifeStageProfile SetElderLifeStageProfile(CharacterCore actor, ElderLifeStageProfile profile)
+        {
+            return UpsertProfile(actor, profile, elderLifeStageProfiles, () => new ElderLifeStageProfile());
+        }
+
         public VampireBloodEconomyProfile SetVampireBloodEconomyProfile(CharacterCore actor, VampireBloodEconomyProfile profile)
         {
             VampireBloodEconomyProfile stored = UpsertProfile(actor, profile, vampireBloodProfiles, () => new VampireBloodEconomyProfile());
@@ -1155,6 +1287,16 @@ namespace Survivebest.Core
         public HumanVampireRelationshipProfile SetHumanVampireRelationshipProfile(CharacterCore actor, HumanVampireRelationshipProfile profile)
         {
             return UpsertProfile(actor, profile, humanVampireRelationshipProfiles, () => new HumanVampireRelationshipProfile());
+        }
+
+        public LongTailConsequenceProfile SetLongTailConsequenceProfile(CharacterCore actor, LongTailConsequenceProfile profile)
+        {
+            return UpsertProfile(actor, profile, longTailConsequenceProfiles, () => new LongTailConsequenceProfile());
+        }
+
+        public SocialOpinionProfile SetSocialOpinionProfile(CharacterCore actor, SocialOpinionProfile profile)
+        {
+            return UpsertProfile(actor, profile, socialOpinionProfiles, () => new SocialOpinionProfile());
         }
 
         public string BuildVampireLifeLoopSummary(string characterId)
@@ -1397,6 +1539,31 @@ namespace Survivebest.Core
                 return FindProfile(characterId, humanVampireRelationshipProfiles) as T;
             }
 
+            if (typeof(T) == typeof(LongTailConsequenceProfile))
+            {
+                return FindProfile(characterId, longTailConsequenceProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(SocialOpinionProfile))
+            {
+                return FindProfile(characterId, socialOpinionProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(RichKidLifeStageProfile))
+            {
+                return FindProfile(characterId, richKidLifeStageProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(TeenLifeStageProfile))
+            {
+                return FindProfile(characterId, teenLifeStageProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(ElderLifeStageProfile))
+            {
+                return FindProfile(characterId, elderLifeStageProfiles) as T;
+            }
+
             return null;
         }
 
@@ -1464,6 +1631,109 @@ namespace Survivebest.Core
             AppendThought(actor, "domestic_intimacy", $"{activity} {tone}.", moment.IntimacyWeight, null);
             RecordLifeTimelineEvent(actor, "Domestic moment", activity, "domestic_intimacy");
             return moment;
+        }
+
+        public LongTailConsequenceProfile RecordLongTailAftermath(CharacterCore actor, LongTailAftermathType aftermathType, float intensity, string summary)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(summary))
+            {
+                return null;
+            }
+
+            float amount = Mathf.Clamp01(intensity);
+            LongTailConsequenceProfile profile = FindProfile(actor.CharacterId, longTailConsequenceProfiles);
+            if (profile == null)
+            {
+                profile = new LongTailConsequenceProfile { CharacterId = actor.CharacterId };
+                longTailConsequenceProfiles.Add(profile);
+            }
+
+            switch (aftermathType)
+            {
+                case LongTailAftermathType.Betrayal:
+                    profile.BetrayalLoad = Mathf.Clamp01(profile.BetrayalLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Embarrassment:
+                    profile.EmbarrassmentLoad = Mathf.Clamp01(profile.EmbarrassmentLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Grief:
+                    profile.GriefLoad = Mathf.Clamp01(profile.GriefLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Jealousy:
+                    profile.JealousyLoad = Mathf.Clamp01(profile.JealousyLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Pride:
+                    profile.PrideLoad = Mathf.Clamp01(profile.PrideLoad + amount * 0.45f);
+                    break;
+                case LongTailAftermathType.Regret:
+                    profile.RegretLoad = Mathf.Clamp01(profile.RegretLoad + amount * 0.45f);
+                    break;
+            }
+
+            profile.HabitStability = Mathf.Clamp01(profile.HabitStability + (profile.PrideLoad * 0.06f) - (profile.RegretLoad * 0.08f) - (profile.GriefLoad * 0.05f));
+            profile.RelapseRisk = Mathf.Clamp01(profile.RelapseRisk + (profile.RegretLoad * 0.09f) + (profile.GriefLoad * 0.08f) + (profile.BetrayalLoad * 0.05f) - (profile.PrideLoad * 0.06f));
+
+            string thought = $"{aftermathType} lingers: {summary}";
+            AppendThought(actor, "long_tail_aftermath", thought, amount, null);
+            RecordLifeTimelineEvent(actor, "Long-tail aftermath", summary, "long_tail_aftermath");
+            return profile;
+        }
+
+        public string SimulateMonthArc(CharacterCore actor, int monthIndex, int seed)
+        {
+            if (actor == null)
+            {
+                return "No actor available for month arc.";
+            }
+
+            LongTailConsequenceProfile consequence = FindProfile(actor.CharacterId, longTailConsequenceProfiles);
+            SocialOpinionProfile opinions = FindProfile(actor.CharacterId, socialOpinionProfiles);
+            if (consequence == null && opinions == null)
+            {
+                return "No long-tail profile found for month arc.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            List<string> beats = new();
+            if (consequence != null)
+            {
+                float heaviest = Mathf.Max(consequence.BetrayalLoad, consequence.EmbarrassmentLoad, consequence.GriefLoad, consequence.JealousyLoad, consequence.PrideLoad, consequence.RegretLoad);
+                if (heaviest > 0.35f)
+                {
+                    beats.Add($"Old emotional residue keeps spilling into ordinary decisions (load {heaviest:0.00}).");
+                }
+
+                if (consequence.RelapseRisk > 0.45f)
+                {
+                    beats.Add("Habit recovery stutters, and old patterns keep tempting a relapse.");
+                }
+            }
+
+            if (opinions != null)
+            {
+                if (opinions.PublicHumiliationScar > 0.4f || opinions.GossipSensitivity > 0.45f)
+                {
+                    beats.Add("Public memory still burns: gossip and side-eyes shape who feels safe.");
+                }
+
+                if (opinions.PromiseMemory > 0.55f)
+                {
+                    beats.Add("Remembered promises keep reframing trust, resentment, and obligation.");
+                }
+            }
+
+            string message = beats.Count > 0
+                ? beats[rng.Next(beats.Count)]
+                : "The month passes with subtle drift, but no major social aftershocks.";
+
+            if (consequence != null)
+            {
+                consequence.LastMonthArc = monthIndex;
+            }
+
+            AppendThought(actor, "month_arc", message, 0.55f, null);
+            RecordLifeTimelineEvent(actor, $"Month arc {monthIndex}", message, "month_arc");
+            return message;
         }
 
         public InterpersonalImpressionProfile GenerateInterpersonalImpression(CharacterCore actor, CharacterCore target, string contextTag, float pressure = 0.5f, float socialOpportunity = 0.5f)
@@ -1561,6 +1831,11 @@ namespace Survivebest.Core
             CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
             AmericanWorkLifeProfile workLife = FindProfile(characterId, workLifeProfiles);
             VampireMasqueradeProfile masquerade = FindProfile(characterId, vampireMasqueradeProfiles);
+            LongTailConsequenceProfile longTail = FindProfile(characterId, longTailConsequenceProfiles);
+            SocialOpinionProfile opinions = FindProfile(characterId, socialOpinionProfiles);
+            RichKidLifeStageProfile richKid = FindProfile(characterId, richKidLifeStageProfiles);
+            TeenLifeStageProfile teen = FindProfile(characterId, teenLifeStageProfiles);
+            ElderLifeStageProfile elder = FindProfile(characterId, elderLifeStageProfiles);
 
             List<string> parts = new();
             if (sensory != null)
@@ -1652,6 +1927,38 @@ namespace Survivebest.Core
             if (masquerade != null && masquerade.Suspicion > 0.2f)
             {
                 parts.Add($"Masquerade tension: suspicion {masquerade.Suspicion:0.00}");
+            }
+
+            if (longTail != null)
+            {
+                float emotionalResidue = Mathf.Max(longTail.BetrayalLoad, longTail.EmbarrassmentLoad, longTail.GriefLoad, longTail.JealousyLoad, longTail.PrideLoad, longTail.RegretLoad);
+                if (emotionalResidue > 0.2f)
+                {
+                    parts.Add($"Long-tail residue: load {emotionalResidue:0.00} / habit {longTail.HabitStability:0.00} / relapse {longTail.RelapseRisk:0.00}");
+                }
+            }
+
+            if (opinions != null)
+            {
+                string trusted = opinions.TrustedPeople.Count > 0 ? opinions.TrustedPeople[0] : "nobody clearly";
+                string district = opinions.AvoidedNeighborhoods.Count > 0 ? opinions.AvoidedNeighborhoods[0] : "no district";
+                parts.Add($"Opinion map: trust {trusted} / avoid {district} / promise memory {opinions.PromiseMemory:0.00}");
+            }
+
+            if (richKid != null)
+            {
+                string club = richKid.EliteSchoolClubs.Count > 0 ? richKid.EliteSchoolClubs[0] : "legacy club";
+                parts.Add($"Rich-kid weather: privilege shield {richKid.PrivilegeShielding:0.00} / expectation {richKid.LegacyExpectationPressure:0.00} / club {club}");
+            }
+
+            if (teen != null)
+            {
+                parts.Add($"Teen pressure: bullying {teen.BullyingExposure:0.00} / crush {teen.CrushIntensity:0.00} / rebellion {teen.RebellionDrive:0.00} / curfew {teen.CurfewConflict:0.00}");
+            }
+
+            if (elder != null)
+            {
+                parts.Add($"Elder weather: cognitive concern {elder.CognitiveDeclineConcern:0.00} / loneliness {elder.ElderLoneliness:0.00} / legacy panic {elder.RegretLegacyPanic:0.00}");
             }
 
             return parts.Count > 0 ? string.Join(" | ", parts) : "Life texture is still being discovered.";
@@ -1780,6 +2087,36 @@ namespace Survivebest.Core
             {
                 string rumor = workLife.CoworkerRumors.Count > 0 ? workLife.CoworkerRumors[rng.Next(workLife.CoworkerRumors.Count)] : "someone's status in the workplace";
                 observations.Add($"{workLife.JobTitle} life won't stay in its lane: {rumor} is riding your {workLife.CommuteMode} commute home from {workLife.WorkplaceName}.");
+            }
+
+            LongTailConsequenceProfile longTail = FindProfile(actor.CharacterId, longTailConsequenceProfiles);
+            if (longTail != null && Mathf.Max(longTail.BetrayalLoad, longTail.EmbarrassmentLoad, longTail.GriefLoad, longTail.JealousyLoad, longTail.RegretLoad) > 0.45f)
+            {
+                observations.Add("Old betrayals, embarrassment, and regret keep leaking into today, long after the scene ended.");
+            }
+
+            SocialOpinionProfile opinions = FindProfile(actor.CharacterId, socialOpinionProfiles);
+            if (opinions != null && (opinions.PublicHumiliationScar > 0.45f || opinions.GossipSensitivity > 0.5f || opinions.PromiseMemory > 0.55f))
+            {
+                observations.Add("Social mess is still alive: mixed signals, remembered promises, and lingering gossip shape the room.");
+            }
+
+            RichKidLifeStageProfile richKid = FindProfile(actor.CharacterId, richKidLifeStageProfiles);
+            if (richKid != null && (richKid.LegacyExpectationPressure > 0.45f || richKid.EntitlementFriction > 0.45f))
+            {
+                observations.Add("Privilege does not remove pressure: family expectations and social optics still script the day.");
+            }
+
+            TeenLifeStageProfile teen = FindProfile(actor.CharacterId, teenLifeStageProfiles);
+            if (teen != null && (teen.BullyingExposure > 0.4f || teen.CrushIntensity > 0.45f || teen.RebellionDrive > 0.45f || teen.CurfewConflict > 0.45f || teen.CollegeApplicationPressure > 0.45f))
+            {
+                observations.Add("Teen life runs hot with bullying, crushes, curfew fights, rebellion impulses, and college pressure.");
+            }
+
+            ElderLifeStageProfile elder = FindProfile(actor.CharacterId, elderLifeStageProfiles);
+            if (elder != null && (elder.MenopauseLoad > 0.4f || elder.CognitiveDeclineConcern > 0.45f || elder.ElderLoneliness > 0.45f || elder.RegretLegacyPanic > 0.45f))
+            {
+                observations.Add("Elder years bring body shifts, memory worries, loneliness, and a sharp urgency about legacy.");
             }
 
             if (observations.Count == 0)
@@ -1992,6 +2329,191 @@ namespace Survivebest.Core
             mundaneEarthLifeProfiles = runtimeState?.MundaneEarthProfiles != null ? new List<MundaneEarthLifeProfile>(runtimeState.MundaneEarthProfiles) : new List<MundaneEarthLifeProfile>();
             collectionIdentityProfiles = runtimeState?.CollectionIdentityProfiles != null ? new List<CollectionIdentityProfile>(runtimeState.CollectionIdentityProfiles) : new List<CollectionIdentityProfile>();
             workLifeProfiles = runtimeState?.WorkLifeProfiles != null ? new List<AmericanWorkLifeProfile>(runtimeState.WorkLifeProfiles) : new List<AmericanWorkLifeProfile>();
+        }
+
+        public string BuildEmotionalJournalBook(string characterId, int day)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return "No journal available.";
+            }
+
+            List<LifeTimelineEntry> timeline = GetRecentTimeline(characterId, 32);
+            List<ThoughtMessage> thoughts = GetRecentThoughts(characterId, 24);
+            List<MemoryMeaningRecord> memories = memoryMeaningRecords.FindAll(x => x != null && x.CharacterId == characterId);
+            CollectionIdentityProfile collection = FindProfile(characterId, collectionIdentityProfiles);
+            FriendshipConstellationProfile friendships = FindProfile(characterId, friendshipConstellationProfiles);
+
+            string whatHappened = timeline.Count > 0 ? timeline[0].Title + ": " + timeline[0].Body : "No major event logged.";
+            string whyItMattered = thoughts.Count > 0 ? thoughts[0].Body : "The day mattered because it changed how you feel about tomorrow.";
+            string strongestMemory = memories.Count > 0 ? memories[^1].Summary : "Nothing fully crystallized into a strongest memory yet.";
+            string peopleThought = thoughts.Find(x => x != null && x.Source == "social_impression")?.Body
+                                  ?? thoughts.Find(x => x != null && x.Body.Contains("with ", StringComparison.OrdinalIgnoreCase))?.Body
+                                  ?? "No focused thought about one specific person was captured.";
+            string keepsake = collection != null ? collection.FavoriteKeepsake : LifeActivityCatalog.PickSentimentalObject();
+            string favoritePlace = placeAttachments.Find(x => x != null && x.CharacterId == characterId && x.Attachment > 0.2f)?.PlaceId ?? "home";
+            string familyLore = friendships != null ? $"Family/friend lore still centers around {friendships.BestFriendNickname} and rituals like {string.Join(", ", friendships.SharedRituals.Take(1))}." : "Family lore is still forming through repeated stories.";
+
+            string milestoneFrame = BuildMilestoneFrame(timeline);
+            string timelineDigest = timeline.Count > 0
+                ? string.Join(" -> ", timeline.Take(5).Select(x => $"{x.Day:00}/{x.Hour:00} {x.Title}"))
+                : "No timeline entries.";
+
+            return $"Day {day} journal | what happened: {whatHappened} | why it mattered: {whyItMattered} | strongest memory: {strongestMemory} | thoughts about people: {peopleThought} | life timeline: {timelineDigest} | keepsakes/comfort objects: {keepsake} | favorite places: {favoritePlace} | family lore: {familyLore} | milestone framing: {milestoneFrame}";
+        }
+
+        public IReadOnlyList<PlayableJobLoopDefinition> EnsurePlayableJobLoopCatalog()
+        {
+            if (playableJobLoops.Count > 0)
+            {
+                return playableJobLoops;
+            }
+
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "diner_server", RoleLabel = "Diner Server", CareerTrack = "food_service", CoreLoopActions = new List<string> { "open_section", "take_order", "run_food", "close_checks" }, CertificationSteps = new List<string> { "food_handler_card" }, PromotionLadder = new List<string> { "server", "shift_lead", "floor_manager" }, BurnoutLoad = 0.45f, DisciplineRisk = 0.25f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "grocery_cashier_stocker", RoleLabel = "Grocery Cashier/Stocker", CareerTrack = "retail", CoreLoopActions = new List<string> { "cash_register_cycle", "aisle_restock", "returns_and_spills", "closing_count" }, CertificationSteps = new List<string> { "loss_prevention_basics" }, PromotionLadder = new List<string> { "cashier", "department_lead", "assistant_manager" }, BurnoutLoad = 0.4f, DisciplineRisk = 0.2f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "warehouse_picker", RoleLabel = "Warehouse Picker", CareerTrack = "logistics", CoreLoopActions = new List<string> { "scan_route", "pick_pack", "dock_handoff", "safety_check" }, CertificationSteps = new List<string> { "forklift_cert", "osha_10" }, PromotionLadder = new List<string> { "picker", "line_lead", "warehouse_supervisor" }, BurnoutLoad = 0.52f, DisciplineRisk = 0.33f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "office_admin", RoleLabel = "Office Admin", CareerTrack = "office", CoreLoopActions = new List<string> { "inbox_triage", "calendar_stack", "document_run", "vendor_calls" }, CertificationSteps = new List<string> { "excel_cert", "hr_compliance" }, PromotionLadder = new List<string> { "admin_assistant", "office_coordinator", "operations_manager" }, BurnoutLoad = 0.38f, DisciplineRisk = 0.18f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "cna_hospital_aide", RoleLabel = "CNA/Hospital Aide", CareerTrack = "healthcare", CoreLoopActions = new List<string> { "patient_rounds", "chart_update", "team_handoff", "supplies_reset" }, CertificationSteps = new List<string> { "cna_license", "bls_cert" }, PromotionLadder = new List<string> { "aide", "senior_aide", "lpn_track" }, BurnoutLoad = 0.57f, DisciplineRisk = 0.22f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "teacher_aide", RoleLabel = "Teacher Aide", CareerTrack = "education", CoreLoopActions = new List<string> { "classroom_setup", "student_support", "behavior_notes", "family_pickup" }, CertificationSteps = new List<string> { "paraprofessional_cert" }, PromotionLadder = new List<string> { "aide", "lead_aide", "teacher_track" }, BurnoutLoad = 0.44f, DisciplineRisk = 0.2f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "construction_helper", RoleLabel = "Construction Helper", CareerTrack = "trades", CoreLoopActions = new List<string> { "site_prep", "material_run", "tool_assist", "cleanup_lockout" }, CertificationSteps = new List<string> { "osha_10", "equipment_safety" }, PromotionLadder = new List<string> { "helper", "crew_member", "foreman_track" }, BurnoutLoad = 0.55f, DisciplineRisk = 0.32f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "salon_assistant", RoleLabel = "Salon Assistant", CareerTrack = "beauty", CoreLoopActions = new List<string> { "station_reset", "client_prep", "inventory_mix", "closing_sanitation" }, CertificationSteps = new List<string> { "state_cosmo_hours" }, PromotionLadder = new List<string> { "assistant", "junior_stylist", "stylist" }, BurnoutLoad = 0.4f, DisciplineRisk = 0.19f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "mechanic_helper", RoleLabel = "Mechanic Helper", CareerTrack = "automotive", CoreLoopActions = new List<string> { "intake_notes", "parts_run", "diagnostic_support", "bay_cleanup" }, CertificationSteps = new List<string> { "ase_entry" }, PromotionLadder = new List<string> { "helper", "tech", "lead_tech" }, BurnoutLoad = 0.47f, DisciplineRisk = 0.28f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "bartender_barista", RoleLabel = "Bartender/Barista", CareerTrack = "hospitality", CoreLoopActions = new List<string> { "bar_open", "rush_service", "cash_close", "conflict_deescalation" }, CertificationSteps = new List<string> { "responsible_beverage_service", "espresso_calibration" }, PromotionLadder = new List<string> { "bar_back", "bartender", "bar_manager" }, BurnoutLoad = 0.48f, DisciplineRisk = 0.24f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "daycare_worker", RoleLabel = "Daycare Worker", CareerTrack = "care_work", CoreLoopActions = new List<string> { "arrival_checkin", "activity_rotation", "incident_notes", "guardian_handoff" }, CertificationSteps = new List<string> { "cpr_child", "early_childhood_credential" }, PromotionLadder = new List<string> { "assistant", "lead_classroom", "center_admin" }, BurnoutLoad = 0.51f, DisciplineRisk = 0.21f });
+            playableJobLoops.Add(new PlayableJobLoopDefinition { RoleId = "delivery_driver", RoleLabel = "Delivery Driver", CareerTrack = "logistics", CoreLoopActions = new List<string> { "route_plan", "pickup_scan", "dropoff_window", "rating_followup" }, CertificationSteps = new List<string> { "defensive_driving" }, PromotionLadder = new List<string> { "driver", "route_lead", "dispatcher" }, BurnoutLoad = 0.46f, DisciplineRisk = 0.26f });
+
+            return playableJobLoops;
+        }
+
+        public string SimulatePlayableJobLoop(CharacterCore actor, string roleId, int seed)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(roleId))
+            {
+                return "No playable job loop available.";
+            }
+
+            EnsurePlayableJobLoopCatalog();
+            PlayableJobLoopDefinition loop = playableJobLoops.Find(x => x != null && string.Equals(x.RoleId, roleId, StringComparison.OrdinalIgnoreCase));
+            if (loop == null)
+            {
+                return "Role loop not found.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            string action = loop.CoreLoopActions[rng.Next(loop.CoreLoopActions.Count)];
+            string cert = loop.CertificationSteps[rng.Next(loop.CertificationSteps.Count)];
+            string ladder = loop.PromotionLadder[rng.Next(loop.PromotionLadder.Count)];
+
+            AmericanWorkLifeProfile work = FindProfile(actor.CharacterId, workLifeProfiles) ?? SetAmericanWorkLifeProfile(actor, new AmericanWorkLifeProfile());
+            work.JobTitle = loop.RoleLabel;
+            work.CareerDomain = loop.CareerTrack;
+            work.Burnout = Mathf.Clamp01(work.Burnout + loop.BurnoutLoad * 0.08f);
+            work.PromotionPressure = Mathf.Clamp01(work.PromotionPressure + 0.06f);
+            if (!work.Certifications.Contains(cert))
+            {
+                work.Certifications.Add(cert);
+            }
+
+            string line = $"{loop.RoleLabel} playable loop: {action}. Career ladder pressure points toward {ladder}; certification track highlights {cert}.";
+            AppendThought(actor, "playable_job_loop", line, Mathf.Clamp01(loop.BurnoutLoad + 0.2f), loop.CareerTrack);
+            RecordLifeTimelineEvent(actor, "Playable job shift", line, "playable_job_loop");
+            return line;
+        }
+
+        public List<string> BuildCareerExecutionModes(string roleId)
+        {
+            EnsurePlayableJobLoopCatalog();
+            PlayableJobLoopDefinition loop = playableJobLoops.Find(x => x != null && string.Equals(x.RoleId, roleId, StringComparison.OrdinalIgnoreCase));
+            if (loop == null)
+            {
+                return new List<string> { "No role loop found." };
+            }
+
+            List<string> modes = new();
+            if (loop.SupportsActiveMinigame)
+            {
+                modes.Add($"{loop.RoleLabel}: active mini-game shift (hands-on actions + timing choices).");
+            }
+
+            if (loop.SupportsRabbitHoleFallback)
+            {
+                modes.Add($"{loop.RoleLabel}: rabbit-hole shift (simulated off-screen with outcome summary).");
+            }
+
+            modes.Add($"{loop.RoleLabel}: career focus includes certifications ({string.Join(", ", loop.CertificationSteps.Take(2))}) and ladder progression ({string.Join(" -> ", loop.PromotionLadder.Take(3))}).");
+            return modes;
+        }
+
+        public IReadOnlyList<LifeStageGameplayPack> EnsureLifeStageGameplayPacks()
+        {
+            if (lifeStageGameplayPacks.Count > 0)
+            {
+                return lifeStageGameplayPacks;
+            }
+
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Child,
+                CoreLoops = new List<string> { "school day rhythm", "homework with help", "club exploration", "family routine play" },
+                SocialConflicts = new List<string> { "playground exclusion", "early bullying", "friendship repair" },
+                MilestoneHooks = new List<string> { "first club performance", "birthday rituals", "family move adjustment" },
+                OptionalRabbitHoleHooks = new List<string> { "after-school program", "sports practice" }
+            });
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Teen,
+                CoreLoops = new List<string> { "school clubs", "crush management", "curfew negotiation", "first job shift", "college applications" },
+                SocialConflicts = new List<string> { "bullying pressure", "rebellion fallout", "friend-group hierarchy fights" },
+                MilestoneHooks = new List<string> { "first love", "first breakup", "college acceptance/rejection", "driver license" },
+                OptionalRabbitHoleHooks = new List<string> { "exam cram weekend", "part-time shift block" }
+            });
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Adult,
+                CoreLoops = new List<string> { "career progression", "relationship commitments", "household budgeting", "caregiving logistics" },
+                SocialConflicts = new List<string> { "workplace politics", "co-parenting strain", "time-poverty burnout" },
+                MilestoneHooks = new List<string> { "moving in", "marriage", "eviction threat", "recovery arc" },
+                OptionalRabbitHoleHooks = new List<string> { "overtime sprint", "paperwork marathon" }
+            });
+            lifeStageGameplayPacks.Add(new LifeStageGameplayPack
+            {
+                Stage = LifeStage.Elder,
+                CoreLoops = new List<string> { "health management", "community routines", "grandparent mentoring", "legacy planning" },
+                SocialConflicts = new List<string> { "elder loneliness", "cognitive decline fears", "regret spirals" },
+                MilestoneHooks = new List<string> { "grandchild influence moments", "bereavement processing", "end-of-life planning", "late-life recovery" },
+                OptionalRabbitHoleHooks = new List<string> { "clinic day block", "quiet reflection day" }
+            });
+
+            return lifeStageGameplayPacks;
+        }
+
+        public string SimulateLifeStageGameplayBeat(CharacterCore actor, int seed, bool allowRabbitHole = true)
+        {
+            if (actor == null)
+            {
+                return "No actor available for life-stage gameplay.";
+            }
+
+            EnsureLifeStageGameplayPacks();
+            LifeStageGameplayPack pack = lifeStageGameplayPacks.Find(x => x != null && x.Stage == actor.CurrentLifeStage)
+                ?? lifeStageGameplayPacks.Find(x => x != null && x.Stage == LifeStage.Adult);
+            if (pack == null)
+            {
+                return "No life-stage gameplay pack found.";
+            }
+
+            System.Random rng = new System.Random(seed);
+            string core = pack.CoreLoops[rng.Next(pack.CoreLoops.Count)];
+            string conflict = pack.SocialConflicts[rng.Next(pack.SocialConflicts.Count)];
+            string milestone = pack.MilestoneHooks[rng.Next(pack.MilestoneHooks.Count)];
+            string optional = allowRabbitHole && pack.OptionalRabbitHoleHooks.Count > 0
+                ? $" Optional rabbit-hole: {pack.OptionalRabbitHoleHooks[rng.Next(pack.OptionalRabbitHoleHooks.Count)]}."
+                : string.Empty;
+
+            string line = $"{actor.CurrentLifeStage} gameplay beat: core loop '{core}', conflict '{conflict}', milestone framing '{milestone}'.{optional}";
+            AppendThought(actor, "life_stage_gameplay", line, 0.68f, null);
+            RecordLifeTimelineEvent(actor, "Life-stage gameplay beat", line, "life_stage_gameplay");
+            return line;
         }
 
         public List<string> BuildEverydayLifeSuggestions(string characterId, int max = 3)
@@ -2475,6 +2997,35 @@ namespace Survivebest.Core
                 : string.Empty;
 
             return string.Join(" ", new[] { read, memoryHook, subtext, distortion }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        }
+
+        private static string BuildMilestoneFrame(List<LifeTimelineEntry> timeline)
+        {
+            if (timeline == null || timeline.Count == 0)
+            {
+                return "No major milestone framing yet.";
+            }
+
+            string[] highWeightMilestones = { "funeral", "first love", "recovery", "birthday", "eviction", "death" };
+            for (int i = 0; i < timeline.Count; i++)
+            {
+                LifeTimelineEntry entry = timeline[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                string joined = $"{entry.Title} {entry.Body}";
+                for (int m = 0; m < highWeightMilestones.Length; m++)
+                {
+                    if (joined.Contains(highWeightMilestones[m], StringComparison.OrdinalIgnoreCase))
+                    {
+                        return $"High-weight milestone active: {highWeightMilestones[m]} reframed the day.";
+                    }
+                }
+            }
+
+            return "Milestone framing is currently anchored in everyday progress rather than a crisis peak.";
         }
 
         private void AppendThought(CharacterCore actor, string source, string body, float intensity, string placeId)
