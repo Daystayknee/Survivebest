@@ -46,6 +46,11 @@ namespace Survivebest.Core
         private static readonly string[] ClothingDetails = { "inside clothes versus outside clothes", "repeating favorite outfits too often", "outfit regret right after stepping outside", "clothes that look good but feel bad all day", "comfort outfits during stress", "changing because of smell, temperature, shame, or mood instead of fashion", "laundry delays shrinking available identity choices" };
         private static readonly string[] BedAndSleepDetails = { "one side of the bed feeling emotionally different", "doomscrolling instead of sleeping", "waking in the middle of the night and overthinking", "naps that help versus naps that ruin the day", "sleeping better after clean sheets", "bad dreams leaking into morning mood", "going to bed too late because night feels like your only free time" };
         private static readonly string[] WeatherLifeDetails = { "rain making errands feel heavier", "sunny weather causing guilt about staying inside", "humidity ruining hair and patience", "cold making showering harder", "gray skies making everything feel slower", "wind making outfits and plans annoying", "weather changing social energy, appetite, and cleaning motivation" };
+        private static readonly string[] SoundDetails = { "fridge hum at night", "neighbor noise changing comfort", "hearing someone moving around the house", "TV in the background making home feel occupied", "silence after an argument feeling louder than music", "rain on windows shifting emotional tone", "certain sounds becoming comforting rituals" };
+        private static readonly string[] SmellDetails = { "clean laundry smell feeling like safety", "stale room smell adding stress", "food smell lingering in clothes", "rain smell through an open window", "perfume or scent becoming part of identity", "trash smell making chores feel urgent", "someone else's scent on fabric stirring emotion" };
+        private static readonly string[] BathroomDetails = { "running low on toilet paper causing quiet panic", "mirror mood changing by time of day", "night bathroom trips reducing sleep quality", "feeling more human after brushing teeth", "messy sink making self-care harder", "a hot shower used as emotional coping", "skipping full grooming because energy is low" };
+        private static readonly string[] KitchenDetails = { "opening cabinets repeatedly and still not knowing what to eat", "dish pile deciding whether cooking feels possible", "cooking smells creating comfort or overwhelm", "snack scavenging versus meal prep mindset", "using the last clean fork", "standing at the fridge tired and indecisive", "eating over the sink when life is chaotic" };
+        private static readonly string[] CleaningDetails = { "rage cleaning", "stress cleaning", "cleaning as avoidance", "one small clean area creating relief", "clutter blindness until it suddenly feels unbearable", "I'll just do one thing turning into a reset spiral", "cleaning for guests differently than for yourself" };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -102,6 +107,11 @@ namespace Survivebest.Core
         public static string PickClothingDetail() => Pick(ClothingDetails, "clothing detail");
         public static string PickBedAndSleepDetail() => Pick(BedAndSleepDetails, "bed and sleep detail");
         public static string PickWeatherLifeDetail() => Pick(WeatherLifeDetails, "weather life detail");
+        public static string PickSoundDetail() => Pick(SoundDetails, "sound detail");
+        public static string PickSmellDetail() => Pick(SmellDetails, "smell detail");
+        public static string PickBathroomDetail() => Pick(BathroomDetails, "bathroom detail");
+        public static string PickKitchenDetail() => Pick(KitchenDetails, "kitchen detail");
+        public static string PickCleaningDetail() => Pick(CleaningDetails, "cleaning detail");
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -115,12 +125,14 @@ namespace Survivebest.Core
                 + SocialDetails.Length + RelationshipRealismDetails.Length + PresentTenseWorldDetails.Length
                 + TimePressureDetails.Length + IdentityDetails.Length + MemoryThroughObjectsDetails.Length
                 + SurvivalButHumanDetails.Length + TravelDetails.Length + ShoppingDetails.Length
-                + ClothingDetails.Length + BedAndSleepDetails.Length + WeatherLifeDetails.Length;
+                + ClothingDetails.Length + BedAndSleepDetails.Length + WeatherLifeDetails.Length
+                + SoundDetails.Length + SmellDetails.Length + BathroomDetails.Length
+                + KitchenDetails.Length + CleaningDetails.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 41 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 46 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
