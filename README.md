@@ -3,6 +3,17 @@
 Survivebest is a Unity-based life-sim/survival RPG prototype built around modular manager systems and a central event stream.
 The project currently focuses on **foundational gameplay architecture**: world time/calendar, character simulation, needs/health, social systems, commerce, law/crime, and early UI for day-to-day play. The current visual direction is explicitly a **2D paper-doll / live-portrait life sim**, with hidden simulation values resolving into layered sprites, tints, silhouette scales, expression presets, and family resemblance presentation.
 
+## Start Here (Complete + Organized Workflow)
+
+If your goal is to **complete and organize the game code with detailed how-to guidance**, start with:
+
+1. `Docs/COMPLETE_GAME_CODE_AND_OPERATIONS_GUIDE.md` (new practical operations manual)
+2. `Docs/DEEP_SYSTEMS_ASSETS_TUTORIAL.md` (implementation-level wiring/extension tutorial)
+3. `Docs/FullGameAfterCodingChecklist.md` (definition-of-done and endgame checklist)
+4. `Docs/COMPLETE_GAMEPLAY_SYSTEM_AUDIT.md` + `Docs/COMPLETE_GAME_CONTENT_GAP_AUDIT.md` (coverage/gap tracking)
+
+This order gives you a single execution path from project setup → system extension → validation → completion gating.
+
 ## Engine / Requirements
 
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
@@ -105,6 +116,8 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `LifeStageManager`, `BodyCompositionSystem`, `VisualGenome`
 - `FamilyDynamicsSystem` (family graph, bonds, household climate, parenting influence, and generational memory hooks).
 - `LifeMilestonesEngine` (major life turning points with emotional/relationship/reputation/personality ripple effects).
+- `AgingExperienceSystem` (regret/body-confidence/worldview conflict/memory texture/priority shifts/elder loneliness/legacy anxiety over time).
+- `FaithAndRitualSystem` (luck routines, grief rituals, family traditions, private beliefs, superstitions, and comfort-object coping profiles).
 - `PersonalityArchetypeSystem`, `PersonalityMatrixSystem`, `MoralValueSystem`, `PreferenceSystem` (deep personality/value/preference profiles and evolution hooks).
 
 ### Needs / Health / Emotion
@@ -116,6 +129,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 - `LoveLanguageSystem` (primary/secondary love-language matching for relationship-memory outcomes).
 - `RelationshipCompatibilityEngine` (pairwise compatibility/trust/attraction/tension profiles driving emergent friendship/romance/rivalry).
 - `SocialDramaEngine` (gossip/rumor/secret/scandal propagation with reputation cascades and awareness levels).
+- `RomanticTensionSystem` (awkward attraction, mixed signals, longing, jealousy, rejection hangover, rebound risk, intimacy avoidance, chemistry-driven impulse pressure).
 - `ActivitySystem`, `DailyRoutineSystem`, `SkillSystem`
 
 ### Commerce / Crafting / Food
@@ -127,6 +141,7 @@ Contextual action popups for buy/sell/medical/forage/skill actions are handled b
 ### Crime / Society / Transport
 - `LawSystem`, `CrimeSystem`, `JusticeSystem`, `SubstanceSystem`
 - `CarSystem`
+- `CompanionGriefSystem` (pet/companion loss grief intensity, memorial rituals, comfort objects, acceptance recovery; includes strong dog-bond grief weighting).
 
 ### UI / Interaction / View
 - `GameHUD` (needs, money, clock)
