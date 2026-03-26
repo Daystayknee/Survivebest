@@ -28,6 +28,8 @@ namespace Survivebest.Core
         private static readonly string[] SentimentalObjects = { "concert ticket stub", "childhood blanket", "favorite hoodie", "signed baseball", "polaroid strip", "holiday ornament", "lucky coin", "handwritten recipe card", "old game cartridge", "friendship bracelet" };
         private static readonly string[] EverydayCarryItems = { "phone charger", "water bottle", "lip balm", "transit card", "headphones", "pocket notebook", "keys", "wallet", "gum pack", "hand sanitizer", "mini first-aid pouch", "portable battery bank", "folding tote bag", "protein bar", "earplugs" };
         private static readonly string[] HumanExperienceMoments = { "late-night grocery run", "mall wandering with no plan", "thrift-store luck streak", "yard-sale find", "group-chat debate over dinner", "waiting-room small talk", "school pickup scramble", "weekend Costco run", "laundry-room negotiation", "parking-lot car snack reset", "make ramen at 1am", "forgotten birthday spiral", "power outage dinner", "loose pet scare on the block" };
+        private static readonly string[] BodyDetails = { "waking up with a dry mouth", "needing to stretch after sleeping badly", "one eye opening slower than the other from exhaustion", "cold feet on tile floor", "feeling gross after sleeping in yesterday's clothes", "mood lifting a little after finally washing your hair", "greasy-hair doubt versus fresh-hair confidence", "discomfort from wearing tight clothes too long", "soreness after standing all shift", "bladder urgency spiking when anxiety hits", "appetite dropping under stress", "craving salty food after sweating", "eating too fast making your stomach and mood worse", "bad sleep causing clumsy moments all day", "swallowing back nausea until you can sit down", "needing a quiet minute to wake up before socializing", "running hotter and getting irritable", "relief after taking your shoes off at home", "wanting a comfort blanket even when temperature is fine", "posture shifting with confidence, pain, fatigue, or shame" };
+        private static readonly string[] HygieneMaintenanceDetails = { "brushing your teeth feels like a tiny reset", "forgetting deodorant quietly dents confidence", "a late shower makes bedtime feel human again", "washing your face after crying steadies your mood", "a dirty mirror makes grooming feel worse", "using the last clean towel triggers laundry panic", "clean sheets boost sleep quality more than just sleeping", "hair tied up versus down changes chore comfort", "sleeping in pajamas rests better than sleeping in jeans", "lipstick, scent, or grooming shifts self-image without magic stat spikes", "shaving and trim upkeep feel like maintenance, not vanity", "hands feeling sticky after cooking", "wet socks ruining a whole mood", "needing lotion when weather turns dry", "skin irritation from cheap detergent or rough weather" };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -66,6 +68,8 @@ namespace Survivebest.Core
         public static string PickSentimentalObject() => Pick(SentimentalObjects, "keepsake");
         public static string PickEverydayCarryItem() => Pick(EverydayCarryItems, "daily item");
         public static string PickHumanExperienceMoment() => Pick(HumanExperienceMoments, "everyday moment");
+        public static string PickBodyDetail() => Pick(BodyDetails, "small body signal");
+        public static string PickHygieneMaintenanceDetail() => Pick(HygieneMaintenanceDetails, "hygiene maintenance beat");
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -73,12 +77,13 @@ namespace Survivebest.Core
                 + CreatorEconomyActivities.Length + SelfCareActivities.Length + AdultErrands.Length + GigWorkActivities.Length
                 + SocialFeedActivities.Length + ComputerActivities.Length + WebChatActivities.Length + MiniGameActivities.Length
                 + HomeUpgradeProjects.Length + AmbitionFocuses.Length + CollectibleHobbies.Length
-                + SentimentalObjects.Length + EverydayCarryItems.Length + HumanExperienceMoments.Length;
+                + SentimentalObjects.Length + EverydayCarryItems.Length + HumanExperienceMoments.Length
+                + BodyDetails.Length + HygieneMaintenanceDetails.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 23 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 25 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
