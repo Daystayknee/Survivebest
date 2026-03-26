@@ -328,6 +328,18 @@ namespace Survivebest.UI
                     reason = ResolveNpcInteraction(true);
                     magnitude = 1.2f;
                     break;
+                case "use_computer":
+                    reason = DoUseComputer(active);
+                    magnitude = 2.5f;
+                    break;
+                case "web_chat":
+                    reason = DoWebChat(active);
+                    magnitude = 2f;
+                    break;
+                case "play_mini_games":
+                    reason = DoPlayMiniGames(active);
+                    magnitude = 3f;
+                    break;
                 case "animal_sight":
                     reason = ResolveAnimalSighting(active, out magnitude);
                     break;
@@ -559,6 +571,13 @@ namespace Survivebest.UI
                 "journal" => "ask_world_ai",
                 "rest" => "camp",
                 "check_phone" => "review_local_pulse",
+                "computer" => "use_computer",
+                "pc" => "use_computer",
+                "use_pc" => "use_computer",
+                "go_online" => "web_chat",
+                "chat_online" => "web_chat",
+                "mini_game" => "play_mini_games",
+                "arcade" => "play_mini_games",
                 "open_map_travel" => "forage",
                 _ => actionKey
             };
@@ -603,6 +622,9 @@ namespace Survivebest.UI
                 "ask_world_ai" => "World AI Guidance",
                 "npc_chat" => "NPC Conversation",
                 "npc_text" => "NPC Text Message",
+                "use_computer" => "Computer Session",
+                "web_chat" => "Web Chat Room",
+                "play_mini_games" => "Mini-Game Session",
                 _ => "Action"
             };
         }
@@ -714,6 +736,9 @@ namespace Survivebest.UI
                 "ask_world_ai" => "Ask the world AI to synthesize local danger, opportunity, and routing advice.",
                 "npc_chat" => "Talk to a nearby NPC using personality-aware conversation guidance.",
                 "npc_text" => "Send a personality-aware text message to a nearby NPC contact.",
+                "use_computer" => "Use your computer for productive digital tasks, setup improvements, and practical skill growth.",
+                "web_chat" => "Join a web chat room, read the room, and contribute messages without starting avoidable drama.",
+                "play_mini_games" => "Play short mini-games that improve reflexes, boost mood, and add modern hobby flavor.",
                 _ => "Confirm to execute this action."
             };
         }
@@ -782,6 +807,24 @@ Finder payout: ${currentSighting.Payment}.";
                     break;
                 case "npc_text":
                     AppendNpcConversationPreview(builder, true);
+                    break;
+                case "use_computer":
+                    builder.AppendLine("Computer options:");
+                    builder.AppendLine($"• {LifeActivityCatalog.PickComputerActivity()}");
+                    builder.AppendLine("• Focus mode productivity block");
+                    builder.AppendLine("• Hardware + software tune-up");
+                    break;
+                case "web_chat":
+                    builder.AppendLine("Web chat options:");
+                    builder.AppendLine($"• {LifeActivityCatalog.PickWebChatActivity()}");
+                    builder.AppendLine("• Friendly room check-in");
+                    builder.AppendLine("• Moderate a tense thread");
+                    break;
+                case "play_mini_games":
+                    builder.AppendLine("Mini-game options:");
+                    builder.AppendLine($"• {LifeActivityCatalog.PickMiniGameActivity()}");
+                    builder.AppendLine("• Ranked quick match");
+                    builder.AppendLine("• Co-op challenge run");
                     break;
                 case "fish":
                     builder.AppendLine("Fishing options:");
@@ -1308,6 +1351,53 @@ Finder payout: ${currentSighting.Payment}.";
             NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
             needs?.ModifyMood(5f);
             return $"Singing session finished with {style} vocal practice.";
+        }
+
+        private string DoUseComputer(CharacterCore active)
+        {
+            string activity = LifeActivityCatalog.PickComputerActivity();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.ComputerGaming, active, _ => { });
+
+            SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            skills?.AddExperience("Engineering", 3f);
+            needs?.ModifyMood(3f);
+            needs?.ModifyEnergy(-2f);
+            return $"Computer session complete: {activity}.";
+        }
+
+        private string DoWebChat(CharacterCore active)
+        {
+            string activity = LifeActivityCatalog.PickWebChatActivity();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.WebChat, active, _ => { });
+
+            if (active != null && digitalLifeSystem != null)
+            {
+                string roomId = "community_hub";
+                digitalLifeSystem.JoinWebChatRoom(roomId, "Community Hub", active.CharacterId);
+                bool controversial = UnityEngine.Random.value < 0.18f;
+                digitalLifeSystem.SendWebChatMessage(roomId, "Community Hub", active.CharacterId, activity, controversial);
+                string summary = digitalLifeSystem.BuildWebChatSummary(active.CharacterId);
+                return $"Web chat complete: {activity}. {summary}";
+            }
+
+            return $"Web chat complete: {activity}.";
+        }
+
+        private string DoPlayMiniGames(CharacterCore active)
+        {
+            string activity = LifeActivityCatalog.PickMiniGameActivity();
+            minigameManager ??= MinigameManager.Instance;
+            minigameManager?.StartMinigame(MinigameType.MiniArcade, active, _ => { });
+
+            NeedsSystem needs = active != null ? active.GetComponent<NeedsSystem>() : null;
+            SkillSystem skills = active != null ? active.GetComponent<SkillSystem>() : null;
+            needs?.ModifyMood(7f);
+            needs?.ModifyEnergy(-3f);
+            skills?.AddExperience("Survival skills", 2.5f);
+            return $"Mini-game run complete: {activity}.";
         }
 
         private string DoCookMeal(CharacterCore active)

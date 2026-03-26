@@ -19,6 +19,9 @@ namespace Survivebest.Core
         private static readonly string[] AdultErrands = { "Pay rent", "Split utility bill", "Book a doctor visit", "Call your parent back", "Refill prescriptions", "Handle taxes", "Negotiate a raise", "Clean out the fridge", "deep clean fridge", "check bank app", "wait in ER", "iron clothes" };
         private static readonly string[] GigWorkActivities = { "Rideshare shift", "Food delivery run", "Freelance edit sprint", "Tattoo flash booking", "Weekend market booth", "Remote client call", "Side-hustle reselling", "Night security shift", "Dog walking route", "Package sorting shift", "Event setup crew call", "Audio transcription sprint" };
         private static readonly string[] SocialFeedActivities = { "Post a thirst-trap selfie", "Reply to a situationship story", "Plan brunch in the group chat", "Soft-launch a relationship", "Curate a private close-friends post", "Voice-note your best friend", "Update your dating profile", "Send a late-night meme check-in", "secretly stalk ex profile", "doomscroll in bed", "delete and rewrite a risky comment three times", "schedule tomorrow's content queue", "archive old drama screenshots", "pin your best budget tip thread", "post a sobriety progress check-in" };
+        private static readonly string[] ComputerActivities = { "Inbox zero sprint", "Install security updates", "Upgrade streaming setup", "Digital declutter session", "Learn keyboard shortcuts", "Assemble a tiny home server", "Tune PC performance profile", "Back up saves to cloud storage", "Calibrate microphone and webcam", "Organize photos by year" };
+        private static readonly string[] WebChatActivities = { "Late-night web chat with friends", "Ask for tech help in a community room", "Moderate a heated hobby chat", "Plan a game night in server chat", "Join a career networking thread", "Share a progress update in support chat", "Help a new member with setup issues", "Host a Q&A in your creator room", "Patch relationship tension in direct chat", "Quietly lurk and read the room vibe" };
+        private static readonly string[] MiniGameActivities = { "Puzzle speedrun challenge", "Rhythm streak warmup", "Co-op survival mini run", "Typing duel match", "Retro arcade score chase", "Tower-defense quick round", "Card strategy showdown", "Platform challenge gauntlet", "Trivia blitz session", "Boss-rush practice run" };
         private static readonly string[] HomeUpgradeProjects = { "Apartment glow-up corner", "Gallery wall refresh", "LED mood-light setup", "Closet reset", "Bathroom shelf styling", "Cozy balcony makeover", "Desk cable-management overhaul", "Kitchen organization sprint", "entryway shoe storage rebuild", "under-bed rotation bins", "noise-dampening curtain install", "DIY pantry labeling pass" };
         private static readonly string[] AmbitionFocuses = { "Emergency fund grind", "Soft life reset", "Fitness comeback arc", "Creative breakthrough", "Promotion chase", "Dating confidence era", "Healing season", "Move-out plan", "Debt-free checkpoint", "Build neighborhood trust", "Career pivot runway", "Stability before spectacle" };
         private static readonly string[] CollectibleHobbies = { "Vinyl collecting", "Sneaker collecting", "Action figure hunting", "Comic back-issue digging", "Trading card collecting", "Thrifted mug collecting", "Keychain collecting", "Retro game collecting", "Perfume sampling", "Stamp collecting" };
@@ -54,6 +57,9 @@ namespace Survivebest.Core
         public static string PickAdultErrand() => Pick(AdultErrands, "Adult errand");
         public static string PickGigWorkActivity() => Pick(GigWorkActivities, "Gig shift");
         public static string PickSocialFeedActivity() => Pick(SocialFeedActivities, "Social check-in");
+        public static string PickComputerActivity() => Pick(ComputerActivities, "Computer time");
+        public static string PickWebChatActivity() => Pick(WebChatActivities, "Web chat");
+        public static string PickMiniGameActivity() => Pick(MiniGameActivities, "Mini game");
         public static string PickHomeUpgradeProject() => Pick(HomeUpgradeProjects, "Home refresh");
         public static string PickAmbitionFocus() => Pick(AmbitionFocuses, "Personal growth");
         public static string PickCollectibleHobby() => Pick(CollectibleHobbies, "Small collection");
@@ -65,13 +71,14 @@ namespace Survivebest.Core
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
                 + HobbyActivities.Length + FamilyMoments.Length + DatingActivities.Length + NightlifeActivities.Length
                 + CreatorEconomyActivities.Length + SelfCareActivities.Length + AdultErrands.Length + GigWorkActivities.Length
-                + SocialFeedActivities.Length + HomeUpgradeProjects.Length + AmbitionFocuses.Length + CollectibleHobbies.Length
+                + SocialFeedActivities.Length + ComputerActivities.Length + WebChatActivities.Length + MiniGameActivities.Length
+                + HomeUpgradeProjects.Length + AmbitionFocuses.Length + CollectibleHobbies.Length
                 + SentimentalObjects.Length + EverydayCarryItems.Length + HumanExperienceMoments.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 20 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 23 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)

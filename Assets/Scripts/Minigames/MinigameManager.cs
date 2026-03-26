@@ -36,7 +36,10 @@ namespace Survivebest.Minigames
         MovieNight,
         TVMarathon,
         BookReading,
-        SingingSession
+        SingingSession,
+        ComputerGaming,
+        WebChat,
+        MiniArcade
     }
 
     [Serializable]
@@ -117,7 +120,10 @@ namespace Survivebest.Minigames
             new MinigameSceneProfile { Type = MinigameType.MovieNight, SceneBackdropId = "living_room", Prompt = "Pick a film mood, settle in, and recover stress while staying present.", RecommendedSkill = "Storytelling", DurationMultiplier = 0.8f },
             new MinigameSceneProfile { Type = MinigameType.TVMarathon, SceneBackdropId = "living_room_tv", Prompt = "Choose episodes by vibe and manage time so tomorrow still works.", RecommendedSkill = "Storytelling", DurationMultiplier = 0.75f },
             new MinigameSceneProfile { Type = MinigameType.BookReading, SceneBackdropId = "library_corner", Prompt = "Read deeply, take notes, and absorb ideas for growth.", RecommendedSkill = "Writing", DurationMultiplier = 0.85f },
-            new MinigameSceneProfile { Type = MinigameType.SingingSession, SceneBackdropId = "music_corner", Prompt = "Warm up voice, stay on pitch, and perform with confidence.", RecommendedSkill = "Singing", DurationMultiplier = 0.95f }
+            new MinigameSceneProfile { Type = MinigameType.SingingSession, SceneBackdropId = "music_corner", Prompt = "Warm up voice, stay on pitch, and perform with confidence.", RecommendedSkill = "Singing", DurationMultiplier = 0.95f },
+            new MinigameSceneProfile { Type = MinigameType.ComputerGaming, SceneBackdropId = "pc_desk_setup", Prompt = "Tune controls, read enemy patterns, and execute a clean strategy loop.", RecommendedSkill = "Engineering", DurationMultiplier = 1.05f },
+            new MinigameSceneProfile { Type = MinigameType.WebChat, SceneBackdropId = "chat_workspace", Prompt = "Read room tone, respond clearly, and keep the thread constructive.", RecommendedSkill = "Writing", DurationMultiplier = 0.85f },
+            new MinigameSceneProfile { Type = MinigameType.MiniArcade, SceneBackdropId = "arcade_corner", Prompt = "Chain quick wins across mini challenges without losing momentum.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f }
         };
 
         private Coroutine runningMinigame;
@@ -394,6 +400,9 @@ namespace Survivebest.Minigames
                 MinigameType.TVMarathon => "Storytelling",
                 MinigameType.BookReading => "Writing",
                 MinigameType.SingingSession => "Singing",
+                MinigameType.ComputerGaming => "Engineering",
+                MinigameType.WebChat => "Writing",
+                MinigameType.MiniArcade => "Survival skills",
                 _ => "Survival skills"
             };
         }
@@ -447,6 +456,9 @@ namespace Survivebest.Minigames
                 MinigameType.TVMarathon => 0.03f,
                 MinigameType.BookReading => 0.04f,
                 MinigameType.SingingSession => 0.08f,
+                MinigameType.ComputerGaming => 0.1f,
+                MinigameType.WebChat => 0.06f,
+                MinigameType.MiniArcade => 0.09f,
                 _ => 0.1f
             };
         }
@@ -465,11 +477,11 @@ namespace Survivebest.Minigames
             {
                 float energyCost = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.IntensiveCare or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare or MinigameType.Casting
                     ? (success ? -5f : -8f)
-                    : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading
+                    : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading or MinigameType.WebChat
                         ? (success ? 4f : 1f)
-                        : (success ? -3f : -6f);
+                    : (success ? -3f : -6f);
                 needs.ModifyEnergy(energyCost);
-                needs.ModifyMood(type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.SingingSession
+                needs.ModifyMood(type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.SingingSession or MinigameType.ComputerGaming or MinigameType.MiniArcade
                     ? (success ? 5f : -1f)
                     : success ? 2f : -3f);
                 needs.RestoreHydration(type == MinigameType.RestaurantService || type == MinigameType.DrinkMixing ? 2f : -1.5f);
@@ -540,7 +552,7 @@ namespace Survivebest.Minigames
 
         private static bool IsBlueprintDriven(MinigameType type)
         {
-            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology;
+            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology or MinigameType.ComputerGaming or MinigameType.WebChat or MinigameType.MiniArcade;
         }
 
         private static IEnumerable<MinigameStepBlueprint> BuildStepBlueprints(MinigameType type, string anatomyFocus, bool emergencyPacing)
@@ -613,6 +625,21 @@ namespace Survivebest.Minigames
                     yield return Step("animal_intake", $"Read posture and stress cues before touching {anatomyFocus}.", "lead_or_towel", MinigameInputStyle.Sequence, 0.45f);
                     yield return Step("gentle_restrain", "Hold pressure in the calm zone without spiking stress.", "restraint_wrap", MinigameInputStyle.Hold, 0.58f);
                     yield return Step("species_treatment", "Drag the right species-safe treatment tools in order.", "vet_tray", MinigameInputStyle.Drag, 0.62f);
+                    break;
+                case MinigameType.ComputerGaming:
+                    yield return Step("loadout", "Tune controls and loadout for the upcoming match.", "game_menu", MinigameInputStyle.Sequence, 0.45f);
+                    yield return Step("reaction_loop", "Hit reaction prompts with steady timing under pressure.", "input_keys", MinigameInputStyle.TimingWindow, 0.6f);
+                    yield return Step("macro_decision", "Pick the winning route as the map shifts.", "map_overlay", MinigameInputStyle.Drag, 0.58f);
+                    break;
+                case MinigameType.WebChat:
+                    yield return Step("read_context", "Scan recent messages to catch tone and conflict risk.", "thread_panel", MinigameInputStyle.Hold, 0.42f);
+                    yield return Step("compose_reply", "Draft a clear reply that keeps the room on track.", "chat_input", MinigameInputStyle.Sequence, 0.48f);
+                    yield return Step("moderate_spike", "Handle one sudden flare-up without escalating drama.", "mod_tools", MinigameInputStyle.TimingWindow, 0.52f);
+                    break;
+                case MinigameType.MiniArcade:
+                    yield return Step("quick_start", "Clear the opening mini challenge to build combo momentum.", "arcade_pad", MinigameInputStyle.Tap, 0.45f);
+                    yield return Step("combo_chain", "Maintain combo chain across mixed inputs.", "combo_meter", MinigameInputStyle.Trace, 0.56f);
+                    yield return Step("boss_wave", "Finish the final wave with one clean sequence.", "boss_lane", MinigameInputStyle.Sequence, 0.6f);
                     break;
                 default:
                     yield return Step("generic_start", $"Perform the main interaction for {anatomyFocus}.", "tool", emergencyPacing ? MinigameInputStyle.TimingWindow : MinigameInputStyle.Tap, 0.4f);

@@ -95,6 +95,27 @@ namespace Survivebest.Core
         public int LikeCount;
     }
 
+    [Serializable]
+    public class WebChatRoom
+    {
+        public string RoomId;
+        public string RoomName;
+        public List<string> ParticipantCharacterIds = new();
+        public int ActiveTopicHeat;
+        public bool IsModerated;
+    }
+
+    [Serializable]
+    public class WebChatMessage
+    {
+        public string MessageId;
+        public string RoomId;
+        public string AuthorCharacterId;
+        public string Body;
+        public int TimestampHour;
+        public bool TriggeredDrama;
+    }
+
     public class DigitalLifeSystem : MonoBehaviour
     {
         [SerializeField] private World.WorldClock worldClock;
@@ -107,6 +128,8 @@ namespace Survivebest.Core
         [SerializeField] private List<SocialMediaProfile> socialProfiles = new();
         [SerializeField] private List<CharacterPhotoRecord> photos = new();
         [SerializeField] private List<SocialPostComment> comments = new();
+        [SerializeField] private List<WebChatRoom> webChatRooms = new();
+        [SerializeField] private List<WebChatMessage> webChatMessages = new();
 
         public IReadOnlyList<DigitalContact> Contacts => contacts;
         public IReadOnlyList<TextThreadRecord> TextThreads => textThreads;
@@ -115,6 +138,8 @@ namespace Survivebest.Core
         public IReadOnlyList<SocialMediaProfile> SocialProfiles => socialProfiles;
         public IReadOnlyList<CharacterPhotoRecord> Photos => photos;
         public IReadOnlyList<SocialPostComment> Comments => comments;
+        public IReadOnlyList<WebChatRoom> WebChatRooms => webChatRooms;
+        public IReadOnlyList<WebChatMessage> WebChatMessages => webChatMessages;
 
         public DigitalLifeProfile GetOrCreateProfile(string characterId)
         {
@@ -296,6 +321,87 @@ namespace Survivebest.Core
             profile.DigitalEvidenceRisk = Mathf.Clamp(profile.DigitalEvidenceRisk + severity, 0f, 100f);
             profile.CancellationRisk = Mathf.Clamp(profile.CancellationRisk + severity * 0.6f, 0f, 100f);
             relationshipMemorySystem?.RecordEventDetailed(characterId, null, summary, -Mathf.RoundToInt(severity), true, "online", new List<string> { "screenshot", "leak" }, suppressedMemory: false);
+        }
+
+        public WebChatRoom GetOrCreateWebChatRoom(string roomId, string roomName, bool isModerated = true)
+        {
+            if (string.IsNullOrWhiteSpace(roomId))
+            {
+                roomId = $"room_{Guid.NewGuid():N}";
+            }
+
+            WebChatRoom room = webChatRooms.Find(x => x != null && string.Equals(x.RoomId, roomId, StringComparison.OrdinalIgnoreCase));
+            if (room != null)
+            {
+                return room;
+            }
+
+            room = new WebChatRoom
+            {
+                RoomId = roomId,
+                RoomName = string.IsNullOrWhiteSpace(roomName) ? roomId : roomName,
+                IsModerated = isModerated
+            };
+            webChatRooms.Add(room);
+            return room;
+        }
+
+        public bool JoinWebChatRoom(string roomId, string roomName, string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return false;
+            }
+
+            WebChatRoom room = GetOrCreateWebChatRoom(roomId, roomName);
+            if (room.ParticipantCharacterIds.Contains(characterId))
+            {
+                return false;
+            }
+
+            room.ParticipantCharacterIds.Add(characterId);
+            return true;
+        }
+
+        public WebChatMessage SendWebChatMessage(string roomId, string roomName, string characterId, string body, bool controversial = false)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(body))
+            {
+                return null;
+            }
+
+            WebChatRoom room = GetOrCreateWebChatRoom(roomId, roomName);
+            if (!room.ParticipantCharacterIds.Contains(characterId))
+            {
+                room.ParticipantCharacterIds.Add(characterId);
+            }
+
+            WebChatMessage message = new()
+            {
+                MessageId = Guid.NewGuid().ToString("N"),
+                RoomId = room.RoomId,
+                AuthorCharacterId = characterId,
+                Body = body,
+                TimestampHour = GetCurrentTotalHours(),
+                TriggeredDrama = controversial
+            };
+            webChatMessages.Add(message);
+
+            room.ActiveTopicHeat = Mathf.Clamp(room.ActiveTopicHeat + (controversial ? 18 : 6), 0, 100);
+            DigitalLifeProfile profile = GetOrCreateProfile(characterId);
+            profile.OnlineReputation = Mathf.Clamp(profile.OnlineReputation + (controversial ? -3f : 2f), 0f, 100f);
+            profile.CreatorEconomyMomentum = Mathf.Clamp(profile.CreatorEconomyMomentum + (controversial ? 0.5f : 2.5f), 0f, 100f);
+            profile.CancellationRisk = Mathf.Clamp(profile.CancellationRisk + (controversial ? 4f : 0.2f), 0f, 100f);
+            relationshipMemorySystem?.RecordEventDetailed(characterId, null, $"web chat: {body}", controversial ? -1f : 2f, controversial, "online");
+            return message;
+        }
+
+        public string BuildWebChatSummary(string characterId)
+        {
+            int roomsJoined = webChatRooms.FindAll(x => x != null && x.ParticipantCharacterIds.Contains(characterId)).Count;
+            int authoredCount = webChatMessages.FindAll(x => x != null && string.Equals(x.AuthorCharacterId, characterId, StringComparison.OrdinalIgnoreCase)).Count;
+            int dramaCount = webChatMessages.FindAll(x => x != null && string.Equals(x.AuthorCharacterId, characterId, StringComparison.OrdinalIgnoreCase) && x.TriggeredDrama).Count;
+            return $"Web chat rooms {roomsJoined}, messages {authoredCount}, drama flags {dramaCount}.";
         }
 
         public DatingAppMatch CreateDatingAppMatch(string characterId, string otherCharacterId, float chemistry)
