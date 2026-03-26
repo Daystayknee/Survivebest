@@ -42,6 +42,88 @@ namespace Survivebest.UI
         Community
     }
 
+    public enum HouseholdLotType
+    {
+        StarterApartment,
+        SuburbanHome,
+        RuralFarmhouse,
+        DowntownPenthouse,
+        Waterfront,
+        OffGridLot
+    }
+
+    public enum HouseholdBudgetTier
+    {
+        Shoestring,
+        Starter,
+        Comfortable,
+        Affluent,
+        Luxury
+    }
+
+    public enum HouseholdVibe
+    {
+        Cozy,
+        Structured,
+        ChaoticFun,
+        CreativeLoft,
+        Prestige,
+        NatureFocused
+    }
+
+    public enum FamilyConflictApproach
+    {
+        TalkItOut,
+        FirmBoundaries,
+        HumorFirst,
+        Competitive,
+        Avoidant,
+        Mediated
+    }
+
+    public enum HouseholdArchetype
+    {
+        LegacyBuilders,
+        AmbitiousRoommates,
+        FamilyFirst,
+        CreativeCollective,
+        QuietRetreat,
+        PartyHouse
+    }
+
+    public enum HouseholdRoomType
+    {
+        Bedroom,
+        Nursery,
+        HomeOffice,
+        Kitchen,
+        Dining,
+        LivingRoom,
+        SkillStudio,
+        FitnessSpace,
+        Garden,
+        RecreationRoom
+    }
+
+    public enum RoomStyleDirection
+    {
+        Minimal,
+        Contemporary,
+        CozyRustic,
+        Industrial,
+        Luxury,
+        Eclectic
+    }
+
+    [Serializable]
+    public class HouseholdRoomPlan
+    {
+        public HouseholdRoomType RoomType = HouseholdRoomType.Bedroom;
+        public RoomStyleDirection StyleDirection = RoomStyleDirection.Contemporary;
+        [Range(1, 5)] public int Priority = 3;
+        [TextArea] public string Notes = "Describe the purpose and mood for this room.";
+    }
+
     [Serializable]
     public class HouseholdMakerTabPanel
     {
@@ -69,6 +151,18 @@ namespace Survivebest.UI
         public string HouseholdStoryPrompt;
         public string OriginFocus;
         public string PlanningPriority;
+        public string LotType;
+        public string BudgetTier;
+        public string HouseholdVibe;
+        public string ConflictApproach;
+        public bool WantsChildrenSoon;
+        public bool IncludesPets;
+        public bool PrioritizesCareerMobility;
+        public string GenerationalGoal;
+        public string HouseholdArchetype;
+        public string CommuteStrategy;
+        public string DailyRhythm;
+        public List<HouseholdRoomPlan> RoomPlans = new();
         public List<HouseholdDraftMemberSnapshot> Members = new();
     }
 
@@ -95,6 +189,41 @@ namespace Survivebest.UI
         [SerializeField, TextArea] private string householdStoryPrompt = "A household trying to build a stable life while balancing work, care, and community expectations.";
         [SerializeField] private HouseholdOriginFocus originFocus = HouseholdOriginFocus.LocalRoots;
         [SerializeField] private FamilyPlanningPriority planningPriority = FamilyPlanningPriority.Stability;
+        [SerializeField] private HouseholdLotType lotType = HouseholdLotType.StarterApartment;
+        [SerializeField] private HouseholdBudgetTier budgetTier = HouseholdBudgetTier.Starter;
+        [SerializeField] private HouseholdVibe householdVibe = HouseholdVibe.Cozy;
+        [SerializeField] private FamilyConflictApproach conflictApproach = FamilyConflictApproach.TalkItOut;
+        [SerializeField] private bool wantsChildrenSoon;
+        [SerializeField] private bool includesPets;
+        [SerializeField] private bool prioritizesCareerMobility = true;
+        [SerializeField] private string generationalGoal = "Build a secure first generation foundation with enough savings to launch the next chapter.";
+        [SerializeField] private HouseholdArchetype householdArchetype = HouseholdArchetype.LegacyBuilders;
+        [SerializeField] private string commuteStrategy = "Live near transit and jobs to reduce stress and keep routines predictable.";
+        [SerializeField] private string dailyRhythm = "Early mornings, shared dinner, and focused skill-building at night.";
+        [SerializeField] private List<HouseholdRoomPlan> roomPlans = new()
+        {
+            new HouseholdRoomPlan
+            {
+                RoomType = HouseholdRoomType.Bedroom,
+                StyleDirection = RoomStyleDirection.CozyRustic,
+                Priority = 5,
+                Notes = "Comfort-focused sleeping space for routine stability."
+            },
+            new HouseholdRoomPlan
+            {
+                RoomType = HouseholdRoomType.Kitchen,
+                StyleDirection = RoomStyleDirection.Contemporary,
+                Priority = 4,
+                Notes = "Central social hub with enough prep space for family meals."
+            },
+            new HouseholdRoomPlan
+            {
+                RoomType = HouseholdRoomType.HomeOffice,
+                StyleDirection = RoomStyleDirection.Minimal,
+                Priority = 3,
+                Notes = "Career and study station that supports focused progression."
+            }
+        };
 
         [Header("Multi-Asset Character Preview")]
         [SerializeField] private List<Transform> characterArtPivots = new();
@@ -187,6 +316,96 @@ namespace Survivebest.UI
         public void SetPlanningPriority(int index)
         {
             planningPriority = (FamilyPlanningPriority)Mathf.Clamp(index, 0, Enum.GetValues(typeof(FamilyPlanningPriority)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetLotType(int index)
+        {
+            lotType = (HouseholdLotType)Mathf.Clamp(index, 0, Enum.GetValues(typeof(HouseholdLotType)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetBudgetTier(int index)
+        {
+            budgetTier = (HouseholdBudgetTier)Mathf.Clamp(index, 0, Enum.GetValues(typeof(HouseholdBudgetTier)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetHouseholdVibe(int index)
+        {
+            householdVibe = (HouseholdVibe)Mathf.Clamp(index, 0, Enum.GetValues(typeof(HouseholdVibe)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetConflictApproach(int index)
+        {
+            conflictApproach = (FamilyConflictApproach)Mathf.Clamp(index, 0, Enum.GetValues(typeof(FamilyConflictApproach)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetWantsChildrenSoon(bool value)
+        {
+            wantsChildrenSoon = value;
+            RefreshCreatorSummary();
+        }
+
+        public void SetIncludesPets(bool value)
+        {
+            includesPets = value;
+            RefreshCreatorSummary();
+        }
+
+        public void SetPrioritizesCareerMobility(bool value)
+        {
+            prioritizesCareerMobility = value;
+            RefreshCreatorSummary();
+        }
+
+        public void SetGenerationalGoal(string value)
+        {
+            generationalGoal = string.IsNullOrWhiteSpace(value) ? generationalGoal : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void SetHouseholdArchetype(int index)
+        {
+            householdArchetype = (HouseholdArchetype)Mathf.Clamp(index, 0, Enum.GetValues(typeof(HouseholdArchetype)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetCommuteStrategy(string value)
+        {
+            commuteStrategy = string.IsNullOrWhiteSpace(value) ? commuteStrategy : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void SetDailyRhythm(string value)
+        {
+            dailyRhythm = string.IsNullOrWhiteSpace(value) ? dailyRhythm : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void AddRoomPlan(int roomType, int styleDirection, int priority, string notes)
+        {
+            roomPlans ??= new List<HouseholdRoomPlan>();
+            roomPlans.Add(new HouseholdRoomPlan
+            {
+                RoomType = (HouseholdRoomType)Mathf.Clamp(roomType, 0, Enum.GetValues(typeof(HouseholdRoomType)).Length - 1),
+                StyleDirection = (RoomStyleDirection)Mathf.Clamp(styleDirection, 0, Enum.GetValues(typeof(RoomStyleDirection)).Length - 1),
+                Priority = Mathf.Clamp(priority, 1, 5),
+                Notes = string.IsNullOrWhiteSpace(notes) ? "Custom room plan." : notes.Trim()
+            });
+            RefreshCreatorSummary();
+        }
+
+        public void RemoveLastRoomPlan()
+        {
+            if (roomPlans == null || roomPlans.Count == 0)
+            {
+                return;
+            }
+
+            roomPlans.RemoveAt(roomPlans.Count - 1);
             RefreshCreatorSummary();
         }
 
@@ -392,7 +611,18 @@ namespace Survivebest.UI
                 HomeDistrict = homeDistrict,
                 HouseholdStoryPrompt = householdStoryPrompt,
                 OriginFocus = originFocus.ToString(),
-                PlanningPriority = planningPriority.ToString()
+                PlanningPriority = planningPriority.ToString(),
+                LotType = lotType.ToString(),
+                BudgetTier = budgetTier.ToString(),
+                HouseholdVibe = householdVibe.ToString(),
+                ConflictApproach = conflictApproach.ToString(),
+                WantsChildrenSoon = wantsChildrenSoon,
+                IncludesPets = includesPets,
+                PrioritizesCareerMobility = prioritizesCareerMobility,
+                GenerationalGoal = generationalGoal,
+                HouseholdArchetype = householdArchetype.ToString(),
+                CommuteStrategy = commuteStrategy,
+                DailyRhythm = dailyRhythm
             };
 
             for (int i = 0; i < householdManager.Members.Count; i++)
@@ -410,6 +640,11 @@ namespace Survivebest.UI
                     LifeStage = member.CurrentLifeStage.ToString(),
                     Locked = !string.IsNullOrWhiteSpace(member.CharacterId) && lockedCharacterIds.Contains(member.CharacterId)
                 });
+            }
+
+            if (roomPlans != null)
+            {
+                snapshot.RoomPlans.AddRange(roomPlans);
             }
 
             PlayerPrefs.SetString(BuildHouseholdDraftKey(slotId), JsonUtility.ToJson(snapshot));
@@ -450,6 +685,40 @@ namespace Survivebest.UI
             {
                 planningPriority = loadedPriority;
             }
+
+            if (Enum.TryParse(snapshot.LotType, out HouseholdLotType loadedLotType))
+            {
+                lotType = loadedLotType;
+            }
+
+            if (Enum.TryParse(snapshot.BudgetTier, out HouseholdBudgetTier loadedBudgetTier))
+            {
+                budgetTier = loadedBudgetTier;
+            }
+
+            if (Enum.TryParse(snapshot.HouseholdVibe, out HouseholdVibe loadedVibe))
+            {
+                householdVibe = loadedVibe;
+            }
+
+            if (Enum.TryParse(snapshot.ConflictApproach, out FamilyConflictApproach loadedConflictApproach))
+            {
+                conflictApproach = loadedConflictApproach;
+            }
+
+            wantsChildrenSoon = snapshot.WantsChildrenSoon;
+            includesPets = snapshot.IncludesPets;
+            prioritizesCareerMobility = snapshot.PrioritizesCareerMobility;
+            generationalGoal = string.IsNullOrWhiteSpace(snapshot.GenerationalGoal) ? generationalGoal : snapshot.GenerationalGoal;
+            commuteStrategy = string.IsNullOrWhiteSpace(snapshot.CommuteStrategy) ? commuteStrategy : snapshot.CommuteStrategy;
+            dailyRhythm = string.IsNullOrWhiteSpace(snapshot.DailyRhythm) ? dailyRhythm : snapshot.DailyRhythm;
+
+            if (Enum.TryParse(snapshot.HouseholdArchetype, out HouseholdArchetype loadedArchetype))
+            {
+                householdArchetype = loadedArchetype;
+            }
+
+            roomPlans = snapshot.RoomPlans != null ? new List<HouseholdRoomPlan>(snapshot.RoomPlans) : new List<HouseholdRoomPlan>();
 
             lockedCharacterIds.Clear();
             for (int i = 0; i < snapshot.Members.Count; i++)
@@ -530,12 +799,25 @@ namespace Survivebest.UI
                 $"Active: {activeName}\n" +
                 $"Surname: {familySurname}\n" +
                 $"Home District: {homeDistrict}\n" +
+                $"Lot Type: {lotType}\n" +
+                $"Budget Tier: {budgetTier}\n" +
+                $"Household Vibe: {householdVibe}\n" +
                 $"Origin Focus: {originFocus}\n" +
                 $"Planning Priority: {planningPriority}\n" +
+                $"Conflict Approach: {conflictApproach}\n" +
+                $"Children Plan: {(wantsChildrenSoon ? "Trying Soon" : "Not Soon")}\n" +
+                $"Pet Plan: {(includesPets ? "Pet Friendly" : "No Pets Planned")}\n" +
+                $"Career Mobility: {(prioritizesCareerMobility ? "High Priority" : "Balanced")}\n" +
+                $"Household Archetype: {householdArchetype}\n" +
                 $"Locked Characters: {lockedCharacterIds.Count}\n" +
                 $"Family Draft Locked: {(familyDraftLocked ? "Yes" : "No")}\n" +
                 $"Preview Assets: {characterArtPivots.Count}\n" +
-                $"Pivot Mode: {(rotateAllArtPivots ? "Rotate All" : "Rotate Active")}";
+                $"Pivot Mode: {(rotateAllArtPivots ? "Rotate All" : "Rotate Active")}\n" +
+                $"Generational Goal: {generationalGoal}\n" +
+                $"Commute Strategy: {commuteStrategy}\n" +
+                $"Daily Rhythm: {dailyRhythm}\n" +
+                $"Room Blueprint:\n{BuildRoomPlanSummary()}\n" +
+                $"Household Composition:\n{BuildMemberCompositionSummary()}";
 
             if (familyLockStateText != null)
             {
@@ -544,8 +826,59 @@ namespace Survivebest.UI
 
             if (familyVisionText != null)
             {
-                familyVisionText.text = $"{familySurname} • {homeDistrict}\n{originFocus} / {planningPriority}\n{householdStoryPrompt}";
+                familyVisionText.text =
+                    $"{familySurname} • {homeDistrict} • {lotType}\n" +
+                    $"{originFocus} / {planningPriority} / {householdVibe} / {householdArchetype}\n" +
+                    $"{householdStoryPrompt}\n" +
+                    $"Conflict: {conflictApproach} • Budget: {budgetTier} • Next Gen: {(wantsChildrenSoon ? "Soon" : "Later")}";
             }
+        }
+
+        private string BuildRoomPlanSummary()
+        {
+            if (roomPlans == null || roomPlans.Count == 0)
+            {
+                return "- No room plans";
+            }
+
+            var lines = new List<string>();
+            for (int i = 0; i < roomPlans.Count; i++)
+            {
+                HouseholdRoomPlan plan = roomPlans[i];
+                if (plan == null)
+                {
+                    continue;
+                }
+
+                string notes = string.IsNullOrWhiteSpace(plan.Notes) ? "No notes" : plan.Notes;
+                lines.Add($"- {plan.RoomType} | Style: {plan.StyleDirection} | Priority: {plan.Priority}/5 | {notes}");
+            }
+
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No room plans";
+        }
+
+        private string BuildMemberCompositionSummary()
+        {
+            if (householdManager == null || householdManager.Members.Count == 0)
+            {
+                return "- No members";
+            }
+
+            var lines = new List<string>();
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                string lockTag = !string.IsNullOrWhiteSpace(member.CharacterId) && lockedCharacterIds.Contains(member.CharacterId) ? "Locked" : "Editable";
+                string talent = member.Talents.Count > 0 ? member.Talents[0].ToString() : "None";
+                lines.Add($"- {member.DisplayName} ({member.CurrentLifeStage}, {member.Species}) • Talent: {talent} • {lockTag}");
+            }
+
+            return lines.Count > 0 ? string.Join("\n", lines) : "- No members";
         }
 
         private void PublishTabEvent()
