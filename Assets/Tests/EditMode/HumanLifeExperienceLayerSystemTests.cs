@@ -532,5 +532,67 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(targetGo);
         }
 
+        [Test]
+        public void RecordLongTailAftermath_UpdatesConsequenceProfileAndThoughts()
+        {
+            GameObject go = new GameObject("LongTailAftermath");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharAftermath");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_aftermath", "Aftermath", LifeStage.Adult);
+
+            LongTailConsequenceProfile profile = system.RecordLongTailAftermath(
+                character,
+                LongTailAftermathType.Betrayal,
+                0.9f,
+                "A broken promise keeps echoing in every new conversation.");
+
+            Assert.IsNotNull(profile);
+            Assert.Greater(profile.BetrayalLoad, 0f);
+            Assert.GreaterOrEqual(system.LongTailConsequenceProfiles.Count, 1);
+            Assert.AreEqual("long_tail_aftermath", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void SimulateMonthArc_UsesLongTailAndOpinionProfiles()
+        {
+            GameObject go = new GameObject("MonthArc");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharMonthArc");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_month_arc", "MonthArc", LifeStage.Adult);
+
+            system.SetLongTailConsequenceProfile(character, new LongTailConsequenceProfile
+            {
+                BetrayalLoad = 0.6f,
+                RegretLoad = 0.7f,
+                RelapseRisk = 0.8f
+            });
+            system.SetSocialOpinionProfile(character, new SocialOpinionProfile
+            {
+                GossipSensitivity = 0.7f,
+                PublicHumiliationScar = 0.8f,
+                PromiseMemory = 0.9f,
+                AvoidedNeighborhoods = new System.Collections.Generic.List<string> { "river_district" },
+                TrustedPeople = new System.Collections.Generic.List<string> { "cousin_jo" }
+            });
+
+            string arc = system.SimulateMonthArc(character, 5, 101);
+            string summary = system.BuildHumanTextureSummary(character.CharacterId);
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(arc));
+            StringAssert.Contains("Long-tail residue", summary);
+            StringAssert.Contains("Opinion map", summary);
+            Assert.AreEqual("month_arc", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }
