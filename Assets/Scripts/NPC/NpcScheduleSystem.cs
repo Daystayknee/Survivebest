@@ -118,11 +118,13 @@ namespace Survivebest.NPC
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private MemoryKernelSystem memoryKernelSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<NpcProfile> npcProfiles = new();
+        [SerializeField] private bool allowOffscreenFlavorEvents;
 
         public IReadOnlyList<NpcProfile> NpcProfiles => npcProfiles;
 
@@ -435,7 +437,10 @@ namespace Survivebest.NPC
 
             if (npc.Stress > 85f)
             {
-                RememberRumor(npc.NpcId, "Town", "RumorSpread", -4, 0.45f, 0.5f);
+                if (IsPlayerRelevantNpcEvent(npc, false, false, false))
+                {
+                    RememberRumor(npc.NpcId, "Town", "RumorSpread", -4, 0.45f, 0.5f);
+                }
             }
 
             TryResolveCrowdedConflict(npc, hour);
@@ -506,7 +511,10 @@ namespace Survivebest.NPC
                     case "overtexts":
                         if (hour >= 20)
                         {
-                            RememberRumor(npc.NpcId, "Town", "Overtext", -1, 0.22f, 0.35f);
+                            if (allowOffscreenFlavorEvents || IsPlayerRelevantNpcEvent(npc, false, false, false))
+                            {
+                                RememberRumor(npc.NpcId, "Town", "Overtext", -1, 0.22f, 0.35f);
+                            }
                         }
                         break;
                     case "avoids_conflict":
@@ -543,11 +551,43 @@ namespace Survivebest.NPC
                     case "gossips_after_work":
                         if (hour >= 18 && hour <= 22 && npc.CurrentState == NpcActivityState.Socializing)
                         {
-                            RememberRumor(npc.NpcId, "Work", "AfterWorkGossip", -2, 0.35f, 0.5f);
+                            if (allowOffscreenFlavorEvents || IsPlayerRelevantNpcEvent(npc, false, false, false))
+                            {
+                                RememberRumor(npc.NpcId, "Work", "AfterWorkGossip", -2, 0.35f, 0.5f);
+                            }
                         }
                         break;
                 }
             }
+        }
+
+        private bool IsPlayerRelevantNpcEvent(NpcProfile npc, bool playerWitnessed, bool playerCaused, bool isScheduledEvent)
+        {
+            if (allowOffscreenFlavorEvents || playerWitnessed || playerCaused || isScheduledEvent)
+            {
+                return true;
+            }
+
+            if (npc == null || householdManager == null || householdManager.Members == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(member.CharacterId, npc.NpcId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void TryResolveCrowdedConflict(NpcProfile npc, int hour)

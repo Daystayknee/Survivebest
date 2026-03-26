@@ -79,11 +79,29 @@ namespace Survivebest.Tests.EditMode
             });
 
             SetPrivateField(social, "npcScheduleSystem", npcSchedule);
+            SetPrivateField(social, "allowOffscreenFlavorPropagation", true);
 
             social.AdvanceOffscreenNpcRelationships(12);
 
             Assert.IsTrue(social.Edges.Count > 0);
             Assert.Greater(social.GetPerceivedTrust("npc_a", "npc_b"), -1f);
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void SocialPerceptionGraphSystem_BlocksOffscreenRumorPropagation_WhenNotPlayerRelevant()
+        {
+            GameObject root = new GameObject("SocialRumorGate");
+            SocialPerceptionGraphSystem social = root.AddComponent<SocialPerceptionGraphSystem>();
+            social.UpsertEdge("npc_a", "npc_b", 0.1f, 0.1f, 0f, 0.6f);
+
+            social.PropagateRumor("npc_a", "npc_target", -0.6f, ReputationChannel.Gossip, "district_1", playerWitnessed: false, playerCaused: false, isScheduledEvent: false);
+
+            Assert.AreEqual(0, social.ReputationSignals.Count);
+
+            social.PropagateRumor("npc_a", "npc_target", -0.6f, ReputationChannel.Gossip, "district_1", playerWitnessed: true, playerCaused: false, isScheduledEvent: false);
+            Assert.Greater(social.ReputationSignals.Count, 0);
 
             Object.DestroyImmediate(root);
         }

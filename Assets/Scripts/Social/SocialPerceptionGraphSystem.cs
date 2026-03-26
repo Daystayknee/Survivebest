@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 using Survivebest.NPC;
 using Survivebest.World;
 
@@ -66,6 +67,7 @@ namespace Survivebest.Social
     {
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private NpcScheduleSystem npcScheduleSystem;
+        [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private List<SocialPerceptionEdge> edges = new();
         [SerializeField] private List<ReputationSignal> reputationSignals = new();
         [SerializeField] private List<ConversationMemoryRecord> conversationMemories = new();
@@ -73,6 +75,7 @@ namespace Survivebest.Social
         [SerializeField, Range(0f, 1f)] private float hopDecay = 0.18f;
         [SerializeField, Range(0f, 1f)] private float rumorMutation = 0.08f;
         [SerializeField, Range(0f, 1f)] private float offscreenRelationshipDrift = 0.04f;
+        [SerializeField] private bool allowOffscreenFlavorPropagation;
 
         public IReadOnlyList<SocialPerceptionEdge> Edges => edges;
         public IReadOnlyList<ReputationSignal> ReputationSignals => reputationSignals;
@@ -120,7 +123,7 @@ namespace Survivebest.Social
             return edge;
         }
 
-        public void RecordWitnessedEvent(string observerId, string subjectId, float impact, float witnessStrength, ReputationChannel channel, string scopeId)
+        public void RecordWitnessedEvent(string observerId, string subjectId, float impact, float witnessStrength, ReputationChannel channel, string scopeId, bool playerWitnessed = true, bool playerCaused = false, bool isScheduledEvent = false)
         {
             if (string.IsNullOrWhiteSpace(observerId) || string.IsNullOrWhiteSpace(subjectId))
             {
@@ -129,11 +132,16 @@ namespace Survivebest.Social
 
             float weighted = Mathf.Clamp(impact * Mathf.Clamp01(witnessStrength), -1f, 1f);
             AddOrMergeSignal(subjectId, channel, scopeId, weighted, Mathf.Clamp01(0.4f + witnessStrength * 0.6f), 0);
-            PropagateRumor(observerId, subjectId, weighted, channel, scopeId);
+            PropagateRumor(observerId, subjectId, weighted, channel, scopeId, playerWitnessed, playerCaused, isScheduledEvent);
         }
 
-        public void PropagateRumor(string fromCharacterId, string subjectId, float baseValue, ReputationChannel channel, string scopeId)
+        public void PropagateRumor(string fromCharacterId, string subjectId, float baseValue, ReputationChannel channel, string scopeId, bool playerWitnessed = false, bool playerCaused = false, bool isScheduledEvent = false)
         {
+            if (!allowOffscreenFlavorPropagation && !IsPlayerRelevant(subjectId, fromCharacterId, playerWitnessed, playerCaused, isScheduledEvent))
+            {
+                return;
+            }
+
             for (int i = 0; i < edges.Count; i++)
             {
                 SocialPerceptionEdge edge = edges[i];
@@ -247,6 +255,11 @@ namespace Survivebest.Social
                         continue;
                     }
 
+                    if (!allowOffscreenFlavorPropagation && !IsPlayerRelevant(source.NpcId, target.NpcId, false, false, false))
+                    {
+                        continue;
+                    }
+
                     bool sharedLot = !string.IsNullOrWhiteSpace(source.CurrentLotId)
                         && string.Equals(source.CurrentLotId, target.CurrentLotId, StringComparison.OrdinalIgnoreCase);
                     float drift = sharedLot ? offscreenRelationshipDrift : offscreenRelationshipDrift * 0.25f;
@@ -336,6 +349,36 @@ namespace Survivebest.Social
         private static int GetCurrentHour()
         {
             return Mathf.FloorToInt(Time.time / 3600f);
+        }
+
+        private bool IsPlayerRelevant(string primaryId, string secondaryId, bool playerWitnessed, bool playerCaused, bool isScheduledEvent)
+        {
+            if (playerWitnessed || playerCaused || isScheduledEvent)
+            {
+                return true;
+            }
+
+            if (householdManager == null || householdManager.Members == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(member.CharacterId, primaryId, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(member.CharacterId, secondaryId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
