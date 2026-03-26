@@ -64,6 +64,7 @@ namespace Survivebest.Core
     public class PersonalGoal
     {
         public string GoalId;
+        public string TemplateKey;
         public string Description;
         public PersonalGoalArchetype Archetype;
         [Range(0f, 100f)] public float Progress;
@@ -241,11 +242,43 @@ namespace Survivebest.Core
                 activeGoals = new List<PersonalGoal>();
             }
 
-            AddGoalIfMissing(PersonalGoalArchetype.Finance, "Build an emergency fund and stay on top of bills");
-            AddGoalIfMissing(PersonalGoalArchetype.Wellness, "Protect a weekly wellness reset and therapy-quality reflection");
-            AddGoalIfMissing(PersonalGoalArchetype.Relationship, "Strengthen one close relationship with deliberate follow-through");
-            AddGoalIfMissing(PersonalGoalArchetype.Creator, "Grow a creative or side-hustle income stream");
-            AddGoalIfMissing(PersonalGoalArchetype.Home, "Make the home feel beautiful, calm, and lived in");
+            AddGoalTemplateIfMissing("baseline_finance_fund", PersonalGoalArchetype.Finance, "Build an emergency fund and stay on top of bills");
+            AddGoalTemplateIfMissing("baseline_wellness_reset", PersonalGoalArchetype.Wellness, "Protect a weekly wellness reset and therapy-quality reflection");
+            AddGoalTemplateIfMissing("baseline_relationship_followthrough", PersonalGoalArchetype.Relationship, "Strengthen one close relationship with deliberate follow-through");
+            AddGoalTemplateIfMissing("baseline_creator_income", PersonalGoalArchetype.Creator, "Grow a creative or side-hustle income stream");
+            AddGoalTemplateIfMissing("baseline_home_calm", PersonalGoalArchetype.Home, "Make the home feel beautiful, calm, and lived in");
+
+            // 30 additional rotating goals to increase creator/lifestyle depth.
+            AddGoalTemplateIfMissing("g01_finance_no_overdraft", PersonalGoalArchetype.Finance, "Go a full month with no overdraft or late-fee penalties");
+            AddGoalTemplateIfMissing("g02_finance_automate_savings", PersonalGoalArchetype.Finance, "Automate savings and keep a recurring transfer active");
+            AddGoalTemplateIfMissing("g03_finance_debt_snowball", PersonalGoalArchetype.Finance, "Reduce one high-stress debt balance with weekly consistency");
+            AddGoalTemplateIfMissing("g04_finance_income_buffer", PersonalGoalArchetype.Finance, "Create a two-week income buffer before discretionary upgrades");
+            AddGoalTemplateIfMissing("g05_finance_budget_dates", PersonalGoalArchetype.Finance, "Hold weekly budget check-ins and adjust spending categories");
+            AddGoalTemplateIfMissing("g06_wellness_sleep_streak", PersonalGoalArchetype.Wellness, "Maintain a sleep routine for seven days in a row");
+            AddGoalTemplateIfMissing("g07_wellness_hydration", PersonalGoalArchetype.Wellness, "Stabilize hydration and avoid energy crashes by midday");
+            AddGoalTemplateIfMissing("g08_wellness_therapy_tools", PersonalGoalArchetype.Wellness, "Practice one therapy-quality coping tool during stress spikes");
+            AddGoalTemplateIfMissing("g09_wellness_mobility", PersonalGoalArchetype.Wellness, "Build a short daily mobility and stretch habit");
+            AddGoalTemplateIfMissing("g10_wellness_recovery_day", PersonalGoalArchetype.Wellness, "Protect one true recovery day each week");
+            AddGoalTemplateIfMissing("g11_relationship_repair", PersonalGoalArchetype.Relationship, "Repair one strained relationship through accountable follow-up");
+            AddGoalTemplateIfMissing("g12_relationship_quality_time", PersonalGoalArchetype.Relationship, "Schedule meaningful quality time with a trusted person");
+            AddGoalTemplateIfMissing("g13_relationship_boundaries", PersonalGoalArchetype.Relationship, "Set and communicate one clear personal boundary");
+            AddGoalTemplateIfMissing("g14_relationship_community", PersonalGoalArchetype.Relationship, "Show up consistently for one community connection");
+            AddGoalTemplateIfMissing("g15_relationship_family_call", PersonalGoalArchetype.Relationship, "Keep regular contact with a family member who matters");
+            AddGoalTemplateIfMissing("g16_creator_publish", PersonalGoalArchetype.Creator, "Publish one piece of creative work on a consistent cadence");
+            AddGoalTemplateIfMissing("g17_creator_skill_ladder", PersonalGoalArchetype.Creator, "Progress a creative skill ladder with deliberate practice");
+            AddGoalTemplateIfMissing("g18_creator_portfolio", PersonalGoalArchetype.Creator, "Build a portfolio artifact that can attract paid opportunities");
+            AddGoalTemplateIfMissing("g19_creator_collab", PersonalGoalArchetype.Creator, "Complete one collaborative project with reliable communication");
+            AddGoalTemplateIfMissing("g20_creator_feedback_loop", PersonalGoalArchetype.Creator, "Collect feedback and ship one meaningful revision");
+            AddGoalTemplateIfMissing("g21_home_declutter_zone", PersonalGoalArchetype.Home, "Declutter one stress-heavy zone and keep it functional");
+            AddGoalTemplateIfMissing("g22_home_maintenance", PersonalGoalArchetype.Home, "Finish pending home maintenance tasks before they escalate");
+            AddGoalTemplateIfMissing("g23_home_comfort", PersonalGoalArchetype.Home, "Improve comfort with lighting, temperature, and rest-ready spaces");
+            AddGoalTemplateIfMissing("g24_home_emergency_ready", PersonalGoalArchetype.Home, "Prepare basic emergency supplies and backup essentials");
+            AddGoalTemplateIfMissing("g25_home_shared_chore_system", PersonalGoalArchetype.Home, "Establish a stable shared chore and cleanup rhythm");
+            AddGoalTemplateIfMissing("g26_explore_new_place", PersonalGoalArchetype.Exploration, "Visit a new neighborhood spot and log what changed your mood");
+            AddGoalTemplateIfMissing("g27_explore_new_skill", PersonalGoalArchetype.Exploration, "Try a new class, workshop, or guided learning session");
+            AddGoalTemplateIfMissing("g28_nutrition_meal_prep", PersonalGoalArchetype.Nutrition, "Meal-prep enough food to reduce stress spending");
+            AddGoalTemplateIfMissing("g29_hygiene_reset", PersonalGoalArchetype.Hygiene, "Reset hygiene and presentation baseline for confidence");
+            AddGoalTemplateIfMissing("g30_rest_microbreaks", PersonalGoalArchetype.Rest, "Use planned micro-breaks to prevent burnout spiral");
         }
 
         public List<string> BuildLifestyleHooks(int desiredCount = 4)
@@ -587,6 +620,32 @@ namespace Survivebest.Core
             activeGoals.Add(new PersonalGoal
             {
                 GoalId = Guid.NewGuid().ToString("N"),
+                TemplateKey = $"legacy_{archetype}_{description?.GetHashCode() ?? 0}",
+                Description = description,
+                Archetype = archetype,
+                Progress = 0f,
+                CompletionAt = 100f,
+                IsCompleted = false,
+                IsPinned = pinned
+            });
+        }
+
+        private void AddGoalTemplateIfMissing(string templateKey, PersonalGoalArchetype archetype, string description, bool pinned = false)
+        {
+            if (string.IsNullOrWhiteSpace(templateKey))
+            {
+                return;
+            }
+
+            if (activeGoals.Exists(x => x != null && string.Equals(x.TemplateKey, templateKey, StringComparison.Ordinal)))
+            {
+                return;
+            }
+
+            activeGoals.Add(new PersonalGoal
+            {
+                GoalId = Guid.NewGuid().ToString("N"),
+                TemplateKey = templateKey,
                 Description = description,
                 Archetype = archetype,
                 Progress = 0f,

@@ -356,6 +356,16 @@ namespace Survivebest.UI
                 EyeColorType.Amber => new Color(0.74f, 0.48f, 0.12f),
                 EyeColorType.Teal => new Color(0.1f, 0.5f, 0.52f),
                 EyeColorType.Violet => new Color(0.54f, 0.34f, 0.72f),
+                EyeColorType.Aqua => new Color(0.38f, 0.77f, 0.8f),
+                EyeColorType.Turquoise => new Color(0.25f, 0.68f, 0.63f),
+                EyeColorType.SeaGreen => new Color(0.18f, 0.53f, 0.38f),
+                EyeColorType.MossGreen => new Color(0.32f, 0.4f, 0.2f),
+                EyeColorType.GoldenAmber => new Color(0.79f, 0.58f, 0.17f),
+                EyeColorType.Copper => new Color(0.62f, 0.37f, 0.17f),
+                EyeColorType.RedBrown => new Color(0.45f, 0.2f, 0.14f),
+                EyeColorType.Lilac => new Color(0.66f, 0.58f, 0.8f),
+                EyeColorType.RoseGray => new Color(0.62f, 0.56f, 0.6f),
+                EyeColorType.Onyx => new Color(0.08f, 0.08f, 0.1f),
                 _ => new Color(0.7f, 0.45f, 0.1f)
             };
         }
