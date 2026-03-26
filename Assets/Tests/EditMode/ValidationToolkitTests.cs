@@ -6,6 +6,7 @@ using Survivebest.Core;
 using Survivebest.Economy;
 using Survivebest.Location;
 using Survivebest.Needs;
+using Survivebest.NPC;
 using Survivebest.Social;
 using Survivebest.Utility;
 
@@ -82,7 +83,70 @@ namespace Survivebest.Tests.EditMode
 
             ValidationReport report = new SaveParityDebugger().Compare(payload, household, economy);
 
-            Assert.AreEqual(2, report.Issues.Count);
+            Assert.AreEqual(3, report.Issues.Count);
+            Assert.IsTrue(report.Issues.Exists(issue => issue.Code == "save.active_character.mismatch"));
+
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void SaveParityDebugger_FlagsWorldSystemCountMismatches_ForChoresHousingRelationshipsAndSchedules()
+        {
+            GameObject root = new GameObject("SaveParitySystems");
+            HouseholdChoreSystem chores = root.AddComponent<HouseholdChoreSystem>();
+            HousingPropertySystem housing = root.AddComponent<HousingPropertySystem>();
+            RelationshipMemorySystem relationships = root.AddComponent<RelationshipMemorySystem>();
+            NpcScheduleSystem npcSchedules = root.AddComponent<NpcScheduleSystem>();
+
+            chores.ApplyRuntimeState(new List<HouseholdChore>
+            {
+                new HouseholdChore { ChoreId = "c1", PropertyId = "p1", ChoreType = HouseholdChoreType.WashDishes },
+                new HouseholdChore { ChoreId = "c2", PropertyId = "p1", ChoreType = HouseholdChoreType.TakeTrashOut }
+            });
+
+            housing.ApplyRuntimeState(
+                new List<PropertyRecord> { new PropertyRecord { PropertyId = "p1" } },
+                new List<RepairRequest>(),
+                savedDaysSinceBilling: 3);
+
+            relationships.ApplyRuntimeState(
+                new List<RelationshipMemory> { new RelationshipMemory { MemoryId = "m1", SubjectCharacterId = "a", Topic = "topic" } },
+                new List<RelationshipProfile>(),
+                new List<ReputationEntry>());
+
+            npcSchedules.ApplyRuntimeState(new List<NpcProfile>
+            {
+                new NpcProfile { NpcId = "npc_1", DisplayName = "NPC 1" },
+                new NpcProfile { NpcId = "npc_2", DisplayName = "NPC 2" }
+            });
+
+            SaveSlotPayload payload = new SaveSlotPayload
+            {
+                Systems = new WorldSystemsSnapshot
+                {
+                    HouseholdChores = new List<HouseholdChore> { new HouseholdChore { ChoreId = "saved_one" } },
+                    HousingProperties = new List<PropertyRecord>(),
+                    HousingDaysSinceBilling = 1,
+                    RelationshipMemories = new List<RelationshipMemory>(),
+                    Npcs = new List<NpcProfile> { new NpcProfile { NpcId = "npc_1" } }
+                },
+                HouseholdCharacters = new List<CharacterSnapshot>()
+            };
+
+            ValidationReport report = new SaveParityDebugger().Compare(
+                payload,
+                householdManager: null,
+                economyInventorySystem: null,
+                householdChoreSystem: chores,
+                housingPropertySystem: housing,
+                relationshipMemorySystem: relationships,
+                npcScheduleSystem: npcSchedules);
+
+            Assert.IsTrue(report.Issues.Exists(issue => issue.Code == "save.chores.mismatch"));
+            Assert.IsTrue(report.Issues.Exists(issue => issue.Code == "save.housing.properties.mismatch"));
+            Assert.IsTrue(report.Issues.Exists(issue => issue.Code == "save.housing.billing_days.mismatch"));
+            Assert.IsTrue(report.Issues.Exists(issue => issue.Code == "save.relationships.mismatch"));
+            Assert.IsTrue(report.Issues.Exists(issue => issue.Code == "save.npcschedules.mismatch"));
 
             Object.DestroyImmediate(root);
         }

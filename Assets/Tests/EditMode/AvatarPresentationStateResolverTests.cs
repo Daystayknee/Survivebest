@@ -105,6 +105,31 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void ResolveDynamicState_LowGroomingWithoutCrisis_UsesDisheveledStateAndHygieneCue()
+        {
+            PhenotypeProfile phenotype = PhenotypeResolver.Resolve(new GeneticProfile(), LifeStage.Adult, 0.08f);
+
+            AvatarPresentationState state = AvatarPresentationStateResolver.ResolveDynamicState(
+                phenotype,
+                new AvatarPresentationInput
+                {
+                    Stress = 18f,
+                    Anger = 10f,
+                    Affection = 35f,
+                    Energy = 62f,
+                    IllnessPressure = 12f,
+                    Confidence = 46f,
+                    SocialPressure = 18f,
+                    Grooming = 8f,
+                    SafetyUrgency = 14f
+                });
+
+            Assert.AreEqual("state_overlay_disheveled", state.StateOverlayKey);
+            Assert.AreEqual("ui_feedback_hygiene_prompt", state.UiCueKey);
+            Assert.Greater(state.GroomingDrift, 0.85f);
+        }
+
+        [Test]
         public void CharacterPortraitRenderer_MinimumGuaranteedPortraitVariants_ExceedsTenThousand()
         {
             GameObject go = new GameObject("PortraitCoverage");
