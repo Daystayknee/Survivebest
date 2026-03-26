@@ -27,6 +27,9 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTinyHomeLifeDetail()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFoodEmotionDetail()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickMoneyStressDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEmotionalMicroState()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickRelationshipRealismDetail()));
         }
 
         [Test]

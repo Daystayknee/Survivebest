@@ -33,6 +33,9 @@ namespace Survivebest.Core
         private static readonly string[] TinyHomeLifeDetails = { "one room always gets messy first", "a chair that becomes the clothes chair", "favorite mug ritual", "junk drawer archaeology", "a kitchen light that feels too harsh at night", "stale room smell when trash gets ignored", "opening the fridge and feeling like there's nothing to eat anyway", "comfort from hearing a fan at night", "panic when toilet paper runs low", "one blanket that always gets chosen", "the sink getting overwhelming before you notice", "walking past a mess and saying you'll do it later", "a room feeling emotionally different after an argument", "home feeling safer after dishes are done", "clutter subtly raising stress", "a broken appliance making the whole day feel cursed", "relief from coming home and changing clothes immediately", "sitting on the bed for one second and losing an hour" };
         private static readonly string[] FoodEmotionDetails = { "meals reading as survival, comfort, self-care, or celebration", "toast, noodles, or cereal as low-energy depression food", "soup as the sick-day answer", "a sweet drink when emotionally fried", "coffee on an empty stomach backfiring", "leftovers becoming a whole life category", "ingredient household versus ready-food household", "eating standing in the kitchen because the day is chaos", "guilt when food spoils", "comfort food tied to memory", "not cooking because cleanup feels worse than hunger", "cooking for someone feeling different than cooking for yourself", "late-night snack when loneliness spikes", "special meal right after payday", "skipping meals to save money feeling bleak and real", "bad mood triggering weird craving combos" };
         private static readonly string[] MoneyStressDetails = { "checking your bank balance before anything fun", "postponing small pleasures because a bill is coming", "deciding whether gas, groceries, meds, or comfort wins today", "guilt after impulse buying", "cheap products causing future inconvenience", "eating differently right before payday", "technically having money but not feeling safe", "relief after a bill is finally paid", "resenting detergent, toilet paper, and trash bags as recurring costs", "replacing an item only when it becomes unbearable", "wealthier households buying convenience while poorer households buy time-consuming alternatives", "small treats feeling huge when broke", "the mood of the whole house changing on paycheck day" };
+        private static readonly string[] EmotionalMicroStates = { "emotionally numb", "irritated but trying to stay polite", "fragile in a hard-to-name way", "embarrassed but pretending not to be", "restless", "overstimulated", "lonely in a room full of people", "weirdly proud after doing something basic", "touched by a small kindness", "low-grade dread", "comforted but still sad", "wanting attention but not wanting to talk", "craving control through cleaning or organizing", "feeling unattractive for no clear reason", "feeling off all day", "feeling accomplished from tiny tasks while life is heavy" };
+        private static readonly string[] SocialDetails = { "greeting someone differently based on your last interaction", "awkward silence after a weird joke", "conversation sounds fine but body language shows tension", "texting courage feeling different from face-to-face courage", "waiting before replying because you're upset", "apologizing badly", "saying fake I'm fine", "overexplaining when nervous", "getting quieter around certain personalities", "being extra nice when asking for a favor", "feeling different in groups than one-on-one", "someone hovering in the kitchen because they want connection", "lingering after a conversation because neither person wants to end it", "staying polite while angry because others are nearby", "being more honest late at night", "feeling rejected by tone more than words", "housemates noticing each other's routines without explicit dialogue", "social battery draining from the wrong kind of company" };
+        private static readonly string[] RelationshipRealismDetails = { "affection expressed by remembering tiny preferences", "resentment growing when obvious chores go ignored", "attraction shifting with confidence, scent, effort, tenderness, and cruelty", "repeated interruptions causing low-level hostility", "someone always saying be safe", "someone noticing when you skip eating", "someone not asking how you are because they're mad", "comfort through shared routine instead of speeches", "closeness from boring errands together", "emotional distance after practical conflicts", "a relationship feeling worse in a messy environment", "tension after one person outgrows old routines", "tiny loyalty tests like covering for someone, defending them, or saving them the last portion" };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -76,6 +79,9 @@ namespace Survivebest.Core
         public static string PickTinyHomeLifeDetail() => Pick(TinyHomeLifeDetails, "tiny home-life beat");
         public static string PickFoodEmotionDetail() => Pick(FoodEmotionDetails, "food-emotion beat");
         public static string PickMoneyStressDetail() => Pick(MoneyStressDetails, "money-stress beat");
+        public static string PickEmotionalMicroState() => Pick(EmotionalMicroStates, "in-between emotional state");
+        public static string PickSocialDetail() => Pick(SocialDetails, "social detail beat");
+        public static string PickRelationshipRealismDetail() => Pick(RelationshipRealismDetails, "relationship realism beat");
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -85,12 +91,13 @@ namespace Survivebest.Core
                 + HomeUpgradeProjects.Length + AmbitionFocuses.Length + CollectibleHobbies.Length
                 + SentimentalObjects.Length + EverydayCarryItems.Length + HumanExperienceMoments.Length
                 + BodyDetails.Length + HygieneMaintenanceDetails.Length + TinyHomeLifeDetails.Length
-                + FoodEmotionDetails.Length + MoneyStressDetails.Length;
+                + FoodEmotionDetails.Length + MoneyStressDetails.Length + EmotionalMicroStates.Length
+                + SocialDetails.Length + RelationshipRealismDetails.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 28 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 31 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
