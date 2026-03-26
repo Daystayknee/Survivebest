@@ -121,6 +121,39 @@ namespace Survivebest.Core
             { StylePresentation.Androgynous, new[] { "Neutral tote", "Geometric earrings", "Mixed-metal chain", "Tech sling bag", "Cuff bracelet", "Minimal cap", "Pattern scarf", "Utility belt bag" } }
         };
 
+        private static readonly Dictionary<LifeStage, string> StageAudienceLabel = new()
+        {
+            { LifeStage.Baby, "Baby" },
+            { LifeStage.Infant, "Infant" },
+            { LifeStage.Toddler, "Toddler" },
+            { LifeStage.Child, "Child" },
+            { LifeStage.Preteen, "Preteen" },
+            { LifeStage.Teen, "Teen" },
+            { LifeStage.YoungAdult, "Young Adult" },
+            { LifeStage.Adult, "Adult" },
+            { LifeStage.OlderAdult, "Older Adult" },
+            { LifeStage.Elder, "Elder" }
+        };
+
+        private static readonly Dictionary<StylePresentation, string> PresentationAudienceLabel = new()
+        {
+            { StylePresentation.Feminine, "Feminine" },
+            { StylePresentation.Masculine, "Masculine" },
+            { StylePresentation.Androgynous, "Androgynous" }
+        };
+
+        private static readonly Dictionary<WardrobeCategory, string[]> CapsuleCategoryTokens = new()
+        {
+            { WardrobeCategory.Tops, new[] { "Rib Top", "Layer Tee", "Polo Knit", "Thermal Crew", "Festival Shirt", "Training Jersey", "Studio Blouse", "Weekend Henley", "Travel Pullover", "Classic Cardigan", "Rain Layer", "Pocket Tee", "Utility Shirt", "Dinner Knit", "Sleep Tee", "Campus Hoodie", "Office Top", "Street Jersey", "Coach Shirt", "Heritage Top", "Soft Tank", "Tech Zip Top", "Market Shirt", "Casual Blouse" } },
+            { WardrobeCategory.Bottoms, new[] { "Denim Cut", "Pleated Trouser", "Soft Jogger", "Cargo Bottom", "Track Pant", "Cord Pant", "Weekend Short", "Studio Legging", "Relax Pant", "Formal Trouser", "Field Pant", "Pocket Short", "Commuter Pant", "Camp Short", "Cozy Pant", "School Bottom", "Travel Pant", "Classic Jean", "Heritage Trouser", "Rain Trouser", "Active Short", "Straight Pant", "Blend Skirt", "Daily Bottom" } },
+            { WardrobeCategory.Underwear, new[] { "Comfort Base Set", "Moisture Base Set", "Support Base Set", "Daily Core Set", "Soft Lounge Set", "Thermal Base Layer", "Athletic Layer Set", "Breathable Core Set", "Seamless Core Set", "Recovery Base Set", "Sleep Base Set", "Training Base Set", "Airflow Base Set", "Weekend Core Set", "Long-Wear Set", "Travel Base Set", "Quick-Dry Set", "Stretch Base Set", "Essential Set", "Routine Base Set", "Cozy Core Set", "Mesh Base Set", "Cloud Base Set", "Anchor Base Set" } },
+            { WardrobeCategory.FullBody, new[] { "City Set", "Ceremony Set", "Work Set", "Garden Set", "Travel Set", "Formal Set", "Festival Set", "Athletic Set", "Rain Set", "Lounge Set", "Studio Set", "Celebration Set", "Utility Set", "Heritage Set", "Commuter Set", "Weekend Set", "Sleep Set", "Performance Set", "Outdoor Set", "Artisan Set", "School Set", "Roleplay Set", "Story Set", "Parade Set" } },
+            { WardrobeCategory.Shoes, new[] { "Runner", "Walker", "Trail Shoe", "Comfort Sneaker", "Canvas Shoe", "Slip Shoe", "Daily Boot", "Field Boot", "Studio Shoe", "Court Shoe", "Weekend Sneaker", "Commuter Shoe", "Rain Boot", "Training Shoe", "Indoor Shoe", "Outdoor Shoe", "Classic Loafer", "Travel Sneaker", "Support Shoe", "Heritage Boot", "Craft Shoe", "Play Shoe", "Cozy Slipper", "Smart Shoe" } },
+            { WardrobeCategory.Accessories, new[] { "Carry Bag", "Crossbody", "Belt", "Bracelet", "Chain", "Scarf", "Cap", "Beanie", "Hair Tie", "Sling Bag", "Charm", "Ring", "Watch", "Pin Set", "Glasses", "Bandana", "Wallet", "Pouch", "Neckwear", "Earring Set", "Hand Wrap", "Arm Cuff", "Pocket Charm", "Brooch" } }
+        };
+
+        private static readonly Dictionary<string, string[]> GeneratedCapsuleCache = new();
+
         private static readonly List<BodyCompositionProfile> BodyProfiles = new()
         {
             CreateProfile("baby_soft", "Baby Soft", "Infant-safe soft frame with minimal muscle definition.", 0.35f, 0.55f, 0.05f, LifeStage.Baby, LifeStage.Infant),
@@ -160,6 +193,7 @@ namespace Survivebest.Core
             AddRange(options, GetUniversalCategory(category));
             AddRange(options, ResolveStageCategory(lifeStage, category));
             AddRange(options, ResolvePresentationCategory(presentation, category));
+            AddRange(options, ResolveGeneratedCapsuleCategory(lifeStage, presentation, category));
             return options;
         }
 
@@ -254,6 +288,31 @@ namespace Survivebest.Core
         private static IReadOnlyList<string> ResolvePresentation(Dictionary<StylePresentation, string[]> map, StylePresentation presentation)
         {
             return map != null && map.TryGetValue(presentation, out string[] options) ? options : Array.Empty<string>();
+        }
+
+        private static IReadOnlyList<string> ResolveGeneratedCapsuleCategory(LifeStage lifeStage, StylePresentation presentation, WardrobeCategory category)
+        {
+            string key = $"{lifeStage}:{presentation}:{category}";
+            if (GeneratedCapsuleCache.TryGetValue(key, out string[] cached))
+            {
+                return cached;
+            }
+
+            if (!CapsuleCategoryTokens.TryGetValue(category, out string[] tokens) ||
+                !StageAudienceLabel.TryGetValue(lifeStage, out string stageLabel) ||
+                !PresentationAudienceLabel.TryGetValue(presentation, out string presentationLabel))
+            {
+                return Array.Empty<string>();
+            }
+
+            string[] generated = new string[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                generated[i] = $"{stageLabel} {presentationLabel} {tokens[i]}";
+            }
+
+            GeneratedCapsuleCache[key] = generated;
+            return generated;
         }
 
         private static void AddRange(List<string> target, IReadOnlyList<string> values)

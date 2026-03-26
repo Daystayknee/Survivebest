@@ -6,14 +6,14 @@ namespace Survivebest.Tests.EditMode
     public class IdentityWardrobeCatalogTests
     {
         [Test]
-        public void EveryLifeStageAndPresentation_HasLargeWardrobeDepth()
+        public void EveryLifeStageAndPresentation_HasOverOneHundredWardrobeItems()
         {
             foreach (LifeStage stage in System.Enum.GetValues(typeof(LifeStage)))
             {
                 foreach (StylePresentation presentation in System.Enum.GetValues(typeof(StylePresentation)))
                 {
                     int count = IdentityWardrobeCatalog.CountWardrobeOptions(stage, presentation);
-                    Assert.GreaterOrEqual(count, 70, $"Expected high wardrobe depth for {stage}/{presentation}.");
+                    Assert.GreaterOrEqual(count, 100, $"Expected at least 100 wardrobe items for {stage}/{presentation}.");
                 }
             }
         }
