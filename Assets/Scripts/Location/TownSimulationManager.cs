@@ -6,6 +6,7 @@ using Survivebest.NPC;
 using Survivebest.Story;
 using Survivebest.World;
 using Survivebest.UI;
+using Survivebest.Core;
 
 namespace Survivebest.Location
 {
@@ -60,6 +61,7 @@ namespace Survivebest.Location
         [SerializeField] private WorldPersistenceCullingSystem worldPersistenceCullingSystem;
         [SerializeField] private LivingWorldInfrastructureEngine livingWorldInfrastructureEngine;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private GlobalSimulationSettings globalSimulationSettings;
         [SerializeField, Range(0f, 1f)] private float dailyIncidentChance = 0.35f;
         [SerializeField, Range(0f, 1f)] private float dailyCommunityEventChance = 0.28f;
 
@@ -316,16 +318,37 @@ namespace Survivebest.Location
 
             livingWorldInfrastructureEngine?.SimulateInfrastructureDay(day);
 
-            if (UnityEngine.Random.value <= dailyIncidentChance)
+            if (UnityEngine.Random.value <= GetEffectiveDailyIncidentChance())
             {
                 autonomousStoryGenerator?.TryGenerateIncident(50f);
                 PublishTownEvent("TownIncident", "Daily town incident roll triggered", day, SimulationEventSeverity.Warning);
             }
 
-            if (UnityEngine.Random.value <= dailyCommunityEventChance)
+            if (UnityEngine.Random.value <= GetEffectiveDailyCommunityEventChance())
             {
                 TriggerCommunityEvent(day);
             }
+        }
+
+
+        public float GetEffectiveDailyIncidentChance()
+        {
+            if (globalSimulationSettings == null)
+            {
+                return Mathf.Clamp01(dailyIncidentChance);
+            }
+
+            return globalSimulationSettings.ScaleSpawnChance(dailyIncidentChance, globalSimulationSettings.DailyIncidentSpawnRateMultiplier);
+        }
+
+        public float GetEffectiveDailyCommunityEventChance()
+        {
+            if (globalSimulationSettings == null)
+            {
+                return Mathf.Clamp01(dailyCommunityEventChance);
+            }
+
+            return globalSimulationSettings.ScaleSpawnChance(dailyCommunityEventChance, globalSimulationSettings.DailyCommunityEventSpawnRateMultiplier);
         }
 
         private void TriggerCommunityEvent(int day)

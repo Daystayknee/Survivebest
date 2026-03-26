@@ -77,6 +77,7 @@ namespace Survivebest.Needs
         [SerializeField] private BurnoutStage burnoutStage;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
+        [SerializeField] private GlobalSimulationSettings globalSimulationSettings;
         [SerializeField] private SimulationCohesionSystem simulationCohesionSystem;
 
         [Header("Decay")]
@@ -326,13 +327,13 @@ namespace Survivebest.Needs
 
         private void HandleMinutePassed(int hour, int minute)
         {
-            float m = balanceManager != null ? balanceManager.NeedDecayMultiplier : 1f;
+            float m = ResolveNeedDecayMultiplier();
             IncreaseBladder(bladderGainPerMinute * m);
         }
 
         private void HandleHourPassed(int hour)
         {
-            float m = balanceManager != null ? balanceManager.NeedDecayMultiplier : 1f;
+            float m = ResolveNeedDecayMultiplier();
             SetHunger(hunger - hungerLossPerHour * m);
             SetEnergy(energy - energyLossPerHour * m);
             SetHygiene(hygiene - hygieneLossPerHour * m);
@@ -358,6 +359,18 @@ namespace Survivebest.Needs
             {
                 simulationCohesionSystem.EvaluateBadSleepChain(owner, CaptureSnapshot());
             }
+        }
+
+
+        private float ResolveNeedDecayMultiplier()
+        {
+            float balanceMultiplier = balanceManager != null ? balanceManager.NeedDecayMultiplier : 1f;
+            if (globalSimulationSettings == null)
+            {
+                return balanceMultiplier;
+            }
+
+            return globalSimulationSettings.ScaleNeedDecay(1f, balanceMultiplier);
         }
 
         private float stressProxy() => Mathf.Clamp01((100f - mood) / 100f) * 100f;
