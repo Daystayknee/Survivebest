@@ -158,6 +158,16 @@ namespace Survivebest.UI
         public string Detail;
     }
 
+    public enum HouseholdPetTemperament
+    {
+        Gentle,
+        Playful,
+        Protective,
+        Independent,
+        Shy,
+        Energetic
+    }
+
     [Serializable]
     public class HouseholdDraftSnapshot
     {
@@ -184,6 +194,10 @@ namespace Survivebest.UI
         public List<HouseholdDraftMemberSnapshot> Members = new();
         public List<HouseholdDraftPetSnapshot> Pets = new();
         public List<AdoptionIntentSnapshot> AdoptionIntents = new();
+        public string PetCreatorSpecies;
+        public string PetCreatorBreed;
+        public string PetCreatorName;
+        public string PetCreatorTemperament;
     }
 
     public class HouseholdMakerScreenController : MonoBehaviour
@@ -218,6 +232,19 @@ namespace Survivebest.UI
         [SerializeField] private bool prioritizesCareerMobility = true;
         [SerializeField] private bool supportsAdoption = true;
         [SerializeField, Min(1)] private int adoptionPoolSize = 36;
+        [SerializeField] private List<string> petCreatorSpeciesCatalog = new()
+        {
+            "Dog","Cat","Rabbit","Bird","Hamster","Guinea Pig","Ferret","Turtle","Lizard","Mini Pig","Goat","Horse"
+        };
+        [SerializeField] private List<string> petCreatorBreedCatalog = new()
+        {
+            "Mixed Rescue","Labrador","Golden Retriever","Shiba Inu","Corgi","German Shepherd","Maine Coon","Ragdoll","Siamese","Domestic Shorthair",
+            "Holland Lop","Mini Rex","Cockatiel","Parakeet","Syrian Hamster","Abyssinian Guinea Pig","Standard Ferret","Painted Turtle","Leopard Gecko","Miniature Pig"
+        };
+        [SerializeField] private int petCreatorSpeciesIndex;
+        [SerializeField] private int petCreatorBreedIndex;
+        [SerializeField] private string petCreatorName = "Paws";
+        [SerializeField] private HouseholdPetTemperament petCreatorTemperament = HouseholdPetTemperament.Playful;
         [SerializeField] private string generationalGoal = "Build a secure first generation foundation with enough savings to launch the next chapter.";
         [SerializeField] private HouseholdArchetype householdArchetype = HouseholdArchetype.LegacyBuilders;
         [SerializeField] private string commuteStrategy = "Live near transit and jobs to reduce stress and keep routines predictable.";
@@ -382,6 +409,58 @@ namespace Survivebest.UI
         public void SetSupportsAdoption(bool value)
         {
             supportsAdoption = value;
+            RefreshCreatorSummary();
+        }
+
+        public void SetPetCreatorSpecies(int index)
+        {
+            if (petCreatorSpeciesCatalog.Count == 0) return;
+            petCreatorSpeciesIndex = Mathf.Clamp(index, 0, petCreatorSpeciesCatalog.Count - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetPetCreatorBreed(int index)
+        {
+            if (petCreatorBreedCatalog.Count == 0) return;
+            petCreatorBreedIndex = Mathf.Clamp(index, 0, petCreatorBreedCatalog.Count - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void SetPetCreatorName(string value)
+        {
+            petCreatorName = string.IsNullOrWhiteSpace(value) ? petCreatorName : value.Trim();
+            RefreshCreatorSummary();
+        }
+
+        public void SetPetCreatorTemperament(int index)
+        {
+            petCreatorTemperament = (HouseholdPetTemperament)Mathf.Clamp(index, 0, Enum.GetValues(typeof(HouseholdPetTemperament)).Length - 1);
+            RefreshCreatorSummary();
+        }
+
+        public void CreatePetFromCreator()
+        {
+            if (householdManager == null || petCreatorSpeciesCatalog.Count == 0 || petCreatorBreedCatalog.Count == 0)
+            {
+                return;
+            }
+
+            string species = petCreatorSpeciesCatalog[Mathf.Clamp(petCreatorSpeciesIndex, 0, petCreatorSpeciesCatalog.Count - 1)];
+            string breed = petCreatorBreedCatalog[Mathf.Clamp(petCreatorBreedIndex, 0, petCreatorBreedCatalog.Count - 1)];
+            string name = string.IsNullOrWhiteSpace(petCreatorName) ? BuildRandomPetName() : petCreatorName.Trim();
+            string petId = $"pet_creator_{Guid.NewGuid():N}".Substring(0, 20);
+            householdManager.RegisterPet(petId, name, species, breed);
+            includesPets = true;
+
+            adoptionIntents.Add(new AdoptionIntentSnapshot
+            {
+                IntentId = $"intent_petmaker_{Guid.NewGuid():N}".Substring(0, 20),
+                CandidateName = name,
+                Category = "Pet Creator",
+                Detail = $"{species} • {breed} • {petCreatorTemperament}"
+            });
+
+            PublishAdoptionEvent($"Created pet {name} ({species}, {breed}) in Pet Creator.");
             RefreshCreatorSummary();
         }
 
@@ -754,6 +833,10 @@ namespace Survivebest.UI
             }
 
             snapshot.AdoptionIntents = new List<AdoptionIntentSnapshot>(adoptionIntents);
+            snapshot.PetCreatorSpecies = petCreatorSpeciesCatalog.Count > 0 ? petCreatorSpeciesCatalog[Mathf.Clamp(petCreatorSpeciesIndex, 0, petCreatorSpeciesCatalog.Count - 1)] : null;
+            snapshot.PetCreatorBreed = petCreatorBreedCatalog.Count > 0 ? petCreatorBreedCatalog[Mathf.Clamp(petCreatorBreedIndex, 0, petCreatorBreedCatalog.Count - 1)] : null;
+            snapshot.PetCreatorName = petCreatorName;
+            snapshot.PetCreatorTemperament = petCreatorTemperament.ToString();
 
             PlayerPrefs.SetString(BuildHouseholdDraftKey(slotId), JsonUtility.ToJson(snapshot));
             PlayerPrefs.Save();
@@ -832,6 +915,8 @@ namespace Survivebest.UI
             {
                 adoptionIntents.AddRange(snapshot.AdoptionIntents);
             }
+
+            ApplyPetCreatorSnapshot(snapshot);
 
             if (snapshot.Pets != null && householdManager != null)
             {
@@ -935,6 +1020,7 @@ namespace Survivebest.UI
                 $"Children Plan: {(wantsChildrenSoon ? "Trying Soon" : "Not Soon")}\n" +
                 $"Pet Plan: {(includesPets ? "Pet Friendly" : "No Pets Planned")}\n" +
                 $"Adoption: {(supportsAdoption ? "Enabled" : "Disabled")}\n" +
+                $"Pet Creator: {BuildPetCreatorSummary()}\n" +
                 $"Career Mobility: {(prioritizesCareerMobility ? "High Priority" : "Balanced")}\n" +
                 $"Household Archetype: {householdArchetype}\n" +
                 $"Locked Characters: {lockedCharacterIds.Count}\n" +
@@ -960,7 +1046,7 @@ namespace Survivebest.UI
                     $"{familySurname} • {homeDistrict} • {lotType}\n" +
                     $"{originFocus} / {planningPriority} / {householdVibe} / {householdArchetype}\n" +
                     $"{householdStoryPrompt}\n" +
-                    $"Conflict: {conflictApproach} • Budget: {budgetTier} • Next Gen: {(wantsChildrenSoon ? "Soon" : "Later")} • Adoption: {(supportsAdoption ? "Ready" : "Off")}";
+                    $"Conflict: {conflictApproach} • Budget: {budgetTier} • Next Gen: {(wantsChildrenSoon ? "Soon" : "Later")} • Adoption: {(supportsAdoption ? "Ready" : "Off")} • Pet Creator: {BuildPetCreatorSummary()}";
             }
         }
 
@@ -1056,9 +1142,50 @@ namespace Survivebest.UI
             return lines.Count > 0 ? string.Join("\n", lines) : "- No adoption activity";
         }
 
+        private string BuildPetCreatorSummary()
+        {
+            string species = petCreatorSpeciesCatalog.Count > 0 ? petCreatorSpeciesCatalog[Mathf.Clamp(petCreatorSpeciesIndex, 0, petCreatorSpeciesCatalog.Count - 1)] : "Species";
+            string breed = petCreatorBreedCatalog.Count > 0 ? petCreatorBreedCatalog[Mathf.Clamp(petCreatorBreedIndex, 0, petCreatorBreedCatalog.Count - 1)] : "Breed";
+            string name = string.IsNullOrWhiteSpace(petCreatorName) ? "Custom Name" : petCreatorName;
+            return $"{name} ({species}, {breed}, {petCreatorTemperament})";
+        }
+
         private void EnsureAdoptionPoolSeeded()
         {
             adoptionPoolSize = Mathf.Max(1, adoptionPoolSize);
+            petCreatorSpeciesIndex = Mathf.Clamp(petCreatorSpeciesIndex, 0, Mathf.Max(0, petCreatorSpeciesCatalog.Count - 1));
+            petCreatorBreedIndex = Mathf.Clamp(petCreatorBreedIndex, 0, Mathf.Max(0, petCreatorBreedCatalog.Count - 1));
+        }
+
+        private void ApplyPetCreatorSnapshot(HouseholdDraftSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.PetCreatorName))
+            {
+                petCreatorName = snapshot.PetCreatorName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.PetCreatorTemperament) &&
+                Enum.TryParse(snapshot.PetCreatorTemperament, out HouseholdPetTemperament loadedTemperament))
+            {
+                petCreatorTemperament = loadedTemperament;
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.PetCreatorSpecies) && petCreatorSpeciesCatalog != null)
+            {
+                int idx = petCreatorSpeciesCatalog.FindIndex(x => string.Equals(x, snapshot.PetCreatorSpecies, StringComparison.OrdinalIgnoreCase));
+                if (idx >= 0) petCreatorSpeciesIndex = idx;
+            }
+
+            if (!string.IsNullOrWhiteSpace(snapshot.PetCreatorBreed) && petCreatorBreedCatalog != null)
+            {
+                int idx = petCreatorBreedCatalog.FindIndex(x => string.Equals(x, snapshot.PetCreatorBreed, StringComparison.OrdinalIgnoreCase));
+                if (idx >= 0) petCreatorBreedIndex = idx;
+            }
         }
 
         private static LifeStage PickRandomChildLifeStage()
