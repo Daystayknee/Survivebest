@@ -102,7 +102,7 @@ namespace Survivebest.World
                 Fidgeting = Mathf.Clamp01(s * 0.55f + socialPressure * 0.2f + (1f - confidence) * 0.15f),
                 SicknessVisibility = Mathf.Clamp01(ill * 0.8f + (1f - e) * 0.1f),
                 GroomingDrift = Mathf.Clamp01(1f - grooming),
-                UiCueKey = ResolveUiCue(s, ill, e, confidence)
+                UiCueKey = ResolveUiCue(s, ill, e, confidence, grooming)
             };
 
             if (phenotype?.Behavior != null)
@@ -345,7 +345,7 @@ namespace Survivebest.World
 
             if (grooming < 0.25f)
             {
-                return "state_overlay_stress";
+                return "state_overlay_disheveled";
             }
 
             return "state_overlay_none";
@@ -466,7 +466,7 @@ namespace Survivebest.World
             return MouthExpressionSet.Neutral;
         }
 
-        private static string ResolveUiCue(float stress, float illness, float energy, float confidence)
+        private static string ResolveUiCue(float stress, float illness, float energy, float confidence, float grooming)
         {
             if (illness > 0.72f)
             {
@@ -481,6 +481,11 @@ namespace Survivebest.World
             if (stress > 0.7f)
             {
                 return "ui_feedback_stress_soft";
+            }
+
+            if (grooming < 0.24f)
+            {
+                return "ui_feedback_hygiene_prompt";
             }
 
             if (confidence > 0.72f)

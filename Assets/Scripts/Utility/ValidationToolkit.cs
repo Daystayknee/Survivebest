@@ -4,6 +4,7 @@ using UnityEngine;
 using Survivebest.Core;
 using Survivebest.Economy;
 using Survivebest.Location;
+using Survivebest.NPC;
 using Survivebest.Social;
 
 namespace Survivebest.Utility
@@ -284,7 +285,16 @@ namespace Survivebest.Utility
 
     public sealed class SaveParityDebugger
     {
-        public ValidationReport Compare(SaveSlotPayload payload, HouseholdManager householdManager, EconomyInventorySystem economyInventorySystem, LocationManager locationManager = null, WorldClock worldClock = null)
+        public ValidationReport Compare(
+            SaveSlotPayload payload,
+            HouseholdManager householdManager,
+            EconomyInventorySystem economyInventorySystem,
+            LocationManager locationManager = null,
+            WorldClock worldClock = null,
+            HouseholdChoreSystem householdChoreSystem = null,
+            HousingPropertySystem housingPropertySystem = null,
+            RelationshipMemorySystem relationshipMemorySystem = null,
+            NpcScheduleSystem npcScheduleSystem = null)
         {
             ValidationReport report = new ValidationReport { Title = nameof(SaveParityDebugger) };
             if (payload == null)
@@ -328,6 +338,18 @@ namespace Survivebest.Utility
 
             if (householdManager != null && payload.HouseholdCharacters != null)
             {
+                CharacterCore activeRuntime = householdManager.ActiveCharacter;
+                CharacterSnapshot activeSaved = payload.HouseholdCharacters.Find(character => character != null && character.IsActive);
+                string runtimeActiveId = activeRuntime != null ? activeRuntime.CharacterId : string.Empty;
+                string savedActiveId = activeSaved != null ? activeSaved.CharacterId : string.Empty;
+                if (!string.Equals(runtimeActiveId, savedActiveId, StringComparison.Ordinal))
+                {
+                    report.Add(ValidationSeverity.Warning, "save.active_character.mismatch", $"Active character mismatch. runtime={runtimeActiveId}, save={savedActiveId}");
+                }
+            }
+
+            if (householdManager != null && payload.HouseholdCharacters != null)
+            {
                 for (int i = 0; i < payload.HouseholdCharacters.Count; i++)
                 {
                     CharacterSnapshot savedCharacter = payload.HouseholdCharacters[i];
@@ -354,7 +376,38 @@ namespace Survivebest.Utility
                 }
             }
 
+            WorldSystemsSnapshot systems = payload.Systems;
+            if (systems != null)
+            {
+                CompareCount(report, "save.chores.mismatch", householdChoreSystem != null ? householdChoreSystem.DailyChores.Count : 0, systems.HouseholdChores != null ? systems.HouseholdChores.Count : 0, "Household chores");
+                CompareCount(report, "save.relationships.mismatch", relationshipMemorySystem != null ? relationshipMemorySystem.Memories.Count : 0, systems.RelationshipMemories != null ? systems.RelationshipMemories.Count : 0, "Relationship memories");
+                CompareCount(report, "save.npcschedules.mismatch", npcScheduleSystem != null ? npcScheduleSystem.NpcProfiles.Count : 0, systems.Npcs != null ? systems.Npcs.Count : 0, "NPC schedule profiles");
+
+                if (housingPropertySystem != null)
+                {
+                    int runtimeProperties = housingPropertySystem.Properties.Count;
+                    int savedProperties = systems.HousingProperties != null ? systems.HousingProperties.Count : 0;
+                    if (runtimeProperties != savedProperties)
+                    {
+                        report.Add(ValidationSeverity.Warning, "save.housing.properties.mismatch", $"Housing property count mismatch. runtime={runtimeProperties}, save={savedProperties}");
+                    }
+
+                    if (housingPropertySystem.DaysSinceBilling != systems.HousingDaysSinceBilling)
+                    {
+                        report.Add(ValidationSeverity.Warning, "save.housing.billing_days.mismatch", $"Housing billing day mismatch. runtime={housingPropertySystem.DaysSinceBilling}, save={systems.HousingDaysSinceBilling}");
+                    }
+                }
+            }
+
             return report;
+        }
+
+        private static void CompareCount(ValidationReport report, string code, int runtimeCount, int savedCount, string label)
+        {
+            if (runtimeCount != savedCount)
+            {
+                report.Add(ValidationSeverity.Warning, code, $"{label} mismatch. runtime={runtimeCount}, save={savedCount}");
+            }
         }
     }
 }

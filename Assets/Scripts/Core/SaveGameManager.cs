@@ -213,7 +213,16 @@ namespace Survivebest.Core
         public ValidationReport BuildHumanDaySliceParityReport(string worldName = "ParityCheck")
         {
             SaveSlotPayload payload = BuildPayload(worldName);
-            return new SaveParityDebugger().Compare(payload, householdManager, economyInventorySystem, locationManager, worldClock);
+            return new SaveParityDebugger().Compare(
+                payload,
+                householdManager,
+                economyInventorySystem,
+                locationManager,
+                worldClock,
+                householdChoreSystem,
+                housingPropertySystem,
+                relationshipMemorySystem,
+                npcScheduleSystem);
         }
 
         public void DeleteSlot(int slotIndex)

@@ -109,6 +109,7 @@ namespace Survivebest.NPC
         public List<NpcScheduleBlock> Schedule = new();
         public List<NpcMemoryEntry> Memory = new();
         public List<string> RelationshipIds = new();
+        public List<string> BehaviorSignatures = new();
     }
 
     public class NpcScheduleSystem : MonoBehaviour
@@ -117,11 +118,13 @@ namespace Survivebest.NPC
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private JusticeSystem justiceSystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
+        [SerializeField] private HouseholdManager householdManager;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private MemoryKernelSystem memoryKernelSystem;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private List<NpcProfile> npcProfiles = new();
+        [SerializeField] private bool allowOffscreenFlavorEvents;
 
         public IReadOnlyList<NpcProfile> NpcProfiles => npcProfiles;
 
@@ -177,7 +180,8 @@ namespace Survivebest.NPC
                 HomeLotId = homeLotId,
                 WorkLotId = workLotId,
                 CurrentLotId = homeLotId,
-                Schedule = BuildDefaultSchedule(job)
+                Schedule = BuildDefaultSchedule(job),
+                BehaviorSignatures = BuildBehaviorSignatures(npcId, job)
             });
         }
 
@@ -406,6 +410,8 @@ namespace Survivebest.NPC
 
         private void ApplyHourlyNpcSimulation(NpcProfile npc, int hour)
         {
+            ApplyBehaviorSignatureEffects(npc, hour);
+
             switch (npc.CurrentState)
             {
                 case NpcActivityState.Working:
@@ -431,10 +437,157 @@ namespace Survivebest.NPC
 
             if (npc.Stress > 85f)
             {
-                RememberRumor(npc.NpcId, "Town", "RumorSpread", -4, 0.45f, 0.5f);
+                if (IsPlayerRelevantNpcEvent(npc, false, false, false))
+                {
+                    RememberRumor(npc.NpcId, "Town", "RumorSpread", -4, 0.45f, 0.5f);
+                }
             }
 
             TryResolveCrowdedConflict(npc, hour);
+        }
+
+        private static List<string> BuildBehaviorSignatures(string npcId, NpcJobType job)
+        {
+            List<string> signatures = new();
+            if (string.IsNullOrWhiteSpace(npcId))
+            {
+                return signatures;
+            }
+
+            int seed = Mathf.Abs(npcId.GetHashCode());
+            string[] pool =
+            {
+                "always_late",
+                "stress_cleans",
+                "overtexts",
+                "avoids_conflict",
+                "flirts_too_fast",
+                "disappears_after_arguments",
+                "doomscrolls",
+                "hoards_food",
+                "gossips_after_work"
+            };
+
+            signatures.Add(pool[seed % pool.Length]);
+            signatures.Add(pool[(seed / 7 + (int)job) % pool.Length]);
+            if (job is NpcJobType.Shopkeeper or NpcJobType.Teacher)
+            {
+                signatures.Add("gossips_after_work");
+            }
+
+            return signatures;
+        }
+
+        private void ApplyBehaviorSignatureEffects(NpcProfile npc, int hour)
+        {
+            if (npc == null || npc.BehaviorSignatures == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < npc.BehaviorSignatures.Count; i++)
+            {
+                string signature = npc.BehaviorSignatures[i];
+                if (string.IsNullOrWhiteSpace(signature))
+                {
+                    continue;
+                }
+
+                switch (signature)
+                {
+                    case "always_late":
+                        if (npc.CurrentState == NpcActivityState.Working && hour <= 10)
+                        {
+                            npc.Stress = Mathf.Clamp(npc.Stress + 1.5f, 0f, 100f);
+                        }
+                        break;
+                    case "stress_cleans":
+                        if (npc.Stress > 70f)
+                        {
+                            npc.CurrentState = NpcActivityState.Idle;
+                            npc.Stress = Mathf.Clamp(npc.Stress - 1.2f, 0f, 100f);
+                        }
+                        break;
+                    case "overtexts":
+                        if (hour >= 20)
+                        {
+                            if (allowOffscreenFlavorEvents || IsPlayerRelevantNpcEvent(npc, false, false, false))
+                            {
+                                RememberRumor(npc.NpcId, "Town", "Overtext", -1, 0.22f, 0.35f);
+                            }
+                        }
+                        break;
+                    case "avoids_conflict":
+                        if (npc.CurrentState == NpcActivityState.Socializing && npc.Stress > 55f)
+                        {
+                            npc.CurrentState = NpcActivityState.Commuting;
+                        }
+                        break;
+                    case "flirts_too_fast":
+                        if (npc.CurrentState == NpcActivityState.Socializing)
+                        {
+                            npc.Reputation = Mathf.Clamp(npc.Reputation + 1, -100, 100);
+                        }
+                        break;
+                    case "disappears_after_arguments":
+                        if (npc.Memory.Exists(memory => memory != null && memory.Kind == NpcMemoryKind.Grudge && hour - memory.LastSeenHour < 6))
+                        {
+                            npc.CurrentState = NpcActivityState.Idle;
+                            npc.CurrentLotId = npc.HomeLotId;
+                        }
+                        break;
+                    case "doomscrolls":
+                        if (hour >= 23 || hour <= 1)
+                        {
+                            npc.Stress = Mathf.Clamp(npc.Stress + 0.8f, 0f, 100f);
+                        }
+                        break;
+                    case "hoards_food":
+                        if (npc.CurrentState == NpcActivityState.Shopping)
+                        {
+                            npc.Reputation = Mathf.Clamp(npc.Reputation - 1, -100, 100);
+                        }
+                        break;
+                    case "gossips_after_work":
+                        if (hour >= 18 && hour <= 22 && npc.CurrentState == NpcActivityState.Socializing)
+                        {
+                            if (allowOffscreenFlavorEvents || IsPlayerRelevantNpcEvent(npc, false, false, false))
+                            {
+                                RememberRumor(npc.NpcId, "Work", "AfterWorkGossip", -2, 0.35f, 0.5f);
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        private bool IsPlayerRelevantNpcEvent(NpcProfile npc, bool playerWitnessed, bool playerCaused, bool isScheduledEvent)
+        {
+            if (allowOffscreenFlavorEvents || playerWitnessed || playerCaused || isScheduledEvent)
+            {
+                return true;
+            }
+
+            if (npc == null || householdManager == null || householdManager.Members == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < householdManager.Members.Count; i++)
+            {
+                CharacterCore member = householdManager.Members[i];
+                if (member == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(member.CharacterId, npc.NpcId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void TryResolveCrowdedConflict(NpcProfile npc, int hour)
