@@ -6,6 +6,7 @@ using Survivebest.Core;
 using Survivebest.Crime;
 using Survivebest.Location;
 using Survivebest.World;
+using Survivebest.Needs;
 
 namespace Survivebest.Tests.EditMode
 {
@@ -85,5 +86,57 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(root);
         }
+
+        [Test]
+        public void NeedsSystem_UsesGlobalSettingsToScaleHungerDecay()
+        {
+            GameObject root = new GameObject("NeedsGlobalSettingsRoot");
+            NeedsSystem needs = root.AddComponent<NeedsSystem>();
+            GlobalSimulationSettings settings = ScriptableObject.CreateInstance<GlobalSimulationSettings>();
+
+            typeof(NeedsSystem).GetField("hunger", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(needs, 100f);
+            typeof(NeedsSystem).GetField("hungerLossPerHour", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(needs, 10f);
+            typeof(GlobalSimulationSettings).GetField("hungerDecayRateMultiplier", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(settings, 0.5f);
+            typeof(NeedsSystem).GetField("globalSimulationSettings", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(needs, settings);
+
+            MethodInfo handleHourPassed = typeof(NeedsSystem).GetMethod("HandleHourPassed", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(handleHourPassed);
+            handleHourPassed.Invoke(needs, new object[] { 8 });
+
+            Assert.AreEqual(95f, needs.Hunger, 0.001f);
+
+            Object.DestroyImmediate(settings);
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void TownSimulationManager_UsesGlobalSettingsToScaleDailySpawnRates()
+        {
+            GameObject root = new GameObject("TownGlobalSettingsRoot");
+            TownSimulationManager town = root.AddComponent<TownSimulationManager>();
+            GlobalSimulationSettings settings = ScriptableObject.CreateInstance<GlobalSimulationSettings>();
+
+            typeof(TownSimulationManager).GetField("dailyIncidentChance", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(town, 0.8f);
+            typeof(TownSimulationManager).GetField("dailyCommunityEventChance", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(town, 0.4f);
+            typeof(GlobalSimulationSettings).GetField("dailyIncidentSpawnRateMultiplier", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(settings, 0.5f);
+            typeof(GlobalSimulationSettings).GetField("dailyCommunityEventSpawnRateMultiplier", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(settings, 0.25f);
+            typeof(TownSimulationManager).GetField("globalSimulationSettings", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(town, settings);
+
+            Assert.AreEqual(0.4f, town.GetEffectiveDailyIncidentChance(), 0.001f);
+            Assert.AreEqual(0.1f, town.GetEffectiveDailyCommunityEventChance(), 0.001f);
+
+            Object.DestroyImmediate(settings);
+            Object.DestroyImmediate(root);
+        }
+
     }
 }
