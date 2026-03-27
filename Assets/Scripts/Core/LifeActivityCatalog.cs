@@ -64,6 +64,21 @@ namespace Survivebest.Core
         private static readonly string[] PetCareDetails = { "pet routines forcing structure on chaotic days", "guilt when a walk gets delayed", "pet mess changing morning priorities", "comfort from small pet rituals", "vet reminders creating background stress", "buying pet essentials before personal treats", "a pet's mood subtly affecting household tone" };
         private static readonly string[] DigitalOverloadDetails = { "tab overload mirroring mental overload", "notification fatigue flattening focus", "doomscrolling past the point of feeling better", "muting chats to protect attention", "screen-time guilt after midnight", "switching apps instead of resting", "clearing notifications as a fake productivity win" };
         private static readonly string[] HolidayPressureDetails = { "holiday planning fatigue before celebrations even start", "gift budgeting stress versus generosity", "family expectation friction around traditions", "social media holiday comparisons hurting mood", "cleaning rush before guests arrive", "post-holiday emotional crash", "small traditions providing real stability" };
+        private static readonly string[] SurvivalPracticalActivities =
+        {
+            "Gather wood and tinder",
+            "Build and maintain a fire",
+            "Identify safe wild plants and berries",
+            "Construct a debris shelter",
+            "Build a lean-to with weatherproofing",
+            "Track animal signs near water routes",
+            "Set simple snare and fish traps",
+            "Butcher and preserve harvested food",
+            "Craft survival tools and improvised weapons",
+            "Filter and boil drinking water",
+            "Scout nearby terrain and mark safe routes",
+            "Cook a survival meal over open fire"
+        };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -138,6 +153,7 @@ namespace Survivebest.Core
         public static string PickPetCareDetail() => Pick(PetCareDetails, "pet care detail");
         public static string PickDigitalOverloadDetail() => Pick(DigitalOverloadDetails, "digital overload detail");
         public static string PickHolidayPressureDetail() => Pick(HolidayPressureDetails, "holiday pressure detail");
+        public static string PickSurvivalPracticalActivity() => Pick(SurvivalPracticalActivities, "basic survival task");
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -157,12 +173,13 @@ namespace Survivebest.Core
                 + PainDetails.Length + WorkDetails.Length + SchoolLearningDetails.Length
                 + PhoneTextingDetails.Length + FriendshipDetails.Length + RomanceDetails.Length
                 + FamilyDetails.Length + CommuteTransitDetails.Length + UtilityBillDetails.Length
-                + PetCareDetails.Length + DigitalOverloadDetails.Length + HolidayPressureDetails.Length;
+                + PetCareDetails.Length + DigitalOverloadDetails.Length + HolidayPressureDetails.Length
+                + SurvivalPracticalActivities.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 59 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 60 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
