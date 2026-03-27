@@ -18,6 +18,12 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(skills.SkillLevels.ContainsKey("Office administration"));
             Assert.IsTrue(skills.SkillLevels.ContainsKey("Electrical repair"));
             Assert.IsTrue(skills.SkillLevels.ContainsKey("Logistics"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Firecraft"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Shelter Building"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Water Purification"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("First Aid & Medicine"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Fitness"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Construction"));
 
             Object.DestroyImmediate(go);
         }
