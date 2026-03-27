@@ -314,6 +314,10 @@ namespace Survivebest.Core
             if (category == WardrobeCategory.Tops)
             {
                 AddRange(options, GetUpperBodyTopNames());
+                if (lifeStage == LifeStage.Teen)
+                {
+                    AddRange(options, TeenClothingCatalog.GetTeenTopNames());
+                }
             }
             AddRange(options, ResolveStageCategory(lifeStage, category));
             AddRange(options, ResolvePresentationCategory(presentation, category));
