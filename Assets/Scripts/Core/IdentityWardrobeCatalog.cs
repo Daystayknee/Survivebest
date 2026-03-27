@@ -311,6 +311,23 @@ namespace Survivebest.Core
         {
             List<string> options = new();
             AddRange(options, GetUniversalCategory(category));
+
+            if (lifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler)
+            {
+                switch (category)
+                {
+                    case WardrobeCategory.Tops:
+                        AddRange(options, InfantClothingCatalog.GetNamesForCategory(EarlyLifeClothingCategory.Tops));
+                        break;
+                    case WardrobeCategory.Bottoms:
+                        AddRange(options, InfantClothingCatalog.GetNamesForCategory(EarlyLifeClothingCategory.Bottoms));
+                        break;
+                    case WardrobeCategory.FullBody:
+                        AddRange(options, InfantClothingCatalog.GetNamesForCategory(EarlyLifeClothingCategory.FullBody));
+                        break;
+                }
+            }
+
             if (category == WardrobeCategory.Tops)
             {
                 AddRange(options, GetUpperBodyTopNames());
