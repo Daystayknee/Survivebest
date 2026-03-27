@@ -59,6 +59,11 @@ namespace Survivebest.Core
         private static readonly string[] FriendshipDetails = { "some friends being for fun and others for comfort", "not texting first because of pride", "feeling closer through errands than speeches", "friends noticing routines", "drifting apart through timing instead of drama", "easy friendships versus high-maintenance friendships", "someone becoming safe to be ugly around" };
         private static readonly string[] RomanceDetails = { "affection shown in tiny practical acts", "being extra sensitive to tone from someone you like", "getting dressed differently for them", "resentment from unequal labor", "feeling close through shared boring routines", "rejection shifting body confidence", "late-night honesty opening emotional doors" };
         private static readonly string[] FamilyDetails = { "family roles staying sticky as people change", "one person always fixing things", "one person always forgetting things", "guilt around not helping enough", "family homes holding emotional gravity", "feeling like a child again around certain relatives", "affection shown through food, reminders, nagging, or worry" };
+        private static readonly string[] CommuteTransitDetails = { "missing a light and feeling the whole schedule slip", "scanning traffic apps before deciding when to leave", "train platform mood shifting by crowd density", "commute podcasts becoming emotional anchors", "arriving early but still feeling rushed", "a delayed connection derailing evening plans", "the ride home becoming decompression time" };
+        private static readonly string[] UtilityBillDetails = { "checking thermostat against next month's bill anxiety", "avoiding long showers to protect utilities budget", "peak-hour electricity habits shaping routines", "a surprise bill resetting the week's mood", "negotiating lights and laundry timing at home", "running appliances at odd hours to save money", "bill-paid relief making the house feel lighter" };
+        private static readonly string[] PetCareDetails = { "pet routines forcing structure on chaotic days", "guilt when a walk gets delayed", "pet mess changing morning priorities", "comfort from small pet rituals", "vet reminders creating background stress", "buying pet essentials before personal treats", "a pet's mood subtly affecting household tone" };
+        private static readonly string[] DigitalOverloadDetails = { "tab overload mirroring mental overload", "notification fatigue flattening focus", "doomscrolling past the point of feeling better", "muting chats to protect attention", "screen-time guilt after midnight", "switching apps instead of resting", "clearing notifications as a fake productivity win" };
+        private static readonly string[] HolidayPressureDetails = { "holiday planning fatigue before celebrations even start", "gift budgeting stress versus generosity", "family expectation friction around traditions", "social media holiday comparisons hurting mood", "cleaning rush before guests arrive", "post-holiday emotional crash", "small traditions providing real stability" };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -128,6 +133,11 @@ namespace Survivebest.Core
         public static string PickFriendshipDetail() => Pick(FriendshipDetails, "friendship detail");
         public static string PickRomanceDetail() => Pick(RomanceDetails, "romance detail");
         public static string PickFamilyDetail() => Pick(FamilyDetails, "family detail");
+        public static string PickCommuteTransitDetail() => Pick(CommuteTransitDetails, "commute/transit detail");
+        public static string PickUtilityBillDetail() => Pick(UtilityBillDetails, "utility/bill detail");
+        public static string PickPetCareDetail() => Pick(PetCareDetails, "pet care detail");
+        public static string PickDigitalOverloadDetail() => Pick(DigitalOverloadDetails, "digital overload detail");
+        public static string PickHolidayPressureDetail() => Pick(HolidayPressureDetails, "holiday pressure detail");
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -146,12 +156,13 @@ namespace Survivebest.Core
                 + KitchenDetails.Length + CleaningDetails.Length + IllnessDetails.Length
                 + PainDetails.Length + WorkDetails.Length + SchoolLearningDetails.Length
                 + PhoneTextingDetails.Length + FriendshipDetails.Length + RomanceDetails.Length
-                + FamilyDetails.Length;
+                + FamilyDetails.Length + CommuteTransitDetails.Length + UtilityBillDetails.Length
+                + PetCareDetails.Length + DigitalOverloadDetails.Length + HolidayPressureDetails.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 54 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 59 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)

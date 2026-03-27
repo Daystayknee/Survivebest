@@ -53,6 +53,11 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFriendshipDetail()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickRomanceDetail()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFamilyDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickCommuteTransitDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickUtilityBillDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickPetCareDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickDigitalOverloadDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHolidayPressureDetail()));
         }
 
         [Test]
