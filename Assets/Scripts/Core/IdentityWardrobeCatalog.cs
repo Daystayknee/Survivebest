@@ -312,6 +312,11 @@ namespace Survivebest.Core
             List<string> options = new();
             AddRange(options, GetUniversalCategory(category));
 
+            if (category == WardrobeCategory.Shoes)
+            {
+                AddRange(options, ShoeCatalog.GetShoesForStage(lifeStage, true));
+            }
+
             if (lifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler)
             {
                 switch (category)
