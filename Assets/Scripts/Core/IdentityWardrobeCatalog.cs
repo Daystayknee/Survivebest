@@ -33,6 +33,64 @@ namespace Survivebest.Core
         public LifeStage MaxLifeStage;
     }
 
+    public enum SleeveLengthType
+    {
+        None,
+        Strap,
+        Short,
+        Elbow,
+        Long
+    }
+
+    public enum GarmentFitType
+    {
+        Tight,
+        Regular,
+        Loose,
+        Oversized
+    }
+
+    public enum LayerSlotType
+    {
+        Base,
+        Mid,
+        Outer
+    }
+
+    public enum GenderExpressionType
+    {
+        Masculine,
+        Feminine,
+        Androgynous,
+        Adaptive
+    }
+
+    [Serializable]
+    public sealed class TopClothingProfile
+    {
+        public string Id;
+        public string Name;
+        public SleeveLengthType SleeveLength;
+        public GarmentFitType Fit;
+        public LayerSlotType LayerSlot;
+        public GenderExpressionType GenderExpression;
+        public float TeenPreferenceWeight;
+        public float AdultPreferenceWeight;
+        public float MaturePreferenceWeight;
+        public float ElderPreferenceWeight;
+        public float Warmth;
+        public float Breathability;
+        public float Mobility;
+        public float SocialImpression;
+        public float Professionalism;
+        public float Comfort;
+        public float Durability;
+        public string FabricType;
+        public string CulturalTag;
+        public string OccasionTag;
+        public string PersonalityTag;
+    }
+
     public static class IdentityWardrobeCatalog
     {
         private static readonly string[] UniversalTops =
@@ -197,15 +255,107 @@ namespace Survivebest.Core
             CreateProfile("elder_sturdy", "Elder Sturdy", "Heavier but functional elder frame.", 0.73f, 0.53f, 0.2f, LifeStage.Elder, LifeStage.Elder)
         };
 
+        private static readonly List<TopClothingProfile> UpperBodyTopProfiles = BuildUpperBodyTopProfiles();
+
         public static IReadOnlyList<BodyCompositionProfile> GetBodyCompositionProfiles()
         {
             return BodyProfiles;
+        }
+
+        public static IReadOnlyList<TopClothingProfile> GetUpperBodyTopProfiles()
+        {
+            return UpperBodyTopProfiles;
+        }
+
+        public static IReadOnlyList<string> GetUpperBodyTopNames()
+        {
+            List<string> names = new(UpperBodyTopProfiles.Count);
+            for (int i = 0; i < UpperBodyTopProfiles.Count; i++)
+            {
+                TopClothingProfile profile = UpperBodyTopProfiles[i];
+                if (profile != null && !string.IsNullOrWhiteSpace(profile.Name))
+                {
+                    names.Add(profile.Name);
+                }
+            }
+
+            return names;
+        }
+
+        public static TopClothingProfile FindUpperBodyTopProfile(string topName)
+        {
+            if (string.IsNullOrWhiteSpace(topName))
+            {
+                return null;
+            }
+
+            for (int i = 0; i < UpperBodyTopProfiles.Count; i++)
+            {
+                TopClothingProfile profile = UpperBodyTopProfiles[i];
+                if (profile == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(profile.Name, topName.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(profile.Id, topName.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return profile;
+                }
+            }
+
+            return null;
         }
 
         public static IReadOnlyList<string> GetWardrobeOptions(LifeStage lifeStage, StylePresentation presentation, WardrobeCategory category)
         {
             List<string> options = new();
             AddRange(options, GetUniversalCategory(category));
+
+            if (category == WardrobeCategory.Shoes)
+            {
+                AddRange(options, ShoeCatalog.GetShoesForStage(lifeStage, true));
+            }
+
+            if (lifeStage is LifeStage.Baby or LifeStage.Infant or LifeStage.Toddler)
+            {
+                switch (category)
+                {
+                    case WardrobeCategory.Tops:
+                        AddRange(options, InfantClothingCatalog.GetNamesForCategory(EarlyLifeClothingCategory.Tops));
+                        break;
+                    case WardrobeCategory.Bottoms:
+                        AddRange(options, InfantClothingCatalog.GetNamesForCategory(EarlyLifeClothingCategory.Bottoms));
+                        break;
+                    case WardrobeCategory.FullBody:
+                        AddRange(options, InfantClothingCatalog.GetNamesForCategory(EarlyLifeClothingCategory.FullBody));
+                        break;
+                }
+            }
+            else if (lifeStage is LifeStage.YoungAdult or LifeStage.Adult or LifeStage.OlderAdult or LifeStage.Elder)
+            {
+                switch (category)
+                {
+                    case WardrobeCategory.Tops:
+                    case WardrobeCategory.Bottoms:
+                    case WardrobeCategory.FullBody:
+                        AddRange(options, AdultWardrobeCatalog.GetNamesForCategory(category));
+                        break;
+                }
+            }
+
+            if (category == WardrobeCategory.Tops)
+            {
+                AddRange(options, GetUpperBodyTopNames());
+                if (lifeStage == LifeStage.Teen)
+                {
+                    AddRange(options, TeenClothingCatalog.GetTeenTopNames());
+                }
+                else if (lifeStage is LifeStage.Toddler or LifeStage.Child or LifeStage.Preteen)
+                {
+                    AddRange(options, KidsPreteenClothingCatalog.GetKidsPreteenTopNames());
+                }
+            }
             AddRange(options, ResolveStageCategory(lifeStage, category));
             AddRange(options, ResolvePresentationCategory(presentation, category));
             AddRange(options, ResolveGeneratedCapsuleCategory(lifeStage, presentation, category));
@@ -362,6 +512,121 @@ namespace Survivebest.Core
             }
 
             return options;
+        }
+
+        private static List<TopClothingProfile> BuildUpperBodyTopProfiles()
+        {
+            List<TopClothingProfile> profiles = new(50)
+            {
+                CreateTop("strapless_top", "Strapless top", SleeveLengthType.None, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Feminine, "synthetic", "casual", "expressive_style", 0.22f, 0.95f, 0.94f, 0.75f, 0.2f, 0.72f, 0.32f, 0.9f, 1f, 0.9f, 0.6f),
+                CreateTop("tube_top", "Tube top", SleeveLengthType.None, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Feminine, "cotton", "casual", "bold_style", 0.24f, 0.92f, 0.93f, 0.73f, 0.2f, 0.71f, 0.35f, 0.88f, 1f, 0.9f, 0.55f),
+                CreateTop("bandeau", "Bandeau", SleeveLengthType.None, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Adaptive, "synthetic", "date", "confident_style", 0.2f, 0.9f, 0.93f, 0.7f, 0.18f, 0.7f, 0.34f, 0.86f, 1f, 0.85f, 0.52f),
+                CreateTop("spaghetti_strap_tank", "Spaghetti strap tank", SleeveLengthType.Strap, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Feminine, "cotton", "casual", "friendly_style", 0.28f, 0.82f, 0.9f, 0.84f, 0.28f, 0.62f, 0.58f, 0.75f, 0.98f, 0.88f, 0.68f),
+                CreateTop("double_strap_tank", "Double-strap tank", SleeveLengthType.Strap, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "active_style", 0.3f, 0.83f, 0.88f, 0.86f, 0.3f, 0.6f, 0.62f, 0.76f, 0.96f, 0.9f, 0.7f),
+                CreateTop("halter_top", "Halter top", SleeveLengthType.Strap, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Feminine, "silk", "date", "confident_style", 0.22f, 0.86f, 0.88f, 0.82f, 0.26f, 0.76f, 0.42f, 0.78f, 0.98f, 0.86f, 0.62f),
+                CreateTop("cross_back_strap_top", "Cross-back strap top", SleeveLengthType.Strap, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Androgynous, "synthetic", "gym", "athletic_style", 0.26f, 0.84f, 0.9f, 0.91f, 0.22f, 0.58f, 0.66f, 0.8f, 0.97f, 0.85f, 0.73f),
+                CreateTop("asymmetrical_one_strap_top", "Asymmetrical one-strap top", SleeveLengthType.Strap, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Adaptive, "synthetic", "party", "creative_style", 0.2f, 0.86f, 0.87f, 0.8f, 0.2f, 0.82f, 0.38f, 0.79f, 0.95f, 0.84f, 0.6f),
+                CreateTop("tank_top", "Tank top", SleeveLengthType.None, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "easygoing_style", 0.34f, 0.8f, 0.9f, 0.92f, 0.26f, 0.6f, 0.64f, 0.7f, 0.95f, 0.88f, 0.72f),
+                CreateTop("crop_top", "Crop top", SleeveLengthType.Short, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Feminine, "cotton", "casual", "trendy_style", 0.22f, 0.78f, 0.88f, 0.86f, 0.18f, 0.8f, 0.46f, 0.74f, 0.94f, 0.82f, 0.6f),
+                CreateTop("fitted_tshirt", "Fitted t-shirt", SleeveLengthType.Short, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "organized_style", 0.35f, 0.66f, 0.85f, 0.83f, 0.38f, 0.66f, 0.68f, 0.68f, 0.93f, 0.89f, 0.74f),
+                CreateTop("oversized_tshirt", "Oversized t-shirt", SleeveLengthType.Short, GarmentFitType.Oversized, LayerSlotType.Base, GenderExpressionType.Androgynous, "cotton", "casual", "relaxed_style", 0.4f, 0.64f, 0.86f, 0.78f, 0.24f, 0.58f, 0.82f, 0.7f, 0.94f, 0.87f, 0.69f),
+                CreateTop("graphic_tee", "Graphic tee", SleeveLengthType.Short, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "expressive_style", 0.38f, 0.65f, 0.84f, 0.81f, 0.25f, 0.74f, 0.76f, 0.69f, 0.94f, 0.86f, 0.7f),
+                CreateTop("polo_shirt", "Polo shirt", SleeveLengthType.Short, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Masculine, "cotton", "office", "preppy_style", 0.34f, 0.68f, 0.82f, 0.8f, 0.62f, 0.68f, 0.72f, 0.72f, 0.9f, 0.9f, 0.78f),
+                CreateTop("henley_short_sleeve", "Henley (short sleeve)", SleeveLengthType.Short, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "grounded_style", 0.32f, 0.7f, 0.82f, 0.79f, 0.42f, 0.64f, 0.74f, 0.74f, 0.9f, 0.9f, 0.8f),
+                CreateTop("sleeveless_blouse", "Sleeveless blouse", SleeveLengthType.None, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Feminine, "silk", "office", "polished_style", 0.3f, 0.72f, 0.86f, 0.76f, 0.66f, 0.8f, 0.58f, 0.75f, 0.92f, 0.88f, 0.68f),
+                CreateTop("button_up_short", "Button-up shirt (short sleeve)", SleeveLengthType.Short, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "office", "professional_style", 0.32f, 0.73f, 0.82f, 0.77f, 0.72f, 0.7f, 0.7f, 0.78f, 0.89f, 0.91f, 0.82f),
+                CreateTop("button_up_long", "Button-up shirt (long sleeve)", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "office", "professional_style", 0.34f, 0.77f, 0.76f, 0.74f, 0.78f, 0.72f, 0.68f, 0.82f, 0.84f, 0.92f, 0.84f),
+                CreateTop("blouse_flowy", "Blouse (flowy)", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Base, GenderExpressionType.Feminine, "silk", "date", "romantic_style", 0.3f, 0.73f, 0.82f, 0.74f, 0.68f, 0.78f, 0.78f, 0.76f, 0.9f, 0.88f, 0.72f),
+                CreateTop("tunic_top", "Tunic top", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "comfort_style", 0.38f, 0.78f, 0.79f, 0.75f, 0.54f, 0.64f, 0.86f, 0.82f, 0.86f, 0.9f, 0.79f),
+                CreateTop("peasant_top", "Peasant top", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Base, GenderExpressionType.Feminine, "cotton", "festival", "boho_style", 0.34f, 0.75f, 0.81f, 0.73f, 0.46f, 0.76f, 0.82f, 0.8f, 0.86f, 0.88f, 0.76f),
+                CreateTop("wrap_top", "Wrap top", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Feminine, "cotton", "office", "polished_style", 0.3f, 0.76f, 0.8f, 0.77f, 0.74f, 0.77f, 0.78f, 0.82f, 0.86f, 0.89f, 0.79f),
+                CreateTop("knit_top", "Knit top", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Mid, GenderExpressionType.Adaptive, "wool", "casual", "cozy_style", 0.4f, 0.82f, 0.64f, 0.71f, 0.56f, 0.66f, 0.88f, 0.85f, 0.72f, 0.92f, 0.84f),
+                CreateTop("lightweight_sweater", "Lightweight sweater", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Mid, GenderExpressionType.Adaptive, "wool", "office", "calm_style", 0.42f, 0.83f, 0.63f, 0.69f, 0.68f, 0.67f, 0.9f, 0.86f, 0.7f, 0.91f, 0.83f),
+                CreateTop("long_sleeve_tshirt", "Long sleeve t-shirt", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "casual", "practical_style", 0.38f, 0.74f, 0.8f, 0.79f, 0.46f, 0.62f, 0.82f, 0.84f, 0.82f, 0.9f, 0.81f),
+                CreateTop("thermal_shirt", "Thermal shirt", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "synthetic", "cold_weather", "survival_style", 0.46f, 0.88f, 0.56f, 0.78f, 0.4f, 0.52f, 0.78f, 0.91f, 0.64f, 0.9f, 0.87f),
+                CreateTop("turtleneck", "Turtleneck", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Mid, GenderExpressionType.Adaptive, "wool", "office", "classic_style", 0.42f, 0.86f, 0.58f, 0.66f, 0.78f, 0.74f, 0.82f, 0.9f, 0.66f, 0.92f, 0.85f),
+                CreateTop("mock_neck_top", "Mock neck top", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Mid, GenderExpressionType.Androgynous, "synthetic", "casual", "minimal_style", 0.4f, 0.82f, 0.62f, 0.72f, 0.68f, 0.7f, 0.84f, 0.86f, 0.7f, 0.9f, 0.82f),
+                CreateTop("henley_long_sleeve", "Henley (long sleeve)", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Masculine, "cotton", "casual", "rugged_style", 0.4f, 0.8f, 0.7f, 0.8f, 0.58f, 0.64f, 0.82f, 0.87f, 0.76f, 0.9f, 0.83f),
+                CreateTop("rugby_shirt", "Rugby shirt", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Mid, GenderExpressionType.Masculine, "cotton", "casual", "team_style", 0.44f, 0.82f, 0.68f, 0.78f, 0.62f, 0.66f, 0.76f, 0.9f, 0.72f, 0.91f, 0.88f),
+                CreateTop("flannel_shirt", "Flannel shirt", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Mid, GenderExpressionType.Adaptive, "cotton", "casual", "outdoor_style", 0.45f, 0.84f, 0.62f, 0.75f, 0.58f, 0.64f, 0.9f, 0.92f, 0.68f, 0.92f, 0.9f),
+                CreateTop("denim_shirt", "Denim shirt", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Mid, GenderExpressionType.Adaptive, "cotton", "casual", "heritage_style", 0.43f, 0.8f, 0.6f, 0.72f, 0.64f, 0.68f, 0.74f, 0.9f, 0.64f, 0.9f, 0.89f),
+                CreateTop("hoodie", "Hoodie", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Outer, GenderExpressionType.Adaptive, "cotton", "casual", "comfort_style", 0.5f, 0.9f, 0.52f, 0.76f, 0.38f, 0.62f, 0.95f, 0.91f, 0.6f, 0.94f, 0.9f),
+                CreateTop("zip_up_hoodie", "Zip-up hoodie", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Outer, GenderExpressionType.Adaptive, "cotton", "casual", "practical_style", 0.5f, 0.88f, 0.54f, 0.78f, 0.42f, 0.62f, 0.92f, 0.9f, 0.62f, 0.94f, 0.88f),
+                CreateTop("crewneck_sweatshirt", "Crewneck sweatshirt", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "cotton", "casual", "calm_style", 0.5f, 0.89f, 0.5f, 0.74f, 0.46f, 0.6f, 0.93f, 0.9f, 0.58f, 0.93f, 0.9f),
+                CreateTop("pullover_sweater", "Pullover sweater", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "wool", "office", "classic_style", 0.46f, 0.9f, 0.46f, 0.68f, 0.72f, 0.7f, 0.9f, 0.89f, 0.52f, 0.93f, 0.86f),
+                CreateTop("cardigan", "Cardigan", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Outer, GenderExpressionType.Adaptive, "wool", "casual", "easywear_style", 0.42f, 0.85f, 0.58f, 0.7f, 0.68f, 0.68f, 0.96f, 0.85f, 0.62f, 0.9f, 0.82f),
+                CreateTop("shawl_collar_sweater", "Shawl collar sweater", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "wool", "date", "refined_style", 0.42f, 0.92f, 0.44f, 0.63f, 0.76f, 0.76f, 0.9f, 0.9f, 0.48f, 0.92f, 0.86f),
+                CreateTop("fleece_top", "Fleece top", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "synthetic", "cold_weather", "outdoor_style", 0.5f, 0.94f, 0.42f, 0.7f, 0.4f, 0.58f, 0.92f, 0.93f, 0.44f, 0.91f, 0.9f),
+                CreateTop("insulated_base_layer", "Insulated base layer", SleeveLengthType.Long, GarmentFitType.Tight, LayerSlotType.Base, GenderExpressionType.Adaptive, "synthetic", "cold_weather", "survival_style", 0.5f, 0.96f, 0.38f, 0.86f, 0.34f, 0.54f, 0.8f, 0.94f, 0.38f, 0.9f, 0.91f),
+                CreateTop("blazer", "Blazer", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "wool", "office", "career_style", 0.4f, 0.78f, 0.52f, 0.62f, 0.96f, 0.84f, 0.62f, 0.92f, 0.58f, 0.92f, 0.83f),
+                CreateTop("suit_jacket", "Suit jacket", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "wool", "office", "career_style", 0.38f, 0.8f, 0.5f, 0.58f, 1f, 0.86f, 0.56f, 0.93f, 0.54f, 0.93f, 0.86f),
+                CreateTop("leather_jacket", "Leather jacket", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Androgynous, "synthetic", "night_out", "rebellious_style", 0.34f, 0.88f, 0.48f, 0.62f, 0.52f, 0.9f, 0.58f, 0.88f, 0.5f, 0.86f, 0.92f),
+                CreateTop("bomber_jacket", "Bomber jacket", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Androgynous, "synthetic", "casual", "street_style", 0.36f, 0.86f, 0.52f, 0.68f, 0.56f, 0.84f, 0.68f, 0.88f, 0.52f, 0.88f, 0.9f),
+                CreateTop("trench_coat", "Trench coat (upper-body category for layering systems)", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "cotton", "formal", "refined_style", 0.34f, 0.92f, 0.44f, 0.58f, 0.88f, 0.86f, 0.66f, 0.9f, 0.46f, 0.9f, 0.88f),
+                CreateTop("peacoat", "Peacoat", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "wool", "formal", "classic_style", 0.32f, 0.95f, 0.36f, 0.52f, 0.92f, 0.84f, 0.62f, 0.92f, 0.4f, 0.92f, 0.9f),
+                CreateTop("parka", "Parka", SleeveLengthType.Long, GarmentFitType.Loose, LayerSlotType.Outer, GenderExpressionType.Adaptive, "synthetic", "cold_weather", "survival_style", 0.42f, 1f, 0.3f, 0.52f, 0.58f, 0.58f, 0.74f, 0.95f, 0.34f, 0.92f, 0.94f),
+                CreateTop("windbreaker", "Windbreaker", SleeveLengthType.Long, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "synthetic", "sport", "active_style", 0.42f, 0.82f, 0.78f, 0.82f, 0.48f, 0.62f, 0.64f, 0.9f, 0.72f, 0.9f, 0.87f),
+                CreateTop("uniform_shirt", "Uniform shirt (work, school, medical, etc.)", SleeveLengthType.Short, GarmentFitType.Regular, LayerSlotType.Base, GenderExpressionType.Adaptive, "cotton", "work", "duty_style", 0.34f, 0.72f, 0.82f, 0.78f, 0.98f, 0.72f, 0.64f, 0.86f, 0.84f, 0.91f, 0.88f),
+                CreateTop("tactical_survival_vest", "Tactical / survival vest", SleeveLengthType.None, GarmentFitType.Regular, LayerSlotType.Outer, GenderExpressionType.Adaptive, "synthetic", "survival", "prepared_style", 0.38f, 0.84f, 0.72f, 0.82f, 0.62f, 0.7f, 0.7f, 0.94f, 0.78f, 0.92f, 0.95f)
+            };
+
+            return profiles;
+        }
+
+        private static TopClothingProfile CreateTop(
+            string id,
+            string name,
+            SleeveLengthType sleeve,
+            GarmentFitType fit,
+            LayerSlotType layer,
+            GenderExpressionType expression,
+            string fabricType,
+            string occasionTag,
+            string personalityTag,
+            float warmth,
+            float breathability,
+            float mobility,
+            float socialImpression,
+            float professionalism,
+            float comfort,
+            float durability,
+            float teenWeight,
+            float adultWeight,
+            float matureWeight,
+            float elderWeight,
+            string culturalTag = "usa_baseline")
+        {
+            return new TopClothingProfile
+            {
+                Id = id,
+                Name = name,
+                SleeveLength = sleeve,
+                Fit = fit,
+                LayerSlot = layer,
+                GenderExpression = expression,
+                TeenPreferenceWeight = Clamp01(teenWeight),
+                AdultPreferenceWeight = Clamp01(adultWeight),
+                MaturePreferenceWeight = Clamp01(matureWeight),
+                ElderPreferenceWeight = Clamp01(elderWeight),
+                Warmth = Clamp01(warmth),
+                Breathability = Clamp01(breathability),
+                Mobility = Clamp01(mobility),
+                SocialImpression = Clamp01(socialImpression),
+                Professionalism = Clamp01(professionalism),
+                Comfort = Clamp01(comfort),
+                Durability = Clamp01(durability),
+                FabricType = string.IsNullOrWhiteSpace(fabricType) ? "cotton" : fabricType.Trim(),
+                CulturalTag = string.IsNullOrWhiteSpace(culturalTag) ? "usa_baseline" : culturalTag.Trim(),
+                OccasionTag = string.IsNullOrWhiteSpace(occasionTag) ? "casual" : occasionTag.Trim(),
+                PersonalityTag = string.IsNullOrWhiteSpace(personalityTag) ? "balanced_style" : personalityTag.Trim()
+            };
+        }
+
+        private static float Clamp01(float value)
+        {
+            if (value < 0f) return 0f;
+            if (value > 1f) return 1f;
+            return value;
         }
 
         private static void AddRange(List<string> target, IReadOnlyList<string> values)
