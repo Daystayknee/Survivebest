@@ -22,6 +22,25 @@ using Survivebest.Economy;
 
 namespace Survivebest.UI
 {
+    public enum ActionPossibilityLane
+    {
+        Safe,
+        Efficient,
+        Expensive,
+        Risky,
+        Social,
+        Illegal
+    }
+
+    [Serializable]
+    public class ActionPossibilityOption
+    {
+        public ActionPossibilityLane Lane;
+        public string Label;
+        public string Summary;
+        public float MagnitudeMultiplier = 1f;
+    }
+
     [Serializable]
     public class AnimalSightingEncounter
     {
@@ -66,6 +85,8 @@ namespace Survivebest.UI
         [SerializeField] private ContractBoardSystem contractBoardSystem;
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private GameplayLifeLoopOrchestrator gameplayLifeLoopOrchestrator;
+        [SerializeField] private bool allowIllegalOptions = true;
+        [SerializeField] private ActionPossibilityLane selectedPossibilityLane = ActionPossibilityLane.Safe;
 
         [Header("Popup UI")]
         [SerializeField] private GameObject popupRoot;
@@ -148,6 +169,20 @@ namespace Survivebest.UI
 
         public event Action<string, string, float> OnActionResolved;
         private readonly StringBuilder builder = new();
+        private static readonly HashSet<string> IllegalEligibleActions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "buy",
+            "sell",
+            "trade",
+            "forage",
+            "fish",
+            "go_to_work",
+            "manage_budget",
+            "review_local_pulse",
+            "npc_chat",
+            "npc_text",
+            "web_chat"
+        };
 
         private void OnEnable()
         {
@@ -171,9 +206,37 @@ namespace Survivebest.UI
         {
             currentActionKey = actionKey;
             currentResolvedActionKey = NormalizeActionKey(actionKey);
+            selectedPossibilityLane = ActionPossibilityLane.Safe;
             currentSighting = currentResolvedActionKey == "animal_sight" ? PickSighting() : null;
             SetPopupVisible(true);
             RefreshPopupContent(currentResolvedActionKey);
+        }
+
+        public void SetPossibilityLane(ActionPossibilityLane lane)
+        {
+            selectedPossibilityLane = lane;
+            if (popupRoot != null && popupRoot.activeSelf)
+            {
+                RefreshPopupContent(currentResolvedActionKey);
+            }
+        }
+
+        public void CyclePossibilityLane()
+        {
+            List<ActionPossibilityOption> options = BuildPossibilityOptions(currentResolvedActionKey);
+            if (options.Count == 0)
+            {
+                selectedPossibilityLane = ActionPossibilityLane.Safe;
+                return;
+            }
+
+            int currentIndex = options.FindIndex(option => option.Lane == selectedPossibilityLane);
+            currentIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % options.Count;
+            selectedPossibilityLane = options[currentIndex].Lane;
+            if (popupRoot != null && popupRoot.activeSelf)
+            {
+                RefreshPopupContent(currentResolvedActionKey);
+            }
         }
 
         public void ConfirmAction()
@@ -189,6 +252,7 @@ namespace Survivebest.UI
             float magnitude = 1f;
             if (TryExecuteCommandAction(actionKey, active, out reason, out magnitude))
             {
+                ApplyPossibilityLaneOutcome(actionKey, ref reason, ref magnitude);
                 PublishActionEvent(reason, magnitude);
                 OnActionResolved?.Invoke(!string.IsNullOrWhiteSpace(currentActionKey) ? currentActionKey : actionKey, reason, magnitude);
                 ClearCurrentActionSelection();
@@ -356,6 +420,7 @@ namespace Survivebest.UI
                     break;
             }
 
+            ApplyPossibilityLaneOutcome(actionKey, ref reason, ref magnitude);
             PublishActionEvent(reason, magnitude);
             OnActionResolved?.Invoke(!string.IsNullOrWhiteSpace(currentActionKey) ? currentActionKey : actionKey, reason, magnitude);
             ClearCurrentActionSelection();
@@ -927,20 +992,47 @@ Finder payout: ${currentSighting.Payment}.";
         private string BuildVisionAwareOptions(string actionKey)
         {
             string preview = BuildOptionsPreview(actionKey);
+            List<ActionPossibilityOption> possibilityOptions = BuildPossibilityOptions(actionKey);
+            string laneText = BuildPossibilityLaneText(possibilityOptions);
             if (gameplayVisionSystem == null)
             {
-                return preview;
+                if (string.IsNullOrWhiteSpace(preview))
+                {
+                    return laneText;
+                }
+
+                if (string.IsNullOrWhiteSpace(laneText))
+                {
+                    return preview;
+                }
+
+                return $"{laneText}\n\n{preview}".Trim();
             }
 
             Room room = locationManager != null ? locationManager.CurrentRoom : null;
             List<string> tabs = gameplayVisionSystem.BuildTabsForContext(actionKey, room);
             if (tabs.Count == 0)
             {
-                return preview;
+                if (string.IsNullOrWhiteSpace(preview))
+                {
+                    return laneText;
+                }
+
+                if (string.IsNullOrWhiteSpace(laneText))
+                {
+                    return preview;
+                }
+
+                return $"{laneText}\n\n{preview}".Trim();
             }
 
             builder.Clear();
             builder.AppendLine($"Section tabs: {string.Join(" • ", tabs)}");
+            if (!string.IsNullOrWhiteSpace(laneText))
+            {
+                builder.AppendLine();
+                builder.AppendLine(laneText);
+            }
             if (!string.IsNullOrWhiteSpace(preview))
             {
                 builder.AppendLine();
@@ -948,6 +1040,107 @@ Finder payout: ${currentSighting.Payment}.";
             }
 
             return builder.ToString().TrimEnd();
+        }
+
+        private string BuildPossibilityLaneText(List<ActionPossibilityOption> options)
+        {
+            if (options == null || options.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            builder.Clear();
+            builder.AppendLine("Possibility lanes:");
+            for (int i = 0; i < options.Count; i++)
+            {
+                ActionPossibilityOption option = options[i];
+                string selected = option.Lane == selectedPossibilityLane ? " [Selected]" : string.Empty;
+                builder.AppendLine($"• {option.Label}{selected} — {option.Summary}");
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private List<ActionPossibilityOption> BuildPossibilityOptions(string actionKey)
+        {
+            List<ActionPossibilityOption> options = new()
+            {
+                new ActionPossibilityOption
+                {
+                    Lane = ActionPossibilityLane.Safe,
+                    Label = "Safe",
+                    Summary = "Steady outcome, lower volatility.",
+                    MagnitudeMultiplier = 0.9f
+                },
+                new ActionPossibilityOption
+                {
+                    Lane = ActionPossibilityLane.Efficient,
+                    Label = "Efficient",
+                    Summary = "Faster routine with moderate payoff.",
+                    MagnitudeMultiplier = 1.12f
+                },
+                new ActionPossibilityOption
+                {
+                    Lane = ActionPossibilityLane.Expensive,
+                    Label = "Expensive",
+                    Summary = "Pay more for comfort and convenience.",
+                    MagnitudeMultiplier = 1.28f
+                },
+                new ActionPossibilityOption
+                {
+                    Lane = ActionPossibilityLane.Risky,
+                    Label = "Risky",
+                    Summary = "Big upside with higher chance of trouble.",
+                    MagnitudeMultiplier = 1.45f
+                },
+                new ActionPossibilityOption
+                {
+                    Lane = ActionPossibilityLane.Social,
+                    Label = "Social",
+                    Summary = "Build relationships while resolving the action.",
+                    MagnitudeMultiplier = 1.1f
+                }
+            };
+
+            if (allowIllegalOptions && IllegalEligibleActions.Contains(actionKey))
+            {
+                options.Add(new ActionPossibilityOption
+                {
+                    Lane = ActionPossibilityLane.Illegal,
+                    Label = "Illegal",
+                    Summary = "Break rules for gains, but legal risk spikes.",
+                    MagnitudeMultiplier = 1.6f
+                });
+            }
+
+            return options;
+        }
+
+        private void ApplyPossibilityLaneOutcome(string actionKey, ref string reason, ref float magnitude)
+        {
+            List<ActionPossibilityOption> options = BuildPossibilityOptions(actionKey);
+            ActionPossibilityOption selected = options.Find(option => option.Lane == selectedPossibilityLane)
+                                             ?? options.Find(option => option.Lane == ActionPossibilityLane.Safe);
+            if (selected == null)
+            {
+                return;
+            }
+
+            magnitude = Mathf.Max(0.25f, magnitude * Mathf.Max(0.1f, selected.MagnitudeMultiplier));
+            reason = $"{reason} [{selected.Lane} lane]";
+
+            if (selected.Lane == ActionPossibilityLane.Illegal)
+            {
+                (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+                {
+                    Type = SimulationEventType.CrimeCommitted,
+                    Severity = SimulationEventSeverity.Warning,
+                    SystemName = nameof(ActionPopupController),
+                    ChangeKey = actionKey,
+                    Reason = $"Illegal lane selected for {actionKey}.",
+                    Magnitude = 10f
+                });
+            }
         }
 
         private void AppendOpportunityPreview(StringBuilder sb, string actionKey)
