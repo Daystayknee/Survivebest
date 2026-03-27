@@ -15,6 +15,22 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void TraitCatalog_IncludesSurvivalPositiveAndNegativeTraitSet()
+        {
+            var traits = ContentExplosionCatalog.GetTraits();
+
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_steady_hands"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_keen_eyes"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_efficient_forager"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_cold_resistant"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_medic_touch"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_claustrophobic"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_fragile_bones"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_impatient"));
+            Assert.IsTrue(traits.Exists(x => x != null && x.Id == "trait_thirst_prone"));
+        }
+
+        [Test]
         public void LateNightEventGenerator_ProducesTaggedNarrativeOutput()
         {
             string result = ContentExplosionCatalog.GenerateLateNightEvent(new LateNightEventContext

@@ -18,6 +18,22 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(skills.SkillLevels.ContainsKey("Office administration"));
             Assert.IsTrue(skills.SkillLevels.ContainsKey("Electrical repair"));
             Assert.IsTrue(skills.SkillLevels.ContainsKey("Logistics"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Firecraft"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Shelter Building"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Water Purification"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("First Aid & Medicine"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Fitness"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Construction"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Trap Setting"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Animal Tracking"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Water Sourcing"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Boiling & Sterilization"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Infection Control"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Reconnaissance"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Base Building"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Weather Reading"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Cold Weather Survival"));
+            Assert.IsTrue(skills.SkillLevels.ContainsKey("Morale Leadership"));
 
             Object.DestroyImmediate(go);
         }

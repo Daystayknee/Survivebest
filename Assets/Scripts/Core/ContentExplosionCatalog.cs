@@ -99,7 +99,16 @@ namespace Survivebest.Core
             CreateDefinition("trait_family_loyalist", "family loyalist", "trait", 0.9f, "Prioritizes family duty even when it costs momentum.", "family", "duty"),
             CreateDefinition("trait_career_maximizer", "career maximizer", "trait", 0.97f, "Frames most choices through long-horizon career outcomes.", "career", "ambition"),
             CreateDefinition("trait_neighborhood_connector", "neighborhood connector", "trait", 0.91f, "Knows everyone and turns proximity into community.", "community", "social"),
-            CreateDefinition("trait_crisis_calm", "crisis calm", "trait", 0.87f, "Becomes steadier when situations become urgent.", "stress", "leadership")
+            CreateDefinition("trait_crisis_calm", "crisis calm", "trait", 0.87f, "Becomes steadier when situations become urgent.", "stress", "leadership"),
+            CreateDefinition("trait_steady_hands", "steady hands", "trait", 0.86f, "Calm fine motor control lowers failure risk during delicate survival tasks.", "survival", "precision"),
+            CreateDefinition("trait_keen_eyes", "keen eyes", "trait", 0.84f, "Spots hidden resources, tracks, and threats sooner than average.", "survival", "perception"),
+            CreateDefinition("trait_efficient_forager", "efficient forager", "trait", 0.88f, "Moves through gathering loops with less stamina waste.", "survival", "foraging"),
+            CreateDefinition("trait_cold_resistant", "cold resistant", "trait", 0.83f, "Cold environments drain energy slower, improving winter endurance.", "survival", "climate"),
+            CreateDefinition("trait_medic_touch", "medic touch", "trait", 0.87f, "Improves treatment outcomes when patching wounds and preventing infection.", "survival", "medicine"),
+            CreateDefinition("trait_claustrophobic", "claustrophobic", "trait", 1.12f, "Tight spaces can trigger panic spikes that disrupt focus.", "survival", "stress"),
+            CreateDefinition("trait_fragile_bones", "fragile bones", "trait", 1.15f, "Falls and impacts carry a higher injury risk.", "survival", "injury"),
+            CreateDefinition("trait_impatient", "impatient", "trait", 1.09f, "Complex tasks suffer when rushed under pressure.", "survival", "crafting"),
+            CreateDefinition("trait_thirst_prone", "thirst prone", "trait", 1.1f, "Hydration drains faster and water management becomes more urgent.", "survival", "needs")
         };
 
         private static readonly List<AuthoredDefinitionEntry> IncidentDefinitions = new()
