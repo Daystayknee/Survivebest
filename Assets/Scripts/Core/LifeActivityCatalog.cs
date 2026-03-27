@@ -154,6 +154,7 @@ namespace Survivebest.Core
         public static string PickDigitalOverloadDetail() => Pick(DigitalOverloadDetails, "digital overload detail");
         public static string PickHolidayPressureDetail() => Pick(HolidayPressureDetails, "holiday pressure detail");
         public static string PickSurvivalPracticalActivity() => Pick(SurvivalPracticalActivities, "basic survival task");
+        public static IReadOnlyList<string> GetSurvivalPracticalActivities() => SurvivalPracticalActivities;
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
