@@ -22,6 +22,37 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialFeedActivity()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHomeUpgradeProject()));
             Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickAmbitionFocus()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickBodyDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickHygieneMaintenanceDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTinyHomeLifeDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFoodEmotionDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickMoneyStressDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickEmotionalMicroState()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSocialDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickRelationshipRealismDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickPresentTenseWorldDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTimePressureDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickIdentityDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickMemoryThroughObjectsDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSurvivalButHumanDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickTravelDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickShoppingDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickClothingDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickBedAndSleepDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickWeatherLifeDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSoundDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSmellDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickBathroomDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickKitchenDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickCleaningDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickIllnessDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickPainDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickWorkDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickSchoolLearningDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickPhoneTextingDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFriendshipDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickRomanceDetail()));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(LifeActivityCatalog.PickFamilyDetail()));
         }
 
         [Test]
