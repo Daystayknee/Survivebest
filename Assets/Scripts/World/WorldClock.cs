@@ -85,6 +85,9 @@ namespace Survivebest.World
         public int Year { get; private set; }
         public Season CurrentSeason { get; private set; }
         public bool UsesHouseholdAgeUpHook => ageUpHouseholdOnYearPassed && householdManager != null;
+        public float RealSecondsPerGameMinute => realSecondsPerGameMinute;
+        public float RealSecondsPerGameHour => realSecondsPerGameMinute * 60f;
+        public float RealSecondsPerGameDay => realSecondsPerGameMinute * 1440f;
 
         private void Awake()
         {
@@ -266,6 +269,21 @@ namespace Survivebest.World
         public bool IsDate(int month, int day)
         {
             return Month == month && Day == day;
+        }
+
+        public void SetRealSecondsPerGameMinute(float seconds)
+        {
+            realSecondsPerGameMinute = Mathf.Max(0.1f, seconds);
+        }
+
+        public void SetRealSecondsPerGameHour(float seconds)
+        {
+            SetRealSecondsPerGameMinute(seconds / 60f);
+        }
+
+        public void SetRealSecondsPerGameDay(float seconds)
+        {
+            SetRealSecondsPerGameMinute(seconds / 1440f);
         }
 
         private Season GetSeasonForMonth(int month)

@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 using Survivebest.Events;
+using Survivebest.World;
+using Survivebest.Appearance;
 
 namespace Survivebest.UI
 {
@@ -17,6 +19,11 @@ namespace Survivebest.UI
         public bool ShowSubtitles = true;
         public bool PauseOnFocusLoss = true;
         [Range(0.5f, 3f)] public float UiScale = 1f;
+        [Min(6f)] public float RealSecondsPerGameHour = 300f;
+        [Min(2.4f)] public float RealSecondsPerGameDay = 120f;
+        public bool AutoHairGrowthEnabled = true;
+        public bool AutoShavingAndCuttingEnabled = false;
+        [Range(1, 30)] public int AutoShavingAndCuttingIntervalDays = 7;
 
         public Color PrimaryColor = new(0.13f, 0.7f, 1f, 1f);
         public Color SecondaryColor = new(0.92f, 0.52f, 0.2f, 1f);
@@ -29,6 +36,8 @@ namespace Survivebest.UI
         [SerializeField] private AudioMixer audioMixer;
         [SerializeField] private GameplaySettingsData settings = new();
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private WorldClock worldClock;
+        [SerializeField] private HairGroomingSystem hairGroomingSystem;
 
         [Header("Optional UI Color Targets")]
         [SerializeField] private List<Graphic> primaryColorTargets = new();
@@ -45,6 +54,11 @@ namespace Survivebest.UI
         private const string SubtitlesKey = "Subtitles";
         private const string PauseOnFocusLossKey = "PauseOnFocusLoss";
         private const string UiScaleKey = "UiScale";
+        private const string RealSecondsPerGameHourKey = "RealSecondsPerGameHour";
+        private const string RealSecondsPerGameDayKey = "RealSecondsPerGameDay";
+        private const string AutoHairGrowthEnabledKey = "AutoHairGrowthEnabled";
+        private const string AutoShavingAndCuttingEnabledKey = "AutoShavingAndCuttingEnabled";
+        private const string AutoShavingAndCuttingIntervalDaysKey = "AutoShavingAndCuttingIntervalDays";
 
         private const string PrimaryColorRKey = "PrimaryColorR";
         private const string PrimaryColorGKey = "PrimaryColorG";
@@ -97,6 +111,43 @@ namespace Survivebest.UI
             SaveSettings();
         }
 
+        public void SetRealSecondsPerGameHour(float value)
+        {
+            settings.RealSecondsPerGameHour = Mathf.Max(6f, value);
+            settings.RealSecondsPerGameDay = settings.RealSecondsPerGameHour * 24f;
+            ApplySettings();
+            SaveSettings();
+        }
+
+        public void SetRealSecondsPerGameDay(float value)
+        {
+            settings.RealSecondsPerGameDay = Mathf.Max(2.4f, value);
+            settings.RealSecondsPerGameHour = Mathf.Max(6f, settings.RealSecondsPerGameDay / 24f);
+            ApplySettings();
+            SaveSettings();
+        }
+
+        public void SetAutoHairGrowthEnabled(bool value)
+        {
+            settings.AutoHairGrowthEnabled = value;
+            ApplySettings();
+            SaveSettings();
+        }
+
+        public void SetAutoShavingAndCuttingEnabled(bool value)
+        {
+            settings.AutoShavingAndCuttingEnabled = value;
+            ApplySettings();
+            SaveSettings();
+        }
+
+        public void SetAutoShavingAndCuttingIntervalDays(int value)
+        {
+            settings.AutoShavingAndCuttingIntervalDays = Mathf.Clamp(value, 1, 30);
+            ApplySettings();
+            SaveSettings();
+        }
+
         public void SetPrimaryColor(float r, float g, float b)
         {
             settings.PrimaryColor = new Color(Mathf.Clamp01(r), Mathf.Clamp01(g), Mathf.Clamp01(b), 1f);
@@ -138,6 +189,21 @@ namespace Survivebest.UI
             AudioSet("MusicVolume", settings.MusicVolume);
             AudioSet("SfxVolume", settings.SfxVolume);
             Screen.fullScreen = settings.Fullscreen;
+            worldClock ??= FindObjectOfType<WorldClock>();
+            hairGroomingSystem ??= FindObjectOfType<HairGroomingSystem>();
+
+            if (worldClock != null)
+            {
+                worldClock.SetRealSecondsPerGameHour(settings.RealSecondsPerGameHour);
+                settings.RealSecondsPerGameDay = settings.RealSecondsPerGameHour * 24f;
+            }
+
+            if (hairGroomingSystem != null)
+            {
+                hairGroomingSystem.SetAutoHairGrowthEnabled(settings.AutoHairGrowthEnabled);
+                hairGroomingSystem.SetAutoShavingAndCuttingEnabled(settings.AutoShavingAndCuttingEnabled);
+                hairGroomingSystem.SetAutoShavingAndCuttingIntervalDays(settings.AutoShavingAndCuttingIntervalDays);
+            }
             ApplyColors();
 
             PublishSettingsEvent("ApplySettings", settings.MasterVolume + settings.MusicVolume + settings.SfxVolume);
@@ -188,6 +254,11 @@ namespace Survivebest.UI
             PlayerPrefs.SetInt(SubtitlesKey, settings.ShowSubtitles ? 1 : 0);
             PlayerPrefs.SetInt(PauseOnFocusLossKey, settings.PauseOnFocusLoss ? 1 : 0);
             PlayerPrefs.SetFloat(UiScaleKey, settings.UiScale);
+            PlayerPrefs.SetFloat(RealSecondsPerGameHourKey, settings.RealSecondsPerGameHour);
+            PlayerPrefs.SetFloat(RealSecondsPerGameDayKey, settings.RealSecondsPerGameDay);
+            PlayerPrefs.SetInt(AutoHairGrowthEnabledKey, settings.AutoHairGrowthEnabled ? 1 : 0);
+            PlayerPrefs.SetInt(AutoShavingAndCuttingEnabledKey, settings.AutoShavingAndCuttingEnabled ? 1 : 0);
+            PlayerPrefs.SetInt(AutoShavingAndCuttingIntervalDaysKey, settings.AutoShavingAndCuttingIntervalDays);
 
             SaveColor(PrimaryColorRKey, PrimaryColorGKey, PrimaryColorBKey, settings.PrimaryColor);
             SaveColor(SecondaryColorRKey, SecondaryColorGKey, SecondaryColorBKey, settings.SecondaryColor);
@@ -206,6 +277,14 @@ namespace Survivebest.UI
             settings.ShowSubtitles = PlayerPrefs.GetInt(SubtitlesKey, settings.ShowSubtitles ? 1 : 0) == 1;
             settings.PauseOnFocusLoss = PlayerPrefs.GetInt(PauseOnFocusLossKey, settings.PauseOnFocusLoss ? 1 : 0) == 1;
             settings.UiScale = PlayerPrefs.GetFloat(UiScaleKey, settings.UiScale);
+            settings.RealSecondsPerGameHour = PlayerPrefs.GetFloat(RealSecondsPerGameHourKey, settings.RealSecondsPerGameHour);
+            settings.RealSecondsPerGameDay = PlayerPrefs.GetFloat(RealSecondsPerGameDayKey, settings.RealSecondsPerGameDay);
+            settings.AutoHairGrowthEnabled = PlayerPrefs.GetInt(AutoHairGrowthEnabledKey, settings.AutoHairGrowthEnabled ? 1 : 0) == 1;
+            settings.AutoShavingAndCuttingEnabled = PlayerPrefs.GetInt(AutoShavingAndCuttingEnabledKey, settings.AutoShavingAndCuttingEnabled ? 1 : 0) == 1;
+            settings.AutoShavingAndCuttingIntervalDays = PlayerPrefs.GetInt(AutoShavingAndCuttingIntervalDaysKey, settings.AutoShavingAndCuttingIntervalDays);
+            settings.RealSecondsPerGameHour = Mathf.Max(6f, settings.RealSecondsPerGameHour);
+            settings.RealSecondsPerGameDay = Mathf.Max(2.4f, settings.RealSecondsPerGameDay);
+            settings.AutoShavingAndCuttingIntervalDays = Mathf.Clamp(settings.AutoShavingAndCuttingIntervalDays, 1, 30);
 
             settings.PrimaryColor = LoadColor(PrimaryColorRKey, PrimaryColorGKey, PrimaryColorBKey, settings.PrimaryColor);
             settings.SecondaryColor = LoadColor(SecondaryColorRKey, SecondaryColorGKey, SecondaryColorBKey, settings.SecondaryColor);

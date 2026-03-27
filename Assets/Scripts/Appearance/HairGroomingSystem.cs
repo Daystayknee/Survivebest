@@ -8,8 +8,12 @@ namespace Survivebest.Appearance
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private AppearanceManager appearanceManager;
         [SerializeField] private HairGrowthRules growthRules = new();
+        [SerializeField] private bool autoHairGrowthEnabled = true;
+        [SerializeField] private bool autoShavingAndCuttingEnabled;
+        [SerializeField, Min(1)] private int autoShavingAndCuttingIntervalDays = 7;
 
         private int currentAbsoluteDay;
+        private int lastAutoGroomingDay = -1;
 
         private void OnEnable()
         {
@@ -91,31 +95,42 @@ namespace Survivebest.Appearance
                 return;
             }
 
-            HairProfile hair = appearanceManager.ScalpHairProfile;
-            int daysSinceTrim = Mathf.Max(0, currentAbsoluteDay - hair.LastTrimDay);
-            hair.GrowthStage = HairAssemblyResolver.ResolveHairGrowthStage(daysSinceTrim, growthRules);
-            appearanceManager.SetHairProfile(hair);
-
-            FacialHairProfile facial = appearanceManager.FacialHairProfile;
-            if (facial.GrowthEnabled)
+            if (autoHairGrowthEnabled)
             {
-                int daysSinceShave = Mathf.Max(0, currentAbsoluteDay - facial.LastShaveDay);
-                BeardGrowthStage stage = HairAssemblyResolver.ResolveBeardGrowthStage(daysSinceShave, growthRules);
-                facial.MustacheStage = stage;
-                facial.BeardStage = stage;
-                facial.SideburnStage = stage;
-                facial.NeckBeardStage = stage > BeardGrowthStage.Short ? stage : BeardGrowthStage.None;
-                appearanceManager.SetFacialHairProfile(facial);
+                HairProfile hair = appearanceManager.ScalpHairProfile;
+                int daysSinceTrim = Mathf.Max(0, currentAbsoluteDay - hair.LastTrimDay);
+                hair.GrowthStage = HairAssemblyResolver.ResolveHairGrowthStage(daysSinceTrim, growthRules);
+                appearanceManager.SetHairProfile(hair);
+
+                FacialHairProfile facial = appearanceManager.FacialHairProfile;
+                if (facial.GrowthEnabled)
+                {
+                    int daysSinceShave = Mathf.Max(0, currentAbsoluteDay - facial.LastShaveDay);
+                    BeardGrowthStage stage = HairAssemblyResolver.ResolveBeardGrowthStage(daysSinceShave, growthRules);
+                    facial.MustacheStage = stage;
+                    facial.BeardStage = stage;
+                    facial.SideburnStage = stage;
+                    facial.NeckBeardStage = stage > BeardGrowthStage.Short ? stage : BeardGrowthStage.None;
+                    appearanceManager.SetFacialHairProfile(facial);
+                }
+
+                BodyHairProfile body = appearanceManager.BodyHairProfile;
+                int bodyDays = Mathf.Max(0, currentAbsoluteDay - body.LastBodyShaveDay);
+                if (bodyDays >= growthRules.DaysToMedium)
+                {
+                    body.IsShavedChest = false;
+                    body.IsShavedArms = false;
+                    body.IsShavedLegs = false;
+                    appearanceManager.SetBodyHairProfile(body);
+                }
             }
 
-            BodyHairProfile body = appearanceManager.BodyHairProfile;
-            int bodyDays = Mathf.Max(0, currentAbsoluteDay - body.LastBodyShaveDay);
-            if (bodyDays >= growthRules.DaysToMedium)
+            if (autoShavingAndCuttingEnabled && (lastAutoGroomingDay < 0 || currentAbsoluteDay - lastAutoGroomingDay >= Mathf.Max(1, autoShavingAndCuttingIntervalDays)))
             {
-                body.IsShavedChest = false;
-                body.IsShavedArms = false;
-                body.IsShavedLegs = false;
-                appearanceManager.SetBodyHairProfile(body);
+                TrimHairToStage(HairGrowthStage.Short);
+                ShaveFacialHair();
+                ShaveBodyHair();
+                lastAutoGroomingDay = currentAbsoluteDay;
             }
         }
 
@@ -129,6 +144,21 @@ namespace Survivebest.Appearance
             currentAbsoluteDay = ((worldClock.Year - 1) * worldClock.MonthsPerYear * worldClock.DaysPerMonth)
                 + ((worldClock.Month - 1) * worldClock.DaysPerMonth)
                 + (worldClock.Day - 1);
+        }
+
+        public void SetAutoHairGrowthEnabled(bool enabled)
+        {
+            autoHairGrowthEnabled = enabled;
+        }
+
+        public void SetAutoShavingAndCuttingEnabled(bool enabled)
+        {
+            autoShavingAndCuttingEnabled = enabled;
+        }
+
+        public void SetAutoShavingAndCuttingIntervalDays(int days)
+        {
+            autoShavingAndCuttingIntervalDays = Mathf.Max(1, days);
         }
     }
 }
