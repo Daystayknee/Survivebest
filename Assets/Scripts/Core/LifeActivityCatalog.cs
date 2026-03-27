@@ -51,6 +51,14 @@ namespace Survivebest.Core
         private static readonly string[] BathroomDetails = { "running low on toilet paper causing quiet panic", "mirror mood changing by time of day", "night bathroom trips reducing sleep quality", "feeling more human after brushing teeth", "messy sink making self-care harder", "a hot shower used as emotional coping", "skipping full grooming because energy is low" };
         private static readonly string[] KitchenDetails = { "opening cabinets repeatedly and still not knowing what to eat", "dish pile deciding whether cooking feels possible", "cooking smells creating comfort or overwhelm", "snack scavenging versus meal prep mindset", "using the last clean fork", "standing at the fridge tired and indecisive", "eating over the sink when life is chaotic" };
         private static readonly string[] CleaningDetails = { "rage cleaning", "stress cleaning", "cleaning as avoidance", "one small clean area creating relief", "clutter blindness until it suddenly feels unbearable", "I'll just do one thing turning into a reset spiral", "cleaning for guests differently than for yourself" };
+        private static readonly string[] IllnessDetails = { "feeling off before fully getting sick", "sickness changing light and sound tolerance", "medicine taste becoming part of the experience", "soup, blanket, or shower becoming survival ritual", "weird guilt from resting", "getting behind on life after being sick for one day", "recovery happening gradually instead of instantly" };
+        private static readonly string[] PainDetails = { "headache shortening patience", "back pain changing posture and kindness", "sore feet after long days", "cramps changing mood and plans", "old injuries flaring with weather", "pain making people quieter, sharper, or needier", "relief moments feeling emotional, not only physical" };
+        private static readonly string[] WorkDetails = { "pre-work dread versus post-work depletion", "uniform changing self-perception", "coming home too tired to enjoy freedom", "fake customer-service friendliness", "mental carryover from a bad shift", "needing transition time before talking to people", "paycheck day feeling like emotional weather" };
+        private static readonly string[] SchoolLearningDetails = { "avoiding assignments until they become scary", "one hard task poisoning the whole day", "pride from finishing something small", "social tension with classmates or teachers", "study environment changing success", "school clutter like papers, bags, and chargers", "a tired brain changing confidence" };
+        private static readonly string[] PhoneTextingDetails = { "rereading a message before replying", "typing and deleting", "delayed replies hurting feelings", "sending dry texts when tired", "checking phone for comfort not purpose", "not wanting to answer but not wanting to be alone", "tone misunderstandings through text" };
+        private static readonly string[] FriendshipDetails = { "some friends being for fun and others for comfort", "not texting first because of pride", "feeling closer through errands than speeches", "friends noticing routines", "drifting apart through timing instead of drama", "easy friendships versus high-maintenance friendships", "someone becoming safe to be ugly around" };
+        private static readonly string[] RomanceDetails = { "affection shown in tiny practical acts", "being extra sensitive to tone from someone you like", "getting dressed differently for them", "resentment from unequal labor", "feeling close through shared boring routines", "rejection shifting body confidence", "late-night honesty opening emotional doors" };
+        private static readonly string[] FamilyDetails = { "family roles staying sticky as people change", "one person always fixing things", "one person always forgetting things", "guilt around not helping enough", "family homes holding emotional gravity", "feeling like a child again around certain relatives", "affection shown through food, reminders, nagging, or worry" };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -112,6 +120,14 @@ namespace Survivebest.Core
         public static string PickBathroomDetail() => Pick(BathroomDetails, "bathroom detail");
         public static string PickKitchenDetail() => Pick(KitchenDetails, "kitchen detail");
         public static string PickCleaningDetail() => Pick(CleaningDetails, "cleaning detail");
+        public static string PickIllnessDetail() => Pick(IllnessDetails, "illness detail");
+        public static string PickPainDetail() => Pick(PainDetails, "pain detail");
+        public static string PickWorkDetail() => Pick(WorkDetails, "work detail");
+        public static string PickSchoolLearningDetail() => Pick(SchoolLearningDetails, "school/learning detail");
+        public static string PickPhoneTextingDetail() => Pick(PhoneTextingDetails, "phone/texting detail");
+        public static string PickFriendshipDetail() => Pick(FriendshipDetails, "friendship detail");
+        public static string PickRomanceDetail() => Pick(RomanceDetails, "romance detail");
+        public static string PickFamilyDetail() => Pick(FamilyDetails, "family detail");
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -127,12 +143,15 @@ namespace Survivebest.Core
                 + SurvivalButHumanDetails.Length + TravelDetails.Length + ShoppingDetails.Length
                 + ClothingDetails.Length + BedAndSleepDetails.Length + WeatherLifeDetails.Length
                 + SoundDetails.Length + SmellDetails.Length + BathroomDetails.Length
-                + KitchenDetails.Length + CleaningDetails.Length;
+                + KitchenDetails.Length + CleaningDetails.Length + IllnessDetails.Length
+                + PainDetails.Length + WorkDetails.Length + SchoolLearningDetails.Length
+                + PhoneTextingDetails.Length + FriendshipDetails.Length + RomanceDetails.Length
+                + FamilyDetails.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 46 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 54 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
