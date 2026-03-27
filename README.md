@@ -14,6 +14,13 @@ If your goal is to **complete and organize the game code with detailed how-to gu
 
 This order gives you a single execution path from project setup → system extension → validation → completion gating.
 
+If your focus is **player-facing alpha expansion priorities** (clarity, guidance, emergent depth, and replayability sequencing), see:
+
+5. `Docs/NEXT_ALPHA_EXPANSION_PLAN.md`
+6. `Docs/PLAYER_QUICK_START_GUIDE.md` (player-only, “what buttons to press first” flow)
+7. `Docs/IMPLEMENTED_ONLY_LIST.md` (implemented-only snapshot excluding expansion/backlog entries)
+8. `Docs/GENRE_STYLE_BREAKDOWN.md` (survival/social/career/crime/emergent-play lens)
+
 ## Engine / Requirements
 
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
