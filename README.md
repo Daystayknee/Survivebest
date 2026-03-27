@@ -14,6 +14,10 @@ If your goal is to **complete and organize the game code with detailed how-to gu
 
 This order gives you a single execution path from project setup → system extension → validation → completion gating.
 
+If your focus is **player-facing alpha expansion priorities** (clarity, guidance, emergent depth, and replayability sequencing), see:
+
+5. `Docs/NEXT_ALPHA_EXPANSION_PLAN.md`
+
 ## Engine / Requirements
 
 - Unity (recommended: Unity 2022 LTS or newer, URP/Built-in compatible for script layer)
