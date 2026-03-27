@@ -327,6 +327,17 @@ namespace Survivebest.Core
                         break;
                 }
             }
+            else if (lifeStage is LifeStage.YoungAdult or LifeStage.Adult or LifeStage.OlderAdult or LifeStage.Elder)
+            {
+                switch (category)
+                {
+                    case WardrobeCategory.Tops:
+                    case WardrobeCategory.Bottoms:
+                    case WardrobeCategory.FullBody:
+                        AddRange(options, AdultWardrobeCatalog.GetNamesForCategory(category));
+                        break;
+                }
+            }
 
             if (category == WardrobeCategory.Tops)
             {
