@@ -318,6 +318,10 @@ namespace Survivebest.Core
                 {
                     AddRange(options, TeenClothingCatalog.GetTeenTopNames());
                 }
+                else if (lifeStage is LifeStage.Toddler or LifeStage.Child or LifeStage.Preteen)
+                {
+                    AddRange(options, KidsPreteenClothingCatalog.GetKidsPreteenTopNames());
+                }
             }
             AddRange(options, ResolveStageCategory(lifeStage, category));
             AddRange(options, ResolvePresentationCategory(presentation, category));
