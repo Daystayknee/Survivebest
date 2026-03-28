@@ -57,7 +57,7 @@ namespace Survivebest.Tests.EditMode
                         }
                         else
                         {
-                            Assert.GreaterOrEqual(tattooCount, 300);
+                            Assert.GreaterOrEqual(tattooCount, 500);
                         }
                     }
                 }
@@ -113,7 +113,7 @@ namespace Survivebest.Tests.EditMode
                 LifeStage.Child => 4,
                 LifeStage.Preteen => 4,
                 LifeStage.Teen => 7,
-                _ => 300
+                _ => 500
             };
         }
 

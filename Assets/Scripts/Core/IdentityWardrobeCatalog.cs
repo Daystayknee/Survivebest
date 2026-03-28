@@ -256,7 +256,7 @@ namespace Survivebest.Core
         };
 
         private static readonly Dictionary<string, string[]> GeneratedCapsuleCache = new();
-        private const int AdultAdornmentTargetCount = 320;
+        private const int AdultAdornmentTargetCount = 560;
 
         private static readonly List<BodyCompositionProfile> BodyProfiles = new()
         {
