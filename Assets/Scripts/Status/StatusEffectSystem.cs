@@ -6,6 +6,7 @@ using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Needs;
 using Survivebest.World;
+using System.Text;
 
 namespace Survivebest.Status
 {
@@ -64,6 +65,7 @@ namespace Survivebest.Status
 
     public class StatusEffectSystem : MonoBehaviour
     {
+        private static readonly StringBuilder tooltipBuilder = new();
         [SerializeField] private CharacterCore owner;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private NeedsSystem needsSystem;
@@ -79,6 +81,34 @@ namespace Survivebest.Status
 
         public IReadOnlyList<StatusEffectDefinition> StatusLibrary => statusLibrary;
         public IReadOnlyList<ActiveStatusEffect> ActiveEffects => activeEffects;
+
+        public static string BuildEffectTooltip(ActiveStatusEffect effect)
+        {
+            if (effect == null)
+            {
+                return "No effect data.";
+            }
+
+            tooltipBuilder.Clear();
+            tooltipBuilder.AppendLine(string.IsNullOrWhiteSpace(effect.Description) ? effect.DisplayName : effect.Description);
+            tooltipBuilder.AppendLine($"Remaining: {effect.RemainingHours}h");
+            AppendDelta(tooltipBuilder, "Mood", effect.MoodDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Hunger", effect.HungerDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Energy", effect.EnergyDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Hydration", effect.HydrationDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Hygiene", effect.HygieneDeltaPerHour);
+            return tooltipBuilder.ToString().TrimEnd();
+        }
+
+        private static void AppendDelta(StringBuilder builder, string label, float delta)
+        {
+            if (Mathf.Approximately(delta, 0f))
+            {
+                return;
+            }
+
+            builder.AppendLine($"{label}: {(delta > 0f ? "+" : string.Empty)}{delta:0.##}/h");
+        }
 
         public List<ActiveStatusEffect> CaptureSnapshot()
         {
