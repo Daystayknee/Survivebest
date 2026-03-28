@@ -140,6 +140,15 @@ namespace Survivebest.UI
                     cue.SfxKey = "body_hit_soft";
                     cue.VfxKey = "vfx_pain_flash";
                     cue.UiPulseKey = "health_warning";
+                    if (ContainsAny(simulationEvent.Reason, "fight", "combat", "hit", "attack", "punched", "kicked", "struck"))
+                    {
+                        cue.AnimationState = "CombatHitReact";
+                        cue.PostureState = "GuardBreak";
+                        cue.FacialState = "AngryPain";
+                        cue.SfxKey = "combat_hit_impact";
+                        cue.VfxKey = "vfx_combat_hit";
+                        cue.UiPulseKey = "combat_damage";
+                    }
                     break;
                 case SimulationEventType.IllnessStarted:
                     cue.AnimationState = "CoughLoop";
@@ -206,6 +215,13 @@ namespace Survivebest.UI
                     cue.VfxKey = "vfx_story_orb";
                     cue.UiPulseKey = "journal_story";
                     break;
+                case SimulationEventType.InventoryChanged:
+                    ApplyInventoryFeedback(simulationEvent, cue);
+                    break;
+                case SimulationEventType.ActivityStarted:
+                case SimulationEventType.ActivityCompleted:
+                    ApplyActivityFeedback(simulationEvent, cue);
+                    break;
             }
 
             if (simulationEvent.Severity == SimulationEventSeverity.Critical)
@@ -218,6 +234,107 @@ namespace Survivebest.UI
             }
 
             return cue;
+        }
+
+        private static void ApplyInventoryFeedback(SimulationEvent simulationEvent, FeedbackCue cue)
+        {
+            bool isUsage = simulationEvent.Magnitude < 0f ||
+                ContainsAny(simulationEvent.Reason, "use", "used", "consume", "consumed", "equip", "craft", "repair");
+            bool isGain = simulationEvent.Magnitude > 0f;
+
+            if (isUsage)
+            {
+                cue.AnimationState = "ItemUse";
+                cue.FacialState = "Focused";
+                cue.SfxKey = "inventory_use_click";
+                cue.VfxKey = "vfx_item_use";
+                cue.UiPulseKey = "inventory_use";
+                return;
+            }
+
+            if (isGain)
+            {
+                cue.AnimationState = "ReceiveItem";
+                cue.FacialState = "Pleased";
+                cue.SfxKey = "inventory_pickup";
+                cue.VfxKey = "vfx_loot_pickup";
+                cue.UiPulseKey = "inventory_gain";
+            }
+        }
+
+        private static void ApplyActivityFeedback(SimulationEvent simulationEvent, FeedbackCue cue)
+        {
+            bool completed = simulationEvent.Type == SimulationEventType.ActivityCompleted;
+            string reason = simulationEvent.Reason;
+            string activityKey = simulationEvent.ChangeKey;
+
+            if (ContainsAny(reason, "minigame", "blueprint") || !string.IsNullOrWhiteSpace(activityKey))
+            {
+                cue.AnimationState = completed ? "MinigameFinish" : "MinigameStart";
+                cue.PostureState = completed ? "Ready" : "Engaged";
+                cue.FacialState = completed ? "Satisfied" : "Focused";
+                cue.SfxKey = completed ? "minigame_complete" : "minigame_start";
+                cue.VfxKey = completed ? "vfx_minigame_success" : "vfx_minigame_start";
+                cue.UiPulseKey = "minigame_feedback";
+            }
+
+            if (ContainsAny(reason, "fight", "combat", "brawl", "spar") || ContainsAny(activityKey, "fight", "combat", "brawl", "spar"))
+            {
+                cue.AnimationState = completed ? "CombatRecover" : "CombatEngage";
+                cue.PostureState = "CombatReady";
+                cue.FacialState = completed ? "Intense" : "Determined";
+                cue.SfxKey = completed ? "combat_recover_breath" : "combat_stance_up";
+                cue.VfxKey = completed ? "vfx_combat_fade" : "vfx_combat_entry";
+                cue.UiPulseKey = "combat_notice";
+                return;
+            }
+
+            if (ContainsAny(reason, "mine", "mining", "ore", "quarry", "pickaxe") || ContainsAny(activityKey, "mine", "mining", "ore", "quarry", "pickaxe"))
+            {
+                cue.AnimationState = completed ? "MineLoopEnd" : "MineLoopStart";
+                cue.PostureState = "WorkLean";
+                cue.FacialState = "Focused";
+                cue.SfxKey = completed ? "mining_strike_finish" : "mining_strike_start";
+                cue.VfxKey = completed ? "vfx_dust_settle" : "vfx_ore_spark";
+                cue.UiPulseKey = "resource_action";
+                return;
+            }
+
+            if (ContainsAny(reason, "chop", "chopping", "cut", "cutting", "axe", "lumber", "wood") || ContainsAny(activityKey, "chop", "chopping", "cut", "cutting", "axe", "lumber", "wood"))
+            {
+                cue.AnimationState = completed ? "ChopLoopEnd" : "ChopLoopStart";
+                cue.PostureState = "WorkLean";
+                cue.FacialState = "Focused";
+                cue.SfxKey = completed ? "wood_chop_finish" : "wood_chop_start";
+                cue.VfxKey = completed ? "vfx_chip_settle" : "vfx_wood_chip";
+                cue.UiPulseKey = "resource_action";
+            }
+        }
+
+        private static bool ContainsAny(params string[] values)
+        {
+            if (values == null || values.Length < 2)
+            {
+                return false;
+            }
+
+            string source = values[0];
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                return false;
+            }
+
+            for (int i = 1; i < values.Length; i++)
+            {
+                string token = values[i];
+                if (!string.IsNullOrWhiteSpace(token) &&
+                    source.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string ResolvePresentationAnimation(PresentationSectionViewModel state)

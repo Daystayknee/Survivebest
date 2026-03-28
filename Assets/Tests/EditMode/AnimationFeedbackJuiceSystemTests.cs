@@ -80,5 +80,72 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void BuildCue_InventoryUseEvent_UsesInventoryUseFeedback()
+        {
+            GameObject go = new GameObject("JuiceInventoryUseTest");
+            AnimationFeedbackJuiceSystem system = go.AddComponent<AnimationFeedbackJuiceSystem>();
+
+            FeedbackCue cue = system.BuildCue(new SimulationEvent
+            {
+                Type = SimulationEventType.InventoryChanged,
+                Severity = SimulationEventSeverity.Info,
+                Reason = "Used bandage on injury",
+                Magnitude = -1f
+            });
+
+            Assert.IsNotNull(cue);
+            Assert.AreEqual("ItemUse", cue.AnimationState);
+            Assert.AreEqual("inventory_use_click", cue.SfxKey);
+            Assert.AreEqual("inventory_use", cue.UiPulseKey);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildCue_MiningActivity_UsesResourceFeedback()
+        {
+            GameObject go = new GameObject("JuiceMiningTest");
+            AnimationFeedbackJuiceSystem system = go.AddComponent<AnimationFeedbackJuiceSystem>();
+
+            FeedbackCue cue = system.BuildCue(new SimulationEvent
+            {
+                Type = SimulationEventType.ActivityStarted,
+                Severity = SimulationEventSeverity.Info,
+                ChangeKey = "Mining",
+                Reason = "Started mining at quarry",
+                Magnitude = 0.6f
+            });
+
+            Assert.IsNotNull(cue);
+            Assert.AreEqual("MineLoopStart", cue.AnimationState);
+            Assert.AreEqual("mining_strike_start", cue.SfxKey);
+            Assert.AreEqual("resource_action", cue.UiPulseKey);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildCue_CombatInjury_UsesHitReactionFeedback()
+        {
+            GameObject go = new GameObject("JuiceCombatHitTest");
+            AnimationFeedbackJuiceSystem system = go.AddComponent<AnimationFeedbackJuiceSystem>();
+
+            FeedbackCue cue = system.BuildCue(new SimulationEvent
+            {
+                Type = SimulationEventType.InjuryStarted,
+                Severity = SimulationEventSeverity.Warning,
+                Reason = "Fight at alley resulted in hit",
+                Magnitude = 3f
+            });
+
+            Assert.IsNotNull(cue);
+            Assert.AreEqual("CombatHitReact", cue.AnimationState);
+            Assert.AreEqual("combat_hit_impact", cue.SfxKey);
+            Assert.AreEqual("combat_damage", cue.UiPulseKey);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
