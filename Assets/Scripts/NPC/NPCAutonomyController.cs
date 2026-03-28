@@ -6,6 +6,7 @@ using Survivebest.Location;
 using Survivebest.Needs;
 using Survivebest.Social;
 using Survivebest.World;
+using System.Collections.Generic;
 
 namespace Survivebest.NPC
 {
@@ -17,6 +18,7 @@ namespace Survivebest.NPC
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private EmotionSystem emotionSystem;
+        [SerializeField] private SocialSystem socialSystem;
         [SerializeField] private RelationshipMemorySystem relationshipMemorySystem;
         [SerializeField] private TownSimulationSystem townSimulationSystem;
         [SerializeField] private WeatherManager weatherManager;
@@ -60,31 +62,32 @@ namespace Survivebest.NPC
             float mood = needsSystem != null ? needsSystem.Mood : 60f;
             float stress = emotionSystem != null ? emotionSystem.Stress : 40f;
 
-            NpcActivityState chosen = scheduled;
-            if (hunger < 25f)
-            {
-                chosen = NpcActivityState.Eating;
-            }
-            else if (energy < 20f)
-            {
-                chosen = NpcActivityState.Sleeping;
-            }
-            else if (stress > 80f)
-            {
-                chosen = NpcActivityState.SickRest;
-            }
-            else if (personalityDecisionSystem != null)
-            {
-                float conflictBias = personalityDecisionSystem.GetFightEscalationChance(npcId, stress, chosen == NpcActivityState.Socializing);
-                if (conflictBias > 0.7f && mood < 45f)
-                {
-                    chosen = NpcActivityState.Socializing;
-                }
-            }
+            float loneliness = emotionSystem != null ? emotionSystem.Loneliness : 35f;
+            float socialBattery = emotionSystem != null ? emotionSystem.SocialBattery : 60f;
+            float relationshipAffinity = EstimateRelationshipAffinity();
+            float memorySentiment = EstimateRecentMemorySentiment();
+            bool severeWeather = weatherManager != null && weatherManager.CurrentWeather is WeatherState.Stormy or WeatherState.Blizzard;
 
-            if (weatherManager != null && weatherManager.CurrentWeather is WeatherState.Stormy or WeatherState.Blizzard)
+            AutonomyDecisionResult decision = AutonomyDecisionEngine.Decide(new AutonomyDecisionContext
             {
-                if (chosen == NpcActivityState.Socializing)
+                ScheduledActivity = scheduled,
+                Hunger = hunger,
+                Energy = energy,
+                Mood = mood,
+                Stress = stress,
+                Loneliness = loneliness,
+                SocialBattery = socialBattery,
+                RelationshipAffinity = relationshipAffinity,
+                MemorySentiment = memorySentiment,
+                SevereWeather = severeWeather
+            });
+
+            NpcActivityState chosen = decision.Activity;
+
+            if (personalityDecisionSystem != null && chosen == NpcActivityState.Socializing)
+            {
+                float conflictBias = personalityDecisionSystem.GetFightEscalationChance(npcId, stress, true);
+                if (conflictBias > 0.75f && mood < 40f)
                 {
                     chosen = NpcActivityState.Idle;
                 }
@@ -104,9 +107,63 @@ namespace Survivebest.NPC
                 SystemName = nameof(NPCAutonomyController),
                 SourceCharacterId = npcId,
                 ChangeKey = chosen.ToString(),
-                Reason = $"Autonomy decision H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0}",
-                Magnitude = hour
+                Reason = $"Autonomy {decision.Reason} H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0} L:{loneliness:0} SD:{decision.SocialDrive:0.00}",
+                Magnitude = decision.SocialDrive
             });
+        }
+
+        private float EstimateRelationshipAffinity()
+        {
+            if (socialSystem == null || socialSystem.Relationships == null || socialSystem.Relationships.Count == 0)
+            {
+                return 0f;
+            }
+
+            float total = 0f;
+            int count = 0;
+            for (int i = 0; i < socialSystem.Relationships.Count; i++)
+            {
+                var relationship = socialSystem.Relationships[i];
+                if (relationship == null)
+                {
+                    continue;
+                }
+
+                total += relationship.RelationshipValue;
+                count++;
+            }
+
+            return count > 0 ? total / count : 0f;
+        }
+
+        private float EstimateRecentMemorySentiment()
+        {
+            if (relationshipMemorySystem == null || string.IsNullOrWhiteSpace(npcId))
+            {
+                return 0f;
+            }
+
+            List<RelationshipMemory> memories = relationshipMemorySystem.GetMemoriesForCharacter(npcId);
+            if (memories == null || memories.Count == 0)
+            {
+                return 0f;
+            }
+
+            int sampleCount = Mathf.Min(5, memories.Count);
+            float total = 0f;
+            int start = memories.Count - sampleCount;
+            for (int i = start; i < memories.Count; i++)
+            {
+                RelationshipMemory memory = memories[i];
+                if (memory == null)
+                {
+                    continue;
+                }
+
+                total += memory.Impact * (0.6f + memory.Importance * 0.4f);
+            }
+
+            return total / sampleCount;
         }
 
         private string ResolveDestination(NpcActivityState chosen, string scheduledLot, int hour)
