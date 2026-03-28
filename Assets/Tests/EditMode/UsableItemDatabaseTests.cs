@@ -24,6 +24,10 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotNull(db.GetItem("Sunscreen SPF50"));
             Assert.IsNotNull(db.GetItem("Bandage"));
             Assert.IsNotNull(db.GetItem("IV Fluids"));
+            Assert.IsNotNull(db.GetItem("Vodka Soda"));
+            Assert.IsNotNull(db.GetItem("Lemonade (Fresh)"));
+            Assert.IsNotNull(db.GetItem("Banana"));
+            Assert.IsNotNull(db.GetItem("Candy"));
 
             Object.DestroyImmediate(go);
         }
@@ -66,6 +70,39 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotNull(db.GetItem("Water Filter"));
             Assert.IsNotNull(db.GetItem("Bandage"));
             Assert.IsNotNull(db.GetItem("Raw Chicken"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void Database_ContainsAllRequestedUseTypes()
+        {
+            GameObject go = new GameObject("UsableItemDbUseTypes");
+            UsableItemDatabase db = go.AddComponent<UsableItemDatabase>();
+
+            MethodInfo awake = typeof(UsableItemDatabase).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance);
+            awake?.Invoke(db, null);
+
+            bool hasConsume = false;
+            bool hasApply = false;
+            bool hasEquip = false;
+            bool hasCombine = false;
+            bool hasInspect = false;
+
+            foreach (UsableItemDefinition item in db.Items)
+            {
+                if (item.UseType == ItemUseType.Consume) hasConsume = true;
+                if (item.UseType == ItemUseType.Apply) hasApply = true;
+                if (item.UseType == ItemUseType.Equip) hasEquip = true;
+                if (item.UseType == ItemUseType.Combine) hasCombine = true;
+                if (item.UseType == ItemUseType.Inspect) hasInspect = true;
+            }
+
+            Assert.IsTrue(hasConsume);
+            Assert.IsTrue(hasApply);
+            Assert.IsTrue(hasEquip);
+            Assert.IsTrue(hasCombine);
+            Assert.IsTrue(hasInspect);
 
             Object.DestroyImmediate(go);
         }

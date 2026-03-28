@@ -173,15 +173,30 @@ namespace Survivebest.Catalog
             AddItem(CreateConsumable("drink_electrolyte", "Electrolyte Drink", "Drink", "Hydration", 34f, 5f, 2f, 1f, 0f, 0f, 0f, -3f, true, 48f, 168f, 500f));
             AddItem(CreateConsumable("drink_coconut_water", "Coconut Water", "Drink", "Hydration", 30f, 4f, 2f, 1f, 0f, 0f, 0f, -2f, true, 20f, 60f, 120f));
             AddItem(CreateConsumable("drink_soda_cola", "Cola", "Drink", "Sugary", 12f, 10f, 4f, -1f, 0f, 0f, 0f, 2f, true, 48f, 180f, 360f));
+            AddItem(CreateConsumable("drink_soda_orange", "Orange Soda", "Drink", "Sugary", 12f, 9f, 4f, -1f, 0f, 0f, 0f, 2f, true, 48f, 180f, 360f));
+            AddItem(CreateConsumable("drink_soda_grape", "Grape Soda", "Drink", "Sugary", 12f, 9f, 4f, -1f, 0f, 0f, 0f, 2f, true, 48f, 180f, 360f));
+            AddItem(CreateConsumable("drink_soda_rootbeer", "Root Beer", "Drink", "Sugary", 12f, 8f, 4f, -1f, 0f, 0f, 0f, 2f, true, 48f, 180f, 360f));
             AddItem(CreateConsumable("drink_sweet_tea", "Sweet Tea", "Drink", "Sugary", 16f, 6f, 5f, 0f, 0f, 0f, 0f, 1f, true, 24f, 96f, 240f));
+            AddItem(CreateConsumable("drink_lemonade_fresh", "Lemonade (Fresh)", "Drink", "Sugary", 18f, 5f, 4f, 0f, 0f, 0f, 0f, 0f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("drink_lemonade_artificial", "Lemonade (Artificial)", "Drink", "Sugary", 16f, 6f, 3f, -1f, 0f, 0f, 0f, 1f, true, 48f, 180f, 360f));
             AddItem(CreateConsumable("drink_milk", "Milk (Whole)", "Drink", "Comfort", 15f, 3f, 2f, 1f, 0f, 0f, 0f, -1f, true, 12f, 36f, 60f));
+            AddItem(CreateConsumable("drink_milk_skim", "Milk (Skim)", "Drink", "Comfort", 15f, 2f, 1f, 1f, 0f, 0f, 0f, -1f, true, 12f, 36f, 60f));
+            AddItem(CreateConsumable("drink_milkshake", "Milkshake", "Drink", "Comfort", 8f, 10f, 8f, -1f, 0f, 0f, 0f, 3f, true, 4f, 10f, 20f));
             AddItem(CreateConsumable("drink_milk_spoiled", "Milk (Spoiled)", "Drink", "Comfort", 5f, -4f, -5f, -8f, 0f, 0f, 0f, 15f, true, 1f, 2f, 3f, interactions: new[] { StatusInteractionType.Illness, StatusInteractionType.Poisoning }));
             AddItem(CreateConsumable("drink_coffee_black", "Coffee (Black)", "Drink", "Energy", 8f, 14f, 2f, 0f, 0f, 0f, 1f, 0f, true, 8f, 24f, 72f, notes: "Caffeine addiction risk"));
+            AddItem(CreateConsumable("drink_coffee_iced", "Coffee (Iced)", "Drink", "Energy", 10f, 12f, 3f, 0f, 0f, 0f, -1f, 0f, true, 8f, 24f, 72f, notes: "Caffeine addiction risk"));
+            AddItem(CreateConsumable("drink_coffee_latte", "Coffee (Latte)", "Drink", "Energy", 10f, 10f, 4f, 0f, 0f, 0f, 0f, 0f, true, 8f, 24f, 72f, notes: "Caffeine addiction risk"));
             AddItem(CreateConsumable("drink_energy", "Energy Drink", "Drink", "Energy", 9f, 22f, 3f, -1f, 0f, 0f, 2f, 2f, true, 72f, 240f, 720f, notes: "High caffeine addiction risk"));
+            AddItem(CreateConsumable("drink_protein_shake", "Protein Shake", "Drink", "Functional", 12f, 10f, 2f, 2f, 8f, 0f, 0f, -1f, true, 8f, 24f, 72f));
+            AddItem(CreateConsumable("drink_preworkout", "Pre-workout Mix", "Drink", "Functional", 8f, 16f, 1f, -1f, 0f, 0f, 0f, 2f, true, 48f, 180f, 360f));
+            AddItem(CreateConsumable("drink_herbal_calming", "Herbal Tea (Calming)", "Drink", "Functional", 14f, -3f, 5f, 0f, 0f, 0f, 0f, -1f, true, 12f, 48f, 96f));
+            AddItem(CreateConsumable("drink_herbal_detox", "Herbal Tea (Detox)", "Drink", "Functional", 14f, -1f, 2f, 1f, 0f, 0f, 0f, -2f, true, 12f, 48f, 96f));
             AddItem(CreateConsumable("drink_herbal_sleep", "Herbal Tea (Sleep)", "Drink", "Functional", 14f, -5f, 4f, 0f, 0f, 0f, 0f, -1f, true, 12f, 48f, 96f));
             AddItem(CreateConsumable("drink_beer", "Beer", "Drink", "Alcohol", 4f, -2f, 6f, -1f, 0f, 0f, 0f, 2f, true, 96f, 300f, 720f, interactions: new[] { StatusInteractionType.Dehydration, StatusInteractionType.Fatigue }, notes: "Alcohol dependency risk"));
             AddItem(CreateConsumable("drink_wine", "Wine", "Drink", "Alcohol", 3f, -2f, 7f, -1f, 0f, 0f, 0f, 2f, true, 120f, 360f, 840f, interactions: new[] { StatusInteractionType.Dehydration }));
             AddItem(CreateConsumable("drink_liquor_whiskey", "Whiskey", "Drink", "Alcohol", 1f, -3f, 8f, -2f, 0f, 0f, 1f, 3f, true, 360f, 1080f, 2000f, interactions: new[] { StatusInteractionType.Dehydration }));
+            AddItem(CreateConsumable("drink_liquor_vodka", "Vodka", "Drink", "Alcohol", 1f, -3f, 7f, -2f, 0f, 0f, 1f, 3f, true, 360f, 1080f, 2000f, interactions: new[] { StatusInteractionType.Dehydration }));
+            AddItem(CreateConsumable("drink_mixed_vodka_soda", "Vodka Soda", "Drink", "Alcohol", 3f, -2f, 7f, -1f, 0f, 0f, 0f, 2f, true, 120f, 360f, 840f, interactions: new[] { StatusInteractionType.Dehydration }));
             AddItem(CreateConsumable("drink_rainwater", "Rainwater", "Drink", "Survival", 20f, -1f, -1f, -3f, 0f, 0f, 0f, 8f, true, 4f, 10f, 20f, interactions: new[] { StatusInteractionType.Illness }));
             AddItem(CreateConsumable("drink_boiled_water", "Boiled Water", "Drink", "Survival", 30f, 0f, 0f, 0f, 0f, 0f, 0f, -3f, true, 24f, 90f, 200f));
             AddItem(CreateConsumable("drink_contaminated_water", "Contaminated Water", "Drink", "Survival", 15f, -4f, -5f, -10f, 0f, 0f, 0f, 18f, true, 2f, 6f, 12f, interactions: new[] { StatusInteractionType.Illness, StatusInteractionType.Poisoning }));
@@ -190,13 +205,26 @@ namespace Survivebest.Catalog
         private void EnsureFoods()
         {
             AddItem(CreateConsumable("food_apple", "Apple", "Food", "Raw Ingredient", 0f, 0f, 1f, 1f, 12f, 0f, 0f, -1f, true, 24f, 72f, 140f));
+            AddItem(CreateConsumable("food_banana", "Banana", "Food", "Raw Ingredient", 0f, 2f, 1f, 1f, 14f, 0f, 0f, -1f, true, 24f, 72f, 140f));
+            AddItem(CreateConsumable("food_berries", "Berries", "Food", "Raw Ingredient", 2f, 1f, 1f, 1f, 10f, 0f, 0f, -1f, true, 10f, 24f, 36f));
+            AddItem(CreateConsumable("food_citrus", "Citrus", "Food", "Raw Ingredient", 2f, 1f, 1f, 2f, 9f, 0f, 0f, -2f, true, 20f, 60f, 120f));
+            AddItem(CreateConsumable("food_carrot", "Carrot", "Food", "Raw Ingredient", 0f, 0f, 0f, 1f, 8f, 0f, 0f, -1f, true, 24f, 72f, 140f));
+            AddItem(CreateConsumable("food_potato", "Potato", "Food", "Raw Ingredient", 0f, 0f, 0f, 0f, 11f, 0f, 0f, -1f, true, 72f, 240f, 500f));
             AddItem(CreateConsumable("food_raw_chicken", "Raw Chicken", "Food", "Raw Ingredient", 0f, 0f, -1f, -6f, 16f, 0f, 0f, 10f, true, 8f, 18f, 30f, interactions: new[] { StatusInteractionType.Poisoning }));
+            AddItem(CreateConsumable("food_raw_beef", "Raw Beef", "Food", "Raw Ingredient", 0f, 0f, -1f, -5f, 18f, 0f, 0f, 8f, true, 8f, 18f, 30f, interactions: new[] { StatusInteractionType.Poisoning }));
+            AddItem(CreateConsumable("food_raw_fish", "Raw Fish", "Food", "Raw Ingredient", 0f, 0f, -1f, -5f, 15f, 0f, 0f, 7f, true, 6f, 14f, 24f, interactions: new[] { StatusInteractionType.Poisoning }));
             AddItem(CreateConsumable("food_eggs", "Eggs", "Food", "Raw Ingredient", 0f, 1f, 0f, 0f, 10f, 0f, 0f, 0f, true, 16f, 48f, 96f));
             AddItem(CreateConsumable("food_grilled_meat", "Grilled Meat", "Food", "Cooked", 0f, 4f, 3f, 2f, 34f, 0f, 0f, -2f, true, 10f, 24f, 48f));
             AddItem(CreateConsumable("food_soup", "Soup", "Food", "Cooked", 8f, 2f, 3f, 1f, 26f, 0f, 0f, -3f, true, 8f, 18f, 30f));
             AddItem(CreateConsumable("food_stew", "Stew", "Food", "Cooked", 6f, 3f, 4f, 2f, 32f, 0f, 0f, -3f, true, 8f, 18f, 30f));
+            AddItem(CreateConsumable("food_pasta", "Pasta", "Food", "Cooked", 0f, 3f, 2f, 1f, 28f, 0f, 0f, -1f, true, 12f, 36f, 72f));
+            AddItem(CreateConsumable("food_rice_dish", "Rice Dish", "Food", "Cooked", 0f, 2f, 2f, 1f, 30f, 0f, 0f, -1f, true, 12f, 36f, 72f));
+            AddItem(CreateConsumable("food_stir_fry", "Stir Fry", "Food", "Cooked", 0f, 4f, 3f, 2f, 26f, 0f, 0f, -2f, true, 10f, 30f, 60f));
             AddItem(CreateConsumable("food_chips", "Chips", "Food", "Snack", -2f, -3f, 3f, -1f, 14f, 0f, 0f, 1f, true, 120f, 480f, 1200f));
+            AddItem(CreateConsumable("food_candy", "Candy", "Food", "Snack", -1f, 7f, 6f, -1f, 8f, 0f, 0f, 2f, true, 240f, 840f, 2000f));
             AddItem(CreateConsumable("food_protein_bar", "Protein Bar", "Food", "Snack", 0f, 8f, 2f, 1f, 18f, 0f, 0f, -1f, true, 240f, 720f, 1600f));
+            AddItem(CreateConsumable("food_crackers", "Crackers", "Food", "Snack", -1f, 1f, 1f, 0f, 10f, 0f, 0f, 0f, true, 240f, 900f, 2200f));
+            AddItem(CreateConsumable("food_nuts", "Nuts", "Food", "Snack", 0f, 4f, 1f, 1f, 12f, 0f, 0f, 0f, true, 240f, 900f, 2200f));
             AddItem(CreateConsumable("food_canned", "Canned Food", "Food", "Survival", 0f, 1f, 0f, 1f, 28f, 0f, 0f, 0f, true, 700f, 2200f, 4000f));
             AddItem(CreateConsumable("food_mre", "MRE", "Food", "Survival", -1f, 5f, -1f, 0f, 30f, 0f, 0f, 1f, true, 900f, 2600f, 5200f));
             AddItem(CreateConsumable("food_foraged_berries", "Foraged Berries", "Food", "Survival", 0f, 2f, 1f, -1f, 10f, 0f, 0f, 3f, true, 6f, 14f, 24f, interactions: new[] { StatusInteractionType.Poisoning }));
@@ -280,7 +308,7 @@ namespace Survivebest.Catalog
             AddItem(CreateApplyItem("clean_disinfectant", "Disinfectant Spray", "Cleaning", "Environment", hygiene: 8f, health: 4f, illness: -4f));
             AddItem(CreateApplyItem("clean_bleach", "Bleach", "Cleaning", "Environment", hygiene: 10f, health: 2f, illness: -5f));
             AddItem(CreateApplyItem("clean_sponge", "Sponge", "Cleaning", "Environment", hygiene: 3f));
-            AddItem(CreateApplyItem("clean_mop", "Cleaning", "Environment", "Environment", hygiene: 5f, mood: 1f));
+            AddItem(CreateApplyItem("clean_mop", "Mop", "Cleaning", "Environment", hygiene: 5f, mood: 1f));
             AddItem(CreateEquipItem("clean_vacuum", "Vacuum", "Cleaning", "Environment", mood: 1f, hygiene: 4f));
 
             AddItem(CreateInspectItem("fun_phone", "Phone", "Lifestyle", "Fun"));
