@@ -48,6 +48,7 @@ namespace Survivebest.Needs
         public float BurnoutRisk;
         public float Motivation;
         public CravingType ActiveCraving;
+        public int CravingRemainingHours;
         public BurnoutStage BurnoutStage;
     }
 
@@ -74,6 +75,7 @@ namespace Survivebest.Needs
         [SerializeField, Range(0f, 100f)] private float burnoutRisk;
         [SerializeField, Range(0f, 100f)] private float motivation = 70f;
         [SerializeField] private CravingType activeCraving;
+        [SerializeField, Min(0)] private int cravingRemainingHours;
         [SerializeField] private BurnoutStage burnoutStage;
         [SerializeField] private GameEventHub gameEventHub;
         [SerializeField] private GameBalanceManager balanceManager;
@@ -132,6 +134,7 @@ namespace Survivebest.Needs
                 BurnoutRisk = burnoutRisk,
                 Motivation = motivation,
                 ActiveCraving = activeCraving,
+                CravingRemainingHours = cravingRemainingHours,
                 BurnoutStage = burnoutStage
             };
         }
@@ -162,6 +165,7 @@ namespace Survivebest.Needs
             burnoutRisk = Mathf.Clamp(snapshot.BurnoutRisk, 0f, 100f);
             motivation = Mathf.Clamp(snapshot.Motivation, 0f, 100f);
             activeCraving = snapshot.ActiveCraving;
+            cravingRemainingHours = Mathf.Max(0, snapshot.CravingRemainingHours);
             SetBurnoutStage(snapshot.BurnoutStage);
         }
 
@@ -177,6 +181,7 @@ namespace Survivebest.Needs
         public float Motivation => motivation;
         public BurnoutStage CurrentBurnoutStage => burnoutStage;
         public CravingType ActiveCraving => activeCraving;
+        public int CravingRemainingHours => cravingRemainingHours;
 
         private void OnEnable()
         {
@@ -226,6 +231,7 @@ namespace Survivebest.Needs
         public void SetActiveCraving(CravingType craving)
         {
             activeCraving = craving;
+            cravingRemainingHours = craving == CravingType.None ? 0 : Mathf.Max(cravingRemainingHours, 4);
         }
 
         public void ResolveCraving(CravingType craving, bool satisfied)
@@ -237,6 +243,7 @@ namespace Survivebest.Needs
 
             ModifyMood(satisfied ? 6f : -4f);
             activeCraving = CravingType.None;
+            cravingRemainingHours = 0;
         }
 
         public void ApplyFoodEffects(FoodItem food, HealthSystem healthSystem = null)
@@ -353,6 +360,16 @@ namespace Survivebest.Needs
             if (activeCraving == CravingType.None && UnityEngine.Random.value < 0.08f)
             {
                 activeCraving = (CravingType)UnityEngine.Random.Range(1, Enum.GetValues(typeof(CravingType)).Length);
+                cravingRemainingHours = UnityEngine.Random.Range(3, 9);
+            }
+            else if (activeCraving != CravingType.None)
+            {
+                cravingRemainingHours = Mathf.Max(0, cravingRemainingHours - 1);
+                if (cravingRemainingHours == 0)
+                {
+                    ModifyMood(-1.5f * m);
+                    cravingRemainingHours = UnityEngine.Random.Range(2, 5);
+                }
             }
 
             if (owner != null && simulationCohesionSystem != null)
