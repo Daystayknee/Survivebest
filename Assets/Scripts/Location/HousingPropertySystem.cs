@@ -130,6 +130,14 @@ namespace Survivebest.Location
         public string StyleTag;
         [Range(0f, 100f)] public float ComfortContribution = 5f;
         [Range(0f, 100f)] public float DecorContribution = 4f;
+        public List<string> Affordances = new();
+        [Min(0)] public int StorageSlots;
+        public bool SupportsFoodPreservation;
+        public bool SupportsFrozenPreservation;
+        public bool SupportsCooking;
+        public bool SupportsCleaning;
+        public bool SupportsReading;
+        public bool SupportsToiletUse;
     }
 
     [Serializable]
@@ -707,21 +715,41 @@ namespace Survivebest.Location
         {
             List<FurniturePlacementRecord> furniture = new()
             {
-                CreateFurniture("sofa_main", "Sofa", FurnitureCategory.Seating, "living_room", styleTag, 8f, 6f),
-                CreateFurniture("dining_table", "Dining Table", FurnitureCategory.Dining, "kitchen", styleTag, 4f, 4f),
-                CreateFurniture("fridge", "Fridge", FurnitureCategory.Kitchen, "kitchen", styleTag, 2f, 2f),
-                CreateFurniture("stove", "Stove", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 2f),
-                CreateFurniture("wardrobe", "Wardrobe", FurnitureCategory.Storage, "bedroom", styleTag, 2f, 4f),
-                CreateFurniture("bed_primary", "Primary Bed", FurnitureCategory.Sleeping, "bedroom", styleTag, 9f, 5f),
-                CreateFurniture("sink_vanity", "Bathroom Sink", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f),
-                CreateFurniture("bath_vanity", "Bath Vanity", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f),
-                CreateFurniture("toilet", "Toilet", FurnitureCategory.Bath, "bathroom", styleTag, 1f, 2f),
-                CreateFurniture("shower", "Shower", FurnitureCategory.Bath, "bathroom", styleTag, 3f, 3f),
-                CreateFurniture("tub", "Bathtub", FurnitureCategory.Bath, "bathroom", styleTag, 4f, 4f),
-                CreateFurniture("hygiene_cart", "Hygiene Cart", FurnitureCategory.Utility, "bathroom", styleTag, 2f, 3f),
-                CreateFurniture("toothbrush_station", "Toothbrush Station", FurnitureCategory.Utility, "bathroom", styleTag, 1f, 2f),
-                CreateFurniture("linen_cabinet", "Linen Cabinet", FurnitureCategory.Storage, "bathroom", styleTag, 1f, 3f),
-                CreateFurniture("washer", "Washer", FurnitureCategory.Utility, "utility", styleTag, 1f, 1f)
+                CreateFurniture("sofa_main", "Sofa", FurnitureCategory.Seating, "living_room", styleTag, 8f, 6f, storageSlots: 1, affordances: "sit", "rest", "socialize"),
+                CreateFurniture("bookshelf", "Bookshelf", FurnitureCategory.Storage, "living_room", styleTag, 3f, 5f, storageSlots: 40, supportsReading: true, affordances: "read", "store_books"),
+                CreateFurniture("coffee_table", "Coffee Table", FurnitureCategory.Dining, "living_room", styleTag, 2f, 3f, affordances: "place_items", "wipe_down"),
+                CreateFurniture("dining_table", "Dining Table", FurnitureCategory.Dining, "kitchen", styleTag, 4f, 4f, affordances: "eat", "read", "wipe_down"),
+                CreateFurniture("kitchen_counter", "Kitchen Counter", FurnitureCategory.Kitchen, "kitchen", styleTag, 2f, 3f, storageSlots: 14, supportsCleaning: true, affordances: "prep_food", "wipe_down", "store_supplies"),
+                CreateFurniture("fridge", "Fridge", FurnitureCategory.Kitchen, "kitchen", styleTag, 2f, 2f, storageSlots: 48, supportsFoodPreservation: true, affordances: "chill_food", "store_leftovers"),
+                CreateFurniture("freezer", "Freezer", FurnitureCategory.Kitchen, "kitchen", styleTag, 2f, 2f, storageSlots: 40, supportsFoodPreservation: true, supportsFrozenPreservation: true, affordances: "freeze_food", "preserve_food_long_term"),
+                CreateFurniture("stove", "Stove", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 2f, supportsCooking: true, affordances: "cook_meal", "boil"),
+                CreateFurniture("oven", "Oven", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 2f, supportsCooking: true, affordances: "bake", "roast"),
+                CreateFurniture("microwave", "Microwave", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 1f, supportsCooking: true, affordances: "reheat", "quick_cook"),
+                CreateFurniture("blender", "Blender", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 1f, supportsCooking: true, affordances: "blend", "make_shakes"),
+                CreateFurniture("air_fryer", "Air Fryer", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 1f, supportsCooking: true, affordances: "air_fry", "quick_cook"),
+                CreateFurniture("pressure_cooker", "Pressure Cooker", FurnitureCategory.Kitchen, "kitchen", styleTag, 1f, 1f, supportsCooking: true, affordances: "pressure_cook", "one_pot_meals"),
+                CreateFurniture("sink_kitchen", "Kitchen Sink", FurnitureCategory.Utility, "kitchen", styleTag, 1f, 1f, supportsCleaning: true, affordances: "wash_dishes", "rinse_food"),
+                CreateFurniture("dish_rack", "Dish Rack", FurnitureCategory.Utility, "kitchen", styleTag, 1f, 1f, storageSlots: 12, supportsCleaning: true, affordances: "dry_dishes"),
+                CreateFurniture("cabinet_kitchen", "Kitchen Cabinets", FurnitureCategory.Storage, "kitchen", styleTag, 1f, 2f, storageSlots: 56, affordances: "store_bowls", "store_cups", "store_mugs"),
+                CreateFurniture("pantry", "Pantry Shelves", FurnitureCategory.Storage, "kitchen", styleTag, 1f, 2f, storageSlots: 72, affordances: "store_dry_food", "store_ingredients"),
+                CreateFurniture("wardrobe", "Wardrobe", FurnitureCategory.Storage, "bedroom", styleTag, 2f, 4f, storageSlots: 44, affordances: "store_clothing"),
+                CreateFurniture("dresser", "Dresser", FurnitureCategory.Storage, "bedroom", styleTag, 2f, 3f, storageSlots: 24, affordances: "store_clothing"),
+                CreateFurniture("nightstand", "Nightstand", FurnitureCategory.Storage, "bedroom", styleTag, 1f, 2f, storageSlots: 8, supportsReading: true, affordances: "read", "store_personal_items"),
+                CreateFurniture("bed_primary", "Primary Bed", FurnitureCategory.Sleeping, "bedroom", styleTag, 9f, 5f, affordances: "sleep", "rest"),
+                CreateFurniture("book_nook_chair", "Reading Chair", FurnitureCategory.Seating, "bedroom", styleTag, 2f, 2f, supportsReading: true, affordances: "read"),
+                CreateFurniture("sink_vanity", "Bathroom Sink", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f, supportsCleaning: true, affordances: "wash_hands", "wash_face"),
+                CreateFurniture("bath_vanity", "Bath Vanity", FurnitureCategory.Bath, "bathroom", styleTag, 2f, 3f, storageSlots: 10, affordances: "groom"),
+                CreateFurniture("toilet", "Toilet", FurnitureCategory.Bath, "bathroom", styleTag, 1f, 2f, supportsToiletUse: true, affordances: "go_potty"),
+                CreateFurniture("shower", "Shower", FurnitureCategory.Bath, "bathroom", styleTag, 3f, 3f, supportsCleaning: true, affordances: "wash_body"),
+                CreateFurniture("tub", "Bathtub", FurnitureCategory.Bath, "bathroom", styleTag, 4f, 4f, supportsCleaning: true, affordances: "bathe"),
+                CreateFurniture("hygiene_cart", "Hygiene Cart", FurnitureCategory.Utility, "bathroom", styleTag, 2f, 3f, storageSlots: 20, affordances: "store_hygiene_items"),
+                CreateFurniture("toothbrush_station", "Toothbrush Station", FurnitureCategory.Utility, "bathroom", styleTag, 1f, 2f, supportsCleaning: true, affordances: "brush_teeth"),
+                CreateFurniture("linen_cabinet", "Linen Cabinet", FurnitureCategory.Storage, "bathroom", styleTag, 1f, 3f, storageSlots: 30, affordances: "store_towels"),
+                CreateFurniture("washer", "Washer", FurnitureCategory.Utility, "utility", styleTag, 1f, 1f, supportsCleaning: true, affordances: "wash_clothes"),
+                CreateFurniture("dryer", "Dryer", FurnitureCategory.Utility, "utility", styleTag, 1f, 1f, supportsCleaning: true, affordances: "dry_clothes"),
+                CreateFurniture("mop_bucket", "Mop and Bucket", FurnitureCategory.Utility, "utility", styleTag, 1f, 1f, supportsCleaning: true, affordances: "wipe_floor"),
+                CreateFurniture("cleaning_closet", "Cleaning Closet", FurnitureCategory.Storage, "utility", styleTag, 1f, 1f, storageSlots: 26, affordances: "store_cleaning_supplies"),
+                CreateFurniture("storage_bins", "Storage Bins", FurnitureCategory.Storage, "hallway", styleTag, 1f, 1f, storageSlots: 32, affordances: "store_everyday_items")
             };
 
             if (blueprintType is HouseBlueprintType.WaterfrontDuplex or HouseBlueprintType.EstateManor or HouseBlueprintType.RuralFarmhouse)
@@ -930,7 +958,15 @@ namespace Survivebest.Location
             return decor;
         }
 
-        private static FurniturePlacementRecord CreateFurniture(string furnitureId, string label, FurnitureCategory category, string roomTag, string styleTag, float comfort, float decor)
+        private static FurniturePlacementRecord CreateFurniture(string furnitureId, string label, FurnitureCategory category, string roomTag, string styleTag, float comfort, float decor,
+            int storageSlots = 0,
+            bool supportsFoodPreservation = false,
+            bool supportsFrozenPreservation = false,
+            bool supportsCooking = false,
+            bool supportsCleaning = false,
+            bool supportsReading = false,
+            bool supportsToiletUse = false,
+            params string[] affordances)
         {
             return new FurniturePlacementRecord
             {
@@ -940,7 +976,15 @@ namespace Survivebest.Location
                 RoomTag = roomTag,
                 StyleTag = styleTag,
                 ComfortContribution = comfort,
-                DecorContribution = decor
+                DecorContribution = decor,
+                StorageSlots = Mathf.Max(0, storageSlots),
+                SupportsFoodPreservation = supportsFoodPreservation,
+                SupportsFrozenPreservation = supportsFrozenPreservation,
+                SupportsCooking = supportsCooking,
+                SupportsCleaning = supportsCleaning,
+                SupportsReading = supportsReading,
+                SupportsToiletUse = supportsToiletUse,
+                Affordances = affordances != null ? new List<string>(affordances) : new List<string>()
             };
         }
 
