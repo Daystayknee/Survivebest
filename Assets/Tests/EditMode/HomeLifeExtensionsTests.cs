@@ -74,5 +74,28 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void NeedsSystem_CravingDuration_PersistsAcrossSnapshot()
+        {
+            GameObject go = new GameObject("NeedsCraving");
+            NeedsSystem needs = go.AddComponent<NeedsSystem>();
+
+            needs.SetActiveCraving(CravingType.Caffeine);
+            NeedsSnapshot snapshot = needs.CaptureSnapshot();
+            string summary = needs.BuildCravingTooltipSummary();
+
+            Assert.AreEqual(CravingType.Caffeine, snapshot.ActiveCraving);
+            Assert.GreaterOrEqual(snapshot.CravingRemainingHours, 4);
+            StringAssert.Contains("Estimated duration", summary);
+
+            needs.ResolveCraving(CravingType.Caffeine, true);
+            needs.ApplySnapshot(snapshot);
+
+            Assert.AreEqual(CravingType.Caffeine, needs.ActiveCraving);
+            Assert.AreEqual(snapshot.CravingRemainingHours, needs.CravingRemainingHours);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }

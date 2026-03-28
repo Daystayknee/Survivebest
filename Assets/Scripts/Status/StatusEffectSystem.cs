@@ -6,6 +6,7 @@ using Survivebest.Events;
 using Survivebest.Health;
 using Survivebest.Needs;
 using Survivebest.World;
+using System.Text;
 
 namespace Survivebest.Status
 {
@@ -64,6 +65,7 @@ namespace Survivebest.Status
 
     public class StatusEffectSystem : MonoBehaviour
     {
+        private static readonly StringBuilder tooltipBuilder = new();
         [SerializeField] private CharacterCore owner;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private NeedsSystem needsSystem;
@@ -79,6 +81,47 @@ namespace Survivebest.Status
 
         public IReadOnlyList<StatusEffectDefinition> StatusLibrary => statusLibrary;
         public IReadOnlyList<ActiveStatusEffect> ActiveEffects => activeEffects;
+
+        public static string BuildEffectTooltip(ActiveStatusEffect effect)
+        {
+            if (effect == null)
+            {
+                return "No effect data.";
+            }
+
+            tooltipBuilder.Clear();
+            tooltipBuilder.AppendLine(string.IsNullOrWhiteSpace(effect.Description) ? effect.DisplayName : effect.Description);
+            tooltipBuilder.AppendLine($"Remaining: {effect.RemainingHours}h");
+            AppendDelta(tooltipBuilder, "Mood", effect.MoodDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Hunger", effect.HungerDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Energy", effect.EnergyDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Hydration", effect.HydrationDeltaPerHour);
+            AppendDelta(tooltipBuilder, "Hygiene", effect.HygieneDeltaPerHour);
+            AppendProjectedTotal(tooltipBuilder, "Projected mood total", effect.MoodDeltaPerHour, effect.RemainingHours);
+            AppendProjectedTotal(tooltipBuilder, "Projected hunger total", effect.HungerDeltaPerHour, effect.RemainingHours);
+            return tooltipBuilder.ToString().TrimEnd();
+        }
+
+        private static void AppendDelta(StringBuilder builder, string label, float delta)
+        {
+            if (Mathf.Approximately(delta, 0f))
+            {
+                return;
+            }
+
+            builder.AppendLine($"{label}: {(delta > 0f ? "+" : string.Empty)}{delta:0.##}/h");
+        }
+
+        private static void AppendProjectedTotal(StringBuilder builder, string label, float deltaPerHour, int remainingHours)
+        {
+            if (Mathf.Approximately(deltaPerHour, 0f) || remainingHours <= 0)
+            {
+                return;
+            }
+
+            float total = deltaPerHour * remainingHours;
+            builder.AppendLine($"{label}: {(total > 0f ? "+" : string.Empty)}{total:0.##} over {remainingHours}h");
+        }
 
         public List<ActiveStatusEffect> CaptureSnapshot()
         {

@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using Survivebest.Core;
 using Survivebest.Health;
+using Survivebest.Needs;
+using Survivebest.Status;
 using Survivebest.World;
 using Survivebest.Catalog;
 
@@ -225,6 +227,12 @@ namespace Survivebest.UI
             CreatePill($"Build: {character.CurrentBodyType}", positiveTraitColor);
             CreatePill($"Style: {character.ClothingStyle}", positiveTraitColor);
 
+            NeedsSystem needs = character.GetComponent<NeedsSystem>();
+            if (needs != null)
+            {
+                AddNeedsPills(needs);
+            }
+
             if (character.Talents != null)
             {
                 for (int i = 0; i < character.Talents.Count; i++)
@@ -240,15 +248,49 @@ namespace Survivebest.UI
                 {
                     MedicalCondition c = med.ActiveConditions[i];
                     string label = c.IsIllness ? c.IllnessType.ToString() : c.InjuryType.ToString();
-                    CreatePill(label, ailmentColor);
+                    CreatePill(label, ailmentColor, "⚕", $"Condition severity: {c.Severity}\nExpected duration: {c.RemainingHours}h\nLikely mood pressure while active.");
+                }
+            }
+
+            StatusEffectSystem status = character.GetComponent<StatusEffectSystem>();
+            if (status != null && status.ActiveEffects != null)
+            {
+                for (int i = 0; i < status.ActiveEffects.Count; i++)
+                {
+                    ActiveStatusEffect effect = status.ActiveEffects[i];
+                    if (effect == null)
+                    {
+                        continue;
+                    }
+
+                    CreatePill(effect.DisplayName, effect.IsNegative ? ailmentColor : positiveTraitColor, effect.IsNegative ? "⚠" : "✨", StatusEffectSystem.BuildEffectTooltip(effect));
                 }
             }
         }
 
-        private void CreatePill(string label, Color color)
+        private void AddNeedsPills(NeedsSystem needs)
+        {
+            NeedsSnapshot snapshot = needs.CaptureSnapshot();
+            CreatePill(
+                $"Hunger {snapshot.Hunger:0}",
+                snapshot.Hunger < 40f ? ailmentColor : cautionTraitColor,
+                "🍽",
+                $"Hunger level: {snapshot.Hunger:0}/100\nLow hunger reduces mood and energy over time.\nEat soon to avoid need-strain penalties.\n{PillTooltipKnowledgeBase.GetHint((int)snapshot.Hunger)}");
+
+            if (snapshot.ActiveCraving != CravingType.None)
+            {
+                CreatePill(
+                    $"Craving: {snapshot.ActiveCraving}",
+                    cautionTraitColor,
+                    "💭",
+                    $"{needs.BuildCravingTooltipSummary()}\n{PillTooltipKnowledgeBase.GetHint(snapshot.CravingRemainingHours + (int)snapshot.ActiveCraving)}");
+            }
+        }
+
+        private void CreatePill(string label, Color color, string icon = "", string tooltip = null)
         {
             TraitPillTagView pill = Instantiate(pillPrefab, pillsContainer);
-            pill.Bind(label, color);
+            pill.Bind(label, color, icon, tooltip);
         }
 
         private void SetMissing()
@@ -259,5 +301,6 @@ namespace Survivebest.UI
             if (healthText != null) healthText.text = string.Empty;
             if (personalityText != null) personalityText.text = string.Empty;
         }
+
     }
 }

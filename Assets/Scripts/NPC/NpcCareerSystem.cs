@@ -44,7 +44,9 @@ namespace Survivebest.NPC
         Journalist,
         SocialWorker,
         Plumber,
-        SecurityGuard
+        SecurityGuard,
+        TattooArtist,
+        PiercingArtist
     }
 
     public enum CareerDomain
