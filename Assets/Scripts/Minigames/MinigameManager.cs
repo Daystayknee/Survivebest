@@ -39,7 +39,9 @@ namespace Survivebest.Minigames
         SingingSession,
         ComputerGaming,
         WebChat,
-        MiniArcade
+        MiniArcade,
+        TattooStudio,
+        PiercingStudio
     }
 
     [Serializable]
@@ -123,7 +125,9 @@ namespace Survivebest.Minigames
             new MinigameSceneProfile { Type = MinigameType.SingingSession, SceneBackdropId = "music_corner", Prompt = "Warm up voice, stay on pitch, and perform with confidence.", RecommendedSkill = "Singing", DurationMultiplier = 0.95f },
             new MinigameSceneProfile { Type = MinigameType.ComputerGaming, SceneBackdropId = "pc_desk_setup", Prompt = "Tune controls, read enemy patterns, and execute a clean strategy loop.", RecommendedSkill = "Engineering", DurationMultiplier = 1.05f },
             new MinigameSceneProfile { Type = MinigameType.WebChat, SceneBackdropId = "chat_workspace", Prompt = "Read room tone, respond clearly, and keep the thread constructive.", RecommendedSkill = "Writing", DurationMultiplier = 0.85f },
-            new MinigameSceneProfile { Type = MinigameType.MiniArcade, SceneBackdropId = "arcade_corner", Prompt = "Chain quick wins across mini challenges without losing momentum.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f }
+            new MinigameSceneProfile { Type = MinigameType.MiniArcade, SceneBackdropId = "arcade_corner", Prompt = "Chain quick wins across mini challenges without losing momentum.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f },
+            new MinigameSceneProfile { Type = MinigameType.TattooStudio, SceneBackdropId = "tattoo_studio_chair", Prompt = "Stencil cleanly, trace linework with precision, and protect client comfort.", RecommendedSkill = "Artistry", DurationMultiplier = 1.2f },
+            new MinigameSceneProfile { Type = MinigameType.PiercingStudio, SceneBackdropId = "piercing_studio_station", Prompt = "Mark placement, sterilize tools, and complete safe jewelry insertion.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f }
         };
 
         private Coroutine runningMinigame;
@@ -228,6 +232,7 @@ namespace Survivebest.Minigames
                 ProfessionType.OfficeAdministrator => MinigameType.BookReading,
                 ProfessionType.Electrician => MinigameType.Repairs,
                 ProfessionType.ConstructionWorker => MinigameType.Repairs,
+                ProfessionType.Barber => MinigameType.PiercingStudio,
                 _ => MinigameType.Cleaning
             };
         }
@@ -403,6 +408,8 @@ namespace Survivebest.Minigames
                 MinigameType.ComputerGaming => "Engineering",
                 MinigameType.WebChat => "Writing",
                 MinigameType.MiniArcade => "Survival skills",
+                MinigameType.TattooStudio => "Artistry",
+                MinigameType.PiercingStudio => "First aid",
                 _ => "Survival skills"
             };
         }
@@ -459,6 +466,8 @@ namespace Survivebest.Minigames
                 MinigameType.ComputerGaming => 0.1f,
                 MinigameType.WebChat => 0.06f,
                 MinigameType.MiniArcade => 0.09f,
+                MinigameType.TattooStudio => 0.17f,
+                MinigameType.PiercingStudio => 0.14f,
                 _ => 0.1f
             };
         }
@@ -477,6 +486,8 @@ namespace Survivebest.Minigames
             {
                 float energyCost = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.IntensiveCare or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare or MinigameType.Casting
                     ? (success ? -5f : -8f)
+                    : type is MinigameType.TattooStudio or MinigameType.PiercingStudio
+                        ? (success ? -4f : -7f)
                     : type is MinigameType.MovieNight or MinigameType.TVMarathon or MinigameType.BookReading or MinigameType.WebChat
                         ? (success ? 4f : 1f)
                     : (success ? -3f : -6f);
@@ -492,6 +503,8 @@ namespace Survivebest.Minigames
                 string skillName = ResolveSkillForMinigame(type);
                 float xp = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.IntensiveCare or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare
                     ? (success ? 6f : 2f)
+                    : type is MinigameType.TattooStudio or MinigameType.PiercingStudio
+                        ? (success ? 5f : 2f)
                     : (success ? 4f : 1.5f);
                 skillSystem.AddExperience(skillName, xp);
             }
@@ -552,7 +565,7 @@ namespace Survivebest.Minigames
 
         private static bool IsBlueprintDriven(MinigameType type)
         {
-            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology or MinigameType.ComputerGaming or MinigameType.WebChat or MinigameType.MiniArcade;
+            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology or MinigameType.ComputerGaming or MinigameType.WebChat or MinigameType.MiniArcade or MinigameType.TattooStudio or MinigameType.PiercingStudio;
         }
 
         private static IEnumerable<MinigameStepBlueprint> BuildStepBlueprints(MinigameType type, string anatomyFocus, bool emergencyPacing)
@@ -640,6 +653,18 @@ namespace Survivebest.Minigames
                     yield return Step("quick_start", "Clear the opening mini challenge to build combo momentum.", "arcade_pad", MinigameInputStyle.Tap, 0.45f);
                     yield return Step("combo_chain", "Maintain combo chain across mixed inputs.", "combo_meter", MinigameInputStyle.Trace, 0.56f);
                     yield return Step("boss_wave", "Finish the final wave with one clean sequence.", "boss_lane", MinigameInputStyle.Sequence, 0.6f);
+                    break;
+                case MinigameType.TattooStudio:
+                    yield return Step("consult_design", $"Review design intent and placement around {anatomyFocus}.", "reference_board", MinigameInputStyle.Sequence, 0.5f);
+                    yield return Step("stencil_place", "Align stencil to landmarks and smooth out distortion.", "stencil_sheet", MinigameInputStyle.Drag, 0.6f);
+                    yield return Step("linework_pass", "Trace clean linework with stable depth and spacing.", "tattoo_machine", MinigameInputStyle.Trace, 0.72f);
+                    yield return Step("aftercare_wrap", "Apply aftercare layer and explain healing steps clearly.", "aftercare_wrap", MinigameInputStyle.Sequence, 0.55f);
+                    break;
+                case MinigameType.PiercingStudio:
+                    yield return Step("placement_mark", $"Mark safe placement points at {anatomyFocus}.", "skin_marker", MinigameInputStyle.Tap, 0.48f);
+                    yield return Step("sterile_setup", "Sequence gloves, clamp, and sterile field prep.", "sterile_tray", MinigameInputStyle.Sequence, 0.58f);
+                    yield return Step("needle_pass", "Complete the piercing pass within the precision timing window.", "piercing_needle", MinigameInputStyle.TimingWindow, 0.66f);
+                    yield return Step("jewelry_lock", "Seat jewelry and lock the closure without tissue pinch.", "jewelry_tool", MinigameInputStyle.Hold, 0.6f);
                     break;
                 default:
                     yield return Step("generic_start", $"Perform the main interaction for {anatomyFocus}.", "tool", emergencyPacing ? MinigameInputStyle.TimingWindow : MinigameInputStyle.Tap, 0.4f);
