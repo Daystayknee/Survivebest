@@ -113,7 +113,7 @@ namespace Survivebest.Tests.EditMode
                 LifeStage.Child => 4,
                 LifeStage.Preteen => 4,
                 LifeStage.Teen => 7,
-                _ => 30
+                _ => 50
             };
         }
 

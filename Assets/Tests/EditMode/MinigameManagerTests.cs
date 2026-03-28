@@ -19,6 +19,8 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(MinigameType.VeterinaryCare, manager.ResolveProfessionMinigame(ProfessionType.Veterinarian));
             Assert.AreEqual(MinigameType.EmergencyResponse, manager.ResolveProfessionMinigame(ProfessionType.Firefighter));
             Assert.AreEqual(MinigameType.PiercingStudio, manager.ResolveProfessionMinigame(ProfessionType.Barber));
+            Assert.AreEqual(MinigameType.TattooStudio, manager.ResolveProfessionMinigame(ProfessionType.TattooArtist));
+            Assert.AreEqual(MinigameType.PiercingStudio, manager.ResolveProfessionMinigame(ProfessionType.PiercingArtist));
 
             Object.DestroyImmediate(go);
         }

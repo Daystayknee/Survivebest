@@ -233,6 +233,8 @@ namespace Survivebest.Minigames
                 ProfessionType.Electrician => MinigameType.Repairs,
                 ProfessionType.ConstructionWorker => MinigameType.Repairs,
                 ProfessionType.Barber => MinigameType.PiercingStudio,
+                ProfessionType.TattooArtist => MinigameType.TattooStudio,
+                ProfessionType.PiercingArtist => MinigameType.PiercingStudio,
                 _ => MinigameType.Cleaning
             };
         }

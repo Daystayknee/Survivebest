@@ -128,7 +128,9 @@ namespace Survivebest.Core
             "Single lobe stud", "Double lobe stack", "Triple lobe stack", "Flat-back lobe", "Mini huggie hoop", "Helix ring", "Forward helix stud", "Tragus stud", "Anti-tragus stud", "Conch hoop",
             "Daith ring", "Rook bar", "Snug bar", "Industrial bar", "Nostril stud", "Double nostril chain", "High nostril stud", "Septum ring", "Bridge bar", "Brow bar",
             "Vertical labret", "Lip ring", "Snake bite pair", "Medusa stud", "Monroe stud", "Ashley stud", "Tongue bar", "Smiley ring", "Navel ring", "Floating navel",
-            "Nipple bar", "Nipple shield", "Dermal anchor", "Surface bar", "Orbital ear ring", "Auricle hoop"
+            "Nipple bar", "Nipple shield", "Dermal anchor", "Surface bar", "Orbital ear ring", "Auricle hoop", "Lobe chain drape", "Helix cluster", "Triple helix ladder", "Daith clicker",
+            "Rook clicker", "Conch chain", "Stacked tragus", "Inner conch stud", "Outer conch spike", "High lobe cluster", "Upper lobe hoop", "Low helix cuff", "Flat constellation set", "Nostril chain duo",
+            "Twin nostril studs", "Septum horseshoe", "Septum clicker", "Bridge curve bar", "Brow ring", "Brow double bar", "Vertical philtrum", "Dahlia bites", "Shark bite set", "Spider bite set"
         };
 
         private static readonly string[] ChildSafePiercings =
