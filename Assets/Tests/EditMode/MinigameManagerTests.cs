@@ -18,6 +18,9 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(MinigameType.FirstAid, manager.ResolveProfessionMinigame(ProfessionType.Nurse));
             Assert.AreEqual(MinigameType.VeterinaryCare, manager.ResolveProfessionMinigame(ProfessionType.Veterinarian));
             Assert.AreEqual(MinigameType.EmergencyResponse, manager.ResolveProfessionMinigame(ProfessionType.Firefighter));
+            Assert.AreEqual(MinigameType.PiercingStudio, manager.ResolveProfessionMinigame(ProfessionType.Barber));
+            Assert.AreEqual(MinigameType.TattooStudio, manager.ResolveProfessionMinigame(ProfessionType.TattooArtist));
+            Assert.AreEqual(MinigameType.PiercingStudio, manager.ResolveProfessionMinigame(ProfessionType.PiercingArtist));
 
             Object.DestroyImmediate(go);
         }
@@ -57,6 +60,25 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(types.Contains(MinigameType.TVMarathon));
             Assert.IsTrue(types.Contains(MinigameType.BookReading));
             Assert.IsTrue(types.Contains(MinigameType.SingingSession));
+            Assert.IsTrue(types.Contains(MinigameType.TattooStudio));
+            Assert.IsTrue(types.Contains(MinigameType.PiercingStudio));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildSessionBlueprint_ForTattooStudioSupportsTattooFlow()
+        {
+            GameObject go = new GameObject("TattooBlueprint");
+            MinigameManager manager = go.AddComponent<MinigameManager>();
+
+            MinigameSessionBlueprint blueprint = manager.BuildSessionBlueprint(MinigameType.TattooStudio, "left forearm", false);
+
+            Assert.IsNotNull(blueprint);
+            Assert.AreEqual(MinigameType.TattooStudio, blueprint.Type);
+            Assert.GreaterOrEqual(blueprint.Steps.Count, 4);
+            Assert.AreEqual("consult_design", blueprint.Steps[0].StepId);
+            Assert.IsTrue(blueprint.Steps.Exists(x => x.ToolId == "tattoo_machine"));
 
             Object.DestroyImmediate(go);
         }
