@@ -97,6 +97,8 @@ namespace Survivebest.Status
             AppendDelta(tooltipBuilder, "Energy", effect.EnergyDeltaPerHour);
             AppendDelta(tooltipBuilder, "Hydration", effect.HydrationDeltaPerHour);
             AppendDelta(tooltipBuilder, "Hygiene", effect.HygieneDeltaPerHour);
+            AppendProjectedTotal(tooltipBuilder, "Projected mood total", effect.MoodDeltaPerHour, effect.RemainingHours);
+            AppendProjectedTotal(tooltipBuilder, "Projected hunger total", effect.HungerDeltaPerHour, effect.RemainingHours);
             return tooltipBuilder.ToString().TrimEnd();
         }
 
@@ -108,6 +110,17 @@ namespace Survivebest.Status
             }
 
             builder.AppendLine($"{label}: {(delta > 0f ? "+" : string.Empty)}{delta:0.##}/h");
+        }
+
+        private static void AppendProjectedTotal(StringBuilder builder, string label, float deltaPerHour, int remainingHours)
+        {
+            if (Mathf.Approximately(deltaPerHour, 0f) || remainingHours <= 0)
+            {
+                return;
+            }
+
+            float total = deltaPerHour * remainingHours;
+            builder.AppendLine($"{label}: {(total > 0f ? "+" : string.Empty)}{total:0.##} over {remainingHours}h");
         }
 
         public List<ActiveStatusEffect> CaptureSnapshot()

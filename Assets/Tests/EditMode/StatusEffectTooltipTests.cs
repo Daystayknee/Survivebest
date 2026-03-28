@@ -25,6 +25,7 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("Mood: -0.8/h", tooltip);
             StringAssert.Contains("Hunger: -0.2/h", tooltip);
             StringAssert.Contains("Hydration: +0.1/h", tooltip);
+            StringAssert.Contains("Projected mood total: -4.8 over 6h", tooltip);
         }
     }
 }

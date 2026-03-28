@@ -246,6 +246,16 @@ namespace Survivebest.Needs
             cravingRemainingHours = 0;
         }
 
+        public string BuildCravingTooltipSummary()
+        {
+            if (activeCraving == CravingType.None)
+            {
+                return "No active craving.";
+            }
+
+            return $"Craving: {activeCraving}\nEstimated duration: {cravingRemainingHours}h\nIf unresolved, mood pressure increases.";
+        }
+
         public void ApplyFoodEffects(FoodItem food, HealthSystem healthSystem = null)
         {
             if (food == null)

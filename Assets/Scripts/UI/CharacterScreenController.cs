@@ -275,7 +275,7 @@ namespace Survivebest.UI
                 $"Hunger {snapshot.Hunger:0}",
                 snapshot.Hunger < 40f ? ailmentColor : cautionTraitColor,
                 "🍽",
-                $"Hunger level: {snapshot.Hunger:0}/100\nLow hunger reduces mood and energy over time.\nEat soon to avoid need-strain penalties.");
+                $"Hunger level: {snapshot.Hunger:0}/100\nLow hunger reduces mood and energy over time.\nEat soon to avoid need-strain penalties.\n{PillTooltipKnowledgeBase.GetHint((int)snapshot.Hunger)}");
 
             if (snapshot.ActiveCraving != CravingType.None)
             {
@@ -283,7 +283,7 @@ namespace Survivebest.UI
                     $"Craving: {snapshot.ActiveCraving}",
                     cautionTraitColor,
                     "💭",
-                    $"Craving active: {snapshot.ActiveCraving}\nEstimated duration: {snapshot.CravingRemainingHours}h\nUnresolved cravings can lower mood.");
+                    $"{needs.BuildCravingTooltipSummary()}\n{PillTooltipKnowledgeBase.GetHint(snapshot.CravingRemainingHours + (int)snapshot.ActiveCraving)}");
             }
         }
 

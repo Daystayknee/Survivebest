@@ -83,9 +83,11 @@ namespace Survivebest.Tests.EditMode
 
             needs.SetActiveCraving(CravingType.Caffeine);
             NeedsSnapshot snapshot = needs.CaptureSnapshot();
+            string summary = needs.BuildCravingTooltipSummary();
 
             Assert.AreEqual(CravingType.Caffeine, snapshot.ActiveCraving);
             Assert.GreaterOrEqual(snapshot.CravingRemainingHours, 4);
+            StringAssert.Contains("Estimated duration", summary);
 
             needs.ResolveCraving(CravingType.Caffeine, true);
             needs.ApplySnapshot(snapshot);
