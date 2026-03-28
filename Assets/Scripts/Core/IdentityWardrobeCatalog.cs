@@ -125,7 +125,32 @@ namespace Survivebest.Core
 
         private static readonly string[] UniversalPiercings =
         {
-            "Single lobe stud", "Double lobe stack", "Helix ring", "Tragus stud", "Conch hoop", "Nostril stud", "Septum ring", "Brow bar", "Lip ring", "Medusa stud", "Industrial bar", "Navel ring"
+            "Single lobe stud", "Double lobe stack", "Triple lobe stack", "Flat-back lobe", "Mini huggie hoop", "Helix ring", "Forward helix stud", "Tragus stud", "Anti-tragus stud", "Conch hoop",
+            "Daith ring", "Rook bar", "Snug bar", "Industrial bar", "Nostril stud", "Double nostril chain", "High nostril stud", "Septum ring", "Bridge bar", "Brow bar",
+            "Vertical labret", "Lip ring", "Snake bite pair", "Medusa stud", "Monroe stud", "Ashley stud", "Tongue bar", "Smiley ring", "Navel ring", "Floating navel",
+            "Nipple bar", "Nipple shield", "Dermal anchor", "Surface bar", "Orbital ear ring", "Auricle hoop", "Lobe chain drape", "Helix cluster", "Triple helix ladder", "Daith clicker",
+            "Rook clicker", "Conch chain", "Stacked tragus", "Inner conch stud", "Outer conch spike", "High lobe cluster", "Upper lobe hoop", "Low helix cuff", "Flat constellation set", "Nostril chain duo",
+            "Twin nostril studs", "Septum horseshoe", "Septum clicker", "Bridge curve bar", "Brow ring", "Brow double bar", "Vertical philtrum", "Dahlia bites", "Shark bite set", "Spider bite set"
+        };
+
+        private static readonly string[] ChildSafePiercings =
+        {
+            "Single lobe stud", "Single lobe hoop", "Clip-safe mini hoop", "Birthstone lobe stud"
+        };
+
+        private static readonly string[] TeenPiercingAdditions =
+        {
+            "Nostril stud", "Mini nostril hoop", "Septum clicker"
+        };
+
+        private static readonly string[] AdornmentFinishTokens =
+        {
+            "Titanium", "Gold", "Rose Gold", "Silver", "Black Steel", "Opal", "Matte", "Polished"
+        };
+
+        private static readonly string[] AdornmentPlacementTokens =
+        {
+            "Left", "Right", "Center", "Upper", "Lower"
         };
 
         private static readonly string[] UniversalHats =
@@ -135,7 +160,12 @@ namespace Survivebest.Core
 
         private static readonly string[] UniversalTattooStyles =
         {
-            "Fine-line floral", "Geometric mandala", "Traditional flash rose", "Neo-traditional tiger", "Lettering script", "Tribal-inspired bands", "Watercolor gradient", "Dotwork constellation", "Blackwork sleeve patch", "Micro realism portrait", "Symbolic protection sigil", "Abstract brushstroke"
+            "Fine-line floral", "Geometric mandala", "Traditional flash rose", "Neo-traditional tiger", "Lettering script", "Tribal-inspired bands", "Watercolor gradient", "Dotwork constellation", "Blackwork sleeve patch", "Micro realism portrait",
+            "Symbolic protection sigil", "Abstract brushstroke", "Sacred geometry panel", "Micro botanical vine", "Patchwork animal icon", "Old-school swallow", "Compass and map blend", "Constellation path", "Minimal barbed wire line", "Japanese cloud wave",
+            "Snake and dagger", "Phoenix wing segment", "Moon phase strip", "Sunburst crest", "Minimal roman numerals", "Birth flower cluster", "Family initials monogram", "Script quote ribbon", "Cherub line-art", "Spider lily blackwork",
+            "Koi shoulder panel", "Dragon scale band", "Peony realism bloom", "Wolf eye realism", "Lion crown portrait", "Skull with roses", "Biomechanical plate", "Cyber sigil cluster", "Glitch pixel icon", "Music staff phrase",
+            "Cassette nostalgia mark", "Film reel linework", "Game controller icon", "Arcade joystick flash", "Mountain silhouette", "Ocean tide band", "Palm skyline", "Desert moon scene", "Storm cloud shading", "Lightning split",
+            "Butterfly pair", "Moth with moon", "Raven branch scene", "Fox mask emblem", "Tiger stripe panel", "Rose thorn spine", "Lotus mandala", "Anatomical heart", "Eye of providence", "Hourglass sandfall"
         };
 
         private static readonly Dictionary<LifeStage, string[]> StageTops = new()
@@ -226,6 +256,7 @@ namespace Survivebest.Core
         };
 
         private static readonly Dictionary<string, string[]> GeneratedCapsuleCache = new();
+        private const int AdultAdornmentTargetCount = 560;
 
         private static readonly List<BodyCompositionProfile> BodyProfiles = new()
         {
@@ -497,7 +528,7 @@ namespace Survivebest.Core
 
         private static IReadOnlyList<string> BuildInclusiveAdornments(string[] baseStyles, LifeStage lifeStage, StylePresentation presentation, string ancestryTag, string label)
         {
-            if (baseStyles == null ||
+            if (!TryResolveAdornmentBaseStyles(baseStyles, lifeStage, label, out IReadOnlyList<string> resolvedStyles) ||
                 !StageAudienceLabel.TryGetValue(lifeStage, out string stageLabel) ||
                 !PresentationAudienceLabel.TryGetValue(presentation, out string presentationLabel))
             {
@@ -505,13 +536,97 @@ namespace Survivebest.Core
             }
 
             string ancestry = string.IsNullOrWhiteSpace(ancestryTag) ? "Global" : ancestryTag.Trim();
-            List<string> options = new(baseStyles.Length);
-            for (int i = 0; i < baseStyles.Length; i++)
+            List<string> options = new(resolvedStyles.Count);
+            for (int i = 0; i < resolvedStyles.Count; i++)
             {
-                options.Add($"{stageLabel} {presentationLabel} {ancestry} {label}: {baseStyles[i]}");
+                options.Add($"{stageLabel} {presentationLabel} {ancestry} {label}: {resolvedStyles[i]}");
+            }
+
+            if (lifeStage >= LifeStage.YoungAdult && (string.Equals(label, "Tattoo", StringComparison.OrdinalIgnoreCase) || string.Equals(label, "Piercing", StringComparison.OrdinalIgnoreCase)))
+            {
+                ExpandAdornmentVariants(options, stageLabel, presentationLabel, ancestry, label, AdultAdornmentTargetCount);
             }
 
             return options;
+        }
+
+        private static void ExpandAdornmentVariants(List<string> options, string stageLabel, string presentationLabel, string ancestry, string label, int targetCount)
+        {
+            if (options == null || options.Count == 0 || options.Count >= targetCount)
+            {
+                return;
+            }
+
+            int sourceCount = options.Count;
+            int cursor = 0;
+            while (options.Count < targetCount)
+            {
+                string source = options[cursor % sourceCount];
+                string baseStyle = source;
+                int idx = source.IndexOf(':');
+                if (idx >= 0 && idx < source.Length - 1)
+                {
+                    baseStyle = source.Substring(idx + 1).Trim();
+                }
+
+                string finish = AdornmentFinishTokens[cursor % AdornmentFinishTokens.Length];
+                string placement = AdornmentPlacementTokens[cursor % AdornmentPlacementTokens.Length];
+                string variant = $"{stageLabel} {presentationLabel} {ancestry} {label}: {placement} {baseStyle} [{finish} v{(cursor / (AdornmentFinishTokens.Length * AdornmentPlacementTokens.Length)) + 1}]";
+                if (!options.Contains(variant))
+                {
+                    options.Add(variant);
+                }
+
+                cursor++;
+            }
+        }
+
+        private static bool TryResolveAdornmentBaseStyles(string[] baseStyles, LifeStage lifeStage, string label, out IReadOnlyList<string> resolvedStyles)
+        {
+            resolvedStyles = baseStyles;
+            if (baseStyles == null)
+            {
+                return false;
+            }
+
+            if (string.Equals(label, "Tattoo", StringComparison.OrdinalIgnoreCase))
+            {
+                if (lifeStage < LifeStage.YoungAdult)
+                {
+                    resolvedStyles = Array.Empty<string>();
+                    return true;
+                }
+
+                return true;
+            }
+
+            if (!string.Equals(label, "Piercing", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (lifeStage <= LifeStage.Toddler)
+            {
+                resolvedStyles = Array.Empty<string>();
+                return true;
+            }
+
+            if (lifeStage is LifeStage.Child or LifeStage.Preteen)
+            {
+                resolvedStyles = ChildSafePiercings;
+                return true;
+            }
+
+            if (lifeStage == LifeStage.Teen)
+            {
+                List<string> teenSet = new(ChildSafePiercings.Length + TeenPiercingAdditions.Length);
+                AddRange(teenSet, ChildSafePiercings);
+                AddRange(teenSet, TeenPiercingAdditions);
+                resolvedStyles = teenSet;
+                return true;
+            }
+
+            return true;
         }
 
         private static List<TopClothingProfile> BuildUpperBodyTopProfiles()
