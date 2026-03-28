@@ -143,6 +143,16 @@ namespace Survivebest.Core
             "Nostril stud", "Mini nostril hoop", "Septum clicker"
         };
 
+        private static readonly string[] AdornmentFinishTokens =
+        {
+            "Titanium", "Gold", "Rose Gold", "Silver", "Black Steel", "Opal", "Matte", "Polished"
+        };
+
+        private static readonly string[] AdornmentPlacementTokens =
+        {
+            "Left", "Right", "Center", "Upper", "Lower"
+        };
+
         private static readonly string[] UniversalHats =
         {
             "Dad cap", "Fitted cap", "Beanie", "Beret", "Bucket hat", "Wide-brim sun hat", "Cowboy hat", "Fedora", "Newsboy cap", "Visor", "Head wrap", "Turban-style wrap", "Kufi cap", "Top hat"
@@ -246,6 +256,7 @@ namespace Survivebest.Core
         };
 
         private static readonly Dictionary<string, string[]> GeneratedCapsuleCache = new();
+        private const int AdultAdornmentTargetCount = 320;
 
         private static readonly List<BodyCompositionProfile> BodyProfiles = new()
         {
@@ -531,7 +542,43 @@ namespace Survivebest.Core
                 options.Add($"{stageLabel} {presentationLabel} {ancestry} {label}: {resolvedStyles[i]}");
             }
 
+            if (lifeStage >= LifeStage.YoungAdult && (string.Equals(label, "Tattoo", StringComparison.OrdinalIgnoreCase) || string.Equals(label, "Piercing", StringComparison.OrdinalIgnoreCase)))
+            {
+                ExpandAdornmentVariants(options, stageLabel, presentationLabel, ancestry, label, AdultAdornmentTargetCount);
+            }
+
             return options;
+        }
+
+        private static void ExpandAdornmentVariants(List<string> options, string stageLabel, string presentationLabel, string ancestry, string label, int targetCount)
+        {
+            if (options == null || options.Count == 0 || options.Count >= targetCount)
+            {
+                return;
+            }
+
+            int sourceCount = options.Count;
+            int cursor = 0;
+            while (options.Count < targetCount)
+            {
+                string source = options[cursor % sourceCount];
+                string baseStyle = source;
+                int idx = source.IndexOf(':');
+                if (idx >= 0 && idx < source.Length - 1)
+                {
+                    baseStyle = source.Substring(idx + 1).Trim();
+                }
+
+                string finish = AdornmentFinishTokens[cursor % AdornmentFinishTokens.Length];
+                string placement = AdornmentPlacementTokens[cursor % AdornmentPlacementTokens.Length];
+                string variant = $"{stageLabel} {presentationLabel} {ancestry} {label}: {placement} {baseStyle} [{finish} v{(cursor / (AdornmentFinishTokens.Length * AdornmentPlacementTokens.Length)) + 1}]";
+                if (!options.Contains(variant))
+                {
+                    options.Add(variant);
+                }
+
+                cursor++;
+            }
         }
 
         private static bool TryResolveAdornmentBaseStyles(string[] baseStyles, LifeStage lifeStage, string label, out IReadOnlyList<string> resolvedStyles)
