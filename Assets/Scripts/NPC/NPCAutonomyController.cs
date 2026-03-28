@@ -7,6 +7,7 @@ using Survivebest.Needs;
 using Survivebest.Social;
 using Survivebest.World;
 using System.Collections.Generic;
+using System;
 
 namespace Survivebest.NPC
 {
@@ -24,6 +25,10 @@ namespace Survivebest.NPC
         [SerializeField] private WeatherManager weatherManager;
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField, Min(1)] private int socialInteractionCooldownHours = 3;
+        [SerializeField] private List<string> fallbackSocialTargetIds = new();
+
+        private int lastSocialInteractionAbsoluteHour = -99999;
 
         private void OnEnable()
         {
@@ -100,6 +105,8 @@ namespace Survivebest.NPC
                 npcScheduleSystem.ForceNpcLot(npcId, destination, "NPCAutonomyController routing");
             }
 
+            HandleSocialConsequences(chosen, decision.SocialDrive, stress, mood, relationshipAffinity, memorySentiment, destination);
+
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
                 Type = SimulationEventType.ActivityStarted,
@@ -110,6 +117,126 @@ namespace Survivebest.NPC
                 Reason = $"Autonomy {decision.Reason} H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0} L:{loneliness:0} SD:{decision.SocialDrive:0.00}",
                 Magnitude = decision.SocialDrive
             });
+        }
+
+        private void HandleSocialConsequences(NpcActivityState chosen, float socialDrive, float stress, float mood, float relationshipAffinity, float memorySentiment, string contextLotId)
+        {
+            if (chosen == NpcActivityState.Socializing)
+            {
+                TryExecuteSocialBeat(socialDrive, stress, mood, relationshipAffinity, memorySentiment, contextLotId);
+            }
+            else if (chosen == NpcActivityState.Sleeping || chosen == NpcActivityState.SickRest)
+            {
+                emotionSystem?.RecoverSocialEnergy(1.5f);
+            }
+        }
+
+        private void TryExecuteSocialBeat(float socialDrive, float stress, float mood, float relationshipAffinity, float memorySentiment, string contextLotId)
+        {
+            if (socialSystem == null || emotionSystem == null || !CanRunSocialBeatThisHour())
+            {
+                return;
+            }
+
+            string targetId = ResolveSocialTargetId();
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                return;
+            }
+
+            int relationshipDelta = NpcSocialInteractionModel.ComputeRelationshipDelta(socialDrive, stress, mood, memorySentiment, relationshipAffinity);
+            socialSystem.UpdateRelationship(targetId, relationshipDelta);
+            emotionSystem.ApplySocialInteraction(Mathf.Clamp01(socialDrive));
+
+            PersonalMemoryKind memoryKind = NpcSocialInteractionModel.ClassifyMemoryKind(relationshipDelta);
+            relationshipMemorySystem?.RecordPersonalMemory(npcId, targetId, memoryKind, relationshipDelta * 8, true, contextLotId);
+
+            lastSocialInteractionAbsoluteHour = GetCurrentAbsoluteHour();
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.DialogueResolved,
+                Severity = relationshipDelta < 0 ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
+                SystemName = nameof(NPCAutonomyController),
+                SourceCharacterId = npcId,
+                TargetCharacterId = targetId,
+                ChangeKey = memoryKind.ToString(),
+                Reason = $"Social beat resolved with delta {relationshipDelta}",
+                Magnitude = relationshipDelta
+            });
+        }
+
+        private bool CanRunSocialBeatThisHour()
+        {
+            int now = GetCurrentAbsoluteHour();
+            return now - lastSocialInteractionAbsoluteHour >= Mathf.Max(1, socialInteractionCooldownHours);
+        }
+
+        private int GetCurrentAbsoluteHour()
+        {
+            if (worldClock == null)
+            {
+                return 0;
+            }
+
+            int dayIndex = (worldClock.Year - 1) * worldClock.MonthsPerYear * worldClock.DaysPerMonth
+                           + (worldClock.Month - 1) * worldClock.DaysPerMonth
+                           + (worldClock.Day - 1);
+            return dayIndex * 24 + worldClock.Hour;
+        }
+
+        private string ResolveSocialTargetId()
+        {
+            string best = null;
+            float bestValue = float.NegativeInfinity;
+
+            if (socialSystem != null && socialSystem.Relationships != null)
+            {
+                for (int i = 0; i < socialSystem.Relationships.Count; i++)
+                {
+                    var relationship = socialSystem.Relationships[i];
+                    if (relationship == null || string.IsNullOrWhiteSpace(relationship.TargetCharacterId))
+                    {
+                        continue;
+                    }
+
+                    if (relationship.RelationshipValue > bestValue)
+                    {
+                        best = relationship.TargetCharacterId;
+                        bestValue = relationship.RelationshipValue;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(best))
+            {
+                return best;
+            }
+
+            for (int i = 0; i < fallbackSocialTargetIds.Count; i++)
+            {
+                string candidate = fallbackSocialTargetIds[i];
+                if (!string.IsNullOrWhiteSpace(candidate) && !string.Equals(candidate, npcId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate;
+                }
+            }
+
+            CharacterCore[] characters = FindObjectsOfType<CharacterCore>();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                CharacterCore character = characters[i];
+                if (character == null || string.IsNullOrWhiteSpace(character.CharacterId))
+                {
+                    continue;
+                }
+
+                if (!string.Equals(character.CharacterId, npcId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return character.CharacterId;
+                }
+            }
+
+            return null;
         }
 
         private float EstimateRelationshipAffinity()
