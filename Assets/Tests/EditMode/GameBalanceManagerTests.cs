@@ -141,5 +141,22 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void ApplyExperienceMode_Dyslite_UsesHigherPressureTradeoffPreset()
+        {
+            GameObject go = new GameObject("BalanceDyslitePreset");
+            GameBalanceManager manager = go.AddComponent<GameBalanceManager>();
+
+            manager.ApplyExperienceMode(BalanceExperienceMode.Dyslite);
+
+            Assert.AreEqual(BalanceExperienceMode.Dyslite, manager.ExperienceMode);
+            Assert.AreEqual(1.2f, manager.NeedDecayMultiplier, 0.001f);
+            Assert.AreEqual(1.08f, manager.ItemPriceMultiplier, 0.001f);
+            Assert.AreEqual(1.15f, manager.WeatherPenaltyMultiplier, 0.001f);
+            Assert.AreEqual(1.1f, manager.SkillXpMultiplier, 0.001f);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
