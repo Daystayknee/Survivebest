@@ -7,7 +7,8 @@ namespace Survivebest.Core
     public enum BalanceExperienceMode
     {
         Standard,
-        Sandbox
+        Sandbox,
+        Dyslite
     }
 
     [Serializable]
@@ -135,6 +136,9 @@ namespace Survivebest.Core
             {
                 case BalanceExperienceMode.Sandbox:
                     ApplySandboxPreset();
+                    break;
+                case BalanceExperienceMode.Dyslite:
+                    ApplyDyslitePreset();
                     break;
                 default:
                     ApplyStandardPreset();
@@ -294,6 +298,23 @@ namespace Survivebest.Core
             weatherPenaltyMultiplier = 0.7f;
             crimeRiskMultiplier = 0.75f;
             skillXpMultiplier = 1.35f;
+        }
+
+        private void ApplyDyslitePreset()
+        {
+            needDecayMultiplier = 1.2f;
+            socialChangeMultiplier = 1.1f;
+            emotionalStabilityRange = 0.9f;
+            wageMultiplier = 0.95f;
+            itemPriceMultiplier = 1.08f;
+            questRewardMultiplier = 1.05f;
+            jailPunishmentMultiplier = 1.05f;
+            illnessFrequencyMultiplier = 1.12f;
+            recoveryTimeMultiplier = 1.08f;
+            addictionSeverityMultiplier = 1.12f;
+            weatherPenaltyMultiplier = 1.15f;
+            crimeRiskMultiplier = 1.1f;
+            skillXpMultiplier = 1.1f;
         }
     }
 }
