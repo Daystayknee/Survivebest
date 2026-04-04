@@ -48,6 +48,7 @@ namespace Survivebest.Animal
         [SerializeField] private List<InstinctStack> instincts = new();
         private readonly Dictionary<string, string> lastLifeAffirmingChoiceByAnimalId = new();
         private readonly Dictionary<string, List<string>> lifeAffirmingChoiceHistoryByAnimalId = new();
+        public const int LifeChoiceHistoryCap = 12;
 
         public AnimalPerception GetOrCreatePerception(string animalId)
         {
@@ -147,8 +148,7 @@ namespace Survivebest.Animal
                 }
 
                 history.Add(choice);
-                const int historyCap = 12;
-                if (history.Count > historyCap)
+                if (history.Count > LifeChoiceHistoryCap)
                 {
                     history.RemoveAt(0);
                 }
@@ -166,5 +166,19 @@ namespace Survivebest.Animal
             => !string.IsNullOrWhiteSpace(animalId) && lifeAffirmingChoiceHistoryByAnimalId.TryGetValue(animalId, out List<string> history)
                 ? history
                 : Array.Empty<string>();
+
+        public IReadOnlyList<string> BuildAnimalLifeAffirmingChoiceSuggestions(string animalId, string caregiverId = null, int count = 3, int seed = 0)
+        {
+            InstinctStack instinct = GetOrCreateInstinctStack(animalId);
+            string moodTag = GetLastLifeAffirmingChoice(animalId).Contains("confident", StringComparison.OrdinalIgnoreCase) ? "confident companion" : "cautious survivor";
+            string instinctTag = instinct.Hunger > instinct.Pack ? "secure food" : "stay close to the pack";
+            string descriptor = string.IsNullOrWhiteSpace(caregiverId)
+                ? $"animal {animalId} as a {moodTag} trying to {instinctTag}"
+                : $"animal {animalId} with caregiver {caregiverId} as a {moodTag} trying to {instinctTag}";
+
+            return seed == 0
+                ? LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count)
+                : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count, seed);
+        }
     }
 }

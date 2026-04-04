@@ -85,6 +85,7 @@ namespace Survivebest.Core
         [SerializeField] private List<DaySurvivalProfile> daySurvivalProfiles = new();
         private readonly Dictionary<string, string> lastLifeAffirmingChoiceByCharacterId = new();
         private readonly Dictionary<string, List<string>> lifeAffirmingChoiceHistoryByCharacterId = new();
+        public const int LifeChoiceHistoryCap = 12;
 
         public IReadOnlyList<BloodBondProfile> BloodBonds => bloodBonds;
         public IReadOnlyList<FrenzyState> FrenzyStates => frenzyStates;
@@ -284,8 +285,7 @@ namespace Survivebest.Core
             }
 
             history.Add(choice);
-            const int historyCap = 12;
-            if (history.Count > historyCap)
+            if (history.Count > LifeChoiceHistoryCap)
             {
                 history.RemoveAt(0);
             }
@@ -325,6 +325,17 @@ namespace Survivebest.Core
             => !string.IsNullOrWhiteSpace(characterId) && lifeAffirmingChoiceHistoryByCharacterId.TryGetValue(characterId, out List<string> history)
                 ? history
                 : Array.Empty<string>();
+
+        public IReadOnlyList<string> BuildVampireLifeAffirmingChoiceSuggestions(string characterId, int count = 3, int seed = 0)
+        {
+            string lastChoice = !string.IsNullOrWhiteSpace(characterId) && lastLifeAffirmingChoiceByCharacterId.TryGetValue(characterId, out string value)
+                ? value
+                : $"vampire {characterId} preserving the masquerade";
+
+            return seed == 0
+                ? LifeActivityCatalog.BuildLifeAffirmingChoiceSet(lastChoice, count)
+                : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(lastChoice, count, seed);
+        }
 
         private BloodBondProfile GetOrCreateBloodBond(string feederId, string recipientId)
         {

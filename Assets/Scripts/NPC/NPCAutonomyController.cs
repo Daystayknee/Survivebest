@@ -32,6 +32,7 @@ namespace Survivebest.NPC
         public string LastLifeAffirmingChoice { get; private set; } = string.Empty;
         private readonly List<string> lifeAffirmingChoiceHistory = new();
         public IReadOnlyList<string> LifeAffirmingChoiceHistory => lifeAffirmingChoiceHistory;
+        public const int LifeChoiceHistoryCap = 12;
 
         private void OnEnable()
         {
@@ -309,6 +310,19 @@ namespace Survivebest.NPC
             return LifeActivityCatalog.PickNpcLifeAffirmingChoice(resolvedNpcId, socialTone, memoryTone);
         }
 
+        public IReadOnlyList<string> BuildNpcLifeAffirmingChoiceSuggestions(int count = 3, int seed = 0)
+        {
+            string resolvedNpcId = string.IsNullOrWhiteSpace(npcId) ? "unknown_npc" : npcId;
+            float affinity = EstimateRelationshipAffinity();
+            float sentiment = EstimateRecentMemorySentiment();
+            string socialTone = affinity >= 50f ? "protect close bonds" : "rebuild trust";
+            string memoryTone = sentiment >= 0f ? "grow from recent wins" : "heal recent setbacks";
+            string descriptor = $"npc {resolvedNpcId} trying to {socialTone} and {memoryTone}";
+            return seed == 0
+                ? LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count)
+                : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count, seed);
+        }
+
         private void AppendLifeChoiceHistory(string choice)
         {
             if (string.IsNullOrWhiteSpace(choice))
@@ -317,8 +331,7 @@ namespace Survivebest.NPC
             }
 
             lifeAffirmingChoiceHistory.Add(choice);
-            const int historyCap = 12;
-            if (lifeAffirmingChoiceHistory.Count > historyCap)
+            if (lifeAffirmingChoiceHistory.Count > LifeChoiceHistoryCap)
             {
                 lifeAffirmingChoiceHistory.RemoveAt(0);
             }
