@@ -342,7 +342,7 @@ namespace Survivebest.UI
         public void FocusFaceClose() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.FaceClose);
         public void FocusBodyClose() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.BodyClose);
         public void FocusGenetics() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.Genetics);
-        public void FocusAreaView() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.AreaView);
+        public void FocusAreaView() => SetPreviewFocus((int)CharacterCreatorPreviewFocus.FullBody);
 
         public void SetHairTextureFilter(int textureIndex)
         {
@@ -1073,18 +1073,18 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
-        public void ApplyDysliteCharacterSetup()
+        public void ApplyDislyteInspiredCharacterSetup()
         {
             SetTab((int)CharacterCreatorDashboardTab.Traits);
             SetPreviewBackground((int)CharacterCreatorBackgroundOption.Neighborhood);
-            SetPreviewFocus((int)CharacterCreatorPreviewFocus.AreaView);
+            SetPreviewFocus((int)CharacterCreatorPreviewFocus.FullBody);
 
             creatorMode = CreatorGeneticsMode.DnaEdit;
             SetGenomeStressEpigenetics(0.72f);
             SetGenomeCognition(0.58f);
             SetGenomeHairThickness(0.62f);
 
-            PublishUiEvent("DysliteCharacterSetup", "Applied dyslite-inspired character setup baseline", 1f);
+            PublishUiEvent("DislyteInspiredCharacterSetup", "Applied Dislyte-inspired character combat/view baseline", 1f);
             RefreshPreview();
         }
 

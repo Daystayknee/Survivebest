@@ -60,9 +60,9 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
-        public void SetDysliteExperience_UpdatesBalanceModeAndDisablesSandbox()
+        public void SetDislyteInspiredExperience_UpdatesBalanceModeAndDisablesSandbox()
         {
-            GameObject root = new GameObject("WorldCreatorDysliteMode");
+            GameObject root = new GameObject("WorldCreatorDislyteInspiredMode");
             WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
             GameBalanceManager balance = root.AddComponent<GameBalanceManager>();
 
@@ -71,25 +71,25 @@ namespace Survivebest.Tests.EditMode
                 .SetValue(controller, balance);
 
             controller.SetSandboxExperience(true);
-            controller.SetDysliteExperience(true);
+            controller.SetDislyteInspiredExperience(true);
 
-            Assert.AreEqual(BalanceExperienceMode.Dyslite, balance.ExperienceMode);
-            Assert.IsTrue(controller.Settings.DysliteExperience);
+            Assert.AreEqual(BalanceExperienceMode.DislyteInspired, balance.ExperienceMode);
+            Assert.IsTrue(controller.Settings.DislyteInspiredExperience);
             Assert.IsFalse(controller.Settings.SandboxExperience);
             Assert.AreEqual(1.2f, balance.NeedDecayMultiplier, 0.001f);
 
-            controller.SetDysliteExperience(false);
+            controller.SetDislyteInspiredExperience(false);
 
             Assert.AreEqual(BalanceExperienceMode.Standard, balance.ExperienceMode);
-            Assert.IsFalse(controller.Settings.DysliteExperience);
+            Assert.IsFalse(controller.Settings.DislyteInspiredExperience);
 
             Object.DestroyImmediate(root);
         }
 
         [Test]
-        public void GenerateWorld_DysliteSettingTakesPriorityOverSandboxFlag()
+        public void GenerateWorld_DislyteInspiredSettingTakesPriorityOverSandboxFlag()
         {
-            GameObject root = new GameObject("WorldCreatorGenerateDyslite");
+            GameObject root = new GameObject("WorldCreatorGenerateDislyteInspired");
             WorldCreatorScreenController controller = root.AddComponent<WorldCreatorScreenController>();
             GameBalanceManager balance = root.AddComponent<GameBalanceManager>();
             WorldCreatorManager worldCreatorManager = root.AddComponent<WorldCreatorManager>();
@@ -102,10 +102,10 @@ namespace Survivebest.Tests.EditMode
                 .SetValue(controller, worldCreatorManager);
 
             controller.Settings.SandboxExperience = true;
-            controller.Settings.DysliteExperience = true;
+            controller.Settings.DislyteInspiredExperience = true;
             controller.GenerateWorld();
 
-            Assert.AreEqual(BalanceExperienceMode.Dyslite, balance.ExperienceMode);
+            Assert.AreEqual(BalanceExperienceMode.DislyteInspired, balance.ExperienceMode);
             Assert.Greater(balance.NeedDecayMultiplier, 1f);
             Assert.Greater(balance.WeatherPenaltyMultiplier, 1f);
 

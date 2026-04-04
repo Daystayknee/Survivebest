@@ -143,14 +143,14 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
-        public void ApplyExperienceMode_Dyslite_UsesHigherPressureTradeoffPreset()
+        public void ApplyExperienceMode_DislyteInspired_UsesHigherPressureTradeoffPreset()
         {
-            GameObject go = new GameObject("BalanceDyslitePreset");
+            GameObject go = new GameObject("BalanceDislyteInspiredPreset");
             GameBalanceManager manager = go.AddComponent<GameBalanceManager>();
 
-            manager.ApplyExperienceMode(BalanceExperienceMode.Dyslite);
+            manager.ApplyExperienceMode(BalanceExperienceMode.DislyteInspired);
 
-            Assert.AreEqual(BalanceExperienceMode.Dyslite, manager.ExperienceMode);
+            Assert.AreEqual(BalanceExperienceMode.DislyteInspired, manager.ExperienceMode);
             Assert.AreEqual(1.2f, manager.NeedDecayMultiplier, 0.001f);
             Assert.AreEqual(1.08f, manager.ItemPriceMultiplier, 0.001f);
             Assert.AreEqual(1.15f, manager.WeatherPenaltyMultiplier, 0.001f);

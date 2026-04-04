@@ -82,9 +82,9 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
-        public void ApplyDysliteCharacterSetup_SetsCharacterSetupContextForTraitsFlow()
+        public void ApplyDislyteInspiredCharacterSetup_SetsCharacterSetupContextForTraitsFlow()
         {
-            GameObject root = new GameObject("CreatorDysliteSetup");
+            GameObject root = new GameObject("CreatorDislyteInspiredSetup");
             HouseholdManager household = root.AddComponent<HouseholdManager>();
             CharacterCreatorDashboardController controller = root.AddComponent<CharacterCreatorDashboardController>();
             SetPrivateField(controller, "householdManager", household);
@@ -97,11 +97,11 @@ namespace Survivebest.Tests.EditMode
             household.AddMember(actor);
             household.SetActiveCharacter(actor);
 
-            controller.ApplyDysliteCharacterSetup();
+            controller.ApplyDislyteInspiredCharacterSetup();
 
             Assert.AreEqual(CharacterCreatorDashboardTab.Traits, controller.CurrentTab);
             Assert.AreEqual(CharacterCreatorBackgroundOption.Neighborhood, controller.CurrentBackground);
-            Assert.AreEqual(CharacterCreatorPreviewFocus.AreaView, controller.CurrentPreviewFocus);
+            Assert.AreEqual(CharacterCreatorPreviewFocus.FullBody, controller.CurrentPreviewFocus);
             Assert.AreEqual(CreatorGeneticsMode.DnaEdit, genes.Profile.CreatorMode);
             Assert.GreaterOrEqual(genes.Profile.Epigenetics.StressLoad, 0.7f);
 

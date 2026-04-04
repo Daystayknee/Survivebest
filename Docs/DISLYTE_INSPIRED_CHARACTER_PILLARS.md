@@ -1,6 +1,6 @@
-# Dyslite-Inspired Pillars for Survivebest
+# Dislyte-Inspired Character Combat and View Pillars for Survivebest
 
-This note translates a **"dyslite" style inspiration** into concrete, implementation-friendly directions for Survivebest's existing systems.
+This note translates **Dislyte-style inspiration** into implementation-friendly direction for Survivebest's character fighting feel and character-view presentation, as inspiration only (not a feature copy).
 
 ## Core Feel Targets
 
@@ -20,7 +20,7 @@ Use the existing day-slice structure to create a light but persistent pressure a
 
 ### Hook Points
 
-- `DaySliceManager`: expose an optional "dyslite pressure profile" with slightly tighter thresholds.
+- `DaySliceManager`: expose an optional "dislyte-inspired pressure profile" with slightly tighter thresholds.
 - `GameBalanceManager`: add a low/medium/high pressure preset toggle for tuning sessions.
 - `SimulationStabilityMonitor`: log pressure spikes to help balancing before content expansion.
 
@@ -76,9 +76,24 @@ Embed frequent recovery moments to keep the loop sticky:
 
 - `HouseholdChoreSystem`, `FaithAndRitualSystem`, `RecipeSystem`, `SocialSystem`.
 
+
+## 6) Character Fighting Readability and Staging (Inspiration-Only)
+
+Lean into stylish, legible clashes where players can quickly parse intent and momentum:
+
+- Favor clear wind-up silhouettes for aggressive actions and defensive reactions.
+- Use contrast-heavy camera framing so active fighters stay readable during movement.
+- Prefer short, punchy hit-confirm feedback over long effect stacks.
+
+### Hook Points
+
+- `AnimationFeedbackJuiceSystem`: emphasize anticipation and impact timing windows.
+- `ActionPopupController`: mirror conflict stakes with concise, high-contrast prompts.
+- `CharacterCreatorDashboardController`: bias preview presets toward full-body framing for combat readability checks.
+
 ## Suggested First Implementation Slice (1-2 days)
 
-1. Add a balancing preset in `GameBalanceManager` for a "dyslite" profile.
+1. Add a balancing preset in `GameBalanceManager` for a "dislyte-inspired" profile.
 2. Introduce one consequence chain end-to-end (laundry -> appearance -> confidence -> performance).
 3. Add causal UI messaging for that chain in `UIEventFeedbackRouter`.
 4. Validate via EditMode tests around deterministic state transitions.
@@ -91,4 +106,4 @@ Embed frequent recovery moments to keep the loop sticky:
 
 ## Notes
 
-This direction is intentionally "lite": the goal is emotional texture and emergent personal stories, not heavy simulation punishment.
+This direction is intentionally inspiration-forward: the goal is stylish readability, expressive character views, and personal-scale stories without cloning another game's feature set.
