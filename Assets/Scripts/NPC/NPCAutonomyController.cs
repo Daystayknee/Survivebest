@@ -30,6 +30,8 @@ namespace Survivebest.NPC
 
         private int lastSocialInteractionAbsoluteHour = -99999;
         public string LastLifeAffirmingChoice { get; private set; } = string.Empty;
+        private readonly List<string> lifeAffirmingChoiceHistory = new();
+        public IReadOnlyList<string> LifeAffirmingChoiceHistory => lifeAffirmingChoiceHistory;
 
         private void OnEnable()
         {
@@ -101,6 +103,7 @@ namespace Survivebest.NPC
 
             string destination = ResolveDestination(chosen, scheduledLot, hour);
             LastLifeAffirmingChoice = BuildNpcLifeAffirmingChoice();
+            AppendLifeChoiceHistory(LastLifeAffirmingChoice);
             npcScheduleSystem.ForceNpcState(npcId, chosen, "NPCAutonomyController decision");
             if (!string.IsNullOrWhiteSpace(destination))
             {
@@ -304,6 +307,21 @@ namespace Survivebest.NPC
             string memoryTone = sentiment >= 0f ? "grow from recent wins" : "heal recent setbacks";
             string resolvedNpcId = string.IsNullOrWhiteSpace(npcId) ? "unknown_npc" : npcId;
             return LifeActivityCatalog.PickNpcLifeAffirmingChoice(resolvedNpcId, socialTone, memoryTone);
+        }
+
+        private void AppendLifeChoiceHistory(string choice)
+        {
+            if (string.IsNullOrWhiteSpace(choice))
+            {
+                return;
+            }
+
+            lifeAffirmingChoiceHistory.Add(choice);
+            const int historyCap = 12;
+            if (lifeAffirmingChoiceHistory.Count > historyCap)
+            {
+                lifeAffirmingChoiceHistory.RemoveAt(0);
+            }
         }
 
         private string ResolveDestination(NpcActivityState chosen, string scheduledLot, int hour)

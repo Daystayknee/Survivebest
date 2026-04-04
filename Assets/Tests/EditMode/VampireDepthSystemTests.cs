@@ -77,6 +77,7 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(day.ChaosEventTriggered);
             Assert.IsFalse(string.IsNullOrWhiteSpace(lifeChoice));
             StringAssert.Contains("vampire ancient_vamp", lifeChoice);
+            Assert.AreEqual(1, system.GetLifeAffirmingChoiceHistory(vampire.CharacterId).Count);
             StringAssert.Contains("Life choice", dashboard);
             StringAssert.Contains("Ancient memory century 17", dashboard);
             Assert.Greater(paper.GetOrCreateProfile(vampire.CharacterId).VampireAnomalyRisk, 0f);

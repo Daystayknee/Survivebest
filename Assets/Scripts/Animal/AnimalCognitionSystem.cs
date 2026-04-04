@@ -47,6 +47,7 @@ namespace Survivebest.Animal
         [SerializeField] private List<BondState> bonds = new();
         [SerializeField] private List<InstinctStack> instincts = new();
         private readonly Dictionary<string, string> lastLifeAffirmingChoiceByAnimalId = new();
+        private readonly Dictionary<string, List<string>> lifeAffirmingChoiceHistoryByAnimalId = new();
 
         public AnimalPerception GetOrCreatePerception(string animalId)
         {
@@ -139,6 +140,18 @@ namespace Survivebest.Animal
             if (!string.IsNullOrWhiteSpace(animalId))
             {
                 lastLifeAffirmingChoiceByAnimalId[animalId] = choice;
+                if (!lifeAffirmingChoiceHistoryByAnimalId.TryGetValue(animalId, out List<string> history))
+                {
+                    history = new List<string>();
+                    lifeAffirmingChoiceHistoryByAnimalId[animalId] = history;
+                }
+
+                history.Add(choice);
+                const int historyCap = 12;
+                if (history.Count > historyCap)
+                {
+                    history.RemoveAt(0);
+                }
             }
 
             return choice;
@@ -148,5 +161,10 @@ namespace Survivebest.Animal
             => !string.IsNullOrWhiteSpace(animalId) && lastLifeAffirmingChoiceByAnimalId.TryGetValue(animalId, out string value)
                 ? value
                 : string.Empty;
+
+        public IReadOnlyList<string> GetLifeAffirmingChoiceHistory(string animalId)
+            => !string.IsNullOrWhiteSpace(animalId) && lifeAffirmingChoiceHistoryByAnimalId.TryGetValue(animalId, out List<string> history)
+                ? history
+                : Array.Empty<string>();
     }
 }

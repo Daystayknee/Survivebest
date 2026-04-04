@@ -84,6 +84,7 @@ namespace Survivebest.Core
         [SerializeField] private List<VampirePoliticalProfile> politicalProfiles = new();
         [SerializeField] private List<DaySurvivalProfile> daySurvivalProfiles = new();
         private readonly Dictionary<string, string> lastLifeAffirmingChoiceByCharacterId = new();
+        private readonly Dictionary<string, List<string>> lifeAffirmingChoiceHistoryByCharacterId = new();
 
         public IReadOnlyList<BloodBondProfile> BloodBonds => bloodBonds;
         public IReadOnlyList<FrenzyState> FrenzyStates => frenzyStates;
@@ -276,6 +277,19 @@ namespace Survivebest.Core
 
             string choice = LifeActivityCatalog.PickVampireLifeAffirmingChoice(resolvedCharacterId, focus);
             lastLifeAffirmingChoiceByCharacterId[resolvedCharacterId] = choice;
+            if (!lifeAffirmingChoiceHistoryByCharacterId.TryGetValue(resolvedCharacterId, out List<string> history))
+            {
+                history = new List<string>();
+                lifeAffirmingChoiceHistoryByCharacterId[resolvedCharacterId] = history;
+            }
+
+            history.Add(choice);
+            const int historyCap = 12;
+            if (history.Count > historyCap)
+            {
+                history.RemoveAt(0);
+            }
+
             return choice;
         }
 
@@ -306,6 +320,11 @@ namespace Survivebest.Core
 
             return builder.Length > 0 ? builder.ToString() : "No vampire depth data.";
         }
+
+        public IReadOnlyList<string> GetLifeAffirmingChoiceHistory(string characterId)
+            => !string.IsNullOrWhiteSpace(characterId) && lifeAffirmingChoiceHistoryByCharacterId.TryGetValue(characterId, out List<string> history)
+                ? history
+                : Array.Empty<string>();
 
         private BloodBondProfile GetOrCreateBloodBond(string feederId, string recipientId)
         {

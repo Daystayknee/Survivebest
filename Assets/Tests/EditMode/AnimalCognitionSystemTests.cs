@@ -35,6 +35,7 @@ namespace Survivebest.Tests.EditMode
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(choice));
             StringAssert.Contains("animal wolf_1", choice);
+            Assert.AreEqual(1, system.GetLifeAffirmingChoiceHistory("wolf_1").Count);
 
             Object.DestroyImmediate(go);
         }

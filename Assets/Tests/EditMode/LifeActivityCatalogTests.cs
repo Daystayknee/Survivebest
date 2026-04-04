@@ -113,6 +113,17 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void LifeAffirmingChoiceSet_RespectsMaxCapAndCanBeDeterministic()
+        {
+            var capped = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("npc cap", 9999);
+            var seededA = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("npc seed", 4, 1234);
+            var seededB = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("npc seed", 4, 1234);
+
+            Assert.AreEqual(LifeActivityCatalog.MaxLifeAffirmingChoiceSetCount, capped.Count);
+            CollectionAssert.AreEqual(seededA, seededB);
+        }
+
+        [Test]
         public void ArchetypeSpecificLifeChoicePickers_ReturnExpectedActorPrefixes()
         {
             string npcChoice = LifeActivityCatalog.PickNpcLifeAffirmingChoice("npc_77", "protect trust", "recover hope");

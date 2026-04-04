@@ -32,6 +32,7 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(NpcActivityState.Working, profile.CurrentState);
             Assert.IsFalse(string.IsNullOrWhiteSpace(lifeChoice));
             Assert.AreEqual(lifeChoice, controller.LastLifeAffirmingChoice);
+            Assert.AreEqual(1, controller.LifeAffirmingChoiceHistory.Count);
             StringAssert.Contains("npc npc_1", lifeChoice);
 
             Object.DestroyImmediate(autoGo);

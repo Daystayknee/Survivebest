@@ -6,6 +6,7 @@ namespace Survivebest.Core
 {
     public static class LifeActivityCatalog
     {
+        public const int MaxLifeAffirmingChoiceSetCount = 64;
         private static readonly string[] TvGenres = { "Sitcom", "Drama", "Documentary", "Sports", "Anime", "Reality", "Mystery", "Historical", "Travel", "Cooking", "Crime Procedural", "Fantasy Epic", "Financial Thriller", "Medical", "Teen Slice-of-Life" };
         private static readonly string[] MovieGenres = { "Comedy", "Action", "Romance", "Horror", "Family", "Thriller", "Adventure", "Musical", "Sci-Fi", "Animation", "Noir", "Coming-of-Age", "Biopic", "Psychological Drama", "Post-Apocalyptic" };
         private static readonly string[] BookGenres = { "Fantasy", "Mystery", "Sci-fi", "Biography", "History", "Self-help", "Poetry", "Philosophy", "Business", "True Crime", "Graphic Novel", "Memoir", "Magical Realism", "Folklore", "Ecology" };
@@ -282,23 +283,38 @@ namespace Survivebest.Core
             => PickLifeAffirmingChoice($"vampire {characterId} choosing to {focus}");
 
         public static IReadOnlyList<string> BuildLifeAffirmingChoiceSet(string actorDescriptor = "character", int count = 3)
+            => BuildLifeAffirmingChoiceSet(actorDescriptor, count, Environment.TickCount);
+
+        public static IReadOnlyList<string> BuildLifeAffirmingChoiceSet(string actorDescriptor, int count, int seed)
         {
-            int safeCount = Mathf.Clamp(count, 1, 12);
-            HashSet<string> uniqueChoices = new(StringComparer.Ordinal);
+            int safeCount = Mathf.Clamp(count, 1, MaxLifeAffirmingChoiceSetCount);
             List<string> results = new(safeCount);
-            int attempts = safeCount * 4;
-            for (int i = 0; i < attempts && results.Count < safeCount; i++)
-            {
-                string candidate = PickLifeAffirmingChoice(actorDescriptor);
-                if (uniqueChoices.Add(candidate))
-                {
-                    results.Add(candidate);
-                }
-            }
+            System.Random random = new(seed);
+            HashSet<int> usedSignatures = new();
 
             while (results.Count < safeCount)
             {
-                results.Add(PickLifeAffirmingChoice(actorDescriptor));
+                int signature = random.Next();
+                if (!usedSignatures.Add(signature))
+                {
+                    continue;
+                }
+
+                int intentionIndex = (int)(Math.Abs((long)signature) % LifeAffirmingIntentions.Length);
+                int verbIndex = (int)(Math.Abs((long)signature / 3) % LifeAffirmingActionVerbs.Length);
+                int targetIndex = (int)(Math.Abs((long)signature / 5) % LifeAffirmingActionTargets.Length);
+                int contextIndex = (int)(Math.Abs((long)signature / 7) % LifeAffirmingActionContexts.Length);
+                int domainIndex = (int)(Math.Abs((long)signature / 11) % LifeAffirmingDomains.Length);
+                int cadenceIndex = (int)(Math.Abs((long)signature / 13) % LifeAffirmingCadences.Length);
+                int urgencyIndex = (int)(Math.Abs((long)signature / 17) % LifeAffirmingUrgencies.Length);
+                string intention = LifeAffirmingIntentions[intentionIndex];
+                string verb = LifeAffirmingActionVerbs[verbIndex];
+                string target = LifeAffirmingActionTargets[targetIndex];
+                string context = LifeAffirmingActionContexts[contextIndex];
+                string domain = LifeAffirmingDomains[domainIndex];
+                string cadence = LifeAffirmingCadences[cadenceIndex];
+                string urgency = LifeAffirmingUrgencies[urgencyIndex];
+                results.Add($"{actorDescriptor} chooses to {verb} {target} to {intention} in {domain} {context}, {cadence}, {urgency}");
             }
 
             return results;
