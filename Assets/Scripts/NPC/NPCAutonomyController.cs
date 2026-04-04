@@ -29,6 +29,9 @@ namespace Survivebest.NPC
         [SerializeField] private List<string> fallbackSocialTargetIds = new();
 
         private int lastSocialInteractionAbsoluteHour = -99999;
+        public string LastLifeAffirmingChoice { get; private set; } = string.Empty;
+        private readonly List<string> lifeAffirmingChoiceHistory = new();
+        public IReadOnlyList<string> LifeAffirmingChoiceHistory => lifeAffirmingChoiceHistory;
 
         private void OnEnable()
         {
@@ -99,6 +102,8 @@ namespace Survivebest.NPC
             }
 
             string destination = ResolveDestination(chosen, scheduledLot, hour);
+            LastLifeAffirmingChoice = BuildNpcLifeAffirmingChoice();
+            AppendLifeChoiceHistory(LastLifeAffirmingChoice);
             npcScheduleSystem.ForceNpcState(npcId, chosen, "NPCAutonomyController decision");
             if (!string.IsNullOrWhiteSpace(destination))
             {
@@ -114,7 +119,7 @@ namespace Survivebest.NPC
                 SystemName = nameof(NPCAutonomyController),
                 SourceCharacterId = npcId,
                 ChangeKey = chosen.ToString(),
-                Reason = $"Autonomy {decision.Reason} H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0} L:{loneliness:0} SD:{decision.SocialDrive:0.00}",
+                Reason = $"Autonomy {decision.Reason} H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0} L:{loneliness:0} SD:{decision.SocialDrive:0.00} LifeChoice:{LastLifeAffirmingChoice}",
                 Magnitude = decision.SocialDrive
             });
         }
@@ -291,6 +296,32 @@ namespace Survivebest.NPC
             }
 
             return total / sampleCount;
+        }
+
+
+        public string BuildNpcLifeAffirmingChoice()
+        {
+            float affinity = EstimateRelationshipAffinity();
+            float sentiment = EstimateRecentMemorySentiment();
+            string socialTone = affinity >= 50f ? "protect close bonds" : "rebuild trust";
+            string memoryTone = sentiment >= 0f ? "grow from recent wins" : "heal recent setbacks";
+            string resolvedNpcId = string.IsNullOrWhiteSpace(npcId) ? "unknown_npc" : npcId;
+            return LifeActivityCatalog.PickNpcLifeAffirmingChoice(resolvedNpcId, socialTone, memoryTone);
+        }
+
+        private void AppendLifeChoiceHistory(string choice)
+        {
+            if (string.IsNullOrWhiteSpace(choice))
+            {
+                return;
+            }
+
+            lifeAffirmingChoiceHistory.Add(choice);
+            const int historyCap = 12;
+            if (lifeAffirmingChoiceHistory.Count > historyCap)
+            {
+                lifeAffirmingChoiceHistory.RemoveAt(0);
+            }
         }
 
         private string ResolveDestination(NpcActivityState chosen, string scheduledLot, int hour)
