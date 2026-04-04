@@ -81,6 +81,34 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(root);
         }
 
+        [Test]
+        public void ApplyDysliteCharacterSetup_SetsCharacterSetupContextForTraitsFlow()
+        {
+            GameObject root = new GameObject("CreatorDysliteSetup");
+            HouseholdManager household = root.AddComponent<HouseholdManager>();
+            CharacterCreatorDashboardController controller = root.AddComponent<CharacterCreatorDashboardController>();
+            SetPrivateField(controller, "householdManager", household);
+
+            GameObject actorGo = new GameObject("Actor");
+            CharacterCore actor = actorGo.AddComponent<CharacterCore>();
+            actor.Initialize("actor", "Actor", LifeStage.YoungAdult);
+            GeneticsSystem genes = actorGo.AddComponent<GeneticsSystem>();
+            genes.OverrideGenetics(InheritanceResolver.BuildFounder(313, BodySchema.Neutral), reapply: false);
+            household.AddMember(actor);
+            household.SetActiveCharacter(actor);
+
+            controller.ApplyDysliteCharacterSetup();
+
+            Assert.AreEqual(CharacterCreatorDashboardTab.Traits, controller.CurrentTab);
+            Assert.AreEqual(CharacterCreatorBackgroundOption.Neighborhood, controller.CurrentBackground);
+            Assert.AreEqual(CharacterCreatorPreviewFocus.AreaView, controller.CurrentPreviewFocus);
+            Assert.AreEqual(CreatorGeneticsMode.DnaEdit, genes.Profile.CreatorMode);
+            Assert.GreaterOrEqual(genes.Profile.Epigenetics.StressLoad, 0.7f);
+
+            Object.DestroyImmediate(actorGo);
+            Object.DestroyImmediate(root);
+        }
+
         private static void SetPrivateField(object instance, string fieldName, object value)
         {
             FieldInfo field = instance.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
