@@ -303,7 +303,7 @@ namespace Survivebest.NPC
             string socialTone = affinity >= 50f ? "protect close bonds" : "rebuild trust";
             string memoryTone = sentiment >= 0f ? "grow from recent wins" : "heal recent setbacks";
             string resolvedNpcId = string.IsNullOrWhiteSpace(npcId) ? "unknown_npc" : npcId;
-            return LifeActivityCatalog.PickLifeAffirmingChoice($"npc {resolvedNpcId} trying to {socialTone} and {memoryTone}");
+            return LifeActivityCatalog.PickNpcLifeAffirmingChoice(resolvedNpcId, socialTone, memoryTone);
         }
 
         private string ResolveDestination(NpcActivityState chosen, string scheduledLot, int hour)

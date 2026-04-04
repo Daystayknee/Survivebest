@@ -274,7 +274,7 @@ namespace Survivebest.Core
                 focus = "rebuild a safe haven before sunrise";
             }
 
-            string choice = LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {resolvedCharacterId} choosing to {focus}");
+            string choice = LifeActivityCatalog.PickVampireLifeAffirmingChoice(resolvedCharacterId, focus);
             lastLifeAffirmingChoiceByCharacterId[resolvedCharacterId] = choice;
             return choice;
         }

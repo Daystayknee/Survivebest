@@ -85,8 +85,8 @@ namespace Survivebest.Tests.EditMode
             int total = LifeActivityCatalog.GetTotalChoiceCount();
             string summary = LifeActivityCatalog.BuildChoiceDepthSummary();
 
-            Assert.GreaterOrEqual(total, 1000);
-            Assert.GreaterOrEqual(LifeActivityCatalog.GetGeneratedLifeAffirmingChoiceCount(), 1000);
+            Assert.GreaterOrEqual(total, 100000);
+            Assert.GreaterOrEqual(LifeActivityCatalog.GetGeneratedLifeAffirmingChoiceCount(), 100000);
             StringAssert.Contains(total.ToString(), summary);
             StringAssert.Contains("65 authored pools", summary);
         }
@@ -110,6 +110,18 @@ namespace Survivebest.Tests.EditMode
             {
                 StringAssert.Contains("vampire lio", set[i]);
             }
+        }
+
+        [Test]
+        public void ArchetypeSpecificLifeChoicePickers_ReturnExpectedActorPrefixes()
+        {
+            string npcChoice = LifeActivityCatalog.PickNpcLifeAffirmingChoice("npc_77", "protect trust", "recover hope");
+            string animalChoice = LifeActivityCatalog.PickAnimalLifeAffirmingChoice("wolf_2", "alert guardian", "stay near den", "human_2");
+            string vampireChoice = LifeActivityCatalog.PickVampireLifeAffirmingChoice("vamp_9", "hold the masquerade");
+
+            StringAssert.Contains("npc npc_77", npcChoice);
+            StringAssert.Contains("animal wolf_2", animalChoice);
+            StringAssert.Contains("vampire vamp_9", vampireChoice);
         }
 
     }

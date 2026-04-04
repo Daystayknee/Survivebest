@@ -137,6 +137,39 @@ namespace Survivebest.Core
             "during a moonlit shift",
             "before a family milestone"
         };
+        private static readonly string[] LifeAffirmingDomains =
+        {
+            "relationships",
+            "health",
+            "craft",
+            "home",
+            "community",
+            "survival",
+            "legacy",
+            "learning",
+            "leadership",
+            "recovery"
+        };
+        private static readonly string[] LifeAffirmingCadences =
+        {
+            "as a daily ritual",
+            "as a weekly anchor",
+            "as a monthly milestone",
+            "as a dawn routine",
+            "as an after-work reset",
+            "as a long-term plan",
+            "as a quiet night practice",
+            "as a season-long commitment"
+        };
+        private static readonly string[] LifeAffirmingUrgencies =
+        {
+            "starting now",
+            "before tonight ends",
+            "before the next shift",
+            "before next week",
+            "before the next full moon",
+            "before the next council vote"
+        };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -219,7 +252,8 @@ namespace Survivebest.Core
         public static string PickSurvivalPracticalActivity() => Pick(SurvivalPracticalActivities, "basic survival task");
         public static IReadOnlyList<string> GetSurvivalPracticalActivities() => SurvivalPracticalActivities;
         public static int GetGeneratedLifeAffirmingChoiceCount()
-            => LifeAffirmingIntentions.Length * LifeAffirmingActionVerbs.Length * LifeAffirmingActionTargets.Length * LifeAffirmingActionContexts.Length;
+            => LifeAffirmingIntentions.Length * LifeAffirmingActionVerbs.Length * LifeAffirmingActionTargets.Length * LifeAffirmingActionContexts.Length
+               * LifeAffirmingDomains.Length * LifeAffirmingCadences.Length * LifeAffirmingUrgencies.Length;
 
         public static string PickLifeAffirmingChoice(string actorDescriptor = "character")
         {
@@ -227,8 +261,25 @@ namespace Survivebest.Core
             string verb = Pick(LifeAffirmingActionVerbs, "improve");
             string target = Pick(LifeAffirmingActionTargets, "their routine");
             string context = Pick(LifeAffirmingActionContexts, "today");
-            return $"{actorDescriptor} chooses to {verb} {target} to {intention} {context}";
+            string domain = Pick(LifeAffirmingDomains, "life");
+            string cadence = Pick(LifeAffirmingCadences, "as an ongoing practice");
+            string urgency = Pick(LifeAffirmingUrgencies, "soon");
+            return $"{actorDescriptor} chooses to {verb} {target} to {intention} in {domain} {context}, {cadence}, {urgency}";
         }
+
+        public static string PickNpcLifeAffirmingChoice(string npcId, string socialTone, string memoryTone)
+            => PickLifeAffirmingChoice($"npc {npcId} trying to {socialTone} and {memoryTone}");
+
+        public static string PickAnimalLifeAffirmingChoice(string animalId, string moodTag, string instinctTag, string caregiverId = null)
+        {
+            string actor = string.IsNullOrWhiteSpace(caregiverId)
+                ? $"animal {animalId}"
+                : $"animal {animalId} with caregiver {caregiverId}";
+            return PickLifeAffirmingChoice($"{actor} as a {moodTag} trying to {instinctTag}");
+        }
+
+        public static string PickVampireLifeAffirmingChoice(string characterId, string focus)
+            => PickLifeAffirmingChoice($"vampire {characterId} choosing to {focus}");
 
         public static IReadOnlyList<string> BuildLifeAffirmingChoiceSet(string actorDescriptor = "character", int count = 3)
         {

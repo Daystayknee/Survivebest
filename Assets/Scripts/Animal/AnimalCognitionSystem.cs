@@ -135,10 +135,7 @@ namespace Survivebest.Animal
 
             string moodTag = trustAverage >= 0.65f ? "confident companion" : "cautious survivor";
             string instinctTag = instinct.Hunger > instinct.Pack ? "secure food" : "stay close to the pack";
-            string actor = string.IsNullOrWhiteSpace(caregiverId)
-                ? $"animal {animalId}"
-                : $"animal {animalId} with caregiver {caregiverId}";
-            string choice = LifeActivityCatalog.PickLifeAffirmingChoice($"{actor} as a {moodTag} trying to {instinctTag}");
+            string choice = LifeActivityCatalog.PickAnimalLifeAffirmingChoice(animalId, moodTag, instinctTag, caregiverId);
             if (!string.IsNullOrWhiteSpace(animalId))
             {
                 lastLifeAffirmingChoiceByAnimalId[animalId] = choice;
