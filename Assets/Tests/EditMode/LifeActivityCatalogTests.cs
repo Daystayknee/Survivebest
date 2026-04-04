@@ -85,9 +85,55 @@ namespace Survivebest.Tests.EditMode
             int total = LifeActivityCatalog.GetTotalChoiceCount();
             string summary = LifeActivityCatalog.BuildChoiceDepthSummary();
 
-            Assert.GreaterOrEqual(total, 220);
+            Assert.GreaterOrEqual(total, 100000);
+            Assert.GreaterOrEqual(LifeActivityCatalog.GetGeneratedLifeAffirmingChoiceCount(), 100000);
             StringAssert.Contains(total.ToString(), summary);
-            StringAssert.Contains("65 activity pools", summary);
+            StringAssert.Contains("65 authored pools", summary);
         }
+        [Test]
+        public void LifeAffirmingChoicePicker_ReturnsFlavorfulPrompt()
+        {
+            string value = LifeActivityCatalog.PickLifeAffirmingChoice("npc aria");
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(value));
+            StringAssert.Contains("npc aria", value);
+            StringAssert.Contains("chooses to", value);
+        }
+
+        [Test]
+        public void LifeAffirmingChoiceSet_ReturnsRequestedCount()
+        {
+            var set = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("vampire lio", 5);
+
+            Assert.AreEqual(5, set.Count);
+            for (int i = 0; i < set.Count; i++)
+            {
+                StringAssert.Contains("vampire lio", set[i]);
+            }
+        }
+
+        [Test]
+        public void LifeAffirmingChoiceSet_RespectsMaxCapAndCanBeDeterministic()
+        {
+            var capped = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("npc cap", 9999);
+            var seededA = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("npc seed", 4, 1234);
+            var seededB = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("npc seed", 4, 1234);
+
+            Assert.AreEqual(LifeActivityCatalog.MaxLifeAffirmingChoiceSetCount, capped.Count);
+            CollectionAssert.AreEqual(seededA, seededB);
+        }
+
+        [Test]
+        public void ArchetypeSpecificLifeChoicePickers_ReturnExpectedActorPrefixes()
+        {
+            string npcChoice = LifeActivityCatalog.PickNpcLifeAffirmingChoice("npc_77", "protect trust", "recover hope");
+            string animalChoice = LifeActivityCatalog.PickAnimalLifeAffirmingChoice("wolf_2", "alert guardian", "stay near den", "human_2");
+            string vampireChoice = LifeActivityCatalog.PickVampireLifeAffirmingChoice("vamp_9", "hold the masquerade");
+
+            StringAssert.Contains("npc npc_77", npcChoice);
+            StringAssert.Contains("animal wolf_2", animalChoice);
+            StringAssert.Contains("vampire vamp_9", vampireChoice);
+        }
+
     }
 }
