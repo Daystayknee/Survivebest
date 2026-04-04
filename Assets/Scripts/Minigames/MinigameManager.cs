@@ -40,6 +40,11 @@ namespace Survivebest.Minigames
         ComputerGaming,
         WebChat,
         MiniArcade,
+        StreetBasketball,
+        ParkourRun,
+        GardeningChallenge,
+        DebateClub,
+        Lockpicking,
         TattooStudio,
         PiercingStudio
     }
@@ -126,6 +131,11 @@ namespace Survivebest.Minigames
             new MinigameSceneProfile { Type = MinigameType.ComputerGaming, SceneBackdropId = "pc_desk_setup", Prompt = "Tune controls, read enemy patterns, and execute a clean strategy loop.", RecommendedSkill = "Engineering", DurationMultiplier = 1.05f },
             new MinigameSceneProfile { Type = MinigameType.WebChat, SceneBackdropId = "chat_workspace", Prompt = "Read room tone, respond clearly, and keep the thread constructive.", RecommendedSkill = "Writing", DurationMultiplier = 0.85f },
             new MinigameSceneProfile { Type = MinigameType.MiniArcade, SceneBackdropId = "arcade_corner", Prompt = "Chain quick wins across mini challenges without losing momentum.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f },
+            new MinigameSceneProfile { Type = MinigameType.StreetBasketball, SceneBackdropId = "street_court", Prompt = "Read defenders, chain dribble moves, and make high-pressure shots.", RecommendedSkill = "Athletics", DurationMultiplier = 1.1f },
+            new MinigameSceneProfile { Type = MinigameType.ParkourRun, SceneBackdropId = "city_rooftops", Prompt = "Keep flow through jumps, wall-runs, and safe landings.", RecommendedSkill = "Athletics", DurationMultiplier = 1.2f },
+            new MinigameSceneProfile { Type = MinigameType.GardeningChallenge, SceneBackdropId = "community_garden", Prompt = "Balance watering, pruning, and soil health to keep crops thriving.", RecommendedSkill = "Survival skills", DurationMultiplier = 0.95f },
+            new MinigameSceneProfile { Type = MinigameType.DebateClub, SceneBackdropId = "town_hall_stage", Prompt = "Build arguments, counter points calmly, and win audience trust.", RecommendedSkill = "Writing", DurationMultiplier = 1f },
+            new MinigameSceneProfile { Type = MinigameType.Lockpicking, SceneBackdropId = "utility_workbench", Prompt = "Feel pin tension, set sequence timing, and avoid breaking picks.", RecommendedSkill = "Engineering", DurationMultiplier = 1.05f },
             new MinigameSceneProfile { Type = MinigameType.TattooStudio, SceneBackdropId = "tattoo_studio_chair", Prompt = "Stencil cleanly, trace linework with precision, and protect client comfort.", RecommendedSkill = "Artistry", DurationMultiplier = 1.2f },
             new MinigameSceneProfile { Type = MinigameType.PiercingStudio, SceneBackdropId = "piercing_studio_station", Prompt = "Mark placement, sterilize tools, and complete safe jewelry insertion.", RecommendedSkill = "First aid", DurationMultiplier = 1.05f }
         };
@@ -410,6 +420,11 @@ namespace Survivebest.Minigames
                 MinigameType.ComputerGaming => "Engineering",
                 MinigameType.WebChat => "Writing",
                 MinigameType.MiniArcade => "Survival skills",
+                MinigameType.StreetBasketball => "Athletics",
+                MinigameType.ParkourRun => "Athletics",
+                MinigameType.GardeningChallenge => "Survival skills",
+                MinigameType.DebateClub => "Writing",
+                MinigameType.Lockpicking => "Engineering",
                 MinigameType.TattooStudio => "Artistry",
                 MinigameType.PiercingStudio => "First aid",
                 _ => "Survival skills"
@@ -468,6 +483,11 @@ namespace Survivebest.Minigames
                 MinigameType.ComputerGaming => 0.1f,
                 MinigameType.WebChat => 0.06f,
                 MinigameType.MiniArcade => 0.09f,
+                MinigameType.StreetBasketball => 0.12f,
+                MinigameType.ParkourRun => 0.16f,
+                MinigameType.GardeningChallenge => 0.07f,
+                MinigameType.DebateClub => 0.09f,
+                MinigameType.Lockpicking => 0.14f,
                 MinigameType.TattooStudio => 0.17f,
                 MinigameType.PiercingStudio => 0.14f,
                 _ => 0.1f
@@ -506,6 +526,8 @@ namespace Survivebest.Minigames
                 float xp = type is MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.IntensiveCare or MinigameType.EmergencyResponse or MinigameType.VeterinaryCare
                     ? (success ? 6f : 2f)
                     : type is MinigameType.TattooStudio or MinigameType.PiercingStudio
+                        ? (success ? 5f : 2f)
+                    : type is MinigameType.ParkourRun or MinigameType.Lockpicking
                         ? (success ? 5f : 2f)
                     : (success ? 4f : 1.5f);
                 skillSystem.AddExperience(skillName, xp);
@@ -567,7 +589,7 @@ namespace Survivebest.Minigames
 
         private static bool IsBlueprintDriven(MinigameType type)
         {
-            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology or MinigameType.ComputerGaming or MinigameType.WebChat or MinigameType.MiniArcade or MinigameType.TattooStudio or MinigameType.PiercingStudio;
+            return type is MinigameType.Triage or MinigameType.Bandaging or MinigameType.Casting or MinigameType.Pharmacy or MinigameType.Surgery or MinigameType.OrthopedicSurgery or MinigameType.WoundDebridement or MinigameType.InfectionControl or MinigameType.AllergyResponse or MinigameType.RadiologyScan or MinigameType.IntensiveCare or MinigameType.VeterinaryCare or MinigameType.Dermatology or MinigameType.ComputerGaming or MinigameType.WebChat or MinigameType.MiniArcade or MinigameType.StreetBasketball or MinigameType.ParkourRun or MinigameType.GardeningChallenge or MinigameType.DebateClub or MinigameType.Lockpicking or MinigameType.TattooStudio or MinigameType.PiercingStudio;
         }
 
         private static IEnumerable<MinigameStepBlueprint> BuildStepBlueprints(MinigameType type, string anatomyFocus, bool emergencyPacing)
@@ -655,6 +677,31 @@ namespace Survivebest.Minigames
                     yield return Step("quick_start", "Clear the opening mini challenge to build combo momentum.", "arcade_pad", MinigameInputStyle.Tap, 0.45f);
                     yield return Step("combo_chain", "Maintain combo chain across mixed inputs.", "combo_meter", MinigameInputStyle.Trace, 0.56f);
                     yield return Step("boss_wave", "Finish the final wave with one clean sequence.", "boss_lane", MinigameInputStyle.Sequence, 0.6f);
+                    break;
+                case MinigameType.StreetBasketball:
+                    yield return Step("dribble_setup", "Break down the defender with controlled dribble rhythm.", "court_ball", MinigameInputStyle.TimingWindow, 0.55f);
+                    yield return Step("drive_lane", "Thread through contact and keep your lane angle.", "lane_marker", MinigameInputStyle.Drag, 0.62f);
+                    yield return Step("clutch_shot", "Release the shot at peak timing under pressure.", "shoot_meter", MinigameInputStyle.TimingWindow, 0.68f);
+                    break;
+                case MinigameType.ParkourRun:
+                    yield return Step("route_read", "Read the rooftop route and pick the safest flow line.", "route_overlay", MinigameInputStyle.Sequence, 0.58f);
+                    yield return Step("vault_chain", "Chain vaults and wall runs without breaking momentum.", "movement_lane", MinigameInputStyle.Trace, 0.66f);
+                    yield return Step("landing_control", "Stick the final landing and absorb impact safely.", "landing_zone", MinigameInputStyle.Hold, 0.63f);
+                    break;
+                case MinigameType.GardeningChallenge:
+                    yield return Step("soil_check", "Check moisture and nutrient balance before watering.", "soil_probe", MinigameInputStyle.Sequence, 0.46f);
+                    yield return Step("precision_watering", "Water each bed with the right flow and timing.", "watering_can", MinigameInputStyle.Hold, 0.52f);
+                    yield return Step("prune_and_protect", "Prune weak growth and protect healthy stems.", "pruning_shears", MinigameInputStyle.Trace, 0.5f);
+                    break;
+                case MinigameType.DebateClub:
+                    yield return Step("opening_claim", "Deliver a clear opening claim that frames the issue.", "podium_notes", MinigameInputStyle.Sequence, 0.5f);
+                    yield return Step("counter_argument", "Counter key points without losing composure.", "counter_cards", MinigameInputStyle.TimingWindow, 0.57f);
+                    yield return Step("closing_summary", "Close with concise evidence and audience appeal.", "closing_notes", MinigameInputStyle.Sequence, 0.55f);
+                    break;
+                case MinigameType.Lockpicking:
+                    yield return Step("pin_read", "Read the first pin stack tension and binding order.", "tension_wrench", MinigameInputStyle.Hold, 0.56f);
+                    yield return Step("set_sequence", "Set each pin in sequence without dropping previous sets.", "pick_tool", MinigameInputStyle.TimingWindow, 0.64f);
+                    yield return Step("final_turn", "Rotate cylinder cleanly once all pins are seated.", "lock_cylinder", MinigameInputStyle.Drag, 0.62f);
                     break;
                 case MinigameType.TattooStudio:
                     yield return Step("consult_design", $"Review design intent and placement around {anatomyFocus}.", "reference_board", MinigameInputStyle.Sequence, 0.5f);

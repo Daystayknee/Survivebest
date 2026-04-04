@@ -83,6 +83,9 @@ namespace Survivebest.Core
         [SerializeField] private List<AncientMemoryEntry> ancientMemories = new();
         [SerializeField] private List<VampirePoliticalProfile> politicalProfiles = new();
         [SerializeField] private List<DaySurvivalProfile> daySurvivalProfiles = new();
+        private readonly Dictionary<string, string> lastLifeAffirmingChoiceByCharacterId = new();
+        private readonly Dictionary<string, List<string>> lifeAffirmingChoiceHistoryByCharacterId = new();
+        public const int LifeChoiceHistoryCap = 12;
 
         public IReadOnlyList<BloodBondProfile> BloodBonds => bloodBonds;
         public IReadOnlyList<FrenzyState> FrenzyStates => frenzyStates;
@@ -253,6 +256,43 @@ namespace Survivebest.Core
             return day;
         }
 
+
+        public string BuildVampireLifeAffirmingChoice(string characterId)
+        {
+            FrenzyState frenzy = frenzyStates.Find(x => x != null && x.CharacterId == characterId);
+            VampirePoliticalProfile politics = politicalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            DaySurvivalProfile day = daySurvivalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            string resolvedCharacterId = string.IsNullOrWhiteSpace(characterId) ? "unknown_vampire" : characterId;
+
+            bool stable = frenzy == null || frenzy.LossOfControlRisk < 55f;
+            string focus = stable ? "protect their humanity" : "regain self-control";
+            if (politics != null && politics.SecretCouncilAttention > 60f)
+            {
+                focus = "outmaneuver council pressure";
+            }
+
+            if (day != null && day.ChaosEventTriggered)
+            {
+                focus = "rebuild a safe haven before sunrise";
+            }
+
+            string choice = LifeActivityCatalog.PickVampireLifeAffirmingChoice(resolvedCharacterId, focus);
+            lastLifeAffirmingChoiceByCharacterId[resolvedCharacterId] = choice;
+            if (!lifeAffirmingChoiceHistoryByCharacterId.TryGetValue(resolvedCharacterId, out List<string> history))
+            {
+                history = new List<string>();
+                lifeAffirmingChoiceHistoryByCharacterId[resolvedCharacterId] = history;
+            }
+
+            history.Add(choice);
+            if (history.Count > LifeChoiceHistoryCap)
+            {
+                history.RemoveAt(0);
+            }
+
+            return choice;
+        }
+
         public string BuildVampireDepthDashboard(string characterId)
         {
             StringBuilder builder = new();
@@ -273,7 +313,39 @@ namespace Survivebest.Core
             if (politics != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Politics {politics.TerritoryId} / council {politics.SecretCouncilAttention:0}");
             if (day != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Day survival {day.SafehouseIntegrity:0} / {day.LastDayIncident}");
             if (memory != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Ancient memory century {memory.CenturyMarker}: {memory.PastIdentity}");
+            if (lastLifeAffirmingChoiceByCharacterId.TryGetValue(characterId, out string lifeChoice) && !string.IsNullOrWhiteSpace(lifeChoice))
+            {
+                builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Life choice {lifeChoice}");
+            }
+
             return builder.Length > 0 ? builder.ToString() : "No vampire depth data.";
+        }
+
+        public IReadOnlyList<string> GetLifeAffirmingChoiceHistory(string characterId)
+            => !string.IsNullOrWhiteSpace(characterId) && lifeAffirmingChoiceHistoryByCharacterId.TryGetValue(characterId, out List<string> history)
+                ? history
+                : Array.Empty<string>();
+
+        public IReadOnlyList<string> BuildVampireLifeAffirmingChoiceSuggestions(string characterId, int count = 3, int seed = 0)
+        {
+            string lastChoice = !string.IsNullOrWhiteSpace(characterId) && lastLifeAffirmingChoiceByCharacterId.TryGetValue(characterId, out string value)
+                ? value
+                : $"vampire {characterId} preserving the masquerade";
+
+            return seed == 0
+                ? LifeActivityCatalog.BuildLifeAffirmingChoiceSet(lastChoice, count)
+                : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(lastChoice, count, seed);
+        }
+
+        public void ClearLifeAffirmingChoiceHistory(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            lastLifeAffirmingChoiceByCharacterId.Remove(characterId);
+            lifeAffirmingChoiceHistoryByCharacterId.Remove(characterId);
         }
 
         private BloodBondProfile GetOrCreateBloodBond(string feederId, string recipientId)

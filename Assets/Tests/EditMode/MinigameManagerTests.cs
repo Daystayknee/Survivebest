@@ -60,6 +60,11 @@ namespace Survivebest.Tests.EditMode
             Assert.IsTrue(types.Contains(MinigameType.TVMarathon));
             Assert.IsTrue(types.Contains(MinigameType.BookReading));
             Assert.IsTrue(types.Contains(MinigameType.SingingSession));
+            Assert.IsTrue(types.Contains(MinigameType.StreetBasketball));
+            Assert.IsTrue(types.Contains(MinigameType.ParkourRun));
+            Assert.IsTrue(types.Contains(MinigameType.GardeningChallenge));
+            Assert.IsTrue(types.Contains(MinigameType.DebateClub));
+            Assert.IsTrue(types.Contains(MinigameType.Lockpicking));
             Assert.IsTrue(types.Contains(MinigameType.TattooStudio));
             Assert.IsTrue(types.Contains(MinigameType.PiercingStudio));
 
@@ -96,6 +101,37 @@ namespace Survivebest.Tests.EditMode
             Assert.GreaterOrEqual(blueprint.Steps.Count, 4);
             Assert.AreEqual("sterile_prep", blueprint.Steps[0].StepId);
             Assert.IsTrue(blueprint.Steps.Exists(x => x.ToolId == "suture_kit"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildSessionBlueprint_ForParkourRunProducesFlowSteps()
+        {
+            GameObject go = new GameObject("ParkourBlueprint");
+            MinigameManager manager = go.AddComponent<MinigameManager>();
+
+            MinigameSessionBlueprint blueprint = manager.BuildSessionBlueprint(MinigameType.ParkourRun, "rooftop route", true);
+
+            Assert.IsNotNull(blueprint);
+            Assert.AreEqual(MinigameType.ParkourRun, blueprint.Type);
+            Assert.GreaterOrEqual(blueprint.Steps.Count, 3);
+            Assert.AreEqual("route_read", blueprint.Steps[0].StepId);
+            Assert.IsTrue(blueprint.Steps.Exists(x => x.ToolId == "landing_zone"));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void GetSceneProfile_ReturnsStreetBasketballBackdrop()
+        {
+            GameObject go = new GameObject("MinigameManagerStreetBallProfile");
+            MinigameManager manager = go.AddComponent<MinigameManager>();
+
+            MinigameSceneProfile profile = manager.GetSceneProfile(MinigameType.StreetBasketball);
+
+            Assert.IsNotNull(profile);
+            Assert.AreEqual("street_court", profile.SceneBackdropId);
 
             Object.DestroyImmediate(go);
         }
