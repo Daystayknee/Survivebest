@@ -253,6 +253,29 @@ namespace Survivebest.Core
             return day;
         }
 
+
+        public string BuildVampireLifeAffirmingChoice(string characterId)
+        {
+            FrenzyState frenzy = frenzyStates.Find(x => x != null && x.CharacterId == characterId);
+            VampirePoliticalProfile politics = politicalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            DaySurvivalProfile day = daySurvivalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            string resolvedCharacterId = string.IsNullOrWhiteSpace(characterId) ? "unknown_vampire" : characterId;
+
+            bool stable = frenzy == null || frenzy.LossOfControlRisk < 55f;
+            string focus = stable ? "protect their humanity" : "regain self-control";
+            if (politics != null && politics.SecretCouncilAttention > 60f)
+            {
+                focus = "outmaneuver council pressure";
+            }
+
+            if (day != null && day.ChaosEventTriggered)
+            {
+                focus = "rebuild a safe haven before sunrise";
+            }
+
+            return LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {resolvedCharacterId} choosing to {focus}");
+        }
+
         public string BuildVampireDepthDashboard(string characterId)
         {
             StringBuilder builder = new();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 
 namespace Survivebest.Animal
 {
@@ -102,6 +103,41 @@ namespace Survivebest.Animal
             {
                 bond.SafePlaces.Add(locationId);
             }
+        }
+
+        public string BuildAnimalLifeAffirmingChoice(string animalId, string caregiverId = null)
+        {
+            BondState bond = GetOrCreateBondState(animalId);
+            InstinctStack instinct = GetOrCreateInstinctStack(animalId);
+            float trustAverage = 0.4f;
+            if (bond.TrustByHumanId.Count > 0)
+            {
+                float total = 0f;
+                int contributorCount = 0;
+                for (int i = 0; i < bond.TrustByHumanId.Count; i++)
+                {
+                    BondTrust bondTrust = bond.TrustByHumanId[i];
+                    if (bondTrust == null)
+                    {
+                        continue;
+                    }
+
+                    total += Mathf.Clamp01(bondTrust.Trust);
+                    contributorCount++;
+                }
+
+                if (contributorCount > 0)
+                {
+                    trustAverage = total / contributorCount;
+                }
+            }
+
+            string moodTag = trustAverage >= 0.65f ? "confident companion" : "cautious survivor";
+            string instinctTag = instinct.Hunger > instinct.Pack ? "secure food" : "stay close to the pack";
+            string actor = string.IsNullOrWhiteSpace(caregiverId)
+                ? $"animal {animalId}"
+                : $"animal {animalId} with caregiver {caregiverId}";
+            return LifeActivityCatalog.PickLifeAffirmingChoice($"{actor} as a {moodTag} trying to {instinctTag}");
         }
     }
 }
