@@ -27,8 +27,15 @@ namespace Survivebest.Tests.EditMode
 
             controller.EvaluateAutonomy(9);
             NpcProfile profile = npcSchedule.GetNpcProfile("npc_1");
+            string lifeChoice = controller.BuildNpcLifeAffirmingChoice();
             Assert.IsNotNull(profile);
             Assert.AreEqual(NpcActivityState.Working, profile.CurrentState);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(lifeChoice));
+            Assert.AreEqual(lifeChoice, controller.LastLifeAffirmingChoice);
+            Assert.AreEqual(1, controller.LifeAffirmingChoiceHistory.Count);
+            StringAssert.Contains("npc npc_1", lifeChoice);
+            var suggestions = controller.BuildNpcLifeAffirmingChoiceSuggestions(4, 77);
+            Assert.AreEqual(4, suggestions.Count);
 
             Object.DestroyImmediate(autoGo);
             Object.DestroyImmediate(ssGo);

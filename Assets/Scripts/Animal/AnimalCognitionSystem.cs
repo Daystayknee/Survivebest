@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Survivebest.Core;
 
 namespace Survivebest.Animal
 {
@@ -45,6 +46,9 @@ namespace Survivebest.Animal
         [SerializeField] private List<AnimalPerception> perceptions = new();
         [SerializeField] private List<BondState> bonds = new();
         [SerializeField] private List<InstinctStack> instincts = new();
+        private readonly Dictionary<string, string> lastLifeAffirmingChoiceByAnimalId = new();
+        private readonly Dictionary<string, List<string>> lifeAffirmingChoiceHistoryByAnimalId = new();
+        public const int LifeChoiceHistoryCap = 12;
 
         public AnimalPerception GetOrCreatePerception(string animalId)
         {
@@ -102,6 +106,79 @@ namespace Survivebest.Animal
             {
                 bond.SafePlaces.Add(locationId);
             }
+        }
+
+        public string BuildAnimalLifeAffirmingChoice(string animalId, string caregiverId = null)
+        {
+            BondState bond = GetOrCreateBondState(animalId);
+            InstinctStack instinct = GetOrCreateInstinctStack(animalId);
+            float trustAverage = 0.4f;
+            if (bond.TrustByHumanId.Count > 0)
+            {
+                float total = 0f;
+                int contributorCount = 0;
+                for (int i = 0; i < bond.TrustByHumanId.Count; i++)
+                {
+                    BondTrust bondTrust = bond.TrustByHumanId[i];
+                    if (bondTrust == null)
+                    {
+                        continue;
+                    }
+
+                    total += Mathf.Clamp01(bondTrust.Trust);
+                    contributorCount++;
+                }
+
+                if (contributorCount > 0)
+                {
+                    trustAverage = total / contributorCount;
+                }
+            }
+
+            string moodTag = trustAverage >= 0.65f ? "confident companion" : "cautious survivor";
+            string instinctTag = instinct.Hunger > instinct.Pack ? "secure food" : "stay close to the pack";
+            string choice = LifeActivityCatalog.PickAnimalLifeAffirmingChoice(animalId, moodTag, instinctTag, caregiverId);
+            if (!string.IsNullOrWhiteSpace(animalId))
+            {
+                lastLifeAffirmingChoiceByAnimalId[animalId] = choice;
+                if (!lifeAffirmingChoiceHistoryByAnimalId.TryGetValue(animalId, out List<string> history))
+                {
+                    history = new List<string>();
+                    lifeAffirmingChoiceHistoryByAnimalId[animalId] = history;
+                }
+
+                history.Add(choice);
+                if (history.Count > LifeChoiceHistoryCap)
+                {
+                    history.RemoveAt(0);
+                }
+            }
+
+            return choice;
+        }
+
+        public string GetLastLifeAffirmingChoice(string animalId)
+            => !string.IsNullOrWhiteSpace(animalId) && lastLifeAffirmingChoiceByAnimalId.TryGetValue(animalId, out string value)
+                ? value
+                : string.Empty;
+
+        public IReadOnlyList<string> GetLifeAffirmingChoiceHistory(string animalId)
+            => !string.IsNullOrWhiteSpace(animalId) && lifeAffirmingChoiceHistoryByAnimalId.TryGetValue(animalId, out List<string> history)
+                ? history
+                : Array.Empty<string>();
+
+        public IReadOnlyList<string> BuildAnimalLifeAffirmingChoiceSuggestions(string animalId, string caregiverId = null, int count = 3, int seed = 0)
+        {
+            InstinctStack instinct = GetOrCreateInstinctStack(animalId);
+            string moodTag = GetLastLifeAffirmingChoice(animalId).Contains("confident", StringComparison.OrdinalIgnoreCase) ? "confident companion" : "cautious survivor";
+            string instinctTag = instinct.Hunger > instinct.Pack ? "secure food" : "stay close to the pack";
+            string descriptor = string.IsNullOrWhiteSpace(caregiverId)
+                ? $"animal {animalId} as a {moodTag} trying to {instinctTag}"
+                : $"animal {animalId} with caregiver {caregiverId} as a {moodTag} trying to {instinctTag}";
+
+            return seed == 0
+                ? LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count)
+                : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count, seed);
         }
     }
 }
