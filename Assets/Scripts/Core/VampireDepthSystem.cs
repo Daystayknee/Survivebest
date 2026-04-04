@@ -83,6 +83,7 @@ namespace Survivebest.Core
         [SerializeField] private List<AncientMemoryEntry> ancientMemories = new();
         [SerializeField] private List<VampirePoliticalProfile> politicalProfiles = new();
         [SerializeField] private List<DaySurvivalProfile> daySurvivalProfiles = new();
+        private readonly Dictionary<string, string> lastLifeAffirmingChoiceByCharacterId = new();
 
         public IReadOnlyList<BloodBondProfile> BloodBonds => bloodBonds;
         public IReadOnlyList<FrenzyState> FrenzyStates => frenzyStates;
@@ -253,6 +254,31 @@ namespace Survivebest.Core
             return day;
         }
 
+
+        public string BuildVampireLifeAffirmingChoice(string characterId)
+        {
+            FrenzyState frenzy = frenzyStates.Find(x => x != null && x.CharacterId == characterId);
+            VampirePoliticalProfile politics = politicalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            DaySurvivalProfile day = daySurvivalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            string resolvedCharacterId = string.IsNullOrWhiteSpace(characterId) ? "unknown_vampire" : characterId;
+
+            bool stable = frenzy == null || frenzy.LossOfControlRisk < 55f;
+            string focus = stable ? "protect their humanity" : "regain self-control";
+            if (politics != null && politics.SecretCouncilAttention > 60f)
+            {
+                focus = "outmaneuver council pressure";
+            }
+
+            if (day != null && day.ChaosEventTriggered)
+            {
+                focus = "rebuild a safe haven before sunrise";
+            }
+
+            string choice = LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {resolvedCharacterId} choosing to {focus}");
+            lastLifeAffirmingChoiceByCharacterId[resolvedCharacterId] = choice;
+            return choice;
+        }
+
         public string BuildVampireDepthDashboard(string characterId)
         {
             StringBuilder builder = new();
@@ -273,6 +299,11 @@ namespace Survivebest.Core
             if (politics != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Politics {politics.TerritoryId} / council {politics.SecretCouncilAttention:0}");
             if (day != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Day survival {day.SafehouseIntegrity:0} / {day.LastDayIncident}");
             if (memory != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Ancient memory century {memory.CenturyMarker}: {memory.PastIdentity}");
+            if (lastLifeAffirmingChoiceByCharacterId.TryGetValue(characterId, out string lifeChoice) && !string.IsNullOrWhiteSpace(lifeChoice))
+            {
+                builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Life choice {lifeChoice}");
+            }
+
             return builder.Length > 0 ? builder.ToString() : "No vampire depth data.";
         }
 

@@ -85,9 +85,32 @@ namespace Survivebest.Tests.EditMode
             int total = LifeActivityCatalog.GetTotalChoiceCount();
             string summary = LifeActivityCatalog.BuildChoiceDepthSummary();
 
-            Assert.GreaterOrEqual(total, 220);
+            Assert.GreaterOrEqual(total, 1000);
+            Assert.GreaterOrEqual(LifeActivityCatalog.GetGeneratedLifeAffirmingChoiceCount(), 1000);
             StringAssert.Contains(total.ToString(), summary);
-            StringAssert.Contains("65 activity pools", summary);
+            StringAssert.Contains("65 authored pools", summary);
         }
+        [Test]
+        public void LifeAffirmingChoicePicker_ReturnsFlavorfulPrompt()
+        {
+            string value = LifeActivityCatalog.PickLifeAffirmingChoice("npc aria");
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(value));
+            StringAssert.Contains("npc aria", value);
+            StringAssert.Contains("chooses to", value);
+        }
+
+        [Test]
+        public void LifeAffirmingChoiceSet_ReturnsRequestedCount()
+        {
+            var set = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("vampire lio", 5);
+
+            Assert.AreEqual(5, set.Count);
+            for (int i = 0; i < set.Count; i++)
+            {
+                StringAssert.Contains("vampire lio", set[i]);
+            }
+        }
+
     }
 }
