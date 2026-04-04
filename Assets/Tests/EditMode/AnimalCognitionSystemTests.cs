@@ -18,6 +18,7 @@ namespace Survivebest.Tests.EditMode
             Assert.IsFalse(string.IsNullOrWhiteSpace(choice));
             StringAssert.Contains("animal fox_1", choice);
             StringAssert.Contains("chooses to", choice);
+            Assert.AreEqual(choice, system.GetLastLifeAffirmingChoice("fox_1"));
 
             Object.DestroyImmediate(go);
         }

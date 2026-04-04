@@ -83,6 +83,7 @@ namespace Survivebest.Core
         [SerializeField] private List<AncientMemoryEntry> ancientMemories = new();
         [SerializeField] private List<VampirePoliticalProfile> politicalProfiles = new();
         [SerializeField] private List<DaySurvivalProfile> daySurvivalProfiles = new();
+        private readonly Dictionary<string, string> lastLifeAffirmingChoiceByCharacterId = new();
 
         public IReadOnlyList<BloodBondProfile> BloodBonds => bloodBonds;
         public IReadOnlyList<FrenzyState> FrenzyStates => frenzyStates;
@@ -273,7 +274,9 @@ namespace Survivebest.Core
                 focus = "rebuild a safe haven before sunrise";
             }
 
-            return LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {resolvedCharacterId} choosing to {focus}");
+            string choice = LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {resolvedCharacterId} choosing to {focus}");
+            lastLifeAffirmingChoiceByCharacterId[resolvedCharacterId] = choice;
+            return choice;
         }
 
         public string BuildVampireDepthDashboard(string characterId)
@@ -296,6 +299,11 @@ namespace Survivebest.Core
             if (politics != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Politics {politics.TerritoryId} / council {politics.SecretCouncilAttention:0}");
             if (day != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Day survival {day.SafehouseIntegrity:0} / {day.LastDayIncident}");
             if (memory != null) builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Ancient memory century {memory.CenturyMarker}: {memory.PastIdentity}");
+            if (lastLifeAffirmingChoiceByCharacterId.TryGetValue(characterId, out string lifeChoice) && !string.IsNullOrWhiteSpace(lifeChoice))
+            {
+                builder.Append(builder.Length > 0 ? " | " : string.Empty).Append($"Life choice {lifeChoice}");
+            }
+
             return builder.Length > 0 ? builder.ToString() : "No vampire depth data.";
         }
 

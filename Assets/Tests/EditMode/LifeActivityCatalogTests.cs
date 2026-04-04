@@ -100,5 +100,17 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("chooses to", value);
         }
 
+        [Test]
+        public void LifeAffirmingChoiceSet_ReturnsRequestedCount()
+        {
+            var set = LifeActivityCatalog.BuildLifeAffirmingChoiceSet("vampire lio", 5);
+
+            Assert.AreEqual(5, set.Count);
+            for (int i = 0; i < set.Count; i++)
+            {
+                StringAssert.Contains("vampire lio", set[i]);
+            }
+        }
+
     }
 }

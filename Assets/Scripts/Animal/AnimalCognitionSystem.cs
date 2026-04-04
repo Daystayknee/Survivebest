@@ -46,6 +46,7 @@ namespace Survivebest.Animal
         [SerializeField] private List<AnimalPerception> perceptions = new();
         [SerializeField] private List<BondState> bonds = new();
         [SerializeField] private List<InstinctStack> instincts = new();
+        private readonly Dictionary<string, string> lastLifeAffirmingChoiceByAnimalId = new();
 
         public AnimalPerception GetOrCreatePerception(string animalId)
         {
@@ -137,7 +138,18 @@ namespace Survivebest.Animal
             string actor = string.IsNullOrWhiteSpace(caregiverId)
                 ? $"animal {animalId}"
                 : $"animal {animalId} with caregiver {caregiverId}";
-            return LifeActivityCatalog.PickLifeAffirmingChoice($"{actor} as a {moodTag} trying to {instinctTag}");
+            string choice = LifeActivityCatalog.PickLifeAffirmingChoice($"{actor} as a {moodTag} trying to {instinctTag}");
+            if (!string.IsNullOrWhiteSpace(animalId))
+            {
+                lastLifeAffirmingChoiceByAnimalId[animalId] = choice;
+            }
+
+            return choice;
         }
+
+        public string GetLastLifeAffirmingChoice(string animalId)
+            => !string.IsNullOrWhiteSpace(animalId) && lastLifeAffirmingChoiceByAnimalId.TryGetValue(animalId, out string value)
+                ? value
+                : string.Empty;
     }
 }

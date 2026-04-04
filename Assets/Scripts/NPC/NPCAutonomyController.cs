@@ -29,6 +29,7 @@ namespace Survivebest.NPC
         [SerializeField] private List<string> fallbackSocialTargetIds = new();
 
         private int lastSocialInteractionAbsoluteHour = -99999;
+        public string LastLifeAffirmingChoice { get; private set; } = string.Empty;
 
         private void OnEnable()
         {
@@ -99,6 +100,7 @@ namespace Survivebest.NPC
             }
 
             string destination = ResolveDestination(chosen, scheduledLot, hour);
+            LastLifeAffirmingChoice = BuildNpcLifeAffirmingChoice();
             npcScheduleSystem.ForceNpcState(npcId, chosen, "NPCAutonomyController decision");
             if (!string.IsNullOrWhiteSpace(destination))
             {
@@ -114,7 +116,7 @@ namespace Survivebest.NPC
                 SystemName = nameof(NPCAutonomyController),
                 SourceCharacterId = npcId,
                 ChangeKey = chosen.ToString(),
-                Reason = $"Autonomy {decision.Reason} H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0} L:{loneliness:0} SD:{decision.SocialDrive:0.00}",
+                Reason = $"Autonomy {decision.Reason} H:{hunger:0} E:{energy:0} M:{mood:0} S:{stress:0} L:{loneliness:0} SD:{decision.SocialDrive:0.00} LifeChoice:{LastLifeAffirmingChoice}",
                 Magnitude = decision.SocialDrive
             });
         }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace Survivebest.Core
 {
@@ -227,6 +228,29 @@ namespace Survivebest.Core
             string target = Pick(LifeAffirmingActionTargets, "their routine");
             string context = Pick(LifeAffirmingActionContexts, "today");
             return $"{actorDescriptor} chooses to {verb} {target} to {intention} {context}";
+        }
+
+        public static IReadOnlyList<string> BuildLifeAffirmingChoiceSet(string actorDescriptor = "character", int count = 3)
+        {
+            int safeCount = Mathf.Clamp(count, 1, 12);
+            HashSet<string> uniqueChoices = new(StringComparer.Ordinal);
+            List<string> results = new(safeCount);
+            int attempts = safeCount * 4;
+            for (int i = 0; i < attempts && results.Count < safeCount; i++)
+            {
+                string candidate = PickLifeAffirmingChoice(actorDescriptor);
+                if (uniqueChoices.Add(candidate))
+                {
+                    results.Add(candidate);
+                }
+            }
+
+            while (results.Count < safeCount)
+            {
+                results.Add(PickLifeAffirmingChoice(actorDescriptor));
+            }
+
+            return results;
         }
 
         public static int GetTotalChoiceCount()
