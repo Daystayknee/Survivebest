@@ -113,12 +113,23 @@ namespace Survivebest.Animal
             if (bond.TrustByHumanId.Count > 0)
             {
                 float total = 0f;
+                int contributorCount = 0;
                 for (int i = 0; i < bond.TrustByHumanId.Count; i++)
                 {
-                    total += Mathf.Clamp01(bond.TrustByHumanId[i].Trust);
+                    BondTrust bondTrust = bond.TrustByHumanId[i];
+                    if (bondTrust == null)
+                    {
+                        continue;
+                    }
+
+                    total += Mathf.Clamp01(bondTrust.Trust);
+                    contributorCount++;
                 }
 
-                trustAverage = total / bond.TrustByHumanId.Count;
+                if (contributorCount > 0)
+                {
+                    trustAverage = total / contributorCount;
+                }
             }
 
             string moodTag = trustAverage >= 0.65f ? "confident companion" : "cautious survivor";

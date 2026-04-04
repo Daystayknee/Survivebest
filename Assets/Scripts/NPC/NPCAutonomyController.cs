@@ -300,7 +300,8 @@ namespace Survivebest.NPC
             float sentiment = EstimateRecentMemorySentiment();
             string socialTone = affinity >= 50f ? "protect close bonds" : "rebuild trust";
             string memoryTone = sentiment >= 0f ? "grow from recent wins" : "heal recent setbacks";
-            return LifeActivityCatalog.PickLifeAffirmingChoice($"npc {npcId} trying to {socialTone} and {memoryTone}");
+            string resolvedNpcId = string.IsNullOrWhiteSpace(npcId) ? "unknown_npc" : npcId;
+            return LifeActivityCatalog.PickLifeAffirmingChoice($"npc {resolvedNpcId} trying to {socialTone} and {memoryTone}");
         }
 
         private string ResolveDestination(NpcActivityState chosen, string scheduledLot, int hour)

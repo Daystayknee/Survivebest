@@ -259,6 +259,7 @@ namespace Survivebest.Core
             FrenzyState frenzy = frenzyStates.Find(x => x != null && x.CharacterId == characterId);
             VampirePoliticalProfile politics = politicalProfiles.Find(x => x != null && x.CharacterId == characterId);
             DaySurvivalProfile day = daySurvivalProfiles.Find(x => x != null && x.CharacterId == characterId);
+            string resolvedCharacterId = string.IsNullOrWhiteSpace(characterId) ? "unknown_vampire" : characterId;
 
             bool stable = frenzy == null || frenzy.LossOfControlRisk < 55f;
             string focus = stable ? "protect their humanity" : "regain self-control";
@@ -272,7 +273,7 @@ namespace Survivebest.Core
                 focus = "rebuild a safe haven before sunrise";
             }
 
-            return LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {characterId} choosing to {focus}");
+            return LifeActivityCatalog.PickLifeAffirmingChoice($"vampire {resolvedCharacterId} choosing to {focus}");
         }
 
         public string BuildVampireDepthDashboard(string characterId)

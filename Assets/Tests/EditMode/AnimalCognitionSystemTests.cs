@@ -21,5 +21,21 @@ namespace Survivebest.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void BuildAnimalLifeAffirmingChoice_IgnoresNullTrustEntries()
+        {
+            GameObject go = new GameObject("AnimalCognitionNullSafe");
+            AnimalCognitionSystem system = go.AddComponent<AnimalCognitionSystem>();
+            BondState bond = system.GetOrCreateBondState("wolf_1");
+            bond.TrustByHumanId.Add(null);
+
+            string choice = system.BuildAnimalLifeAffirmingChoice("wolf_1");
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(choice));
+            StringAssert.Contains("animal wolf_1", choice);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
