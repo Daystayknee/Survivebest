@@ -1073,6 +1073,21 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void ApplyDysliteCharacterSetup()
+        {
+            SetTab((int)CharacterCreatorDashboardTab.Traits);
+            SetPreviewBackground((int)CharacterCreatorBackgroundOption.Neighborhood);
+            SetPreviewFocus((int)CharacterCreatorPreviewFocus.AreaView);
+
+            creatorMode = CreatorGeneticsMode.DnaEdit;
+            SetGenomeStressEpigenetics(0.72f);
+            SetGenomeCognition(0.58f);
+            SetGenomeHairThickness(0.62f);
+
+            PublishUiEvent("DysliteCharacterSetup", "Applied dyslite-inspired character setup baseline", 1f);
+            RefreshPreview();
+        }
+
         public void SaveAppearancePreset(string presetId)
         {
             if (appearanceManager == null || string.IsNullOrWhiteSpace(presetId))

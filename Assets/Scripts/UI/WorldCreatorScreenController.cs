@@ -107,6 +107,7 @@ namespace Survivebest.UI
         public bool EnableTemperature = true;
         public bool EnableFatigue = true;
         public bool SandboxExperience = true;
+        public bool DysliteExperience;
         public bool UseUsaCommonPlaces = true;
     }
 
@@ -181,6 +182,23 @@ namespace Survivebest.UI
         public void SetSandboxExperience(bool enabled)
         {
             settings.SandboxExperience = enabled;
+            if (enabled)
+            {
+                settings.DysliteExperience = false;
+            }
+
+            ApplyBalanceModeFromSettings();
+            RefreshText();
+        }
+
+        public void SetDysliteExperience(bool enabled)
+        {
+            settings.DysliteExperience = enabled;
+            if (enabled)
+            {
+                settings.SandboxExperience = false;
+            }
+
             ApplyBalanceModeFromSettings();
             RefreshText();
         }
@@ -651,9 +669,17 @@ namespace Survivebest.UI
                 return;
             }
 
-            gameBalanceManager.ApplyExperienceMode(settings.SandboxExperience
-                ? BalanceExperienceMode.Sandbox
-                : BalanceExperienceMode.Standard);
+            BalanceExperienceMode mode = BalanceExperienceMode.Standard;
+            if (settings.DysliteExperience)
+            {
+                mode = BalanceExperienceMode.Dyslite;
+            }
+            else if (settings.SandboxExperience)
+            {
+                mode = BalanceExperienceMode.Sandbox;
+            }
+
+            gameBalanceManager.ApplyExperienceMode(mode);
         }
 
         private void PublishTabEvent()
