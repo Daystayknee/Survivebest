@@ -293,6 +293,16 @@ namespace Survivebest.NPC
             return total / sampleCount;
         }
 
+
+        public string BuildNpcLifeAffirmingChoice()
+        {
+            float affinity = EstimateRelationshipAffinity();
+            float sentiment = EstimateRecentMemorySentiment();
+            string socialTone = affinity >= 50f ? "protect close bonds" : "rebuild trust";
+            string memoryTone = sentiment >= 0f ? "grow from recent wins" : "heal recent setbacks";
+            return LifeActivityCatalog.PickLifeAffirmingChoice($"npc {npcId} trying to {socialTone} and {memoryTone}");
+        }
+
         private string ResolveDestination(NpcActivityState chosen, string scheduledLot, int hour)
         {
             if (!string.IsNullOrWhiteSpace(scheduledLot))

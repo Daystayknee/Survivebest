@@ -84,6 +84,58 @@ namespace Survivebest.Core
             "Scout nearby terrain and mark safe routes",
             "Cook a survival meal over open fire"
         };
+        private static readonly string[] LifeAffirmingIntentions =
+        {
+            "build trust",
+            "protect their peace",
+            "heal old wounds",
+            "grow their craft",
+            "care for their loved ones",
+            "find belonging",
+            "create beauty",
+            "stabilize finances",
+            "strengthen their body",
+            "make the neighborhood safer"
+        };
+        private static readonly string[] LifeAffirmingActionVerbs =
+        {
+            "mentor",
+            "repair",
+            "explore",
+            "practice",
+            "volunteer",
+            "research",
+            "negotiate",
+            "perform",
+            "train",
+            "design"
+        };
+        private static readonly string[] LifeAffirmingActionTargets =
+        {
+            "a community program",
+            "a home sanctuary",
+            "a local business",
+            "a difficult relationship",
+            "a survival route",
+            "a creative project",
+            "an animal rescue effort",
+            "a mentorship circle",
+            "a bloodline archive",
+            "a civic improvement plan"
+        };
+        private static readonly string[] LifeAffirmingActionContexts =
+        {
+            "during sunrise prep",
+            "during a storm warning",
+            "after a tense argument",
+            "on a neighborhood event day",
+            "while recovering from burnout",
+            "before a major trial",
+            "during weekend free time",
+            "after work exhaustion",
+            "during a moonlit shift",
+            "before a family milestone"
+        };
         private static readonly Dictionary<LifeStage, string[]> OutfitStylesByLifeStage = new()
         {
             { LifeStage.Baby, new[] { "Swaddle", "Sleep Sack", "Soft Onesie", "Play Mat Set", "Weather Coverall" } },
@@ -165,6 +217,18 @@ namespace Survivebest.Core
         public static string PickFaithCommunityDetail() => Pick(FaithCommunityDetails, "faith/community detail");
         public static string PickSurvivalPracticalActivity() => Pick(SurvivalPracticalActivities, "basic survival task");
         public static IReadOnlyList<string> GetSurvivalPracticalActivities() => SurvivalPracticalActivities;
+        public static int GetGeneratedLifeAffirmingChoiceCount()
+            => LifeAffirmingIntentions.Length * LifeAffirmingActionVerbs.Length * LifeAffirmingActionTargets.Length * LifeAffirmingActionContexts.Length;
+
+        public static string PickLifeAffirmingChoice(string actorDescriptor = "character")
+        {
+            string intention = Pick(LifeAffirmingIntentions, "find stability");
+            string verb = Pick(LifeAffirmingActionVerbs, "improve");
+            string target = Pick(LifeAffirmingActionTargets, "their routine");
+            string context = Pick(LifeAffirmingActionContexts, "today");
+            return $"{actorDescriptor} chooses to {verb} {target} to {intention} {context}";
+        }
+
         public static int GetTotalChoiceCount()
         {
             return TvGenres.Length + MovieGenres.Length + BookGenres.Length + SingingStyles.Length + OutfitStyles.Length
@@ -187,12 +251,13 @@ namespace Survivebest.Core
                 + PetCareDetails.Length + DigitalOverloadDetails.Length + HolidayPressureDetails.Length
                 + ChildcareLoadDetails.Length + DisabilityAccessDetails.Length + DisasterPreparednessDetails.Length
                 + CivicLifeDetails.Length + FaithCommunityDetails.Length
-                + SurvivalPracticalActivities.Length;
+                + SurvivalPracticalActivities.Length
+                + GetGeneratedLifeAffirmingChoiceCount();
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 65 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} options across 65 authored pools plus {GetGeneratedLifeAffirmingChoiceCount()} life-affirming combinational choices.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
