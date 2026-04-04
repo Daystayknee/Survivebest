@@ -67,6 +67,7 @@ namespace Survivebest.Tests.EditMode
             VampirePoliticalProfile politics = system.UpdatePolitics(vampire, "old_quarter", 18f, 22f, 16f);
             AncientMemoryEntry archive = system.ArchiveAncientMemory(vampire, 17, "A lover from the plague years returned in a stranger's face.", "apothecary widow", "lover_1700", true);
             DaySurvivalProfile day = system.EvaluateDaySurvival(vampire, 78f, 70f, true, true);
+            string lifeChoice = system.BuildVampireLifeAffirmingChoice(vampire.CharacterId);
             string dashboard = system.BuildVampireDepthDashboard(vampire.CharacterId);
 
             Assert.IsTrue(frenzy.FrenzyActive);
@@ -74,6 +75,9 @@ namespace Survivebest.Tests.EditMode
             Assert.Greater(politics.SecretCouncilAttention, 0f);
             Assert.AreEqual(17, archive.CenturyMarker);
             Assert.IsTrue(day.ChaosEventTriggered);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(lifeChoice));
+            StringAssert.Contains("vampire ancient_vamp", lifeChoice);
+            StringAssert.Contains("Life choice", dashboard);
             StringAssert.Contains("Ancient memory century 17", dashboard);
             Assert.Greater(paper.GetOrCreateProfile(vampire.CharacterId).VampireAnomalyRisk, 0f);
 
