@@ -64,6 +64,11 @@ namespace Survivebest.Core
         private static readonly string[] PetCareDetails = { "pet routines forcing structure on chaotic days", "guilt when a walk gets delayed", "pet mess changing morning priorities", "comfort from small pet rituals", "vet reminders creating background stress", "buying pet essentials before personal treats", "a pet's mood subtly affecting household tone" };
         private static readonly string[] DigitalOverloadDetails = { "tab overload mirroring mental overload", "notification fatigue flattening focus", "doomscrolling past the point of feeling better", "muting chats to protect attention", "screen-time guilt after midnight", "switching apps instead of resting", "clearing notifications as a fake productivity win" };
         private static readonly string[] HolidayPressureDetails = { "holiday planning fatigue before celebrations even start", "gift budgeting stress versus generosity", "family expectation friction around traditions", "social media holiday comparisons hurting mood", "cleaning rush before guests arrive", "post-holiday emotional crash", "small traditions providing real stability" };
+        private static readonly string[] ChildcareLoadDetails = { "daycare pickup timing stress", "unexpected school closure reshaping the whole day", "co-parent handoff tension", "bedtime negotiation marathon", "childcare costs colliding with bills", "packing snacks, clothes, and backup plans", "guilt about screen-time tradeoffs during survival weeks" };
+        private static readonly string[] DisabilityAccessDetails = { "route planning around accessible entrances", "fatigue budgeting before errands", "medication and mobility aids as daily logistics", "paperwork loops for accommodations", "sensory-friendly scheduling for public spaces", "advocating for accessibility at work or school", "small environment changes restoring independence" };
+        private static readonly string[] DisasterPreparednessDetails = { "storm prep checklist before supply runs", "backup water and food rotation", "charging power banks before outage risk", "family emergency contact drill", "home hazard check before severe weather", "balancing panic buying versus calm planning", "post-event cleanup and claim paperwork fatigue" };
+        private static readonly string[] CivicLifeDetails = { "local election reminders changing household conversations", "attending a school board or council meeting", "neighborhood mutual-aid coordination", "tracking law changes that affect your routine", "public transit budget votes impacting commute plans", "community trust rising after visible service fixes", "burnout from caring about every civic issue at once" };
+        private static readonly string[] FaithCommunityDetails = { "weekly ritual as emotional reset", "community meal prep and volunteer duty", "belief friction inside mixed-faith households", "quiet spiritual practice before a stressful shift", "moral support from trusted elders", "holiday observance logistics and budget pressure", "rebuilding trust in community after conflict" };
         private static readonly string[] SurvivalPracticalActivities =
         {
             "Gather wood and tinder",
@@ -153,6 +158,11 @@ namespace Survivebest.Core
         public static string PickPetCareDetail() => Pick(PetCareDetails, "pet care detail");
         public static string PickDigitalOverloadDetail() => Pick(DigitalOverloadDetails, "digital overload detail");
         public static string PickHolidayPressureDetail() => Pick(HolidayPressureDetails, "holiday pressure detail");
+        public static string PickChildcareLoadDetail() => Pick(ChildcareLoadDetails, "childcare-load detail");
+        public static string PickDisabilityAccessDetail() => Pick(DisabilityAccessDetails, "disability/access detail");
+        public static string PickDisasterPreparednessDetail() => Pick(DisasterPreparednessDetails, "disaster preparedness detail");
+        public static string PickCivicLifeDetail() => Pick(CivicLifeDetails, "civic-life detail");
+        public static string PickFaithCommunityDetail() => Pick(FaithCommunityDetails, "faith/community detail");
         public static string PickSurvivalPracticalActivity() => Pick(SurvivalPracticalActivities, "basic survival task");
         public static IReadOnlyList<string> GetSurvivalPracticalActivities() => SurvivalPracticalActivities;
         public static int GetTotalChoiceCount()
@@ -175,12 +185,14 @@ namespace Survivebest.Core
                 + PhoneTextingDetails.Length + FriendshipDetails.Length + RomanceDetails.Length
                 + FamilyDetails.Length + CommuteTransitDetails.Length + UtilityBillDetails.Length
                 + PetCareDetails.Length + DigitalOverloadDetails.Length + HolidayPressureDetails.Length
+                + ChildcareLoadDetails.Length + DisabilityAccessDetails.Length + DisasterPreparednessDetails.Length
+                + CivicLifeDetails.Length + FaithCommunityDetails.Length
                 + SurvivalPracticalActivities.Length;
         }
 
         public static string BuildChoiceDepthSummary()
         {
-            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 60 activity pools.";
+            return $"LifeActivityCatalog depth: {GetTotalChoiceCount()} total authored options across 65 activity pools.";
         }
 
         public static IReadOnlyList<string> GetOutfitStylesForLifeStage(LifeStage lifeStage)
