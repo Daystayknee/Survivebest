@@ -38,6 +38,14 @@ namespace Survivebest.Tests.EditMode
             Assert.AreEqual(1, system.GetLifeAffirmingChoiceHistory("wolf_1").Count);
             var suggestions = system.BuildAnimalLifeAffirmingChoiceSuggestions("wolf_1", count: 3, seed: 99);
             Assert.AreEqual(3, suggestions.Count);
+            for (int i = 0; i < 20; i++)
+            {
+                system.BuildAnimalLifeAffirmingChoice("wolf_1");
+            }
+
+            Assert.AreEqual(AnimalCognitionSystem.LifeChoiceHistoryCap, system.GetLifeAffirmingChoiceHistory("wolf_1").Count);
+            system.ClearLifeAffirmingChoiceHistory("wolf_1");
+            Assert.AreEqual(0, system.GetLifeAffirmingChoiceHistory("wolf_1").Count);
 
             Object.DestroyImmediate(go);
         }

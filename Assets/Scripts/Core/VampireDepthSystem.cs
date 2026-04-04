@@ -337,6 +337,17 @@ namespace Survivebest.Core
                 : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(lastChoice, count, seed);
         }
 
+        public void ClearLifeAffirmingChoiceHistory(string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            lastLifeAffirmingChoiceByCharacterId.Remove(characterId);
+            lifeAffirmingChoiceHistoryByCharacterId.Remove(characterId);
+        }
+
         private BloodBondProfile GetOrCreateBloodBond(string feederId, string recipientId)
         {
             BloodBondProfile bond = bloodBonds.Find(x => x != null && x.Matches(feederId, recipientId));

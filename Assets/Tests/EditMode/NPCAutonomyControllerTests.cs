@@ -36,6 +36,15 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("npc npc_1", lifeChoice);
             var suggestions = controller.BuildNpcLifeAffirmingChoiceSuggestions(4, 77);
             Assert.AreEqual(4, suggestions.Count);
+            for (int i = 0; i < 20; i++)
+            {
+                controller.EvaluateAutonomy(9);
+            }
+
+            Assert.AreEqual(NPCAutonomyController.LifeChoiceHistoryCap, controller.LifeAffirmingChoiceHistory.Count);
+            controller.ClearLifeAffirmingChoiceHistory();
+            Assert.AreEqual(0, controller.LifeAffirmingChoiceHistory.Count);
+            Assert.IsTrue(string.IsNullOrEmpty(controller.LastLifeAffirmingChoice));
 
             Object.DestroyImmediate(autoGo);
             Object.DestroyImmediate(ssGo);

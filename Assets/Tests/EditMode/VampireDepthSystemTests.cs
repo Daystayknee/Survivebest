@@ -79,6 +79,14 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("vampire ancient_vamp", lifeChoice);
             Assert.AreEqual(1, system.GetLifeAffirmingChoiceHistory(vampire.CharacterId).Count);
             Assert.AreEqual(3, system.BuildVampireLifeAffirmingChoiceSuggestions(vampire.CharacterId, 3, 88).Count);
+            for (int i = 0; i < 20; i++)
+            {
+                system.BuildVampireLifeAffirmingChoice(vampire.CharacterId);
+            }
+
+            Assert.AreEqual(VampireDepthSystem.LifeChoiceHistoryCap, system.GetLifeAffirmingChoiceHistory(vampire.CharacterId).Count);
+            system.ClearLifeAffirmingChoiceHistory(vampire.CharacterId);
+            Assert.AreEqual(0, system.GetLifeAffirmingChoiceHistory(vampire.CharacterId).Count);
             StringAssert.Contains("Life choice", dashboard);
             StringAssert.Contains("Ancient memory century 17", dashboard);
             Assert.Greater(paper.GetOrCreateProfile(vampire.CharacterId).VampireAnomalyRisk, 0f);

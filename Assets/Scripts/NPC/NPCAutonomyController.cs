@@ -323,6 +323,12 @@ namespace Survivebest.NPC
                 : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count, seed);
         }
 
+        public void ClearLifeAffirmingChoiceHistory()
+        {
+            lifeAffirmingChoiceHistory.Clear();
+            LastLifeAffirmingChoice = string.Empty;
+        }
+
         private void AppendLifeChoiceHistory(string choice)
         {
             if (string.IsNullOrWhiteSpace(choice))

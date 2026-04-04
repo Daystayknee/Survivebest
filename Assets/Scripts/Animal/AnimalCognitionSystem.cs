@@ -180,5 +180,16 @@ namespace Survivebest.Animal
                 ? LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count)
                 : LifeActivityCatalog.BuildLifeAffirmingChoiceSet(descriptor, count, seed);
         }
+
+        public void ClearLifeAffirmingChoiceHistory(string animalId)
+        {
+            if (string.IsNullOrWhiteSpace(animalId))
+            {
+                return;
+            }
+
+            lastLifeAffirmingChoiceByAnimalId.Remove(animalId);
+            lifeAffirmingChoiceHistoryByAnimalId.Remove(animalId);
+        }
     }
 }
