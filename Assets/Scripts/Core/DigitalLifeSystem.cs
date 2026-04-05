@@ -6,6 +6,26 @@ using Survivebest.Social;
 namespace Survivebest.Core
 {
     [Serializable]
+    public enum HistoricalTimePeriod
+    {
+        Contemporary,
+        VikingAge,
+        VictorianEra,
+        AfricanAmericanGreatMigration
+    }
+
+    [Serializable]
+    public class CommunicationTechnologyUnlock
+    {
+        public string UnlockId;
+        public string Label;
+        public HistoricalTimePeriod TimePeriod;
+        public bool UsesLetters;
+        public bool UsesPublicBoards;
+        public bool SupportsDigitalSocialFeed;
+    }
+
+    [Serializable]
     public class DigitalContact
     {
         public string OwnerCharacterId;
@@ -59,6 +79,8 @@ namespace Survivebest.Core
         [Range(0f, 100f)] public float CreatorEconomyMomentum;
         [Range(0f, 100f)] public float CancellationRisk;
         [Range(0f, 100f)] public float DigitalEvidenceRisk;
+        public HistoricalTimePeriod ActiveTimePeriod = HistoricalTimePeriod.Contemporary;
+        public List<string> UnlockedCommunicationTechnologyIds = new();
     }
 
     [Serializable]
@@ -130,6 +152,7 @@ namespace Survivebest.Core
         [SerializeField] private List<SocialPostComment> comments = new();
         [SerializeField] private List<WebChatRoom> webChatRooms = new();
         [SerializeField] private List<WebChatMessage> webChatMessages = new();
+        [SerializeField] private List<CommunicationTechnologyUnlock> communicationTechnologyUnlocks = new();
 
         public IReadOnlyList<DigitalContact> Contacts => contacts;
         public IReadOnlyList<TextThreadRecord> TextThreads => textThreads;
@@ -140,14 +163,82 @@ namespace Survivebest.Core
         public IReadOnlyList<SocialPostComment> Comments => comments;
         public IReadOnlyList<WebChatRoom> WebChatRooms => webChatRooms;
         public IReadOnlyList<WebChatMessage> WebChatMessages => webChatMessages;
+        public IReadOnlyList<CommunicationTechnologyUnlock> CommunicationTechnologyUnlocks => communicationTechnologyUnlocks;
+
+        private void Awake()
+        {
+            EnsureDefaultCommunicationUnlocks();
+        }
 
         public DigitalLifeProfile GetOrCreateProfile(string characterId)
         {
             DigitalLifeProfile profile = profiles.Find(x => x != null && x.CharacterId == characterId);
             if (profile != null) return profile;
             profile = new DigitalLifeProfile { CharacterId = characterId };
+            EnsureUnlockDefaults(profile);
             profiles.Add(profile);
             return profile;
+        }
+
+        public void SetCharacterTimePeriod(string characterId, HistoricalTimePeriod timePeriod)
+        {
+            if (string.IsNullOrWhiteSpace(characterId))
+            {
+                return;
+            }
+
+            DigitalLifeProfile profile = GetOrCreateProfile(characterId);
+            profile.ActiveTimePeriod = timePeriod;
+            EnsureUnlockDefaults(profile);
+        }
+
+        public bool UnlockCommunicationTechnology(string characterId, string unlockId)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(unlockId))
+            {
+                return false;
+            }
+
+            EnsureDefaultCommunicationUnlocks();
+            DigitalLifeProfile profile = GetOrCreateProfile(characterId);
+            CommunicationTechnologyUnlock unlock = communicationTechnologyUnlocks.Find(x => x != null && string.Equals(x.UnlockId, unlockId, StringComparison.OrdinalIgnoreCase));
+            if (unlock == null || unlock.TimePeriod != profile.ActiveTimePeriod || profile.UnlockedCommunicationTechnologyIds.Contains(unlock.UnlockId))
+            {
+                return false;
+            }
+
+            profile.UnlockedCommunicationTechnologyIds.Add(unlock.UnlockId);
+            return true;
+        }
+
+        public bool PublishBoardNotice(string characterId, string body, string boardName)
+        {
+            if (string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(body))
+            {
+                return false;
+            }
+
+            string boardLabel = string.IsNullOrWhiteSpace(boardName) ? "Town Board" : boardName.Trim();
+            string formatted = $"[Board:{boardLabel}] {body}";
+            return PublishHistoricalSocialEntry(characterId, formatted, requiresBoards: true);
+        }
+
+        public bool SendLetter(string ownerCharacterId, string otherCharacterId, string body)
+        {
+            if (string.IsNullOrWhiteSpace(ownerCharacterId) || string.IsNullOrWhiteSpace(otherCharacterId) || string.IsNullOrWhiteSpace(body))
+            {
+                return false;
+            }
+
+            DigitalLifeProfile profile = GetOrCreateProfile(ownerCharacterId);
+            if (ResolveCommunicationMode(profile) != "letters_and_boards")
+            {
+                return false;
+            }
+
+            string letterBody = $"Letter to {otherCharacterId}: {body}";
+            SendText(ownerCharacterId, otherCharacterId, letterBody, leakRisk: false);
+            return true;
         }
 
         public void AddContact(string ownerCharacterId, string contactCharacterId, string displayName, bool favorite = false)
@@ -426,7 +517,9 @@ namespace Survivebest.Core
             int threadCount = textThreads.FindAll(x => x != null && x.OwnerCharacterId == characterId).Count;
             int viralCount = socialFeedPosts.FindAll(x => x != null && x.CharacterId == characterId && x.Viral).Count;
             SocialMediaProfile socialProfile = GetOrCreateSocialProfile(characterId);
-            return $"Threads {threadCount}, viral posts {viralCount}, online rep {profile.OnlineReputation:0.0}, followers {socialProfile.FollowerCharacterIds.Count}, following {socialProfile.FollowingCharacterIds.Count}, creator followers {profile.ParasocialFollowers:0.0}, cancel risk {profile.CancellationRisk:0.0}, evidence risk {profile.DigitalEvidenceRisk:0.0}.";
+            string mode = ResolveCommunicationMode(profile);
+            string unlocked = profile.UnlockedCommunicationTechnologyIds.Count > 0 ? string.Join(", ", profile.UnlockedCommunicationTechnologyIds) : "none";
+            return $"Mode {mode}, period {profile.ActiveTimePeriod}, threads {threadCount}, viral posts {viralCount}, online rep {profile.OnlineReputation:0.0}, followers {socialProfile.FollowerCharacterIds.Count}, following {socialProfile.FollowingCharacterIds.Count}, creator followers {profile.ParasocialFollowers:0.0}, cancel risk {profile.CancellationRisk:0.0}, evidence risk {profile.DigitalEvidenceRisk:0.0}, tech unlocks {unlocked}.";
         }
 
         public string BuildSocialMediaSummary(string characterId)
@@ -434,7 +527,145 @@ namespace Survivebest.Core
             SocialMediaProfile profile = GetOrCreateSocialProfile(characterId);
             int postCount = socialFeedPosts.FindAll(x => x != null && x.CharacterId == characterId).Count;
             int photoCount = photos.FindAll(x => x != null && x.CharacterId == characterId).Count;
-            return $"{profile.Handle} posts {postCount}, photos {photoCount}, followers {profile.FollowerCharacterIds.Count}, following {profile.FollowingCharacterIds.Count}.";
+            DigitalLifeProfile digitalProfile = GetOrCreateProfile(characterId);
+            string mode = ResolveCommunicationMode(digitalProfile);
+            return mode == "letters_and_boards"
+                ? $"{profile.DisplayName} uses letters and boards in {digitalProfile.ActiveTimePeriod}. Entries {postCount}, portraits {photoCount}, community reach {profile.FollowerCharacterIds.Count}."
+                : $"{profile.Handle} posts {postCount}, photos {photoCount}, followers {profile.FollowerCharacterIds.Count}, following {profile.FollowingCharacterIds.Count}.";
+        }
+
+        private bool PublishHistoricalSocialEntry(string characterId, string body, bool requiresBoards)
+        {
+            DigitalLifeProfile profile = GetOrCreateProfile(characterId);
+            if (ResolveCommunicationMode(profile) != "letters_and_boards")
+            {
+                return false;
+            }
+
+            bool hasRequiredUnlock = profile.UnlockedCommunicationTechnologyIds.Exists(id =>
+            {
+                CommunicationTechnologyUnlock unlock = communicationTechnologyUnlocks.Find(x => x != null && string.Equals(x.UnlockId, id, StringComparison.OrdinalIgnoreCase));
+                return unlock != null && (!requiresBoards || unlock.UsesPublicBoards);
+            });
+
+            if (!hasRequiredUnlock)
+            {
+                return false;
+            }
+
+            CreatePost(characterId, body, reach: 25f, controversial: false);
+            return true;
+        }
+
+        private string ResolveCommunicationMode(DigitalLifeProfile profile)
+        {
+            if (profile == null)
+            {
+                return "digital_social_feed";
+            }
+
+            return profile.ActiveTimePeriod == HistoricalTimePeriod.Contemporary ? "digital_social_feed" : "letters_and_boards";
+        }
+
+        private void EnsureUnlockDefaults(DigitalLifeProfile profile)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            EnsureDefaultCommunicationUnlocks();
+            if (profile.UnlockedCommunicationTechnologyIds == null)
+            {
+                profile.UnlockedCommunicationTechnologyIds = new List<string>();
+            }
+
+            if (profile.UnlockedCommunicationTechnologyIds.Count > 0)
+            {
+                return;
+            }
+
+            switch (profile.ActiveTimePeriod)
+            {
+                case HistoricalTimePeriod.VikingAge:
+                    profile.UnlockedCommunicationTechnologyIds.Add("viking_rune_letters");
+                    profile.UnlockedCommunicationTechnologyIds.Add("viking_thing_notice_board");
+                    break;
+                case HistoricalTimePeriod.VictorianEra:
+                    profile.UnlockedCommunicationTechnologyIds.Add("victorian_penny_post");
+                    profile.UnlockedCommunicationTechnologyIds.Add("victorian_public_billboard");
+                    break;
+                case HistoricalTimePeriod.AfricanAmericanGreatMigration:
+                    profile.UnlockedCommunicationTechnologyIds.Add("aam_black_press_circulation");
+                    profile.UnlockedCommunicationTechnologyIds.Add("aam_community_notice_board");
+                    break;
+                default:
+                    profile.UnlockedCommunicationTechnologyIds.Add("contemporary_mobile_social");
+                    break;
+            }
+        }
+
+        private void EnsureDefaultCommunicationUnlocks()
+        {
+            if (communicationTechnologyUnlocks == null)
+            {
+                communicationTechnologyUnlocks = new List<CommunicationTechnologyUnlock>();
+            }
+
+            if (communicationTechnologyUnlocks.Count > 0)
+            {
+                return;
+            }
+
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "contemporary_mobile_social",
+                Label = "Mobile Social Apps",
+                TimePeriod = HistoricalTimePeriod.Contemporary,
+                SupportsDigitalSocialFeed = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "viking_rune_letters",
+                Label = "Rune Letters",
+                TimePeriod = HistoricalTimePeriod.VikingAge,
+                UsesLetters = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "viking_thing_notice_board",
+                Label = "Thing Assembly Notice Board",
+                TimePeriod = HistoricalTimePeriod.VikingAge,
+                UsesPublicBoards = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "victorian_penny_post",
+                Label = "Penny Post Letters",
+                TimePeriod = HistoricalTimePeriod.VictorianEra,
+                UsesLetters = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "victorian_public_billboard",
+                Label = "Public Billboard",
+                TimePeriod = HistoricalTimePeriod.VictorianEra,
+                UsesPublicBoards = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "aam_black_press_circulation",
+                Label = "Black Press Circulation Letters",
+                TimePeriod = HistoricalTimePeriod.AfricanAmericanGreatMigration,
+                UsesLetters = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "aam_community_notice_board",
+                Label = "Community Church/Union Notice Board",
+                TimePeriod = HistoricalTimePeriod.AfricanAmericanGreatMigration,
+                UsesPublicBoards = true
+            });
         }
 
         private int GetCurrentTotalHours()
