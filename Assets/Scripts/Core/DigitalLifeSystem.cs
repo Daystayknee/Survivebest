@@ -10,8 +10,10 @@ namespace Survivebest.Core
     {
         Contemporary,
         VikingAge,
+        Medieval,
         VictorianEra,
-        AfricanAmericanGreatMigration
+        AfricanAmericanGreatMigration,
+        HarlemRenaissance
     }
 
     [Serializable]
@@ -138,6 +140,28 @@ namespace Survivebest.Core
         public bool TriggeredDrama;
     }
 
+    [Serializable]
+    public class HistoricalLetterRecord
+    {
+        public string LetterId;
+        public string SenderCharacterId;
+        public string RecipientCharacterId;
+        public string Body;
+        public int TimestampHour;
+        public HistoricalTimePeriod TimePeriod;
+    }
+
+    [Serializable]
+    public class CommunityBoardPostRecord
+    {
+        public string NoticeId;
+        public string AuthorCharacterId;
+        public string BoardName;
+        public string Body;
+        public int TimestampHour;
+        public HistoricalTimePeriod TimePeriod;
+    }
+
     public class DigitalLifeSystem : MonoBehaviour
     {
         [SerializeField] private World.WorldClock worldClock;
@@ -153,6 +177,8 @@ namespace Survivebest.Core
         [SerializeField] private List<WebChatRoom> webChatRooms = new();
         [SerializeField] private List<WebChatMessage> webChatMessages = new();
         [SerializeField] private List<CommunicationTechnologyUnlock> communicationTechnologyUnlocks = new();
+        [SerializeField] private List<HistoricalLetterRecord> historicalLetters = new();
+        [SerializeField] private List<CommunityBoardPostRecord> communityBoardPosts = new();
 
         public IReadOnlyList<DigitalContact> Contacts => contacts;
         public IReadOnlyList<TextThreadRecord> TextThreads => textThreads;
@@ -164,6 +190,8 @@ namespace Survivebest.Core
         public IReadOnlyList<WebChatRoom> WebChatRooms => webChatRooms;
         public IReadOnlyList<WebChatMessage> WebChatMessages => webChatMessages;
         public IReadOnlyList<CommunicationTechnologyUnlock> CommunicationTechnologyUnlocks => communicationTechnologyUnlocks;
+        public IReadOnlyList<HistoricalLetterRecord> HistoricalLetters => historicalLetters;
+        public IReadOnlyList<CommunityBoardPostRecord> CommunityBoardPosts => communityBoardPosts;
 
         private void Awake()
         {
@@ -218,9 +246,27 @@ namespace Survivebest.Core
                 return false;
             }
 
+            DigitalLifeProfile profile = GetOrCreateProfile(characterId);
             string boardLabel = string.IsNullOrWhiteSpace(boardName) ? "Town Board" : boardName.Trim();
             string formatted = $"[Board:{boardLabel}] {body}";
-            return PublishHistoricalSocialEntry(characterId, formatted, requiresBoards: true);
+            bool published = PublishHistoricalSocialEntry(characterId, formatted, requiresBoards: true);
+            if (!published)
+            {
+                return false;
+            }
+
+            communityBoardPosts.Add(new CommunityBoardPostRecord
+            {
+                NoticeId = Guid.NewGuid().ToString("N"),
+                AuthorCharacterId = characterId,
+                BoardName = boardLabel,
+                Body = body,
+                TimestampHour = GetCurrentTotalHours(),
+                TimePeriod = profile.ActiveTimePeriod
+            });
+
+            relationshipMemorySystem?.RecordEventDetailed(characterId, null, $"posted board notice: {body}", 1.5f, false, boardLabel);
+            return true;
         }
 
         public bool SendLetter(string ownerCharacterId, string otherCharacterId, string body)
@@ -238,7 +284,38 @@ namespace Survivebest.Core
 
             string letterBody = $"Letter to {otherCharacterId}: {body}";
             SendText(ownerCharacterId, otherCharacterId, letterBody, leakRisk: false);
+            historicalLetters.Add(new HistoricalLetterRecord
+            {
+                LetterId = Guid.NewGuid().ToString("N"),
+                SenderCharacterId = ownerCharacterId,
+                RecipientCharacterId = otherCharacterId,
+                Body = body,
+                TimestampHour = GetCurrentTotalHours(),
+                TimePeriod = profile.ActiveTimePeriod
+            });
+            relationshipMemorySystem?.RecordEventDetailed(ownerCharacterId, otherCharacterId, $"sent letter: {body}", 2f, false, "letter");
             return true;
+        }
+
+        public List<string> GetAvailableCommunicationActions(string characterId)
+        {
+            DigitalLifeProfile profile = GetOrCreateProfile(characterId);
+            List<string> actions = new();
+            if (ResolveCommunicationMode(profile) == "letters_and_boards")
+            {
+                actions.Add("send_letter");
+                actions.Add("publish_board_notice");
+                if (profile.UnlockedCommunicationTechnologyIds.Contains("victorian_telegraph_wire")) actions.Add("send_telegraph");
+                if (profile.UnlockedCommunicationTechnologyIds.Contains("aam_radio_station_broadcast")) actions.Add("radio_broadcast");
+            }
+            else
+            {
+                actions.Add("create_social_post");
+                actions.Add("join_web_chat");
+                actions.Add("comment_social_feed");
+            }
+
+            return actions;
         }
 
         public void AddContact(string ownerCharacterId, string contactCharacterId, string displayName, bool favorite = false)
@@ -519,7 +596,9 @@ namespace Survivebest.Core
             SocialMediaProfile socialProfile = GetOrCreateSocialProfile(characterId);
             string mode = ResolveCommunicationMode(profile);
             string unlocked = profile.UnlockedCommunicationTechnologyIds.Count > 0 ? string.Join(", ", profile.UnlockedCommunicationTechnologyIds) : "none";
-            return $"Mode {mode}, period {profile.ActiveTimePeriod}, threads {threadCount}, viral posts {viralCount}, online rep {profile.OnlineReputation:0.0}, followers {socialProfile.FollowerCharacterIds.Count}, following {socialProfile.FollowingCharacterIds.Count}, creator followers {profile.ParasocialFollowers:0.0}, cancel risk {profile.CancellationRisk:0.0}, evidence risk {profile.DigitalEvidenceRisk:0.0}, tech unlocks {unlocked}.";
+            int sentLetters = historicalLetters.FindAll(x => x != null && string.Equals(x.SenderCharacterId, characterId, StringComparison.OrdinalIgnoreCase)).Count;
+            int boardNotices = communityBoardPosts.FindAll(x => x != null && string.Equals(x.AuthorCharacterId, characterId, StringComparison.OrdinalIgnoreCase)).Count;
+            return $"Mode {mode}, period {profile.ActiveTimePeriod}, threads {threadCount}, viral posts {viralCount}, letters {sentLetters}, board notices {boardNotices}, online rep {profile.OnlineReputation:0.0}, followers {socialProfile.FollowerCharacterIds.Count}, following {socialProfile.FollowingCharacterIds.Count}, creator followers {profile.ParasocialFollowers:0.0}, cancel risk {profile.CancellationRisk:0.0}, evidence risk {profile.DigitalEvidenceRisk:0.0}, tech unlocks {unlocked}.";
         }
 
         public string BuildSocialMediaSummary(string characterId)
@@ -594,10 +673,21 @@ namespace Survivebest.Core
                 case HistoricalTimePeriod.VictorianEra:
                     profile.UnlockedCommunicationTechnologyIds.Add("victorian_penny_post");
                     profile.UnlockedCommunicationTechnologyIds.Add("victorian_public_billboard");
+                    profile.UnlockedCommunicationTechnologyIds.Add("victorian_telegraph_wire");
                     break;
                 case HistoricalTimePeriod.AfricanAmericanGreatMigration:
                     profile.UnlockedCommunicationTechnologyIds.Add("aam_black_press_circulation");
                     profile.UnlockedCommunicationTechnologyIds.Add("aam_community_notice_board");
+                    profile.UnlockedCommunicationTechnologyIds.Add("aam_radio_station_broadcast");
+                    break;
+                case HistoricalTimePeriod.Medieval:
+                    profile.UnlockedCommunicationTechnologyIds.Add("medieval_parchment_letters");
+                    profile.UnlockedCommunicationTechnologyIds.Add("medieval_market_notice_board");
+                    break;
+                case HistoricalTimePeriod.HarlemRenaissance:
+                    profile.UnlockedCommunicationTechnologyIds.Add("harlem_literary_letters");
+                    profile.UnlockedCommunicationTechnologyIds.Add("harlem_community_board");
+                    profile.UnlockedCommunicationTechnologyIds.Add("harlem_jazz_club_bulletin");
                     break;
                 default:
                     profile.UnlockedCommunicationTechnologyIds.Add("contemporary_mobile_social");
@@ -640,6 +730,20 @@ namespace Survivebest.Core
             });
             communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
             {
+                UnlockId = "medieval_parchment_letters",
+                Label = "Parchment Letters",
+                TimePeriod = HistoricalTimePeriod.Medieval,
+                UsesLetters = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "medieval_market_notice_board",
+                Label = "Market Notice Board",
+                TimePeriod = HistoricalTimePeriod.Medieval,
+                UsesPublicBoards = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
                 UnlockId = "victorian_penny_post",
                 Label = "Penny Post Letters",
                 TimePeriod = HistoricalTimePeriod.VictorianEra,
@@ -654,6 +758,13 @@ namespace Survivebest.Core
             });
             communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
             {
+                UnlockId = "victorian_telegraph_wire",
+                Label = "Telegraph Wire",
+                TimePeriod = HistoricalTimePeriod.VictorianEra,
+                UsesLetters = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
                 UnlockId = "aam_black_press_circulation",
                 Label = "Black Press Circulation Letters",
                 TimePeriod = HistoricalTimePeriod.AfricanAmericanGreatMigration,
@@ -664,6 +775,34 @@ namespace Survivebest.Core
                 UnlockId = "aam_community_notice_board",
                 Label = "Community Church/Union Notice Board",
                 TimePeriod = HistoricalTimePeriod.AfricanAmericanGreatMigration,
+                UsesPublicBoards = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "aam_radio_station_broadcast",
+                Label = "Radio Station Broadcast",
+                TimePeriod = HistoricalTimePeriod.AfricanAmericanGreatMigration,
+                UsesPublicBoards = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "harlem_literary_letters",
+                Label = "Harlem Literary Letters",
+                TimePeriod = HistoricalTimePeriod.HarlemRenaissance,
+                UsesLetters = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "harlem_community_board",
+                Label = "Harlem Community Board",
+                TimePeriod = HistoricalTimePeriod.HarlemRenaissance,
+                UsesPublicBoards = true
+            });
+            communicationTechnologyUnlocks.Add(new CommunicationTechnologyUnlock
+            {
+                UnlockId = "harlem_jazz_club_bulletin",
+                Label = "Jazz Club Bulletin",
+                TimePeriod = HistoricalTimePeriod.HarlemRenaissance,
                 UsesPublicBoards = true
             });
         }
