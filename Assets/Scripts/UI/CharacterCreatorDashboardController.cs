@@ -366,6 +366,26 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void SetFaceShapeSlider(float value) => SetFaceShape(MapSliderToIndex(value, Enum.GetValues(typeof(FaceShapeType)).Length));
+
+        public void SetEyeShape(int eyeShapeIndex)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            active.SetPortraitData(
+                active.FaceShape,
+                (EyeShapeType)Mathf.Clamp(eyeShapeIndex, 0, Enum.GetValues(typeof(EyeShapeType)).Length - 1),
+                active.CurrentBodyType,
+                active.ClothingStyle);
+            RefreshPreview();
+        }
+
+        public void SetEyeShapeSlider(float value) => SetEyeShape(MapSliderToIndex(value, Enum.GetValues(typeof(EyeShapeType)).Length));
+
         public void SetBodyType(int bodyTypeIndex)
         {
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
@@ -382,6 +402,8 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void SetBodyTypeSlider(float value) => SetBodyType(MapSliderToIndex(value, Enum.GetValues(typeof(BodyType)).Length));
+
         public void SetJawShape(int jawShapeIndex)
         {
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
@@ -396,6 +418,8 @@ namespace Survivebest.UI
                 active.LipShape);
             RefreshPreview();
         }
+
+        public void SetJawShapeSlider(float value) => SetJawShape(MapSliderToIndex(value, Enum.GetValues(typeof(JawShapeType)).Length));
 
         public void SetNoseShape(int noseShapeIndex)
         {
@@ -412,6 +436,8 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void SetNoseShapeSlider(float value) => SetNoseShape(MapSliderToIndex(value, Enum.GetValues(typeof(NoseShapeType)).Length));
+
         public void SetLipShape(int lipShapeIndex)
         {
             CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
@@ -426,6 +452,8 @@ namespace Survivebest.UI
                 (LipShapeType)Mathf.Clamp(lipShapeIndex, 0, Enum.GetValues(typeof(LipShapeType)).Length - 1));
             RefreshPreview();
         }
+
+        public void SetLipShapeSlider(float value) => SetLipShape(MapSliderToIndex(value, Enum.GetValues(typeof(LipShapeType)).Length));
 
         public void SetEyeColor(int eyeColorIndex)
         {
@@ -713,6 +741,75 @@ namespace Survivebest.UI
             detailState.NeckLength = Mathf.Clamp01(value);
             SetGeneticScalar(profile => profile.BodyGenome.TorsoLength = Mathf.Clamp01(Mathf.Lerp(profile.BodyGenome.TorsoLength, detailState.NeckLength, 0.65f)));
         }
+
+        public void SetHeadWidthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.HeadWidth = Mathf.Clamp01(value));
+        public void SetHeadHeightSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.HeadHeight = Mathf.Clamp01(value));
+        public void SetFaceLengthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.FaceLength = Mathf.Clamp01(value));
+        public void SetForeheadHeightSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.ForeheadHeight = Mathf.Clamp01(value));
+        public void SetForeheadSlopeSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.ForeheadSlope = Mathf.Clamp01(value));
+        public void SetTempleWidthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.TempleWidth = Mathf.Clamp01(value));
+        public void SetCheekFullnessSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.CheekFullness = Mathf.Clamp01(value));
+        public void SetCheekboneProjectionSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.CheekboneProjection = Mathf.Clamp01(value));
+        public void SetMidfaceLengthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.MidfaceLength = Mathf.Clamp01(value));
+        public void SetJawWidthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.JawWidth = Mathf.Clamp01(value));
+        public void SetJawSharpnessSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.JawSharpness = Mathf.Clamp01(value));
+        public void SetChinWidthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.ChinWidth = Mathf.Clamp01(value));
+        public void SetChinLengthSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.ChinLength = Mathf.Clamp01(value));
+        public void SetChinProjectionSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.ChinProjection = Mathf.Clamp01(value));
+        public void SetEarSizeSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.EarSize = Mathf.Clamp01(value));
+        public void SetEarProtrusionSlider(float value) => SetGeneticScalar(profile => profile.FaceStructure.EarProtrusion = Mathf.Clamp01(value));
+
+        public void SetEyeSizeSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.EyeSize = Mathf.Clamp01(value));
+        public void SetEyeWidthSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.EyeWidth = Mathf.Clamp01(value));
+        public void SetEyeRoundnessSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.EyeRoundness = Mathf.Clamp01(value));
+        public void SetEyeDepthSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.EyeDepth = Mathf.Clamp01(value));
+        public void SetEyeSpacingSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.EyeSpacing = Mathf.Clamp01(value));
+        public void SetEyeTiltSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.EyeTilt = Mathf.Clamp01(value));
+        public void SetUpperLidFullnessSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.UpperLidFullness = Mathf.Clamp01(value));
+        public void SetLowerLidFullnessSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.LowerLidFullness = Mathf.Clamp01(value));
+        public void SetLashDensitySlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.LashDensity = Mathf.Clamp01(value));
+        public void SetLashLengthTendencySlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.LashLengthTendency = Mathf.Clamp01(value));
+        public void SetBrowRidgeStrengthSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.BrowRidgeStrength = Mathf.Clamp01(value));
+        public void SetIrisSizeSlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.IrisSize = Mathf.Clamp01(value));
+        public void SetScleraVisibilitySlider(float value) => SetGeneticScalar(profile => profile.EyeGenome.ScleraVisibility = Mathf.Clamp01(value));
+
+        public void SetNoseBridgeHeightSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.BridgeHeight = Mathf.Clamp01(value));
+        public void SetNoseBridgeWidthSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.BridgeWidth = Mathf.Clamp01(value));
+        public void SetNoseLengthSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.NoseLength = Mathf.Clamp01(value));
+        public void SetNoseTipShapeSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.TipShape = Mathf.Clamp01(value));
+        public void SetNostrilWidthSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.NostrilWidth = Mathf.Clamp01(value));
+        public void SetNostrilFlareSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.NostrilFlare = Mathf.Clamp01(value));
+        public void SetNoseProjectionSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.Projection = Mathf.Clamp01(value));
+        public void SetNoseCurveSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.Curve = Mathf.Clamp01(value));
+        public void SetNoseSoftnessSlider(float value) => SetGeneticScalar(profile => profile.NoseGenome.Softness = Mathf.Clamp01(value));
+
+        public void SetUpperLipFullnessSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.UpperLipFullness = Mathf.Clamp01(value));
+        public void SetLowerLipFullnessSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.LowerLipFullness = Mathf.Clamp01(value));
+        public void SetCupidBowSharpnessSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.CupidBowSharpness = Mathf.Clamp01(value));
+        public void SetMouthWidthSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.MouthWidth = Mathf.Clamp01(value));
+        public void SetMouthCornerTiltSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.MouthCornerTilt = Mathf.Clamp01(value));
+        public void SetPhiltrumDepthSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.PhiltrumDepth = Mathf.Clamp01(value));
+        public void SetLipProjectionSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.LipProjection = Mathf.Clamp01(value));
+        public void SetLipAsymmetrySlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.LipAsymmetryTendency = Mathf.Clamp01(value));
+        public void SetToothSpacingSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.ToothSpacingTendency = Mathf.Clamp01(value));
+        public void SetGumShowSlider(float value) => SetGeneticScalar(profile => profile.MouthGenome.GumShowTendency = Mathf.Clamp01(value));
+
+        public void SetBodyHeightSlider(float value) => SetGenomeHeight(value);
+        public void SetFrameSizeSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.FrameSize = Mathf.Clamp01(value));
+        public void SetShoulderWidthSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.ShoulderWidth = Mathf.Clamp01(value));
+        public void SetRibcageWidthSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.RibcageWidth = Mathf.Clamp01(value));
+        public void SetArmLengthSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.ArmLength = Mathf.Clamp01(value));
+        public void SetTorsoLengthSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.TorsoLength = Mathf.Clamp01(value));
+        public void SetWaistTendencySlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.WaistTendency = Mathf.Clamp01(value));
+        public void SetHipWidthSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.HipWidth = Mathf.Clamp01(value));
+        public void SetThighFullnessSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.ThighFullness = Mathf.Clamp01(value));
+        public void SetCalfShapeSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.CalfShape = Mathf.Clamp01(value));
+        public void SetButtFullnessSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.ButtFullness = Mathf.Clamp01(value));
+        public void SetChestSizeTendencySlider(float value) => SetChestMassSlider(value);
+        public void SetMuscleResponseSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.MuscleResponse = Mathf.Clamp01(value));
+        public void SetFatDistributionSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.FatDistribution = Mathf.Clamp01(value));
+        public void SetMetabolismSlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.Metabolism = Mathf.Clamp01(value));
+        public void SetPostureTendencySlider(float value) => SetGeneticScalar(profile => profile.BodyGenome.PostureTendency = Mathf.Clamp01(value));
 
         public void SetPiercingSet(int setIndex)
         {
@@ -1706,6 +1803,16 @@ namespace Survivebest.UI
                 1 => masculine,
                 _ => androgynous
             };
+        }
+
+        private static int MapSliderToIndex(float sliderValue, int itemCount)
+        {
+            if (itemCount <= 1)
+            {
+                return 0;
+            }
+
+            return Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(sliderValue) * (itemCount - 1)), 0, itemCount - 1);
         }
 
         private float ClampForAgeSensitiveBodyFeature(float value)
