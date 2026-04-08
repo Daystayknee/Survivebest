@@ -9,6 +9,7 @@ using Survivebest.UI.ViewModels;
 using Survivebest.Tasks;
 using Survivebest.World;
 using System.Text;
+using System.Reflection;
 
 namespace Survivebest.UI
 {
@@ -121,6 +122,13 @@ namespace Survivebest.UI
         public int HairstyleCatalogIndex;
         public int OutfitGenderCatalog;
         public int OutfitCatalogIndex;
+    }
+
+    [Serializable]
+    public class CreatorFeatureSliderValue
+    {
+        public string FeaturePath;
+        [Range(0f, 1f)] public float Value = 0.5f;
     }
 
     [Serializable]
@@ -1296,6 +1304,84 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public bool SetFeatureSliderByPath(string featurePath, float value)
+        {
+            bool applied = false;
+            SetGeneticScalar(profile =>
+            {
+                applied = TrySetGenomeFloatByPath(profile, featurePath, value);
+            });
+
+            if (applied)
+            {
+                PublishUiEvent("CreatorFeatureSliderPath", $"Feature {featurePath} set via path slider", Mathf.Clamp01(value));
+            }
+
+            return applied;
+        }
+
+        public int ApplyFeatureSliderBatch(List<CreatorFeatureSliderValue> entries)
+        {
+            if (entries == null || entries.Count == 0)
+            {
+                return 0;
+            }
+
+            int appliedCount = 0;
+            SetGeneticScalar(profile =>
+            {
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    CreatorFeatureSliderValue entry = entries[i];
+                    if (entry == null || string.IsNullOrWhiteSpace(entry.FeaturePath))
+                    {
+                        continue;
+                    }
+
+                    if (TrySetGenomeFloatByPath(profile, entry.FeaturePath, entry.Value))
+                    {
+                        appliedCount++;
+                    }
+                }
+            });
+
+            PublishUiEvent("CreatorFeatureSliderBatch", $"Applied {appliedCount} feature sliders from batch input.", appliedCount);
+            return appliedCount;
+        }
+
+        public int RandomizeFeatureSetByPaths(List<string> featurePaths, int count = 24, float blend = 0.65f)
+        {
+            if (featurePaths == null || featurePaths.Count == 0 || count <= 0)
+            {
+                return 0;
+            }
+
+            int appliedCount = 0;
+            int iterations = Mathf.Clamp(count, 1, 2000);
+            float blend01 = Mathf.Clamp01(blend);
+            SetGeneticScalar(profile =>
+            {
+                for (int i = 0; i < iterations; i++)
+                {
+                    string featurePath = featurePaths[UnityEngine.Random.Range(0, featurePaths.Count)];
+                    if (string.IsNullOrWhiteSpace(featurePath))
+                    {
+                        continue;
+                    }
+
+                    float current = GetGenomeFloatByPath(profile, featurePath, 0.5f);
+                    float next = Mathf.Lerp(current, UnityEngine.Random.value, blend01);
+                    if (TrySetGenomeFloatByPath(profile, featurePath, next))
+                    {
+                        appliedCount++;
+                    }
+                }
+            });
+
+            PublishUiEvent("CreatorFeatureSliderRandomize", $"Randomized {appliedCount} path-driven feature changes.", appliedCount);
+            return appliedCount;
+        }
+
         public void SaveAppearancePreset(string presetId)
         {
             if (appearanceManager == null || string.IsNullOrWhiteSpace(presetId))
@@ -1935,6 +2021,87 @@ namespace Survivebest.UI
 
             PersonalityMatrixProfile matrixProfile = personalityMatrixSystem.GetOrCreateProfile(characterId);
             applyPreset(matrixProfile);
+        }
+
+        private static bool TrySetGenomeFloatByPath(GeneticProfile profile, string featurePath, float normalizedValue)
+        {
+            if (profile == null || string.IsNullOrWhiteSpace(featurePath))
+            {
+                return false;
+            }
+
+            string[] parts = featurePath.Split('.');
+            object current = profile;
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                if (current == null)
+                {
+                    return false;
+                }
+
+                FieldInfo field = current.GetType().GetField(parts[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+                if (field == null)
+                {
+                    return false;
+                }
+
+                current = field.GetValue(current);
+            }
+
+            if (current == null)
+            {
+                return false;
+            }
+
+            string leaf = parts.Length > 0 ? parts[parts.Length - 1] : featurePath;
+            FieldInfo leafField = current.GetType().GetField(leaf, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+            if (leafField == null || leafField.FieldType != typeof(float))
+            {
+                return false;
+            }
+
+            leafField.SetValue(current, Mathf.Clamp01(normalizedValue));
+            return true;
+        }
+
+        private static float GetGenomeFloatByPath(GeneticProfile profile, string featurePath, float fallback)
+        {
+            if (profile == null || string.IsNullOrWhiteSpace(featurePath))
+            {
+                return fallback;
+            }
+
+            string[] parts = featurePath.Split('.');
+            object current = profile;
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                if (current == null)
+                {
+                    return fallback;
+                }
+
+                FieldInfo field = current.GetType().GetField(parts[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+                if (field == null)
+                {
+                    return fallback;
+                }
+
+                current = field.GetValue(current);
+            }
+
+            if (current == null)
+            {
+                return fallback;
+            }
+
+            string leaf = parts.Length > 0 ? parts[parts.Length - 1] : featurePath;
+            FieldInfo leafField = current.GetType().GetField(leaf, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+            if (leafField == null || leafField.FieldType != typeof(float))
+            {
+                return fallback;
+            }
+
+            return (float)leafField.GetValue(current);
         }
 
         private float ClampForAgeSensitiveBodyFeature(float value)
