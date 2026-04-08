@@ -48,6 +48,15 @@ namespace Survivebest.UI
         HomeInterior
     }
 
+    public enum CharacterCreatorGameplayArchetype
+    {
+        Balanced,
+        Athlete,
+        Scholar,
+        Rebel,
+        Charmer
+    }
+
     [Serializable]
     public class CharacterCreatorBackgroundView
     {
@@ -1185,6 +1194,108 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
+        public void ApplyGameplayArchetypePreset(int archetypeIndex)
+        {
+            CharacterCreatorGameplayArchetype archetype = (CharacterCreatorGameplayArchetype)Mathf.Clamp(archetypeIndex, 0, Enum.GetValues(typeof(CharacterCreatorGameplayArchetype)).Length - 1);
+            ApplyGameplayArchetypePreset(archetype);
+        }
+
+        public void ApplyGameplayArchetypePreset(CharacterCreatorGameplayArchetype archetype)
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return;
+            }
+
+            switch (archetype)
+            {
+                case CharacterCreatorGameplayArchetype.Athlete:
+                    SetGeneticScalar(profile =>
+                    {
+                        profile.BodyGenome.MuscleResponse = 0.82f;
+                        profile.BodyGenome.Metabolism = 0.74f;
+                        profile.BodyGenome.FatDistribution = 0.38f;
+                        profile.BiologyGenome.StressSensitivity = 0.38f;
+                    });
+                    ApplyPersonalityPreset(active.CharacterId, profile =>
+                    {
+                        profile.Discipline = 78f;
+                        profile.WorkEthic = 74f;
+                        profile.ThrillSeeking = 56f;
+                        profile.AdventureDrive = 72f;
+                    });
+                    break;
+                case CharacterCreatorGameplayArchetype.Scholar:
+                    SetGeneticScalar(profile =>
+                    {
+                        profile.BiologyGenome.SleepNeed = 0.6f;
+                        profile.Hormones.CortisolRegulation = 0.64f;
+                        profile.BodyGenome.PostureTendency = 0.56f;
+                        profile.BodyGenome.MuscleResponse = 0.44f;
+                    });
+                    ApplyPersonalityPreset(active.CharacterId, profile =>
+                    {
+                        profile.Curiosity = 86f;
+                        profile.AnalyticalThinking = 88f;
+                        profile.Focus = 76f;
+                        profile.KnowledgeDrive = 89f;
+                    });
+                    break;
+                case CharacterCreatorGameplayArchetype.Rebel:
+                    SetGeneticScalar(profile =>
+                    {
+                        profile.BiologyGenome.StressSensitivity = 0.66f;
+                        profile.BodyGenome.PostureTendency = 0.62f;
+                        profile.MicroDetailGenome.HairlineAsymmetry = 0.58f;
+                        profile.MicroDetailGenome.ToothCrowding = 0.52f;
+                    });
+                    ApplyPersonalityPreset(active.CharacterId, profile =>
+                    {
+                        profile.RiskTaking = 82f;
+                        profile.Rebelliousness = 87f;
+                        profile.AuthorityRespect = 26f;
+                        profile.Impulsivity = 76f;
+                    });
+                    break;
+                case CharacterCreatorGameplayArchetype.Charmer:
+                    SetGeneticScalar(profile =>
+                    {
+                        profile.FaceStructure.CheekFullness = 0.64f;
+                        profile.MouthGenome.MouthCornerTilt = 0.7f;
+                        profile.EyeGenome.EyeTilt = 0.62f;
+                        profile.Hormones.EstrogenAndrogenBalance = 0.56f;
+                    });
+                    ApplyPersonalityPreset(active.CharacterId, profile =>
+                    {
+                        profile.Charisma = 88f;
+                        profile.Warmth = 77f;
+                        profile.SocialEnergy = 84f;
+                        profile.FameDrive = 72f;
+                    });
+                    break;
+                default:
+                    SetGeneticScalar(profile =>
+                    {
+                        profile.BodyGenome.MuscleResponse = 0.5f;
+                        profile.BodyGenome.Metabolism = 0.5f;
+                        profile.BodyGenome.FatDistribution = 0.5f;
+                        profile.BiologyGenome.StressSensitivity = 0.5f;
+                    });
+                    ApplyPersonalityPreset(active.CharacterId, profile =>
+                    {
+                        profile.Discipline = 50f;
+                        profile.Curiosity = 50f;
+                        profile.RiskTaking = 50f;
+                        profile.Charisma = 50f;
+                    });
+                    break;
+            }
+
+            PublishUiEvent("CreatorGameplayArchetype", $"Applied gameplay archetype {archetype} to {active.DisplayName}", (int)archetype + 1f);
+            RefreshPreview();
+        }
+
         public void SaveAppearancePreset(string presetId)
         {
             if (appearanceManager == null || string.IsNullOrWhiteSpace(presetId))
@@ -1813,6 +1924,17 @@ namespace Survivebest.UI
             }
 
             return Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(sliderValue) * (itemCount - 1)), 0, itemCount - 1);
+        }
+
+        private void ApplyPersonalityPreset(string characterId, Action<PersonalityMatrixProfile> applyPreset)
+        {
+            if (personalityMatrixSystem == null || string.IsNullOrWhiteSpace(characterId) || applyPreset == null)
+            {
+                return;
+            }
+
+            PersonalityMatrixProfile matrixProfile = personalityMatrixSystem.GetOrCreateProfile(characterId);
+            applyPreset(matrixProfile);
         }
 
         private float ClampForAgeSensitiveBodyFeature(float value)
