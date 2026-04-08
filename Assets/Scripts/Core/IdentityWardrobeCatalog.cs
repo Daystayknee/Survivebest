@@ -170,16 +170,58 @@ namespace Survivebest.Core
 
         private static readonly Dictionary<LifeStage, string[]> StageTops = new()
         {
-            { LifeStage.Baby, new[] { "Snap onesie top", "Soft bib top", "Wrap cardigan", "Sleep top", "Weather knit top" } },
-            { LifeStage.Infant, new[] { "Printed daycare top", "Soft henley", "Cozy fleece top", "Play top", "Weather shield top" } },
-            { LifeStage.Toddler, new[] { "Story-time top", "Playground hoodie", "Color-block tee", "Mini polo", "Messy-art smock top" } },
-            { LifeStage.Child, new[] { "School uniform shirt", "Sports team tee", "Club activity top", "Rain-day pullover", "Graphic story tee" } },
-            { LifeStage.Preteen, new[] { "Rec-center tank", "Coding club hoodie", "Debate team shirt", "Weekend layered top", "Music practice tee" } },
-            { LifeStage.Teen, new[] { "Street oversized tee", "Exam-week hoodie", "Band rehearsal shirt", "Date-night top", "Trend knit polo" } },
-            { LifeStage.YoungAdult, new[] { "Workplace blouse/shirt", "Night-out top", "Gym crop/tee", "Interview shirt", "Creator livestream top", "Apartment lounge top" } },
-            { LifeStage.Adult, new[] { "Office staple shirt", "Parent utility top", "Business knit", "Dinner date top", "Weekend layering top", "Shift-ready top" } },
-            { LifeStage.OlderAdult, new[] { "Garden utility top", "Warm knit button top", "Walking club pullover", "Celebration shirt", "Comfort polo" } },
-            { LifeStage.Elder, new[] { "Soft cardigan set top", "Easy-closure shirt", "Sunday blouse/shirt", "Warm lounge top", "Family gathering knit top" } }
+            { LifeStage.Baby, new[] { "Snap onesie top", "Soft bib top", "Wrap cardigan", "Sleep top", "Weather knit top", "Gentle swaddle wrap top", "Tagless nursery tee", "Short-sleeve nap top" } },
+            { LifeStage.Infant, new[] { "Printed daycare top", "Soft henley", "Cozy fleece top", "Play top", "Weather shield top", "Mess-safe feeding top", "Breathable crawl top", "Easy-change side snap top" } },
+            { LifeStage.Toddler, new[] { "Story-time top", "Playground hoodie", "Color-block tee", "Mini polo", "Messy-art smock top", "Toddler sport jersey", "Rainy-day zip hoodie", "Park adventure pullover" } },
+            { LifeStage.Child, new[] { "School uniform shirt", "Sports team tee", "Club activity top", "Rain-day pullover", "Graphic story tee", "Field trip overshirt", "After-school craft top", "Weekend bike tee" } },
+            { LifeStage.Preteen, new[] { "Rec-center tank", "Coding club hoodie", "Debate team shirt", "Weekend layered top", "Music practice tee", "Preteen statement knit", "Skate-park overshirt", "School social polo" } },
+            { LifeStage.Teen, new[] { "Street oversized tee", "Exam-week hoodie", "Band rehearsal shirt", "Date-night top", "Trend knit polo", "Teen varsity warmup top", "Creator stream jersey", "After-party mesh layer" } },
+            { LifeStage.YoungAdult, new[] { "Workplace blouse/shirt", "Night-out top", "Gym crop/tee", "Interview shirt", "Creator livestream top", "Apartment lounge top", "Commute-ready overshirt", "Professional stretch knit" } },
+            { LifeStage.Adult, new[] { "Office staple shirt", "Parent utility top", "Business knit", "Dinner date top", "Weekend layering top", "Shift-ready top", "Neighborhood event blouse/shirt", "Hybrid remote-work top" } },
+            { LifeStage.OlderAdult, new[] { "Garden utility top", "Warm knit button top", "Walking club pullover", "Celebration shirt", "Comfort polo", "Travel-comfort layering top", "Grandparent duty cardigan top", "Lightweight support blouse/shirt" } },
+            { LifeStage.Elder, new[] { "Soft cardigan set top", "Easy-closure shirt", "Sunday blouse/shirt", "Warm lounge top", "Family gathering knit top", "Adaptive seated-comfort top", "Breathable therapy day top", "Zip-front support knit top" } }
+        };
+
+        private static readonly Dictionary<LifeStage, string[]> StageBottoms = new()
+        {
+            { LifeStage.Baby, new[] { "Soft swaddle bottoms", "Elastic diaper-friendly leggings", "Nursery lounge bottoms", "Baby knit pull-on bottoms", "Warm sleep leggings" } },
+            { LifeStage.Infant, new[] { "Crawl-easy leggings", "Elastic play pants", "Nursery joggers", "Quick-change diaper pants", "Soft knit shorts" } },
+            { LifeStage.Toddler, new[] { "Playground joggers", "Color-block play shorts", "Stretch pull-on jeans", "Story-time lounge pants", "Rain puddle pants" } },
+            { LifeStage.Child, new[] { "School uniform bottoms", "Sports practice shorts", "Field-day joggers", "Weekend denim shorts", "Club activity pants" } },
+            { LifeStage.Preteen, new[] { "Preteen straight jeans", "Rec-center track pants", "Skater cargo shorts", "School social trousers", "Weekend comfort leggings" } },
+            { LifeStage.Teen, new[] { "Teen wide-leg jeans", "Trend cargo pants", "Skate-fit joggers", "Night-out statement bottoms", "Varsity training shorts" } },
+            { LifeStage.YoungAdult, new[] { "Interview-ready trousers", "Commute denim", "Gym performance bottoms", "Nightlife statement pants", "Apartment lounge bottoms" } },
+            { LifeStage.Adult, new[] { "Office tailored slacks", "Parent utility cargos", "Shift-ready trousers", "Weekend relaxed jeans", "Dinner date skirt/pants" } },
+            { LifeStage.OlderAdult, new[] { "Garden utility bottoms", "Walking club joggers", "Comfort stretch slacks", "Celebration tailored trousers", "Travel comfort pants" } },
+            { LifeStage.Elder, new[] { "Adaptive easy-closure bottoms", "Warm lounge trousers", "Supportive therapy pants", "Soft formal slacks", "Anti-irritation elastic bottoms" } }
+        };
+
+        private static readonly Dictionary<LifeStage, string[]> StageFullBody = new()
+        {
+            { LifeStage.Baby, new[] { "Nap-time full romper", "Warm swaddle suit", "Nursery ceremony onesie", "Seasonal baby full set" } },
+            { LifeStage.Infant, new[] { "Daycare full-body outfit", "Playdate romper set", "Weather-safe infant suit", "Comfort sleep set" } },
+            { LifeStage.Toddler, new[] { "Toddler adventure overalls", "Mini party full outfit", "Rainy-day splash suit", "Costume play one-piece" } },
+            { LifeStage.Child, new[] { "School ceremony full set", "Sports day matching outfit", "Weekend adventure overalls", "Holiday celebration full outfit" } },
+            { LifeStage.Preteen, new[] { "Preteen social matching set", "Club presentation full outfit", "Weekend trend jumpsuit", "Festival-ready full look" } },
+            { LifeStage.Teen, new[] { "Teen date-night full set", "Dance-event outfit", "Streetwear full matching set", "School formal full outfit" } },
+            { LifeStage.YoungAdult, new[] { "Interview full suit set", "Night-out full look", "Creator event outfit", "Travel-ready jumpsuit set" } },
+            { LifeStage.Adult, new[] { "Professional full suit", "Family event formal set", "Shift uniform full outfit", "Weekend comfort full set" } },
+            { LifeStage.OlderAdult, new[] { "Celebration full outfit", "Travel capsule full set", "Garden utility coverall", "Comfort formal one-piece" } },
+            { LifeStage.Elder, new[] { "Adaptive formal full set", "Soft lounge full-body set", "Family ceremony full outfit", "Therapy-day easy full set" } }
+        };
+
+        private static readonly Dictionary<LifeStage, string[]> StageShoes = new()
+        {
+            { LifeStage.Baby, new[] { "Nursery soft booties", "Warm crib shoes", "Baby breathable pre-walkers" } },
+            { LifeStage.Infant, new[] { "Infant grip booties", "Daycare soft-step shoes", "Infant weather booties" } },
+            { LifeStage.Toddler, new[] { "Toddler playground sneakers", "Toddler splash boots", "Toddler quick-strap shoes" } },
+            { LifeStage.Child, new[] { "Child school trainers", "Child field-day runners", "Child weatherproof boots" } },
+            { LifeStage.Preteen, new[] { "Preteen sport runners", "Preteen trend sneakers", "Preteen daily comfort shoes" } },
+            { LifeStage.Teen, new[] { "Teen trend sneakers", "Teen social event shoes", "Teen active lifestyle runners" } },
+            { LifeStage.YoungAdult, new[] { "Young adult commute sneakers", "Young adult interview shoes", "Young adult nightlife shoes" } },
+            { LifeStage.Adult, new[] { "Adult workday shoes", "Adult hybrid lifestyle sneakers", "Adult event-ready formal shoes" } },
+            { LifeStage.OlderAdult, new[] { "Older adult comfort walkers", "Older adult weather-grip shoes", "Older adult celebration shoes" } },
+            { LifeStage.Elder, new[] { "Elder adaptive support shoes", "Elder anti-slip comfort shoes", "Elder formal comfort shoes" } }
         };
 
         private static readonly Dictionary<StylePresentation, string[]> PresentationTops = new()
@@ -474,12 +516,14 @@ namespace Survivebest.Core
 
         private static IReadOnlyList<string> ResolveStageCategory(LifeStage lifeStage, WardrobeCategory category)
         {
-            if (category != WardrobeCategory.Tops)
+            return category switch
             {
-                return Array.Empty<string>();
-            }
-
-            return StageTops.TryGetValue(lifeStage, out string[] options) ? options : Array.Empty<string>();
+                WardrobeCategory.Tops => StageTops.TryGetValue(lifeStage, out string[] topOptions) ? topOptions : Array.Empty<string>(),
+                WardrobeCategory.Bottoms => StageBottoms.TryGetValue(lifeStage, out string[] bottomOptions) ? bottomOptions : Array.Empty<string>(),
+                WardrobeCategory.FullBody => StageFullBody.TryGetValue(lifeStage, out string[] fullBodyOptions) ? fullBodyOptions : Array.Empty<string>(),
+                WardrobeCategory.Shoes => StageShoes.TryGetValue(lifeStage, out string[] shoeOptions) ? shoeOptions : Array.Empty<string>(),
+                _ => Array.Empty<string>()
+            };
         }
 
         private static IReadOnlyList<string> ResolvePresentationCategory(StylePresentation presentation, WardrobeCategory category)
