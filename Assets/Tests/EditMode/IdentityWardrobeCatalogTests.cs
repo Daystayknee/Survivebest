@@ -77,6 +77,26 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void AllLifeStagesAndPresentations_HaveExpandedTopsBottomsFullBodyAndShoes()
+        {
+            foreach (LifeStage stage in System.Enum.GetValues(typeof(LifeStage)))
+            {
+                foreach (StylePresentation presentation in System.Enum.GetValues(typeof(StylePresentation)))
+                {
+                    int topCount = IdentityWardrobeCatalog.GetWardrobeOptions(stage, presentation, WardrobeCategory.Tops).Count;
+                    int bottomCount = IdentityWardrobeCatalog.GetWardrobeOptions(stage, presentation, WardrobeCategory.Bottoms).Count;
+                    int fullBodyCount = IdentityWardrobeCatalog.GetWardrobeOptions(stage, presentation, WardrobeCategory.FullBody).Count;
+                    int shoeCount = IdentityWardrobeCatalog.GetWardrobeOptions(stage, presentation, WardrobeCategory.Shoes).Count;
+
+                    Assert.GreaterOrEqual(topCount, 45, $"Expected expanded tops for {stage}/{presentation}.");
+                    Assert.GreaterOrEqual(bottomCount, 40, $"Expected expanded bottoms for {stage}/{presentation}.");
+                    Assert.GreaterOrEqual(fullBodyCount, 25, $"Expected expanded full-body options for {stage}/{presentation}.");
+                    Assert.GreaterOrEqual(shoeCount, 45, $"Expected expanded shoes for {stage}/{presentation}.");
+                }
+            }
+        }
+
+        [Test]
         public void BodyProfiles_ContainFatSkinnyMuscularAndLowMuscleOptions()
         {
             var profiles = IdentityWardrobeCatalog.GetBodyCompositionProfiles();
