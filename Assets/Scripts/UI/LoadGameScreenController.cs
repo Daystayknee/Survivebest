@@ -63,7 +63,7 @@ namespace Survivebest.UI
                 Magnitude = slotIndex
             });
 
-            menuFlowController?.StartGameplay();
+            menuFlowController?.StartGameplayWithLoading();
         }
 
         public void Back()
