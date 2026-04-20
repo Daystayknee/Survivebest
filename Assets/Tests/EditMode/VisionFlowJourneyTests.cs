@@ -21,6 +21,7 @@ namespace Survivebest.Tests.EditMode
             List<ScreenBinding> bindings = new()
             {
                 NewBinding(MainMenuScreen.Splash),
+                NewBinding(MainMenuScreen.Loading),
                 NewBinding(MainMenuScreen.MainMenu),
                 NewBinding(MainMenuScreen.NewGameWorldCreator),
                 NewBinding(MainMenuScreen.NewGameCharacterCreator),
@@ -47,7 +48,10 @@ namespace Survivebest.Tests.EditMode
             flow.ContinueFromCharacterCreator();
             Assert.AreEqual(MainMenuScreen.NewGameHousehold, flow.CurrentScreen);
 
-            flow.ContinueFromHousehold();
+            flow.StartGameplayWithLoading();
+            Assert.AreEqual(MainMenuScreen.Loading, flow.CurrentScreen);
+
+            flow.StartGameplay();
             Assert.AreEqual(MainMenuScreen.Gameplay, flow.CurrentScreen);
 
             flow.Back();
