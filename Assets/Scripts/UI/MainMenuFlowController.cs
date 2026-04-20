@@ -8,6 +8,7 @@ namespace Survivebest.UI
     public enum MainMenuScreen
     {
         Splash,
+        Loading,
         MainMenu,
         Settings,
         NewGameWorldCreator,
@@ -41,6 +42,7 @@ namespace Survivebest.UI
         }
 
         public void OpenMainMenu() => SetScreen(MainMenuScreen.MainMenu, true);
+        public void OpenLoading() => SetScreen(MainMenuScreen.Loading, true);
         public void OpenSettings() => SetScreen(MainMenuScreen.Settings, true);
         public void OpenLoadGame() => SetScreen(MainMenuScreen.LoadGame, true);
         public void OpenCharacterScreen() => SetScreen(MainMenuScreen.CharacterScreen, true);
@@ -48,6 +50,10 @@ namespace Survivebest.UI
         public void OpenCharacterCreator() => SetScreen(MainMenuScreen.NewGameCharacterCreator, true);
         public void OpenHouseholdMaker() => SetScreen(MainMenuScreen.NewGameHousehold, true);
         public void StartGameplay() => SetScreen(MainMenuScreen.Gameplay, true);
+        public void StartGameplayWithLoading()
+        {
+            SetScreen(MainMenuScreen.Loading, true);
+        }
 
         public void StartNewGame()
         {
