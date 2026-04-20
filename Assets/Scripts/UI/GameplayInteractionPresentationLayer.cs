@@ -102,6 +102,7 @@ namespace Survivebest.UI
         [SerializeField] private LifestyleBehaviorSystem lifestyleBehaviorSystem;
         [SerializeField] private PersonalityDecisionSystem personalityDecisionSystem;
         [SerializeField] private PsychologicalGrowthMentalHealthEngine psychologicalGrowthMentalHealthEngine;
+        [SerializeField] private InnerNarrativeEvolutionSystem innerNarrativeEvolutionSystem;
         [SerializeField] private GameEventHub gameEventHub;
 
         [Header("Runtime")]
@@ -377,6 +378,25 @@ namespace Survivebest.UI
                 if (satisfaction < 40f)
                 {
                     suggestions.Add("Pick one meaningful purpose action to regain momentum");
+                }
+            }
+
+            if (innerNarrativeEvolutionSystem != null)
+            {
+                InnerNarrativeSnapshot snapshot = innerNarrativeEvolutionSystem.BuildSnapshot(
+                    active.CharacterId,
+                    "A normal daily event occurred",
+                    room != null ? room.RoomName : null,
+                    null,
+                    null);
+                if (!string.IsNullOrWhiteSpace(snapshot?.InternalMonologue))
+                {
+                    suggestions.Add($"Inner voice: {snapshot.InternalMonologue}");
+                }
+
+                if (snapshot != null && snapshot.TriggerWarnings.Count > 0)
+                {
+                    suggestions.Add("Trauma trigger detected: choose a safer route or coping action");
                 }
             }
 
@@ -681,6 +701,32 @@ namespace Survivebest.UI
             }
 
             return features;
+        }
+
+        public List<string> BuildDeepLifeSystemsDigest()
+        {
+            List<string> digest = new()
+            {
+                "Identity & belief: religion/nihilism/spirituality/ideology with self-identity tags",
+                "Inner narrative: internal monologue stream + cognitive bias interpretation",
+                "Trauma psychology: memory intensity decay, reinforcement, triggers, and coping styles",
+                "Body realism: hormone cycles, sleep quality, chronic load, injury permanence, adaptation vs overtraining",
+                "Culture/class: district norms, social class gating, and opportunity access shifts",
+                "Relationship complexity: attachment styles, love languages, hidden feelings, power imbalance, resentment",
+                "Time perception: boredom slows subjective time, joy accelerates it across life chapters",
+                "Meaning systems: purpose tension, existential crisis checks, success-vs-satisfaction mismatch",
+                "Chaos engine: rare life events + black swan volatility",
+                "Media layer: news bias trust, social validation loops, rumor susceptibility",
+                "Expression tracks: art/music/writing growth and emotional release",
+                "Moral ambiguity + archetypes: guilt pressure, situational ethics, and life-pattern detection"
+            };
+
+            if (innerNarrativeEvolutionSystem != null)
+            {
+                digest.Insert(0, $"Active archetype lens: {innerNarrativeEvolutionSystem.ResolveArchetype()}");
+            }
+
+            return digest;
         }
 
         public void SyncTimelinePreview(string characterId)
