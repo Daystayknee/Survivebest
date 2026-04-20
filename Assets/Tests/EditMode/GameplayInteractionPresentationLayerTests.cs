@@ -326,6 +326,84 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
+        public void BuildLifeSimSurvivalRpgDirectives_ReturnsGeneticsSurvivalAndRpgCategories()
+        {
+            GameObject go = new GameObject("PresentationDirectiveDeck");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+
+            GameObject charGo = new GameObject("DirectiveChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_directive", "Directive", LifeStage.Adult);
+            charGo.AddComponent<NeedsSystem>();
+            charGo.AddComponent<Survivebest.Health.HealthSystem>();
+            charGo.AddComponent<Survivebest.Emotion.EmotionSystem>();
+            charGo.AddComponent<Survivebest.World.GeneticsSystem>();
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, household);
+
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            var directives = layer.BuildLifeSimSurvivalRpgDirectives();
+
+            Assert.IsTrue(directives.Exists(d => d.Category == "Survival"));
+            Assert.IsTrue(directives.Exists(d => d.Category == "Genetics"));
+            Assert.IsTrue(directives.Exists(d => d.Category == "RPG"));
+            Assert.IsTrue(directives.Exists(d => d.Category == "Interactivity"));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void BuildUiInteractivityFeatureChecklist_ReturnsExpandedUiFeatureSet()
+        {
+            GameObject go = new GameObject("PresentationUiChecklist");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+
+            var features = layer.BuildUiInteractivityFeatureChecklist();
+
+            Assert.GreaterOrEqual(features.Count, 10);
+            Assert.IsTrue(features.Exists(f => f.Contains("lineage", System.StringComparison.OrdinalIgnoreCase)));
+            Assert.IsTrue(features.Exists(f => f.Contains("heatmap", System.StringComparison.OrdinalIgnoreCase)));
+            Assert.IsTrue(features.Exists(f => f.Contains("hotspot", System.StringComparison.OrdinalIgnoreCase)));
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void BuildGeneticSurvivalInsight_ReportsLineagePressureWhenGeneticsPresent()
+        {
+            GameObject go = new GameObject("PresentationGeneticInsight");
+            GameplayInteractionPresentationLayer layer = go.AddComponent<GameplayInteractionPresentationLayer>();
+            HouseholdManager household = go.AddComponent<HouseholdManager>();
+
+            GameObject charGo = new GameObject("GeneticChar");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_genetic_insight", "Genetic", LifeStage.Adult);
+            charGo.AddComponent<NeedsSystem>();
+            charGo.AddComponent<Survivebest.Health.HealthSystem>();
+            charGo.AddComponent<Survivebest.World.GeneticsSystem>();
+
+            typeof(GameplayInteractionPresentationLayer)
+                .GetField("householdManager", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(layer, household);
+
+            household.AddMember(character);
+            household.SetActiveCharacter(character);
+
+            string insight = layer.BuildGeneticSurvivalInsight();
+
+            Assert.IsTrue(insight.Contains("Lineage", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(insight.Contains("survival pressure", System.StringComparison.OrdinalIgnoreCase));
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
         public void TryTravelToDistrict_ReturnsTrueWhenMatchingRoomExists()
         {
             GameObject go = new GameObject("PresentationTravelMap");

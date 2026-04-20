@@ -74,6 +74,17 @@ namespace Survivebest.UI
         public List<string> Actions = new();
     }
 
+    [Serializable]
+    public class LifeSimRpgDirective
+    {
+        public string DirectiveId;
+        public string Category;
+        public string Headline;
+        public string Description;
+        public string SuggestedAction;
+        [Range(0f, 1f)] public float Urgency;
+    }
+
     public class GameplayInteractionPresentationLayer : MonoBehaviour
     {
         [Header("Wiring")]
@@ -530,6 +541,146 @@ namespace Survivebest.UI
             }
 
             return flow;
+        }
+
+        public string BuildGeneticSurvivalInsight()
+        {
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                return "No active character. Select a household member to unlock genetics + survival insights.";
+            }
+
+            GeneticsSystem genetics = active.GetComponent<GeneticsSystem>();
+            NeedsSystem needs = active.GetComponent<NeedsSystem>();
+            HealthSystem health = active.GetComponent<HealthSystem>();
+
+            if (genetics?.Profile == null)
+            {
+                return "Genetics profile unavailable. Run creator genetics setup to activate lineage forecasting.";
+            }
+
+            float addictionRisk = genetics.Profile.Psychology != null ? genetics.Profile.Psychology.AddictionRisk : 0.25f;
+            float traumaSensitivity = genetics.Profile.Psychology != null ? genetics.Profile.Psychology.TraumaSensitivity : 0.3f;
+            float mutationLoad = genetics.Profile.Mutations != null
+                ? Mathf.Clamp01(genetics.Profile.Mutations.RandomMutationLoad + genetics.Profile.Mutations.EnvironmentalMutationLoad)
+                : 0.1f;
+            float nutritionGap = needs != null ? Mathf.Clamp01((100f - needs.Hunger) / 100f) : 0.4f;
+            float injuryPressure = health != null ? Mathf.Clamp01((100f - health.CurrentHealth) / 100f) : 0.2f;
+
+            float survivalPressure = Mathf.Clamp01((mutationLoad * 0.25f) + (addictionRisk * 0.2f) + (traumaSensitivity * 0.2f) + (nutritionGap * 0.2f) + (injuryPressure * 0.15f));
+
+            string intensity = survivalPressure >= 0.7f
+                ? "critical"
+                : survivalPressure >= 0.45f
+                    ? "elevated"
+                    : "stable";
+
+            string lineage = genetics.Profile.Lineage != null ? genetics.Profile.Lineage.FamilyName : "Unknown lineage";
+            return $"Lineage {lineage} survival pressure is {intensity} ({(survivalPressure * 100f):0}%). Prioritize shelter, food security, trauma-safe social loops, and low-risk XP actions.";
+        }
+
+        public List<LifeSimRpgDirective> BuildLifeSimSurvivalRpgDirectives()
+        {
+            List<LifeSimRpgDirective> directives = new();
+            CharacterCore active = householdManager != null ? householdManager.ActiveCharacter : null;
+            if (active == null)
+            {
+                directives.Add(new LifeSimRpgDirective
+                {
+                    DirectiveId = "activate_household",
+                    Category = "Onboarding",
+                    Headline = "Choose a survivor",
+                    Description = "Pick an active household member so lineage, survival, and RPG progression systems can react.",
+                    SuggestedAction = "Open character roster and set active member",
+                    Urgency = 1f
+                });
+                return directives;
+            }
+
+            GeneticsSystem genetics = active.GetComponent<GeneticsSystem>();
+            NeedsSystem needs = active.GetComponent<NeedsSystem>();
+            HealthSystem health = active.GetComponent<HealthSystem>();
+            Emotion.EmotionSystem emotion = active.GetComponent<Emotion.EmotionSystem>();
+
+            float hungerGap = needs != null ? Mathf.Clamp01((100f - needs.Hunger) / 100f) : 0.35f;
+            float energyGap = needs != null ? Mathf.Clamp01((100f - needs.Energy) / 100f) : 0.35f;
+            float stressLoad = emotion != null ? Mathf.Clamp01(emotion.Stress / 100f) : 0.25f;
+            float healthRisk = health != null ? Mathf.Clamp01((100f - health.CurrentHealth) / 100f) : 0.25f;
+
+            float mutationLoad = genetics?.Profile?.Mutations != null
+                ? Mathf.Clamp01(genetics.Profile.Mutations.RandomMutationLoad + genetics.Profile.Mutations.EnvironmentalMutationLoad)
+                : 0.1f;
+            float addictionRisk = genetics?.Profile?.Psychology != null ? genetics.Profile.Psychology.AddictionRisk : 0.25f;
+            float traumaSensitivity = genetics?.Profile?.Psychology != null ? genetics.Profile.Psychology.TraumaSensitivity : 0.3f;
+
+            directives.Add(new LifeSimRpgDirective
+            {
+                DirectiveId = "survival_core",
+                Category = "Survival",
+                Headline = "Stabilize needs before heroic pushes",
+                Description = "Resource pressure now drives fail states. Food, rest, hygiene, and treatment lock in daily survivability.",
+                SuggestedAction = "Run kitchen + bed + bathroom loop before high-risk actions",
+                Urgency = Mathf.Clamp01((hungerGap * 0.4f) + (energyGap * 0.35f) + (healthRisk * 0.25f))
+            });
+
+            directives.Add(new LifeSimRpgDirective
+            {
+                DirectiveId = "genetics_lineage",
+                Category = "Genetics",
+                Headline = "Exploit lineage strengths, cover inherited weaknesses",
+                Description = BuildGeneticSurvivalInsight(),
+                SuggestedAction = "Use low-risk routines to train traits while reducing mutation and stress pressure",
+                Urgency = Mathf.Clamp01((mutationLoad * 0.5f) + (traumaSensitivity * 0.3f) + (addictionRisk * 0.2f))
+            });
+
+            directives.Add(new LifeSimRpgDirective
+            {
+                DirectiveId = "rpg_build",
+                Category = "RPG",
+                Headline = "Choose a role build for this day",
+                Description = "Role identity affects social outcomes: Caregiver, Hustler, Scholar, Guardian, or Rebel each unlock unique narrative branches.",
+                SuggestedAction = "Pick one role, complete three aligned actions, and bank streak bonus XP",
+                Urgency = Mathf.Clamp01(0.35f + stressLoad * 0.25f)
+            });
+
+            directives.Add(new LifeSimRpgDirective
+            {
+                DirectiveId = "social_interactivity",
+                Category = "Interactivity",
+                Headline = "Trigger dynamic NPC reactions",
+                Description = "High-interactivity mode enables quick talk, barter, conflict, and alliance prompts in each hotspot.",
+                SuggestedAction = "At each location, resolve one social prompt before traveling",
+                Urgency = Mathf.Clamp01(0.3f + stressLoad * 0.4f)
+            });
+
+            return directives
+                .OrderByDescending(d => d.Urgency)
+                .ToList();
+        }
+
+        public List<string> BuildUiInteractivityFeatureChecklist()
+        {
+            List<string> features = new()
+            {
+                "Tabbed survival HUD: Needs, Health, Genetics, Quests, Family Tree",
+                "Clickable lineage graph with inherited-trait tooltips",
+                "Risk heatmap overlay for hunger, injury, crime, and weather",
+                "RPG role stance switcher (Caregiver/Hustler/Scholar/Guardian/Rebel)",
+                "Hotspot micro-actions with hold-to-confirm for high-risk choices",
+                "Context wheel for quick social interactions (ally, negotiate, deceive, romance)",
+                "Combo chain tracker with streak multipliers and failure penalties",
+                "Action aftermath cards showing short-term and generational consequences",
+                "District encounter timeline that previews danger/resource opportunities",
+                "Adaptive alerts: crisis, addiction risk, mutation spikes, and lineage events"
+            };
+
+            if (momentumStreak >= 3)
+            {
+                features.Insert(0, "Momentum spotlight panel unlocked: chain actions for amplified RPG rewards");
+            }
+
+            return features;
         }
 
         public void SyncTimelinePreview(string characterId)
