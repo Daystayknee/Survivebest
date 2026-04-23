@@ -161,6 +161,7 @@ namespace Survivebest.Catalog
             EnsureWearablesAndTools();
             EnsureHomeAndLifestyle();
             EnsureCollectibles();
+            EnsureAromaElementsOresAndFoods();
             EnsureInteractionRules();
         }
 
@@ -363,6 +364,103 @@ namespace Survivebest.Catalog
             AddItem(CreateInspectItem("collectible_boardgame_edition", "Collector Board Game Edition", "Collectible", "Games"));
             AddItem(CreateInspectItem("collectible_antique_watch", "Antique Pocket Watch", "Collectible", "Antique"));
             AddItem(CreateInspectItem("collectible_street_art_print", "Numbered Street Art Print", "Collectible", "Art"));
+        }
+
+        private void EnsureAromaElementsOresAndFoods()
+        {
+            string[] aromaItems =
+            {
+                "Lavender Essential Oil", "Peppermint Essential Oil", "Eucalyptus Essential Oil", "Tea Tree Essential Oil",
+                "Rose Essential Oil", "Jasmine Essential Oil", "Cedarwood Essential Oil", "Sandalwood Essential Oil",
+                "Vanilla Bean Extract", "Cinnamon Bark Oil", "Lemongrass Oil", "Bergamot Oil", "Orange Blossom Oil",
+                "Frankincense Resin", "Myrrh Resin", "Clove Bud Oil", "Patchouli Oil", "Ylang Ylang Oil",
+                "Chamomile Oil", "Pine Needle Oil", "Sage Oil", "Thyme Oil", "Basil Oil", "Cardamom Oil", "Neroli Oil",
+                "Incense Cone Pack", "Aroma Diffuser Refill", "Scented Candle (Ocean)", "Scented Candle (Forest)", "Scented Candle (Citrus)"
+            };
+
+            for (int i = 0; i < aromaItems.Length; i++)
+            {
+                string slug = aromaItems[i].ToLowerInvariant()
+                    .Replace(" ", "_")
+                    .Replace("(", string.Empty)
+                    .Replace(")", string.Empty)
+                    .Replace("-", "_");
+                AddItem(CreateInspectItem($"aroma_{slug}", aromaItems[i], "Aroma", "Fragrance"));
+            }
+
+            string[] elements =
+            {
+                "Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", "Carbon", "Nitrogen", "Oxygen", "Fluorine", "Neon",
+                "Sodium", "Magnesium", "Aluminum", "Silicon", "Phosphorus", "Sulfur", "Chlorine", "Argon", "Potassium", "Calcium",
+                "Scandium", "Titanium", "Vanadium", "Chromium", "Manganese", "Iron", "Cobalt", "Nickel", "Copper", "Zinc",
+                "Gallium", "Germanium", "Arsenic", "Selenium", "Bromine", "Krypton", "Rubidium", "Strontium", "Yttrium", "Zirconium",
+                "Silver", "Tin", "Iodine", "Barium", "Tungsten", "Platinum", "Gold", "Mercury", "Lead", "Uranium"
+            };
+
+            for (int i = 0; i < elements.Length; i++)
+            {
+                string slug = elements[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"element_{slug}", $"{elements[i]} Sample", "Element", "Periodic"));
+            }
+
+            string[] ores =
+            {
+                "Hematite Ore", "Magnetite Ore", "Limonite Ore", "Bauxite Ore", "Chalcopyrite Ore", "Bornite Ore",
+                "Malachite Ore", "Azurite Ore", "Sphalerite Ore", "Galena Ore", "Cassiterite Ore", "Wolframite Ore",
+                "Scheelite Ore", "Pentlandite Ore", "Chromite Ore", "Pyrolusite Ore", "Uraninite Ore", "Cinnabar Ore",
+                "Ilmenite Ore", "Rutile Ore", "Monazite Ore", "Spodumene Ore", "Barite Ore", "Fluorite Ore", "Pyrite Ore",
+                "Native Gold Ore", "Native Silver Ore", "Platinum Nugget Ore", "Coltan Ore", "Kyanite Ore"
+            };
+
+            for (int i = 0; i < ores.Length; i++)
+            {
+                string slug = ores[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"ore_{slug}", ores[i], "Ore", "Mineral"));
+            }
+
+            AddItem(CreateConsumable("food_jollof_rice", "Jollof Rice", "Food", "Regional Meal", 0f, 6f, 6f, 2f, 34f, 0f, 0f, 0f, true, 10f, 26f, 52f));
+            AddItem(CreateConsumable("food_bibimbap", "Bibimbap", "Food", "Regional Meal", 1f, 7f, 6f, 3f, 33f, 0f, 0f, -1f, true, 10f, 26f, 52f));
+            AddItem(CreateConsumable("food_paella", "Paella", "Food", "Regional Meal", 1f, 7f, 6f, 3f, 35f, 0f, 0f, -1f, true, 10f, 26f, 52f));
+            AddItem(CreateConsumable("food_tagine", "Vegetable Tagine", "Food", "Regional Meal", 1f, 5f, 5f, 3f, 29f, 0f, 0f, -2f, true, 10f, 26f, 52f));
+            AddItem(CreateConsumable("food_ramen", "Shoyu Ramen", "Food", "Regional Meal", 4f, 6f, 5f, 1f, 32f, 0f, 0f, 0f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_pho", "Beef Pho", "Food", "Regional Meal", 6f, 5f, 5f, 2f, 28f, 0f, 0f, -1f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_dosa", "Masala Dosa", "Food", "Regional Meal", 0f, 6f, 4f, 2f, 30f, 0f, 0f, -1f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_arepa", "Arepa", "Food", "Regional Meal", 0f, 5f, 5f, 1f, 27f, 0f, 0f, 0f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_taco_plate", "Taco Plate", "Food", "Regional Meal", 0f, 6f, 6f, 1f, 31f, 0f, 0f, 1f, true, 8f, 18f, 36f));
+            AddItem(CreateConsumable("food_gumbo", "Seafood Gumbo", "Food", "Regional Meal", 3f, 6f, 6f, 2f, 32f, 0f, 0f, 0f, true, 8f, 18f, 36f));
+
+            AddItem(CreateConsumable("food_tofu_stirfry", "Tofu Stir Fry", "Food", "Plant Based", 1f, 6f, 4f, 3f, 28f, 0f, 0f, -2f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_lentil_curry", "Lentil Curry", "Food", "Plant Based", 1f, 6f, 5f, 3f, 30f, 0f, 0f, -2f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_veggie_wrap", "Veggie Wrap", "Food", "Plant Based", 2f, 5f, 4f, 3f, 24f, 0f, 0f, -2f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_quinoa_bowl", "Quinoa Bowl", "Food", "Plant Based", 2f, 6f, 4f, 4f, 26f, 0f, 0f, -3f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_chia_pudding", "Chia Pudding", "Food", "Plant Based", 2f, 4f, 3f, 3f, 18f, 0f, 0f, -2f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_hummus_plate", "Hummus Plate", "Food", "Plant Based", 1f, 5f, 4f, 3f, 22f, 0f, 0f, -2f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_blackbean_bowl", "Black Bean Bowl", "Food", "Plant Based", 2f, 6f, 4f, 3f, 29f, 0f, 0f, -2f, true, 10f, 24f, 48f));
+            AddItem(CreateConsumable("food_edamame_salad", "Edamame Salad", "Food", "Plant Based", 3f, 5f, 4f, 3f, 20f, 0f, 0f, -3f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_avocado_toast", "Avocado Toast", "Food", "Plant Based", 1f, 5f, 5f, 2f, 21f, 0f, 0f, -2f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_kimchi_plate", "Kimchi Plate", "Food", "Plant Based", 1f, 3f, 3f, 2f, 12f, 0f, 0f, -2f, true, 20f, 56f, 120f));
+
+            AddItem(CreateConsumable("food_bagel_creamcheese", "Bagel & Cream Cheese", "Food", "Bakery", 0f, 6f, 4f, 1f, 24f, 0f, 0f, 0f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("food_croissant", "Butter Croissant", "Food", "Bakery", 0f, 4f, 5f, 0f, 18f, 0f, 0f, 1f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("food_blueberry_muffin", "Blueberry Muffin", "Food", "Bakery", 0f, 5f, 6f, 0f, 20f, 0f, 0f, 2f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("food_sourdough_slice", "Sourdough Slice", "Food", "Bakery", 0f, 3f, 3f, 1f, 14f, 0f, 0f, 0f, true, 24f, 72f, 160f));
+            AddItem(CreateConsumable("food_brioche_roll", "Brioche Roll", "Food", "Bakery", 0f, 4f, 4f, 1f, 16f, 0f, 0f, 1f, true, 24f, 72f, 160f));
+            AddItem(CreateConsumable("food_cornbread", "Cornbread", "Food", "Bakery", 0f, 4f, 4f, 1f, 17f, 0f, 0f, 1f, true, 24f, 72f, 160f));
+            AddItem(CreateConsumable("food_garlic_bread", "Garlic Bread", "Food", "Bakery", 0f, 4f, 5f, 0f, 18f, 0f, 0f, 1f, true, 14f, 36f, 72f));
+            AddItem(CreateConsumable("food_flatbread", "Herbed Flatbread", "Food", "Bakery", 0f, 4f, 4f, 1f, 16f, 0f, 0f, 0f, true, 24f, 72f, 160f));
+            AddItem(CreateConsumable("food_empanada", "Empanada", "Food", "Bakery", 0f, 5f, 5f, 1f, 22f, 0f, 0f, 0f, true, 14f, 36f, 72f));
+            AddItem(CreateConsumable("food_pretzel_soft", "Soft Pretzel", "Food", "Bakery", 0f, 5f, 4f, 0f, 19f, 0f, 0f, 1f, true, 16f, 48f, 96f));
+
+            AddItem(CreateConsumable("food_smoked_salmon_bagel", "Smoked Salmon Bagel", "Food", "Deli", 1f, 6f, 5f, 3f, 28f, 0f, 0f, -1f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_turkey_club", "Turkey Club Sandwich", "Food", "Deli", 1f, 6f, 5f, 2f, 30f, 0f, 0f, 0f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_tuna_sandwich", "Tuna Sandwich", "Food", "Deli", 1f, 5f, 4f, 2f, 27f, 0f, 0f, 0f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_chicken_panini", "Chicken Panini", "Food", "Deli", 0f, 6f, 5f, 2f, 31f, 0f, 0f, 0f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_roast_beef_sub", "Roast Beef Sub", "Food", "Deli", 0f, 6f, 6f, 1f, 34f, 0f, 0f, 1f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_caesar_wrap", "Chicken Caesar Wrap", "Food", "Deli", 1f, 5f, 5f, 1f, 29f, 0f, 0f, 0f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_grilled_veggie_panini", "Grilled Veggie Panini", "Food", "Deli", 1f, 5f, 4f, 2f, 25f, 0f, 0f, -1f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_egg_salad_sandwich", "Egg Salad Sandwich", "Food", "Deli", 1f, 5f, 4f, 2f, 26f, 0f, 0f, 0f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_caprese_sandwich", "Caprese Sandwich", "Food", "Deli", 1f, 4f, 5f, 2f, 23f, 0f, 0f, -1f, true, 8f, 20f, 40f));
+            AddItem(CreateConsumable("food_chicken_noodle_soup", "Chicken Noodle Soup", "Food", "Deli", 6f, 4f, 4f, 2f, 24f, 0f, 0f, -2f, true, 8f, 20f, 40f));
         }
 
         private void EnsureInteractionRules()
