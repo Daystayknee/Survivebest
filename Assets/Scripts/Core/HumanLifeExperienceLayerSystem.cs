@@ -9,6 +9,117 @@ using Survivebest.Social;
 namespace Survivebest.Core
 {
     [Serializable]
+    public class HumanStateStackProfile
+    {
+        public string CharacterId;
+
+        [Header("Physical")]
+        [Range(0f, 1f)] public float Hunger = 0.2f;
+        [Range(0f, 1f)] public float Hydration = 0.8f;
+        [Range(0f, 1f)] public float Fatigue = 0.2f;
+        [Range(0f, 1f)] public float Illness = 0f;
+        [Range(0f, 1f)] public float Injury = 0f;
+        [Range(0f, 1f)] public float PainLow = 0f;
+        [Range(0f, 1f)] public float PainSharp = 0f;
+        [Range(0f, 1f)] public float PainChronic = 0f;
+
+        [Header("Mental")]
+        [Range(0f, 1f)] public float Focus = 0.7f;
+        [Range(0f, 1f)] public float Stress = 0.2f;
+        [Range(0f, 1f)] public float Dissociation = 0f;
+        [Range(0f, 1f)] public float Clarity = 0.8f;
+
+        [Header("Emotional")]
+        [Range(-1f, 1f)] public float MoodValence = 0f;
+        [Range(0f, 1f)] public float EmotionalVolatility = 0.2f;
+        [Range(0f, 1f)] public float EmotionalInertia = 0.5f;
+
+        [Header("Identity")]
+        [Range(-1f, 1f)] public float SelfWorth = 0f;
+        [Range(-1f, 1f)] public float OptimismVsParanoia = 0f;
+        [Range(0f, 1f)] public float PersonalityDrift = 0f;
+
+        [Header("Social")]
+        [Range(-1f, 1f)] public float Reputation = 0f;
+        [Range(-1f, 1f)] public float RelationshipSafety = 0f;
+        [Range(0f, 1f)] public float Trust = 0.5f;
+        [Range(0f, 1f)] public float Fear = 0.1f;
+
+        [Header("Context Drivers")]
+        [Range(0f, 1f)] public float FinancialPressure = 0f;
+        [Range(0f, 1f)] public float SleepQuality = 0.8f;
+    }
+
+    public enum HumanConsequenceType
+    {
+        StressSpike,
+        SleepLoss,
+        EmotionalInstability,
+        DecisionPenalty,
+        IllnessRisk,
+        FatigueSpike,
+        IncomeLossRisk
+    }
+
+    [Serializable]
+    public class CauseEffectChainRecord
+    {
+        public string CharacterId;
+        public string CauseId;
+        public string EffectId;
+        public string Details;
+        public HumanConsequenceType ConsequenceType;
+        [Range(0f, 1f)] public float Magnitude = 0.5f;
+        public int Day;
+        public int Hour;
+    }
+
+    [Serializable]
+    public class LayeredMemoryRecord
+    {
+        public string MemoryId;
+        public string CharacterId;
+        public string Summary;
+        public string CausedByCharacterId;
+        [Range(-1f, 1f)] public float EmotionalValence;
+        [Range(0f, 1f)] public float EmotionalWeight = 0.5f;
+        [Range(0f, 1f)] public float TriggerStrength = 0.5f;
+    }
+
+    [Serializable]
+    public class GoalPressure
+    {
+        public string GoalId;
+        public string Label;
+        [Range(0f, 1f)] public float Urgency;
+        public string Blocker;
+    }
+
+    [Serializable]
+    public class DecisionOption
+    {
+        public string OptionId;
+        public string Label;
+        [Range(-1f, 1f)] public float NeedAlignment;
+        [Range(-1f, 1f)] public float EmotionalAlignment;
+        [Range(-1f, 1f)] public float IdentityAlignment;
+        [Range(-1f, 1f)] public float MemoryBias;
+        [Range(0f, 1f)] public float EffortCost;
+    }
+
+    [Serializable]
+    public class BodyInjuryState
+    {
+        public string CharacterId;
+        [Range(0f, 1f)] public float HeadDamage;
+        [Range(0f, 1f)] public float TorsoDamage;
+        [Range(0f, 1f)] public float ArmDamage;
+        [Range(0f, 1f)] public float LegDamage;
+        [Range(0f, 1f)] public float InfectionRisk;
+        [Range(0f, 1f)] public float ChronicDamage;
+    }
+
+    [Serializable]
     public class DailyRoutineAction
     {
         public string ActionId;
@@ -773,11 +884,17 @@ namespace Survivebest.Core
         [SerializeField] private List<HumanVampireRelationshipProfile> humanVampireRelationshipProfiles = new();
         [SerializeField] private List<LongTailConsequenceProfile> longTailConsequenceProfiles = new();
         [SerializeField] private List<SocialOpinionProfile> socialOpinionProfiles = new();
+        [SerializeField] private List<HumanStateStackProfile> humanStateStackProfiles = new();
+        [SerializeField] private List<CauseEffectChainRecord> causeEffectChainRecords = new();
+        [SerializeField] private List<LayeredMemoryRecord> layeredMemoryRecords = new();
+        [SerializeField] private List<BodyInjuryState> bodyInjuryStates = new();
         [SerializeField, Min(10)] private int maxThoughts = 200;
         [SerializeField, Min(10)] private int maxMoments = 300;
         [SerializeField, Min(10)] private int maxTimelineEntries = 500;
         [SerializeField, Min(10)] private int maxMemoryMeaningRecords = 300;
         [SerializeField, Min(10)] private int maxDomesticMoments = 200;
+        [SerializeField, Min(10)] private int maxCauseEffectRecords = 600;
+        [SerializeField, Min(10)] private int maxLayeredMemoryRecords = 600;
 
         public IReadOnlyList<PlaceAttachmentState> PlaceAttachments => placeAttachments;
         public IReadOnlyList<ThoughtMessage> RecentThoughts => recentThoughts;
@@ -817,6 +934,10 @@ namespace Survivebest.Core
         public IReadOnlyList<HumanVampireRelationshipProfile> HumanVampireRelationshipProfiles => humanVampireRelationshipProfiles;
         public IReadOnlyList<LongTailConsequenceProfile> LongTailConsequenceProfiles => longTailConsequenceProfiles;
         public IReadOnlyList<SocialOpinionProfile> SocialOpinionProfiles => socialOpinionProfiles;
+        public IReadOnlyList<HumanStateStackProfile> HumanStateStacks => humanStateStackProfiles;
+        public IReadOnlyList<CauseEffectChainRecord> CauseEffectChains => causeEffectChainRecords;
+        public IReadOnlyList<LayeredMemoryRecord> LayeredMemories => layeredMemoryRecords;
+        public IReadOnlyList<BodyInjuryState> BodyInjuryStates => bodyInjuryStates;
         public IReadOnlyList<MemoryMeaningRecord> MemoryMeaningRecords => memoryMeaningRecords;
         public IReadOnlyList<DomesticIntimacyMoment> DomesticIntimacyMoments => domesticIntimacyMoments;
 
@@ -1299,6 +1420,174 @@ namespace Survivebest.Core
             return UpsertProfile(actor, profile, socialOpinionProfiles, () => new SocialOpinionProfile());
         }
 
+        public HumanStateStackProfile GetOrCreateHumanStateStack(CharacterCore actor)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            HumanStateStackProfile profile = FindProfile(actor.CharacterId, humanStateStackProfiles);
+            if (profile == null)
+            {
+                profile = new HumanStateStackProfile { CharacterId = actor.CharacterId };
+                humanStateStackProfiles.Add(profile);
+            }
+
+            return profile;
+        }
+
+        public BodyInjuryState GetOrCreateBodyInjuryState(CharacterCore actor)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            BodyInjuryState profile = FindProfile(actor.CharacterId, bodyInjuryStates);
+            if (profile == null)
+            {
+                profile = new BodyInjuryState { CharacterId = actor.CharacterId };
+                bodyInjuryStates.Add(profile);
+            }
+
+            return profile;
+        }
+
+        public CauseEffectChainRecord RecordCauseEffectChain(CharacterCore actor, string causeId, string effectId, HumanConsequenceType consequenceType, float magnitude, string details = null)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(causeId) || string.IsNullOrWhiteSpace(effectId))
+            {
+                return null;
+            }
+
+            CauseEffectChainRecord chain = new CauseEffectChainRecord
+            {
+                CharacterId = actor.CharacterId,
+                CauseId = causeId,
+                EffectId = effectId,
+                ConsequenceType = consequenceType,
+                Magnitude = Mathf.Clamp01(magnitude),
+                Details = details ?? $"{causeId} -> {effectId}",
+                Day = worldClock != null ? worldClock.Day : 0,
+                Hour = worldClock != null ? worldClock.Hour : 0
+            };
+
+            causeEffectChainRecords.Add(chain);
+            while (causeEffectChainRecords.Count > maxCauseEffectRecords)
+            {
+                causeEffectChainRecords.RemoveAt(0);
+            }
+
+            ApplyHumanConsequence(actor, chain);
+            return chain;
+        }
+
+        public LayeredMemoryRecord RecordLayeredMemory(CharacterCore actor, string summary, float emotionalValence, float emotionalWeight, string causedByCharacterId = null)
+        {
+            if (actor == null || string.IsNullOrWhiteSpace(summary))
+            {
+                return null;
+            }
+
+            LayeredMemoryRecord memory = new LayeredMemoryRecord
+            {
+                MemoryId = Guid.NewGuid().ToString("N"),
+                CharacterId = actor.CharacterId,
+                Summary = summary,
+                CausedByCharacterId = causedByCharacterId,
+                EmotionalValence = Mathf.Clamp(emotionalValence, -1f, 1f),
+                EmotionalWeight = Mathf.Clamp01(emotionalWeight),
+                TriggerStrength = Mathf.Clamp01(0.3f + Mathf.Abs(emotionalValence) * 0.4f + emotionalWeight * 0.3f)
+            };
+
+            layeredMemoryRecords.Add(memory);
+            while (layeredMemoryRecords.Count > maxLayeredMemoryRecords)
+            {
+                layeredMemoryRecords.RemoveAt(0);
+            }
+
+            HumanStateStackProfile stack = GetOrCreateHumanStateStack(actor);
+            if (stack != null)
+            {
+                stack.EmotionalInertia = Mathf.Clamp01(stack.EmotionalInertia + memory.EmotionalWeight * 0.1f);
+                stack.Fear = Mathf.Clamp01(stack.Fear + (memory.EmotionalValence < -0.2f ? memory.TriggerStrength * 0.15f : -0.03f));
+                stack.Trust = Mathf.Clamp01(stack.Trust + (memory.EmotionalValence > 0.2f ? memory.TriggerStrength * 0.1f : -memory.TriggerStrength * 0.08f));
+            }
+
+            return memory;
+        }
+
+        public GoalPressure[] BuildDynamicGoals(CharacterCore actor)
+        {
+            HumanStateStackProfile stack = GetOrCreateHumanStateStack(actor);
+            if (stack == null)
+            {
+                return Array.Empty<GoalPressure>();
+            }
+
+            List<GoalPressure> goals = new();
+            goals.Add(new GoalPressure
+            {
+                GoalId = "find_food",
+                Label = "Find food",
+                Urgency = Mathf.Clamp01(stack.Hunger * 0.8f + stack.Fatigue * 0.15f),
+                Blocker = stack.Fatigue > 0.75f ? "Too exhausted to move fast." : null
+            });
+            goals.Add(new GoalPressure
+            {
+                GoalId = "earn_money",
+                Label = "Get money",
+                Urgency = Mathf.Clamp01(stack.FinancialPressure * 0.9f + stack.Stress * 0.1f),
+                Blocker = stack.Clarity < 0.35f ? "Head feels foggy." : null
+            });
+            goals.Add(new GoalPressure
+            {
+                GoalId = "social_repair",
+                Label = "Reach out",
+                Urgency = Mathf.Clamp01(stack.Fear * 0.6f + (1f - stack.RelationshipSafety * 0.5f)),
+                Blocker = stack.Dissociation > 0.55f ? "Feels detached from everyone." : null
+            });
+
+            return goals.OrderByDescending(x => x.Urgency).ToArray();
+        }
+
+        public DecisionOption ChooseWeightedDecision(CharacterCore actor, IList<DecisionOption> options)
+        {
+            HumanStateStackProfile stack = GetOrCreateHumanStateStack(actor);
+            if (stack == null || options == null || options.Count == 0)
+            {
+                return null;
+            }
+
+            float bestScore = float.MinValue;
+            DecisionOption best = null;
+            for (int i = 0; i < options.Count; i++)
+            {
+                DecisionOption option = options[i];
+                if (option == null)
+                {
+                    continue;
+                }
+
+                float moodPenalty = (stack.MoodValence < -0.35f ? 0.2f : 0f) + stack.EmotionalVolatility * 0.15f;
+                float score =
+                    option.NeedAlignment * (0.5f + stack.Hunger * 0.3f + stack.FinancialPressure * 0.2f) +
+                    option.EmotionalAlignment * (0.35f + stack.EmotionalInertia * 0.25f - moodPenalty) +
+                    option.IdentityAlignment * (0.3f + Mathf.Abs(stack.SelfWorth) * 0.2f) +
+                    option.MemoryBias * (0.25f + stack.Fear * 0.2f + (1f - stack.Trust) * 0.1f) -
+                    option.EffortCost * (0.2f + stack.Fatigue * 0.5f + stack.PainSharp * 0.35f);
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = option;
+                }
+            }
+
+            return best;
+        }
+
         public string BuildVampireLifeLoopSummary(string characterId)
         {
             if (string.IsNullOrWhiteSpace(characterId))
@@ -1547,6 +1836,16 @@ namespace Survivebest.Core
             if (typeof(T) == typeof(SocialOpinionProfile))
             {
                 return FindProfile(characterId, socialOpinionProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(HumanStateStackProfile))
+            {
+                return FindProfile(characterId, humanStateStackProfiles) as T;
+            }
+
+            if (typeof(T) == typeof(BodyInjuryState))
+            {
+                return FindProfile(characterId, bodyInjuryStates) as T;
             }
 
             if (typeof(T) == typeof(RichKidLifeStageProfile))
@@ -2713,6 +3012,59 @@ namespace Survivebest.Core
                 psychologicalGrowthMentalHealthEngine?.RecordLifeEvent(actor.CharacterId, MentalHealthEventType.Milestone, 0.25f + intensity * 0.6f);
                 worldCultureSocietyEngine?.EvaluateNormReaction(actor.CharacterId, "town_default", "career_prestige", false);
             }
+        }
+
+        private void ApplyHumanConsequence(CharacterCore actor, CauseEffectChainRecord chain)
+        {
+            if (actor == null || chain == null)
+            {
+                return;
+            }
+
+            HumanStateStackProfile stack = GetOrCreateHumanStateStack(actor);
+            if (stack == null)
+            {
+                return;
+            }
+
+            float amount = Mathf.Clamp01(chain.Magnitude);
+            switch (chain.ConsequenceType)
+            {
+                case HumanConsequenceType.StressSpike:
+                    stack.Stress = Mathf.Clamp01(stack.Stress + amount * 0.35f);
+                    stack.Focus = Mathf.Clamp01(stack.Focus - amount * 0.2f);
+                    break;
+                case HumanConsequenceType.SleepLoss:
+                    stack.SleepQuality = Mathf.Clamp01(stack.SleepQuality - amount * 0.4f);
+                    stack.Fatigue = Mathf.Clamp01(stack.Fatigue + amount * 0.3f);
+                    break;
+                case HumanConsequenceType.EmotionalInstability:
+                    stack.EmotionalVolatility = Mathf.Clamp01(stack.EmotionalVolatility + amount * 0.35f);
+                    stack.MoodValence = Mathf.Clamp(stack.MoodValence - amount * 0.25f, -1f, 1f);
+                    break;
+                case HumanConsequenceType.DecisionPenalty:
+                    stack.Clarity = Mathf.Clamp01(stack.Clarity - amount * 0.35f);
+                    stack.Dissociation = Mathf.Clamp01(stack.Dissociation + amount * 0.2f);
+                    break;
+                case HumanConsequenceType.IllnessRisk:
+                    stack.Illness = Mathf.Clamp01(stack.Illness + amount * 0.3f);
+                    break;
+                case HumanConsequenceType.FatigueSpike:
+                    stack.Fatigue = Mathf.Clamp01(stack.Fatigue + amount * 0.4f);
+                    break;
+                case HumanConsequenceType.IncomeLossRisk:
+                    stack.FinancialPressure = Mathf.Clamp01(stack.FinancialPressure + amount * 0.4f);
+                    stack.SelfWorth = Mathf.Clamp(stack.SelfWorth - amount * 0.2f, -1f, 1f);
+                    break;
+            }
+
+            // Cross-layer coupling for "feels human" feedback loops.
+            stack.EmotionalVolatility = Mathf.Clamp01(stack.EmotionalVolatility + stack.Stress * 0.08f + stack.Fatigue * 0.06f);
+            stack.Trust = Mathf.Clamp01(stack.Trust - stack.Fear * 0.05f);
+            stack.OptimismVsParanoia = Mathf.Clamp(stack.OptimismVsParanoia - stack.Stress * 0.06f - stack.Fear * 0.08f, -1f, 1f);
+
+            AppendThought(actor, "cause_effect", $"{chain.CauseId} led to {chain.EffectId}.", amount, null);
+            RecordLifeTimelineEvent(actor, "Cause/Effect", chain.Details, "cause_effect");
         }
 
         private PlaceAttachmentState GetOrCreateAttachment(string characterId, string placeId)
