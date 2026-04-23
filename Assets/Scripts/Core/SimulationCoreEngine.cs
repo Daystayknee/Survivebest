@@ -24,6 +24,9 @@ namespace Survivebest.Core
         public GoalPressure[] Goals = Array.Empty<GoalPressure>();
         public DecisionOption SelectedDecision;
         public List<CauseEffectChainRecord> AppliedChains = new();
+        public List<InterpretedLifeEvent> InterpretedEvents = new();
+        public string ContextCollisionSummary;
+        public string LifeMomentCompression;
     }
 
     public class SimulationCoreEngine : MonoBehaviour
@@ -31,6 +34,7 @@ namespace Survivebest.Core
         [SerializeField] private HumanLifeExperienceLayerSystem humanLifeExperienceLayerSystem;
         [SerializeField] private NeedsSystem needsSystem;
         [SerializeField] private EmotionSystem emotionSystem;
+        [SerializeField] private LifeInterpretationEngine lifeInterpretationEngine;
 
         private void Awake()
         {
@@ -47,6 +51,11 @@ namespace Survivebest.Core
             if (emotionSystem == null)
             {
                 emotionSystem = GetComponent<EmotionSystem>();
+            }
+
+            if (lifeInterpretationEngine == null)
+            {
+                lifeInterpretationEngine = GetComponent<LifeInterpretationEngine>();
             }
         }
 
@@ -70,8 +79,31 @@ namespace Survivebest.Core
             result.SelectedDecision = humanLifeExperienceLayerSystem.ChooseWeightedDecision(actor, options);
             result.ThoughtFeed = GenerateThoughts(stack, result.Goals, result.SelectedDecision, pressure);
             RecordThoughtsAsLayeredMemories(actor, result.ThoughtFeed);
+            InterpretThoughtsAndContext(actor, pressure, result);
 
             return result;
+        }
+
+        private void InterpretThoughtsAndContext(CharacterCore actor, WorldPressureState pressure, SimulationTickResult result)
+        {
+            if (lifeInterpretationEngine == null || actor == null || result == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < result.ThoughtFeed.Count; i++)
+            {
+                string thought = result.ThoughtFeed[i];
+                InterpretedLifeEvent interpreted = lifeInterpretationEngine.Interpret(actor, thought, 0.45f + i * 0.05f, "tick_thought");
+                if (interpreted != null)
+                {
+                    result.InterpretedEvents.Add(interpreted);
+                }
+            }
+
+            SocialFieldState defaultField = lifeInterpretationEngine.UpsertSocialField("ambient", pressure.SafetyRisk, pressure.SafetyRisk * 0.7f, 1f - pressure.SafetyRisk, pressure.NoiseStress);
+            result.ContextCollisionSummary = lifeInterpretationEngine.ResolveContextCollision(actor, pressure, defaultField);
+            result.LifeMomentCompression = lifeInterpretationEngine.BuildCompressedLifeMomentSummary(actor.CharacterId, 12);
         }
 
         private void PullObservedStateIntoStack(HumanStateStackProfile stack, WorldPressureState pressure)

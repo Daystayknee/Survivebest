@@ -11,6 +11,7 @@ namespace Survivebest.Tests.EditMode
         {
             GameObject host = new GameObject("SimCore");
             HumanLifeExperienceLayerSystem lifeSystem = host.AddComponent<HumanLifeExperienceLayerSystem>();
+            LifeInterpretationEngine interpretationEngine = host.AddComponent<LifeInterpretationEngine>();
             SimulationCoreEngine coreEngine = host.AddComponent<SimulationCoreEngine>();
 
             GameObject actorGo = new GameObject("Actor");
@@ -38,6 +39,10 @@ namespace Survivebest.Tests.EditMode
             Assert.IsNotNull(result.SelectedDecision);
             Assert.Greater(lifeSystem.CauseEffectChains.Count, 0);
             Assert.Greater(lifeSystem.LayeredMemories.Count, 0);
+            Assert.Greater(result.InterpretedEvents.Count, 0);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.ContextCollisionSummary));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(result.LifeMomentCompression));
+            Assert.Greater(interpretationEngine.InterpretedEvents.Count, 0);
 
             Object.DestroyImmediate(host);
             Object.DestroyImmediate(actorGo);
@@ -48,6 +53,7 @@ namespace Survivebest.Tests.EditMode
         {
             GameObject host = new GameObject("SimCoreNullPressure");
             HumanLifeExperienceLayerSystem lifeSystem = host.AddComponent<HumanLifeExperienceLayerSystem>();
+            host.AddComponent<LifeInterpretationEngine>();
             SimulationCoreEngine coreEngine = host.AddComponent<SimulationCoreEngine>();
 
             GameObject actorGo = new GameObject("Actor2");
