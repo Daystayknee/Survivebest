@@ -176,6 +176,7 @@ namespace Survivebest.Catalog
             EnsureAromaElementsOresAndFoods();
             EnsureMatterNatureAndCultureCoverage();
             EnsureSicknessInjuryAndMentalHealthCoverage();
+            EnsureComprehensiveHealthEcosystem();
             EnsureInteractionRules();
         }
 
@@ -603,6 +604,70 @@ namespace Survivebest.Catalog
             AddItem(CreateInspectItem("diag_sleep_journal", "Sleep Journal", "Diagnostics", "Sleep Health"));
             AddItem(CreateInspectItem("diag_pain_scale_card", "Pain Scale Card", "Diagnostics", "Pain Tracking"));
             AddItem(CreateInspectItem("diag_trauma_intake_form", "Trauma Intake Form", "Diagnostics", "Trauma Care"));
+        }
+
+        private void EnsureComprehensiveHealthEcosystem()
+        {
+            string[] conditionProfiles =
+            {
+                "Acute Viral Infection Profile", "Bacterial Infection Profile", "Heat Exhaustion Profile", "Hypothermia Profile",
+                "Moderate Dehydration Profile", "Severe Dehydration Profile", "Soft Tissue Injury Profile", "Ligament Tear Profile",
+                "Minor Fracture Profile", "Compound Fracture Profile", "Concussion Monitoring Profile", "Migraine Management Profile",
+                "Insomnia Management Profile", "Panic Episode Profile", "Generalized Anxiety Profile", "Depressive Episode Profile",
+                "Trauma Stress Profile", "Allergic Response Profile", "Food Poisoning Profile", "Burn Recovery Profile"
+            };
+            for (int i = 0; i < conditionProfiles.Length; i++)
+            {
+                string slug = conditionProfiles[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"condition_{slug}", conditionProfiles[i], "Condition", "Clinical Profile"));
+            }
+
+            string[] diagnostics =
+            {
+                "CBC Lab Panel", "Metabolic Panel", "Urinalysis Strip", "Blood Glucose Monitor", "Pulse Oximeter",
+                "Portable ECG", "Vision Screening Card", "Reflex Hammer", "Neuro Check Penlight", "Hydration Skin Turgor Card",
+                "Mood Tracking Journal", "Cognitive Screening Sheet", "PTSD Trigger Log", "Anxiety Trigger Log", "Sleep Quality Scale",
+                "Pain Trend Journal", "Recovery Milestone Chart", "Medication Adherence Tracker", "Symptom Severity Scorecard", "Vitals Trend Graph"
+            };
+            for (int i = 0; i < diagnostics.Length; i++)
+            {
+                string slug = diagnostics[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"diagnostic_{slug}", diagnostics[i], "Diagnostics", "Assessment"));
+            }
+
+            AddItem(CreateApplyItem("treatment_compression_bandage", "Compression Bandage", "Treatment", "Injury Recovery", health: 5f, interactions: new[] { StatusInteractionType.Sprain, StatusInteractionType.ChronicPain }));
+            AddItem(CreateApplyItem("treatment_posture_support", "Posture Support Strap", "Treatment", "Injury Recovery", health: 3f, mood: 1f, interactions: new[] { StatusInteractionType.ChronicPain }));
+            AddItem(CreateApplyItem("treatment_saline_rinse", "Saline Rinse", "Treatment", "Infection Prevention", hygiene: 4f, health: 2f, interactions: new[] { StatusInteractionType.Infection, StatusInteractionType.Allergy }));
+            AddItem(CreateApplyItem("treatment_moist_wound_pad", "Moist Wound Pad", "Treatment", "Wound Care", health: 6f, hygiene: 3f, interactions: new[] { StatusInteractionType.Bleeding, StatusInteractionType.Infection }));
+            AddItem(CreateApplyItem("treatment_cooling_towel", "Cooling Towel", "Treatment", "Heat Safety", health: 3f, temperature: -4f, interactions: new[] { StatusInteractionType.Fever, StatusInteractionType.DehydrationSevere }));
+            AddItem(CreateApplyItem("treatment_warming_blanket", "Warming Blanket", "Treatment", "Cold Safety", health: 3f, temperature: 5f, interactions: new[] { StatusInteractionType.Fatigue }));
+            AddItem(CreateApplyItem("treatment_breathing_pacer", "Breathing Pacer Device", "Treatment", "Mental Stabilization", mood: 4f, interactions: new[] { StatusInteractionType.Anxiety, StatusInteractionType.Panic, StatusInteractionType.TraumaStress }));
+            AddItem(CreateApplyItem("treatment_light_therapy_lamp", "Light Therapy Lamp", "Treatment", "Mental Stabilization", mood: 4f, energy: 2f, interactions: new[] { StatusInteractionType.Depression, StatusInteractionType.Insomnia }));
+            AddItem(CreateApplyItem("treatment_weighted_blanket", "Weighted Blanket", "Treatment", "Mental Stabilization", mood: 4f, energy: -2f, interactions: new[] { StatusInteractionType.Anxiety, StatusInteractionType.Insomnia }));
+            AddItem(CreateApplyItem("treatment_mobility_cane", "Mobility Cane", "Treatment", "Rehab Support", health: 2f, interactions: new[] { StatusInteractionType.Fracture, StatusInteractionType.ChronicPain }));
+
+            AddItem(CreateConsumable("med_ssri_trial_pack", "SSRI Trial Pack", "Mental Health", "Prescription", 0f, -1f, 3f, 2f, 0f, 0f, 0f, -1f, true, 1200f, 3000f, 5600f, interactions: new[] { StatusInteractionType.Depression, StatusInteractionType.Anxiety }, notes: "Prescription monitoring required"));
+            AddItem(CreateConsumable("med_anxiolytic_prn", "PRN Anxiolytic", "Mental Health", "Prescription", 0f, -3f, 4f, 1f, 0f, 0f, 0f, -1f, true, 1200f, 3000f, 5600f, interactions: new[] { StatusInteractionType.Panic, StatusInteractionType.Anxiety }, notes: "Sedation and dependency risk"));
+            AddItem(CreateConsumable("med_nonopioid_pain_combo", "Non-Opioid Pain Combo", "Sickness", "Medication", 0f, 0f, 1f, 5f, 0f, 0f, 0f, -2f, true, 1000f, 2600f, 5000f, interactions: new[] { StatusInteractionType.ChronicPain, StatusInteractionType.Migraine }));
+            AddItem(CreateConsumable("med_recovery_protein_mix", "Recovery Protein Mix", "Rehab Nutrition", "Supplement", 4f, 5f, 2f, 3f, 14f, 0f, 0f, -2f, true, 300f, 900f, 2000f, interactions: new[] { StatusInteractionType.Fracture, StatusInteractionType.Sprain }));
+            AddItem(CreateConsumable("med_antiemetic_dissolve", "Dissolvable Antiemetic", "Sickness", "Medication", 0f, 0f, 1f, 3f, 0f, 0f, 0f, -4f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Poisoning, StatusInteractionType.Illness }));
+            AddItem(CreateConsumable("med_rehydration_gel", "Rehydration Gel", "Sickness", "Hydration Therapy", 18f, 2f, 1f, 3f, 3f, 0f, 0f, -4f, true, 700f, 1800f, 3600f, interactions: new[] { StatusInteractionType.Dehydration, StatusInteractionType.DehydrationSevere }));
+            AddItem(CreateConsumable("med_sleep_melatonin_plus", "Melatonin Plus", "Mental Health", "Sleep Support", 0f, -5f, 2f, 1f, 0f, 0f, 0f, -1f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Insomnia, StatusInteractionType.Anxiety }));
+            AddItem(CreateConsumable("med_focus_nootropic_stack", "Nootropic Focus Stack", "Mental Health", "Cognitive Support", 0f, 6f, 2f, 1f, 0f, 0f, 0f, 0f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Depression, StatusInteractionType.TraumaStress }));
+            AddItem(CreateConsumable("med_immunity_booster", "Immunity Booster", "Sickness", "Supplement", 0f, 2f, 1f, 2f, 0f, 0f, 0f, -2f, true, 1200f, 3000f, 5600f, interactions: new[] { StatusInteractionType.Illness, StatusInteractionType.Infection }));
+            AddItem(CreateConsumable("med_gut_repair_broth", "Gut Repair Broth", "Sickness", "Recovery Nutrition", 8f, 2f, 2f, 2f, 10f, 0f, 0f, -2f, true, 36f, 120f, 260f, interactions: new[] { StatusInteractionType.Illness, StatusInteractionType.Poisoning }));
+
+            string[] rehabFoods =
+            {
+                "High Protein Recovery Bowl", "Anti-Inflammatory Grain Bowl", "Electrolyte Fruit Cup", "Iron-Rich Lentil Stew",
+                "Bone Broth Noodle Bowl", "Omega-3 Salmon Plate", "Hydration Soup", "Probiotic Yogurt Cup",
+                "Gentle Stomach Rice Porridge", "Low Sodium Recovery Plate", "Balanced Recovery Sandwich", "Vitamin C Citrus Plate"
+            };
+            for (int i = 0; i < rehabFoods.Length; i++)
+            {
+                string slug = rehabFoods[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateConsumable($"rehab_food_{slug}", rehabFoods[i], "Rehab Nutrition", "Meal", 4f, 3f, 3f, 3f, 20f, 0f, 0f, -2f, true, 16f, 48f, 96f, interactions: new[] { StatusInteractionType.Fracture, StatusInteractionType.ChronicPain, StatusInteractionType.Illness }));
+            }
         }
 
         private void EnsureInteractionRules()
