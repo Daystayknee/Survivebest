@@ -162,6 +162,7 @@ namespace Survivebest.Catalog
             EnsureHomeAndLifestyle();
             EnsureCollectibles();
             EnsureAromaElementsOresAndFoods();
+            EnsureMatterNatureAndCultureCoverage();
             EnsureInteractionRules();
         }
 
@@ -461,6 +462,101 @@ namespace Survivebest.Catalog
             AddItem(CreateConsumable("food_egg_salad_sandwich", "Egg Salad Sandwich", "Food", "Deli", 1f, 5f, 4f, 2f, 26f, 0f, 0f, 0f, true, 8f, 20f, 40f));
             AddItem(CreateConsumable("food_caprese_sandwich", "Caprese Sandwich", "Food", "Deli", 1f, 4f, 5f, 2f, 23f, 0f, 0f, -1f, true, 8f, 20f, 40f));
             AddItem(CreateConsumable("food_chicken_noodle_soup", "Chicken Noodle Soup", "Food", "Deli", 6f, 4f, 4f, 2f, 24f, 0f, 0f, -2f, true, 8f, 20f, 40f));
+        }
+
+        private void EnsureMatterNatureAndCultureCoverage()
+        {
+            string[] atomItems =
+            {
+                "Hydrogen Atom Model", "Helium Atom Model", "Carbon Atom Model", "Nitrogen Atom Model", "Oxygen Atom Model",
+                "Neon Atom Model", "Sodium Atom Model", "Magnesium Atom Model", "Silicon Atom Model", "Phosphorus Atom Model",
+                "Sulfur Atom Model", "Chlorine Atom Model", "Potassium Atom Model", "Calcium Atom Model", "Iron Atom Model",
+                "Copper Atom Model", "Silver Atom Model", "Gold Atom Model", "Lead Atom Model", "Uranium Atom Model"
+            };
+            for (int i = 0; i < atomItems.Length; i++)
+            {
+                string slug = atomItems[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"atom_{slug}", atomItems[i], "Atom", "Model"));
+            }
+
+            string[] arts =
+            {
+                "Oil Painting", "Watercolor Landscape", "Charcoal Portrait", "Ceramic Vase", "Bronze Sculpture",
+                "Street Art Mural", "Digital Illustration", "Calligraphy Scroll", "Glass Art Piece", "Wood Carving",
+                "Ink Sketchbook", "Abstract Canvas", "Origami Crane Set", "Pottery Bowl", "Mixed Media Collage",
+                "Photography Print", "Marble Bust", "Textile Tapestry", "Miniature Diorama", "Handmade Mask"
+            };
+            for (int i = 0; i < arts.Length; i++)
+            {
+                string slug = arts[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"art_{slug}", arts[i], "Art", "Creative"));
+            }
+
+            string[] animals =
+            {
+                "Dog", "Cat", "Horse", "Cow", "Sheep", "Goat", "Chicken", "Duck", "Turkey", "Rabbit",
+                "Fox", "Wolf", "Bear", "Deer", "Elk", "Moose", "Boar", "Otter", "Beaver", "Raccoon",
+                "Squirrel", "Hedgehog", "Eagle", "Falcon", "Owl", "Hawk", "Crow", "Parrot", "Peacock", "Flamingo"
+            };
+            for (int i = 0; i < animals.Length; i++)
+            {
+                string slug = animals[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"animal_{slug}", $"{animals[i]} Field Guide", "Animal", "Fauna"));
+            }
+
+            string[] rocksAndMinerals =
+            {
+                "Granite Rock", "Basalt Rock", "Obsidian Rock", "Limestone Rock", "Sandstone Rock",
+                "Marble Rock", "Slate Rock", "Shale Rock", "Quartzite Rock", "Gneiss Rock",
+                "Quartz Crystal", "Amethyst Crystal", "Calcite Mineral", "Gypsum Mineral", "Halite Mineral",
+                "Mica Mineral", "Talc Mineral", "Feldspar Mineral", "Dolomite Mineral", "Apatite Mineral"
+            };
+            for (int i = 0; i < rocksAndMinerals.Length; i++)
+            {
+                string slug = rocksAndMinerals[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"rock_{slug}", rocksAndMinerals[i], "Rock", "Geology"));
+            }
+
+            string[] shrubsPlantsTrees =
+            {
+                "Azalea Shrub", "Hydrangea Shrub", "Boxwood Shrub", "Juniper Shrub", "Lilac Shrub",
+                "Blueberry Shrub", "Rosemary Shrub", "Lavender Shrub", "Sage Shrub", "Currant Shrub",
+                "Aloe Plant", "Fern Plant", "Spider Plant", "Snake Plant", "Bamboo Plant",
+                "Mint Plant", "Basil Plant", "Thyme Plant", "Cilantro Plant", "Oregano Plant",
+                "Oak Tree", "Maple Tree", "Pine Tree", "Cedar Tree", "Willow Tree",
+                "Birch Tree", "Redwood Tree", "Magnolia Tree", "Apple Tree", "Cherry Tree"
+            };
+            for (int i = 0; i < shrubsPlantsTrees.Length; i++)
+            {
+                string slug = shrubsPlantsTrees[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"flora_{slug}", shrubsPlantsTrees[i], "Plant", "Flora"));
+            }
+
+            AddItem(CreateConsumable("liquid_spring_water", "Spring Water", "Liquid", "Water", 34f, 0f, 1f, 1f, 0f, 0f, 0f, -3f, true, 72f, 240f, 720f));
+            AddItem(CreateConsumable("liquid_mineral_water", "Mineral Water", "Liquid", "Water", 35f, 0f, 1f, 2f, 0f, 0f, 0f, -4f, true, 72f, 240f, 720f));
+            AddItem(CreateConsumable("liquid_alkaline_water", "Alkaline Water", "Liquid", "Water", 33f, 0f, 1f, 1f, 0f, 0f, 0f, -3f, true, 72f, 240f, 720f));
+            AddItem(CreateConsumable("liquid_cucumber_water", "Cucumber Water", "Liquid", "Water", 30f, 1f, 2f, 1f, 0f, 0f, 0f, -3f, true, 24f, 72f, 168f));
+            AddItem(CreateConsumable("liquid_coconut_milk", "Coconut Milk", "Liquid", "Dairy Alternative", 12f, 3f, 3f, 1f, 8f, 0f, 0f, 0f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("liquid_oat_milk", "Oat Milk", "Liquid", "Dairy Alternative", 14f, 3f, 3f, 1f, 9f, 0f, 0f, 0f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("liquid_almond_milk", "Almond Milk", "Liquid", "Dairy Alternative", 14f, 2f, 2f, 1f, 7f, 0f, 0f, 0f, true, 16f, 48f, 96f));
+            AddItem(CreateConsumable("liquid_broth_vegetable", "Vegetable Broth", "Liquid", "Cooking", 8f, 1f, 1f, 1f, 2f, 0f, 0f, -1f, true, 20f, 64f, 140f));
+            AddItem(CreateConsumable("liquid_broth_chicken", "Chicken Broth", "Liquid", "Cooking", 8f, 2f, 2f, 1f, 3f, 0f, 0f, -1f, true, 20f, 64f, 140f));
+            AddItem(CreateConsumable("liquid_bone_broth", "Bone Broth", "Liquid", "Cooking", 8f, 3f, 2f, 2f, 4f, 0f, 0f, -1f, true, 20f, 64f, 140f));
+
+            string[] spices =
+            {
+                "Black Pepper", "Sea Salt", "Smoked Paprika", "Cayenne Pepper", "Chili Flakes",
+                "Turmeric Powder", "Cumin Seed", "Coriander Seed", "Cardamom Pod", "Clove",
+                "Cinnamon Stick", "Nutmeg", "Allspice", "Star Anise", "Mustard Seed",
+                "Fenugreek Seed", "Fennel Seed", "Caraway Seed", "Saffron Thread", "Sumac Blend",
+                "Zaatar Blend", "Garam Masala", "Curry Powder", "Garlic Powder", "Onion Powder",
+                "Dried Oregano", "Dried Thyme", "Dried Basil", "Dried Rosemary", "Dried Sage"
+            };
+            for (int i = 0; i < spices.Length; i++)
+            {
+                string slug = spices[i].ToLowerInvariant().Replace(" ", "_");
+                AddItem(CreateInspectItem($"spice_{slug}", spices[i], "Spice", "Seasoning"));
+            }
         }
 
         private void EnsureInteractionRules()
