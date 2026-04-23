@@ -135,5 +135,15 @@ namespace Survivebest.Tests.EditMode
             StringAssert.Contains("vampire vamp_9", vampireChoice);
         }
 
+        [Test]
+        public void ExpandedPlayAndRelationshipPools_IncludeWaterPlayCoreMemoriesAndBikes()
+        {
+            CollectionAssert.Contains(LifeActivityCatalog.GetFamilyMoments(), "Core memory scrapbook night");
+            CollectionAssert.Contains(LifeActivityCatalog.GetFamilyMoments(), "Backyard water balloon rematch");
+            CollectionAssert.Contains(LifeActivityCatalog.GetDatingActivities(), "Water gun flirt battle at the park");
+            CollectionAssert.Contains(LifeActivityCatalog.GetMiniGameActivities(), "Bike obstacle course race");
+            CollectionAssert.Contains(LifeActivityCatalog.GetHumanExperienceMoments(), "teaching a child to pedal their first bike");
+        }
+
     }
 }
