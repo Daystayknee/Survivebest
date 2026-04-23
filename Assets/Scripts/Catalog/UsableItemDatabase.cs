@@ -61,7 +61,19 @@ namespace Survivebest.Catalog
         Illness,
         Sunburn,
         Acne,
-        Allergy
+        Allergy,
+        Concussion,
+        Sprain,
+        Fracture,
+        ChronicPain,
+        Fever,
+        Migraine,
+        Anxiety,
+        Depression,
+        Panic,
+        Insomnia,
+        TraumaStress,
+        DehydrationSevere
     }
 
     [Serializable]
@@ -163,6 +175,7 @@ namespace Survivebest.Catalog
             EnsureCollectibles();
             EnsureAromaElementsOresAndFoods();
             EnsureMatterNatureAndCultureCoverage();
+            EnsureSicknessInjuryAndMentalHealthCoverage();
             EnsureInteractionRules();
         }
 
@@ -557,6 +570,39 @@ namespace Survivebest.Catalog
                 string slug = spices[i].ToLowerInvariant().Replace(" ", "_");
                 AddItem(CreateInspectItem($"spice_{slug}", spices[i], "Spice", "Seasoning"));
             }
+        }
+
+        private void EnsureSicknessInjuryAndMentalHealthCoverage()
+        {
+            AddItem(CreateApplyItem("injury_ice_pack", "Ice Pack", "Injury Care", "Acute Injury", health: 4f, mood: 1f, interactions: new[] { StatusInteractionType.Sprain, StatusInteractionType.Fracture }));
+            AddItem(CreateApplyItem("injury_heat_pack", "Heat Pack", "Injury Care", "Recovery", health: 3f, mood: 2f, interactions: new[] { StatusInteractionType.ChronicPain }));
+            AddItem(CreateApplyItem("injury_ankle_wrap", "Ankle Wrap", "Injury Care", "Support", health: 4f, interactions: new[] { StatusInteractionType.Sprain }));
+            AddItem(CreateApplyItem("injury_knee_brace", "Knee Brace", "Injury Care", "Support", health: 4f, interactions: new[] { StatusInteractionType.Sprain, StatusInteractionType.ChronicPain }));
+            AddItem(CreateApplyItem("injury_neck_brace", "Neck Brace", "Injury Care", "Support", health: 5f, interactions: new[] { StatusInteractionType.Concussion, StatusInteractionType.Fracture }));
+            AddItem(CreateApplyItem("injury_wound_closure_strips", "Wound Closure Strips", "Injury Care", "First Aid", health: 6f, hygiene: 3f, interactions: new[] { StatusInteractionType.Bleeding, StatusInteractionType.Infection }));
+            AddItem(CreateApplyItem("injury_burn_gel", "Burn Relief Gel", "Injury Care", "First Aid", health: 6f, mood: 1f, interactions: new[] { StatusInteractionType.Burns }));
+            AddItem(CreateApplyItem("injury_eye_wash", "Eye Wash Solution", "Injury Care", "First Aid", health: 3f, hygiene: 4f, interactions: new[] { StatusInteractionType.Infection, StatusInteractionType.Allergy }));
+
+            AddItem(CreateConsumable("sick_fever_reducer", "Fever Reducer", "Sickness", "Medication", 0f, -1f, 1f, 5f, 0f, 0f, 0f, -5f, true, 800f, 2200f, 4200f, interactions: new[] { StatusInteractionType.Fever, StatusInteractionType.Illness }));
+            AddItem(CreateConsumable("sick_cold_flu_relief", "Cold & Flu Relief", "Sickness", "Medication", 2f, -2f, 1f, 4f, 0f, 0f, 0f, -4f, true, 800f, 2200f, 4200f, interactions: new[] { StatusInteractionType.Illness, StatusInteractionType.Fever }));
+            AddItem(CreateConsumable("sick_decongestant", "Decongestant", "Sickness", "Medication", 1f, 2f, 0f, 3f, 0f, 0f, 0f, -3f, true, 800f, 2200f, 4200f, interactions: new[] { StatusInteractionType.Illness }));
+            AddItem(CreateConsumable("sick_electrolyte_ors_plus", "ORS Plus", "Sickness", "Hydration Therapy", 24f, 1f, 1f, 4f, 0f, 0f, 0f, -5f, true, 700f, 1800f, 3600f, interactions: new[] { StatusInteractionType.Dehydration, StatusInteractionType.DehydrationSevere }));
+            AddItem(CreateConsumable("sick_anti_inflammatory", "Anti-Inflammatory", "Sickness", "Medication", 0f, 0f, 1f, 4f, 0f, 0f, 0f, -3f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.ChronicPain, StatusInteractionType.Sprain }));
+            AddItem(CreateConsumable("sick_migraine_relief", "Migraine Relief", "Sickness", "Medication", 0f, -2f, 2f, 4f, 0f, 0f, 0f, -3f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Migraine }));
+            AddItem(CreateConsumable("sick_antacid_liquid", "Liquid Antacid", "Sickness", "Medication", 2f, 0f, 1f, 2f, 0f, 0f, 0f, -2f, true, 700f, 1800f, 3600f, interactions: new[] { StatusInteractionType.Illness }));
+            AddItem(CreateConsumable("sick_cough_drop", "Cough Drops", "Sickness", "Medication", 1f, 0f, 1f, 2f, 0f, 0f, 0f, -2f, true, 1200f, 3000f, 5600f, interactions: new[] { StatusInteractionType.Illness }));
+
+            AddItem(CreateConsumable("mental_anxiety_relief_tea", "Anxiety Relief Tea", "Mental Health", "Support", 6f, -3f, 5f, 1f, 0f, 0f, 0f, -1f, true, 24f, 72f, 140f, interactions: new[] { StatusInteractionType.Anxiety, StatusInteractionType.Panic }));
+            AddItem(CreateConsumable("mental_sleep_support_capsule", "Sleep Support Capsule", "Mental Health", "Support", 0f, -8f, 3f, 1f, 0f, 0f, 0f, -1f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Insomnia, StatusInteractionType.Anxiety }));
+            AddItem(CreateConsumable("mental_focus_support", "Focus Support", "Mental Health", "Support", 0f, 5f, 1f, 1f, 0f, 0f, 0f, 0f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Depression, StatusInteractionType.TraumaStress }));
+            AddItem(CreateConsumable("mental_mood_support", "Mood Support", "Mental Health", "Support", 0f, 2f, 4f, 2f, 0f, 0f, 0f, -1f, true, 900f, 2400f, 4600f, interactions: new[] { StatusInteractionType.Depression, StatusInteractionType.Anxiety }));
+            AddItem(CreateConsumable("mental_grounding_gum", "Grounding Gum", "Mental Health", "Immediate Aid", 0f, 1f, 3f, 1f, 0f, 0f, 0f, -1f, true, 1200f, 3000f, 5600f, interactions: new[] { StatusInteractionType.Panic, StatusInteractionType.Anxiety }));
+
+            AddItem(CreateInspectItem("diag_neurological_checklist", "Neurological Checklist", "Diagnostics", "Concussion Protocol"));
+            AddItem(CreateInspectItem("diag_mental_health_screen", "Mental Health Screening Form", "Diagnostics", "Behavioral Health"));
+            AddItem(CreateInspectItem("diag_sleep_journal", "Sleep Journal", "Diagnostics", "Sleep Health"));
+            AddItem(CreateInspectItem("diag_pain_scale_card", "Pain Scale Card", "Diagnostics", "Pain Tracking"));
+            AddItem(CreateInspectItem("diag_trauma_intake_form", "Trauma Intake Form", "Diagnostics", "Trauma Care"));
         }
 
         private void EnsureInteractionRules()
