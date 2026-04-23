@@ -715,5 +715,91 @@ namespace Survivebest.Tests.EditMode
             Object.DestroyImmediate(teenGo);
         }
 
+        [Test]
+        public void HumanStateStack_CauseEffectChain_UpdatesCrossLayerState()
+        {
+            GameObject go = new GameObject("HumanStack");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharStack");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_stack", "Stack", LifeStage.Adult);
+
+            HumanStateStackProfile stack = system.GetOrCreateHumanStateStack(character);
+            stack.Stress = 0.2f;
+            stack.Fatigue = 0.1f;
+
+            var chain = system.RecordCauseEffectChain(
+                character,
+                "low_money",
+                "sleep_loss",
+                HumanConsequenceType.SleepLoss,
+                0.8f,
+                "Low money caused stress and poor sleep.");
+
+            Assert.IsNotNull(chain);
+            Assert.Greater(stack.Fatigue, 0.1f);
+            Assert.Less(stack.SleepQuality, 0.8f);
+            Assert.Greater(system.CauseEffectChains.Count, 0);
+            Assert.AreEqual("cause_effect", system.RecentThoughts[^1].Source);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
+        [Test]
+        public void LayeredMemory_AndWeightedDecision_ReflectEmotionalConflict()
+        {
+            GameObject go = new GameObject("HumanDecision");
+            HumanLifeExperienceLayerSystem system = go.AddComponent<HumanLifeExperienceLayerSystem>();
+
+            GameObject charGo = new GameObject("CharDecision");
+            CharacterCore character = charGo.AddComponent<CharacterCore>();
+            character.Initialize("char_decision", "Decision", LifeStage.Adult);
+
+            HumanStateStackProfile stack = system.GetOrCreateHumanStateStack(character);
+            stack.Hunger = 0.8f;
+            stack.Fatigue = 0.75f;
+            stack.MoodValence = -0.6f;
+            stack.EmotionalVolatility = 0.7f;
+
+            LayeredMemoryRecord memory = system.RecordLayeredMemory(character, "Got robbed at night near downtown.", -0.8f, 0.9f, "robber_npc");
+            GoalPressure[] goals = system.BuildDynamicGoals(character);
+
+            DecisionOption chosen = system.ChooseWeightedDecision(character, new[]
+            {
+                new DecisionOption
+                {
+                    OptionId = "work_shift",
+                    Label = "Go to work shift",
+                    NeedAlignment = 0.9f,
+                    EmotionalAlignment = -0.2f,
+                    IdentityAlignment = 0.6f,
+                    MemoryBias = 0.1f,
+                    EffortCost = 0.95f
+                },
+                new DecisionOption
+                {
+                    OptionId = "stay_home",
+                    Label = "Stay home and isolate",
+                    NeedAlignment = 0.2f,
+                    EmotionalAlignment = 0.7f,
+                    IdentityAlignment = -0.1f,
+                    MemoryBias = 0.4f,
+                    EffortCost = 0.1f
+                }
+            });
+
+            Assert.IsNotNull(memory);
+            Assert.IsNotNull(chosen);
+            Assert.Greater(goals.Length, 0);
+            Assert.AreEqual("find_food", goals[0].GoalId);
+            Assert.AreEqual("stay_home", chosen.OptionId);
+            Assert.Greater(system.LayeredMemories.Count, 0);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(charGo);
+        }
+
     }
 }
