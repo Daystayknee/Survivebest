@@ -1,6 +1,6 @@
-# Dislyte-Inspired Character Combat and View Pillars for Survivebest
+# Ideas-Inspired Character Combat and View Pillars for Survivebest
 
-This note translates **Dislyte-style inspiration** into implementation-friendly direction for Survivebest's character fighting feel and character-view presentation, as inspiration only (not a feature copy).
+This note translates **ideas-style inspiration** into implementation-friendly direction for Survivebest's character fighting feel and character-view presentation, as inspiration only (not a feature copy).
 
 ## Core Feel Targets
 
@@ -20,7 +20,7 @@ Use the existing day-slice structure to create a light but persistent pressure a
 
 ### Hook Points
 
-- `DaySliceManager`: expose an optional "dislyte-inspired pressure profile" with slightly tighter thresholds.
+- `DaySliceManager`: expose an optional "ideas-inspired pressure profile" with slightly tighter thresholds.
 - `GameBalanceManager`: add a low/medium/high pressure preset toggle for tuning sessions.
 - `SimulationStabilityMonitor`: log pressure spikes to help balancing before content expansion.
 
@@ -93,7 +93,7 @@ Lean into stylish, legible clashes where players can quickly parse intent and mo
 
 ## Suggested First Implementation Slice (1-2 days)
 
-1. Add a balancing preset in `GameBalanceManager` for a "dislyte-inspired" profile.
+1. Add a balancing preset in `GameBalanceManager` for a "ideas-inspired" profile.
 2. Introduce one consequence chain end-to-end (laundry -> appearance -> confidence -> performance).
 3. Add causal UI messaging for that chain in `UIEventFeedbackRouter`.
 4. Validate via EditMode tests around deterministic state transitions.

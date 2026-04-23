@@ -82,9 +82,9 @@ namespace Survivebest.Tests.EditMode
         }
 
         [Test]
-        public void ApplyDislyteInspiredCharacterSetup_SetsCharacterSetupContextForTraitsFlow()
+        public void ApplyIdeasInspiredCharacterSetup_SetsCharacterSetupContextForTraitsFlow()
         {
-            GameObject root = new GameObject("CreatorDislyteInspiredSetup");
+            GameObject root = new GameObject("CreatorIdeasInspiredSetup");
             HouseholdManager household = root.AddComponent<HouseholdManager>();
             CharacterCreatorDashboardController controller = root.AddComponent<CharacterCreatorDashboardController>();
             SetPrivateField(controller, "householdManager", household);
@@ -97,7 +97,7 @@ namespace Survivebest.Tests.EditMode
             household.AddMember(actor);
             household.SetActiveCharacter(actor);
 
-            controller.ApplyDislyteInspiredCharacterSetup();
+            controller.ApplyIdeasInspiredCharacterSetup();
 
             Assert.AreEqual(CharacterCreatorDashboardTab.Traits, controller.CurrentTab);
             Assert.AreEqual(CharacterCreatorBackgroundOption.Neighborhood, controller.CurrentBackground);
