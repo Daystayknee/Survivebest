@@ -8,7 +8,7 @@ namespace Survivebest.Core
     {
         Standard,
         Sandbox,
-        DislyteInspired
+        IdeasInspired
     }
 
     [Serializable]
@@ -137,8 +137,8 @@ namespace Survivebest.Core
                 case BalanceExperienceMode.Sandbox:
                     ApplySandboxPreset();
                     break;
-                case BalanceExperienceMode.DislyteInspired:
-                    ApplyDislyteInspiredPreset();
+                case BalanceExperienceMode.IdeasInspired:
+                    ApplyIdeasInspiredPreset();
                     break;
                 default:
                     ApplyStandardPreset();
@@ -300,7 +300,7 @@ namespace Survivebest.Core
             skillXpMultiplier = 1.35f;
         }
 
-        private void ApplyDislyteInspiredPreset()
+        private void ApplyIdeasInspiredPreset()
         {
             needDecayMultiplier = 1.2f;
             socialChangeMultiplier = 1.1f;

@@ -1187,7 +1187,7 @@ namespace Survivebest.UI
             RefreshPreview();
         }
 
-        public void ApplyDislyteInspiredCharacterSetup()
+        public void ApplyIdeasInspiredCharacterSetup()
         {
             SetTab((int)CharacterCreatorDashboardTab.Traits);
             SetPreviewBackground((int)CharacterCreatorBackgroundOption.Neighborhood);
@@ -1198,7 +1198,7 @@ namespace Survivebest.UI
             SetGenomeCognition(0.58f);
             SetGenomeHairThickness(0.62f);
 
-            PublishUiEvent("DislyteInspiredCharacterSetup", "Applied Dislyte-inspired character combat/view baseline", 1f);
+            PublishUiEvent("IdeasInspiredCharacterSetup", "Applied Ideas-inspired character combat/view baseline", 1f);
             RefreshPreview();
         }
 
