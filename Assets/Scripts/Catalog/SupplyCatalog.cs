@@ -384,6 +384,7 @@ namespace Survivebest.Catalog
         private void Awake()
         {
             EnsureWorldEssentials();
+            EnsureExpandedFoodMedicineAndAnimalCoverage();
         }
 
         public bool HasSupply(string name, SupplyGroup group)
@@ -513,6 +514,100 @@ namespace Survivebest.Catalog
             AddIfMissing("Sporting Goods Store", SupplyGroup.Store);
             AddIfMissing("Pharmacy", SupplyGroup.Store);
             AddIfMissing("Big Box Retailer", SupplyGroup.Store);
+        }
+
+        private void EnsureExpandedFoodMedicineAndAnimalCoverage()
+        {
+            string[] pantryAndEdibles =
+            {
+                "Mango", "Pineapple", "Papaya", "Pear", "Peach", "Plum", "Grapes", "Watermelon",
+                "Avocado", "Sweet Potato", "Spinach", "Kale", "Broccoli", "Dried Figs", "Dates",
+                "Trail Mix Pack", "Granola Cluster", "Jerky Strips", "Emergency Ration Brick", "MRE Dessert Bar"
+            };
+            AddMany(pantryAndEdibles, SupplyGroup.Consumable);
+
+            string[] expandedMedicines =
+            {
+                "Sterile Saline Rinse", "Butterfly Bandages", "Elastic Compression Wrap", "Burn Dressing",
+                "Instant Cold Pack", "Heat Pack", "Moleskin Blister Pad", "Glucose Tablets", "Electrolyte Tablets",
+                "Allergy Tablets", "Anti-Itch Cream", "Antifungal Cream", "Antacid Chews", "Motion Sickness Tablets",
+                "Cough Syrup", "Nasal Saline Spray", "Probiotic Capsules", "Iron Supplement", "Vitamin D Supplement",
+                "Naloxone Kit", "Epinephrine Auto-Injector Trainer"
+            };
+            AddMany(expandedMedicines, SupplyGroup.Medicine);
+
+            // Approximate biggest-to-smallest animal coverage for zoo, farm, wilderness, pet, pest, and ecosystem simulation.
+            string[] biggestToSmallestAnimals =
+            {
+                "Blue Whale", "Fin Whale", "Sperm Whale", "Humpback Whale", "Orca", "African Elephant",
+                "Asian Elephant", "White Rhinoceros", "Hippopotamus", "Giraffe", "American Bison", "Water Buffalo",
+                "Moose", "Elk", "Camel", "Horse", "Polar Bear", "Brown Bear", "Gorilla", "Lion",
+                "Tiger", "Jaguar", "Leopard", "Gray Wolf", "Coyote", "Lynx", "Capybara", "Beaver",
+                "Chicken", "Duck", "Turkey", "Goose", "Raccoon", "Opossum", "Skunk", "Otter", "Prairie Dog", "Ferret", "Guinea Pig", "Hedgehog",
+                "Hamster", "Gerbil", "Chinchilla", "Parakeet", "Canary", "Finch", "Tree Frog", "Salamander",
+                "Gecko", "Anole", "Corn Snake", "Garter Snake", "Goldfish", "Betta Fish", "Honeybee", "Ladybug",
+                "Butterfly", "Dragonfly", "Ant", "Termite", "Earthworm", "Snail"
+            };
+            for (int i = 0; i < biggestToSmallestAnimals.Length; i++)
+            {
+                AddAnimalIfMissing(biggestToSmallestAnimals[i]);
+            }
+
+            AddAnimalBreedIfMissing("Dog", "Great Dane");
+            AddAnimalBreedIfMissing("Dog", "German Shepherd");
+            AddAnimalBreedIfMissing("Dog", "Golden Retriever");
+            AddAnimalBreedIfMissing("Dog", "Beagle");
+            AddAnimalBreedIfMissing("Dog", "Chihuahua");
+            AddAnimalBreedIfMissing("Cat", "Maine Coon");
+            AddAnimalBreedIfMissing("Cat", "Siamese");
+            AddAnimalBreedIfMissing("Cat", "Persian");
+            AddAnimalBreedIfMissing("Cat", "Sphynx");
+            AddAnimalBreedIfMissing("Horse", "Clydesdale");
+            AddAnimalBreedIfMissing("Horse", "Arabian");
+            AddAnimalBreedIfMissing("Horse", "Mustang");
+            AddAnimalBreedIfMissing("Chicken", "Rhode Island Red");
+            AddAnimalBreedIfMissing("Chicken", "Silkie");
+            AddAnimalBreedIfMissing("Duck", "Pekin");
+            AddAnimalBreedIfMissing("Duck", "Mallard");
+        }
+
+        private void AddMany(string[] names, SupplyGroup group)
+        {
+            if (names == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < names.Length; i++)
+            {
+                AddIfMissing(names[i], group);
+            }
+        }
+
+        private void AddAnimalIfMissing(string species)
+        {
+            if (string.IsNullOrWhiteSpace(species) || HasSupply(species, SupplyGroup.Animal))
+            {
+                return;
+            }
+
+            supplies.Add(CreateAnimal(species));
+        }
+
+        private void AddAnimalBreedIfMissing(string species, string breed)
+        {
+            if (string.IsNullOrWhiteSpace(species) || string.IsNullOrWhiteSpace(breed))
+            {
+                return;
+            }
+
+            string name = $"{breed} {species}";
+            if (HasSupply(name, SupplyGroup.Animal))
+            {
+                return;
+            }
+
+            supplies.Add(CreateAnimalBreed(species, breed));
         }
 
         private void AddIfMissing(string name, SupplyGroup group)

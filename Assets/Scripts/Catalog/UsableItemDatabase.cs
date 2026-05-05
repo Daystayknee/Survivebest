@@ -167,6 +167,7 @@ namespace Survivebest.Catalog
         {
             EnsureDrinks();
             EnsureFoods();
+            EnsureExpandedEdiblesDrinksAndMedicines();
             EnsureHygieneAndSkincare();
             EnsureMedical();
             EnsureDrugsAndConsumables();
@@ -259,6 +260,84 @@ namespace Survivebest.Catalog
             AddItem(CreateConsumable("food_fried_chicken_bucket", "Fried Chicken Bucket", "Food", "Fast Food", -4f, 6f, 8f, -2f, 42f, 0f, 0f, 4f, true, 6f, 16f, 28f));
             AddItem(CreateConsumable("food_sushi_platter", "Sushi Platter", "Food", "Premium Meal", 2f, 6f, 6f, 4f, 30f, 0f, 0f, -2f, true, 8f, 20f, 36f));
             AddItem(CreateConsumable("food_noodle_cup", "Instant Noodle Cup", "Food", "Quick Meal", -1f, 4f, 3f, -1f, 20f, 0f, 0f, 1f, true, 240f, 900f, 2200f));
+        }
+
+        private void EnsureExpandedEdiblesDrinksAndMedicines()
+        {
+            string[] rawEdibles =
+            {
+                "Mango", "Pineapple", "Papaya", "Kiwi", "Pear", "Peach", "Plum", "Grapes",
+                "Watermelon Slice", "Cantaloupe Bowl", "Avocado", "Cucumber", "Tomato", "Bell Pepper",
+                "Broccoli", "Spinach", "Kale", "Sweet Potato", "Corn on the Cob", "Boiled Peanuts",
+                "Roasted Seaweed", "Dates", "Figs", "Dried Apricots"
+            };
+            for (int i = 0; i < rawEdibles.Length; i++)
+            {
+                AddItem(CreateConsumable($"food_raw_{Slug(rawEdibles[i])}", rawEdibles[i], "Food", "Raw Edible", 1f, 2f, 2f, 2f, 11f, 0f, 0f, -1f, true, 18f, 54f, 120f));
+            }
+
+            string[] heartyMeals =
+            {
+                "Roast Chicken Dinner", "Beef Stew Bowl", "Turkey Sandwich", "Loaded Baked Potato",
+                "Vegetable Curry", "Lentil Soup", "Chili Bowl", "Chicken Noodle Soup", "Taco Plate",
+                "Fish and Chips", "Shrimp Rice Plate", "Tofu Stir Fry", "Falafel Wrap", "Gyro Plate",
+                "Pizza Slice", "Mac and Cheese", "Lasagna Square", "BBQ Ribs Plate", "Meatball Sub",
+                "Breakfast Burrito", "Pancake Stack", "Waffle Plate", "Egg Fried Rice", "Ramen Bowl"
+            };
+            for (int i = 0; i < heartyMeals.Length; i++)
+            {
+                AddItem(CreateConsumable($"food_meal_{Slug(heartyMeals[i])}", heartyMeals[i], "Food", "Prepared Meal", 1f, 5f, 4f, 2f, 32f, 0f, 0f, -2f, true, 8f, 24f, 48f));
+            }
+
+            string[] sweetsAndSnacks =
+            {
+                "Dark Chocolate Square", "Granola Cluster", "Peanut Butter Cup", "Trail Mix Pack",
+                "Cheese Crackers", "Fruit Leather", "Marshmallows", "Hard Candy", "Cookie Pack",
+                "Cupcake", "Brownie Bite", "Ice Cream Pint", "Frozen Yogurt Cup", "Pudding Cup",
+                "Honey Bun", "Cinnamon Roll", "Rice Krispy Treat", "Donut", "Apple Pie Slice", "Mochi Pack"
+            };
+            for (int i = 0; i < sweetsAndSnacks.Length; i++)
+            {
+                AddItem(CreateConsumable($"food_snack_{Slug(sweetsAndSnacks[i])}", sweetsAndSnacks[i], "Food", "Snack or Dessert", -1f, 6f, 6f, -1f, 14f, 0f, 0f, 1f, true, 72f, 240f, 720f));
+            }
+
+            string[] fieldEdibles =
+            {
+                "Acorns (Leached)", "Cattail Shoots", "Dandelion Greens", "Wild Onion", "Prickly Pear Pad",
+                "Pine Nuts", "Wild Rice Handful", "Sea Lettuce", "Cooked Crayfish", "Smoked Rabbit",
+                "Jerky Strips", "Emergency Ration Brick"
+            };
+            for (int i = 0; i < fieldEdibles.Length; i++)
+            {
+                AddItem(CreateConsumable($"food_survival_{Slug(fieldEdibles[i])}", fieldEdibles[i], "Food", "Survival Edible", 0f, 2f, 0f, 1f, 16f, 0f, 0f, 1f, true, 18f, 72f, 180f, interactions: new[] { StatusInteractionType.Illness }, notes: "Requires correct identification or safe preparation in survival play"));
+            }
+
+            string[] expandedDrinks =
+            {
+                "Mineral Water", "Alkaline Water", "Distilled Water", "Sports Drink", "Oral Rehydration Drink",
+                "Iced Tea Unsweetened", "Green Tea", "Black Tea", "Chai Latte", "Matcha Latte",
+                "Hot Chocolate", "Apple Juice", "Orange Juice", "Grape Juice", "Tomato Juice",
+                "Vegetable Smoothie", "Berry Smoothie", "Meal Replacement Shake", "Kefir Drink", "Kombucha",
+                "Ginger Ale", "Tonic Water", "Seltzer Lime", "Root Tea", "Bone Broth Cup"
+            };
+            for (int i = 0; i < expandedDrinks.Length; i++)
+            {
+                AddItem(CreateConsumable($"drink_expanded_{Slug(expandedDrinks[i])}", expandedDrinks[i], "Drink", "Expanded Beverage", 18f, 3f, 3f, 1f, 2f, 0f, 0f, -2f, true, 24f, 96f, 240f));
+            }
+
+            string[] medicineChest =
+            {
+                "Sterile Saline Rinse", "Butterfly Bandages", "Elastic Compression Wrap", "Instant Cold Pack",
+                "Heat Pack", "Burn Dressing", "Moleskin Blister Pad", "Tourniquet Trainer", "Splint Roll",
+                "Eye Patch", "Oral Thermometer", "Pulse Oximeter", "Glucose Tablets", "Electrolyte Tablets",
+                "Allergy Tablets", "Anti-Itch Cream", "Antifungal Cream", "Antacid Chews", "Motion Sickness Tablets",
+                "Cough Syrup", "Throat Spray", "Nasal Saline Spray", "Probiotic Capsules", "Iron Supplement",
+                "Vitamin D Supplement", "Prenatal Vitamins", "Migraine Cold Cap", "Naloxone Kit", "Epinephrine Auto-Injector Trainer"
+            };
+            for (int i = 0; i < medicineChest.Length; i++)
+            {
+                AddItem(CreateApplyItem($"medical_expanded_{Slug(medicineChest[i])}", medicineChest[i], "Medical", "Expanded Medicine Chest", health: 4f, hygiene: 1f, interactions: new[] { StatusInteractionType.Illness, StatusInteractionType.Infection, StatusInteractionType.Allergy }));
+            }
         }
 
         private void EnsureHygieneAndSkincare()
@@ -668,6 +747,20 @@ namespace Survivebest.Catalog
                 string slug = rehabFoods[i].ToLowerInvariant().Replace(" ", "_");
                 AddItem(CreateConsumable($"rehab_food_{slug}", rehabFoods[i], "Rehab Nutrition", "Meal", 4f, 3f, 3f, 3f, 20f, 0f, 0f, -2f, true, 16f, 48f, 96f, interactions: new[] { StatusInteractionType.Fracture, StatusInteractionType.ChronicPain, StatusInteractionType.Illness }));
             }
+        }
+
+        private static string Slug(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? "item"
+                : value.ToLowerInvariant()
+                    .Replace(" & ", "_")
+                    .Replace(" ", "_")
+                    .Replace("(", string.Empty)
+                    .Replace(")", string.Empty)
+                    .Replace("'", string.Empty)
+                    .Replace("/", "_")
+                    .Replace("-", "_");
         }
 
         private void EnsureInteractionRules()
