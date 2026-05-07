@@ -208,6 +208,69 @@ namespace Survivebest.UI
                     cue.VfxKey = "vfx_weather_transition";
                     cue.UiPulseKey = "weather_notice";
                     break;
+                case SimulationEventType.BiomeChanged:
+                case SimulationEventType.BiomeDiscovery:
+                    cue.AnimationState = "ExploreReact";
+                    cue.PostureState = "Scanning";
+                    cue.FacialState = "Curious";
+                    cue.SfxKey = "ambient_biome_shift";
+                    cue.VfxKey = "vfx_biome_color_grade";
+                    cue.UiPulseKey = "biome_notice";
+                    break;
+                case SimulationEventType.NightEventStarted:
+                    cue.AnimationState = "Alert";
+                    cue.PostureState = "Defensive";
+                    cue.FacialState = "Alarmed";
+                    cue.SfxKey = "night_event_sting";
+                    cue.VfxKey = "vfx_night_pulse";
+                    cue.UiPulseKey = "night_warning";
+                    break;
+                case SimulationEventType.FireStarted:
+                    cue.AnimationState = "Alert";
+                    cue.PostureState = "Defensive";
+                    cue.FacialState = "Alarmed";
+                    cue.SfxKey = "fire_alarm";
+                    cue.VfxKey = "vfx_fire_flash";
+                    cue.UiPulseKey = "critical_warning";
+                    break;
+                case SimulationEventType.CombatEncounterStarted:
+                case SimulationEventType.CombatAiStateChanged:
+                case SimulationEventType.WorldBossAwakened:
+                    cue.AnimationState = "CombatReady";
+                    cue.PostureState = "Defensive";
+                    cue.FacialState = "Focused";
+                    cue.SfxKey = "combat_sting";
+                    cue.VfxKey = "vfx_combat_warning";
+                    cue.UiPulseKey = "combat_warning";
+                    break;
+                case SimulationEventType.EnemyDefeated:
+                    cue.AnimationState = "Victory";
+                    cue.PostureState = "Relaxed";
+                    cue.FacialState = "Confident";
+                    cue.SfxKey = "enemy_defeated";
+                    cue.VfxKey = "vfx_reward_pop";
+                    cue.UiPulseKey = "reward_notice";
+                    break;
+                case SimulationEventType.CampfireChanged:
+                case SimulationEventType.SurvivalMealCooked:
+                case SimulationEventType.WaterStateChanged:
+                case SimulationEventType.MedicineCrafted:
+                    cue.AnimationState = "Crafting";
+                    cue.PostureState = "Working";
+                    cue.FacialState = "Focused";
+                    cue.SfxKey = "survival_craft";
+                    cue.VfxKey = "vfx_survival_resource";
+                    cue.UiPulseKey = "survival_notice";
+                    break;
+                case SimulationEventType.SurvivalConditionStarted:
+                case SimulationEventType.FoodSpoiled:
+                    cue.AnimationState = "PainReact";
+                    cue.PostureState = "Unwell";
+                    cue.FacialState = "Distressed";
+                    cue.SfxKey = "condition_warning";
+                    cue.VfxKey = "vfx_status_negative";
+                    cue.UiPulseKey = "survival_warning";
+                    break;
                 case SimulationEventType.NarrativePromptGenerated:
                     cue.AnimationState = "TalkEmphasis";
                     cue.FacialState = "Expressive";

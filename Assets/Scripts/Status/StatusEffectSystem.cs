@@ -318,6 +318,7 @@ namespace Survivebest.Status
         private void GenerateStatusLibrary()
         {
             statusLibrary.Clear();
+            AddCuratedCombatAndSurvivalStatuses();
 
             string[] prefixes =
             {
@@ -353,6 +354,28 @@ namespace Survivebest.Status
                 statusLibrary.Add(clone);
                 idCounter++;
             }
+        }
+
+        private void AddCuratedCombatAndSurvivalStatuses()
+        {
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_poison", DisplayName = "Poisoned", Description = "Toxins weaken vitality and hydration over time.", IsNegative = true, DefaultDurationHours = 6, EnergyDeltaPerHour = -0.8f, HydrationDeltaPerHour = -1.1f, MoodDeltaPerHour = -0.5f, VitalityDeltaPerHour = -0.45f, HourlyIllnessChance = 0.03f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_bleed", DisplayName = "Bleeding", Description = "Open wounds steadily drain vitality until treated.", IsNegative = true, DefaultDurationHours = 5, EnergyDeltaPerHour = -0.5f, HygieneDeltaPerHour = -0.4f, MoodDeltaPerHour = -0.4f, VitalityDeltaPerHour = -0.65f, HourlyIllnessChance = 0.04f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_burn", DisplayName = "Burning", Description = "Fire damage causes pain, dehydration, and vitality loss.", IsNegative = true, DefaultDurationHours = 4, EnergyDeltaPerHour = -0.7f, HydrationDeltaPerHour = -1.4f, MoodDeltaPerHour = -0.8f, VitalityDeltaPerHour = -0.8f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_freeze", DisplayName = "Frozen", Description = "Cold locks muscles, slows recovery, and drains stamina.", IsNegative = true, DefaultDurationHours = 4, EnergyDeltaPerHour = -1.6f, HydrationDeltaPerHour = -0.3f, MoodDeltaPerHour = -0.6f, VitalityDeltaPerHour = -0.35f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_shock", DisplayName = "Shocked", Description = "Electrical trauma disrupts focus and burns energy.", IsNegative = true, DefaultDurationHours = 3, EnergyDeltaPerHour = -1.4f, MoodDeltaPerHour = -0.9f, VitalityDeltaPerHour = -0.35f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_infection", DisplayName = "Infected", Description = "A worsening infection needs medicine, rest, and clean supplies.", IsNegative = true, DefaultDurationHours = 12, EnergyDeltaPerHour = -0.9f, HydrationDeltaPerHour = -0.4f, HygieneDeltaPerHour = -0.7f, MoodDeltaPerHour = -0.8f, VitalityDeltaPerHour = -0.55f, HourlyIllnessChance = 0.12f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "combat_fear", DisplayName = "Fear", Description = "Panic reduces morale and makes every threat feel closer.", IsNegative = true, DefaultDurationHours = 3, EnergyDeltaPerHour = -0.4f, MoodDeltaPerHour = -1.8f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_food_buff", DisplayName = "Well Fed", Description = "A filling survival meal improves stamina and mood.", IsNegative = false, DefaultDurationHours = 8, EnergyDeltaPerHour = 0.8f, HungerDeltaPerHour = 0.3f, MoodDeltaPerHour = 0.4f, VitalityDeltaPerHour = 0.15f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_healing_food", DisplayName = "Restorative Meal", Description = "Medicinal ingredients support recovery.", IsNegative = false, DefaultDurationHours = 8, EnergyDeltaPerHour = 0.4f, HydrationDeltaPerHour = 0.3f, MoodDeltaPerHour = 0.3f, VitalityDeltaPerHour = 0.45f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_antitoxin_food", DisplayName = "Antitoxin Meal", Description = "Bitter ingredients help resist poison and infection.", IsNegative = false, DefaultDurationHours = 6, EnergyDeltaPerHour = 0.2f, HydrationDeltaPerHour = 0.2f, MoodDeltaPerHour = 0.2f, VitalityDeltaPerHour = 0.25f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_rare_meal", DisplayName = "Rare Feast", Description = "A rare meal provides a powerful survival boost.", IsNegative = false, DefaultDurationHours = 12, EnergyDeltaPerHour = 1.2f, HungerDeltaPerHour = 0.5f, HydrationDeltaPerHour = 0.4f, MoodDeltaPerHour = 0.9f, VitalityDeltaPerHour = 0.55f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_spoiled_food", DisplayName = "Food Sickness", Description = "Spoiled food churns the stomach and risks parasites.", IsNegative = true, DefaultDurationHours = 10, EnergyDeltaPerHour = -0.9f, HungerDeltaPerHour = -0.6f, HydrationDeltaPerHour = -0.8f, MoodDeltaPerHour = -0.9f, VitalityDeltaPerHour = -0.25f, HourlyIllnessChance = 0.08f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_dirty_water", DisplayName = "Dirty Water Sickness", Description = "Unsafe water can cause infection, parasites, and dehydration.", IsNegative = true, DefaultDurationHours = 10, EnergyDeltaPerHour = -0.7f, HydrationDeltaPerHour = -1.0f, MoodDeltaPerHour = -0.6f, VitalityDeltaPerHour = -0.25f, HourlyIllnessChance = 0.1f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_frostbite", DisplayName = "Frostbite", Description = "Cold-damaged tissue needs warmth, rest, and treatment.", IsNegative = true, DefaultDurationHours = 12, EnergyDeltaPerHour = -1.0f, MoodDeltaPerHour = -0.8f, VitalityDeltaPerHour = -0.35f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_exhaustion", DisplayName = "Exhaustion", Description = "Overexertion makes movement and recovery harder.", IsNegative = true, DefaultDurationHours = 10, EnergyDeltaPerHour = -1.5f, MoodDeltaPerHour = -0.6f, VitalityDeltaPerHour = -0.15f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_radiation", DisplayName = "Radiation Exposure", Description = "Radiation damages vitality and may require iodine treatment.", IsNegative = true, DefaultDurationHours = 12, EnergyDeltaPerHour = -1.2f, HydrationDeltaPerHour = -0.4f, MoodDeltaPerHour = -0.7f, VitalityDeltaPerHour = -0.5f, HourlyIllnessChance = 0.05f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_parasites", DisplayName = "Parasites", Description = "Parasites steal nutrition and hydration until treated.", IsNegative = true, DefaultDurationHours = 16, EnergyDeltaPerHour = -0.8f, HungerDeltaPerHour = -0.9f, HydrationDeltaPerHour = -0.7f, MoodDeltaPerHour = -0.6f, VitalityDeltaPerHour = -0.2f, HourlyIllnessChance = 0.06f });
+            statusLibrary.Add(new StatusEffectDefinition { Id = "survival_dehydration", DisplayName = "Dehydration", Description = "Low fluids rapidly reduces stamina and health.", IsNegative = true, DefaultDurationHours = 8, EnergyDeltaPerHour = -1.4f, HydrationDeltaPerHour = -0.5f, MoodDeltaPerHour = -0.7f, VitalityDeltaPerHour = -0.35f });
         }
 
         private static StatusEffectDefinition BuildGeneratedDefinition(int index, string prefix, string theme, string modifier, bool negative)
