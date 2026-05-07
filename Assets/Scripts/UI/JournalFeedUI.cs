@@ -150,6 +150,11 @@ namespace Survivebest.UI
             return simulationEvent.Type switch
             {
                 SimulationEventType.WeatherChanged => "🌧 Weather Update",
+                SimulationEventType.BiomeChanged => "🗺 Biome Shift",
+                SimulationEventType.BiomeDiscovery => "🌙 Night Discovery",
+                SimulationEventType.NightEventStarted => "🌑 Night Event",
+                SimulationEventType.SleepCycleUpdated => "💤 Sleep Cycle",
+                SimulationEventType.FireStarted => "🔥 Fire Started",
                 SimulationEventType.IllnessStarted => "🤒 Illness Started",
                 SimulationEventType.InjuryStarted => "🩹 Injury Report",
                 SimulationEventType.RecipeCooked => "🍲 Meal Prepared",

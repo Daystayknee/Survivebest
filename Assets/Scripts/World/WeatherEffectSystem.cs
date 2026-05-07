@@ -19,6 +19,8 @@ namespace Survivebest.World
         [SerializeField] private float blizzardEnergyLoss = 4f;
         [SerializeField] private float heatwaveHydrationLoss = 6f;
         [SerializeField, Min(0f)] private float hazardousWeatherHealthTick = 0.35f;
+        [SerializeField, Min(0f)] private float coldExposureEnergyLoss = 2.5f;
+        [SerializeField, Min(0f)] private float movementPenaltyEnergyScale = 1.5f;
 
         private WeatherState currentWeather;
 
@@ -93,7 +95,20 @@ namespace Survivebest.World
                     break;
                 case WeatherState.Rainy:
                     needs?.ModifyMood(1f);
+                    needs?.ModifyEnergy(-1f);
                     status?.ApplyStatusById("status_080", 4);
+                    break;
+                case WeatherState.Windy:
+                    needs?.ModifyEnergy(-1f);
+                    status?.ApplyStatusById("status_080", 2);
+                    break;
+                case WeatherState.Foggy:
+                    needs?.ModifyMood(-1f);
+                    status?.ApplyStatusById("status_080", 3);
+                    break;
+                case WeatherState.Snowy:
+                    needs?.ModifyEnergy(-2f);
+                    status?.ApplyStatusById("status_220", 4);
                     break;
                 case WeatherState.Stormy:
                     needs?.ModifyMood(-4f);
@@ -122,6 +137,11 @@ namespace Survivebest.World
                 return;
             }
 
+            WeatherGameplayProfile profile = weatherManager != null
+                ? weatherManager.GetGameplayProfile(weather)
+                : WeatherGameplayProfile.Default;
+            ApplyProfileDrivenGameplay(needs, health, profile);
+
             switch (weather)
             {
                 case WeatherState.Stormy:
@@ -139,6 +159,21 @@ namespace Survivebest.World
                     needs.ModifyEnergy(-2f);
                     health?.Damage(0.6f);
                     break;
+                case WeatherState.Rainy:
+                    needs.ModifyEnergy(-0.7f);
+                    needs.ModifyMood(-0.25f);
+                    break;
+                case WeatherState.Foggy:
+                    needs.ModifyEnergy(-0.4f);
+                    needs.ModifyMood(-0.5f);
+                    break;
+                case WeatherState.Snowy:
+                    needs.ModifyEnergy(-coldExposureEnergyLoss);
+                    health?.Damage(0.15f);
+                    break;
+                case WeatherState.Windy:
+                    needs.ModifyEnergy(-0.8f);
+                    break;
                 case WeatherState.Sunny:
                     needs.ModifyMood(0.5f);
                     break;
@@ -149,6 +184,40 @@ namespace Survivebest.World
             {
                 string key = hazardous ? "WeatherHazardTick" : "WeatherHourTick";
                 PublishWeatherEffectEvent(member, key, weather.ToString(), GetWeatherMagnitude(weather));
+            }
+        }
+
+        private void ApplyProfileDrivenGameplay(NeedsSystem needs, HealthSystem health, WeatherGameplayProfile profile)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            if (profile.StaminaDrainPerHour > 0f)
+            {
+                needs.ModifyEnergy(-profile.StaminaDrainPerHour);
+            }
+
+            if (profile.HydrationDrainPerHour > 0f)
+            {
+                needs.RestoreHydration(-profile.HydrationDrainPerHour);
+            }
+
+            if (profile.MovementSpeedMultiplier < 1f)
+            {
+                needs.ModifyEnergy(-(1f - profile.MovementSpeedMultiplier) * movementPenaltyEnergyScale);
+            }
+
+            if (profile.VisibilityMultiplier < 0.6f)
+            {
+                needs.ModifyMood(-1.25f);
+            }
+
+            if (profile.TemperatureDeltaCelsius <= -10f)
+            {
+                needs.ModifyEnergy(-coldExposureEnergyLoss);
+                health?.Damage(0.2f);
             }
         }
 

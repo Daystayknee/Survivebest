@@ -208,6 +208,31 @@ namespace Survivebest.UI
                     cue.VfxKey = "vfx_weather_transition";
                     cue.UiPulseKey = "weather_notice";
                     break;
+                case SimulationEventType.BiomeChanged:
+                case SimulationEventType.BiomeDiscovery:
+                    cue.AnimationState = "ExploreReact";
+                    cue.PostureState = "Scanning";
+                    cue.FacialState = "Curious";
+                    cue.SfxKey = "ambient_biome_shift";
+                    cue.VfxKey = "vfx_biome_color_grade";
+                    cue.UiPulseKey = "biome_notice";
+                    break;
+                case SimulationEventType.NightEventStarted:
+                    cue.AnimationState = "Alert";
+                    cue.PostureState = "Defensive";
+                    cue.FacialState = "Alarmed";
+                    cue.SfxKey = "night_event_sting";
+                    cue.VfxKey = "vfx_night_pulse";
+                    cue.UiPulseKey = "night_warning";
+                    break;
+                case SimulationEventType.FireStarted:
+                    cue.AnimationState = "Alert";
+                    cue.PostureState = "Defensive";
+                    cue.FacialState = "Alarmed";
+                    cue.SfxKey = "fire_alarm";
+                    cue.VfxKey = "vfx_fire_flash";
+                    cue.UiPulseKey = "critical_warning";
+                    break;
                 case SimulationEventType.NarrativePromptGenerated:
                     cue.AnimationState = "TalkEmphasis";
                     cue.FacialState = "Expressive";
