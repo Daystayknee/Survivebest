@@ -17,6 +17,29 @@ namespace Survivebest.World
         Heatwave
     }
 
+    [Serializable]
+    public class WeatherGameplayProfile
+    {
+        public WeatherState Weather;
+        [Range(0.1f, 1.5f)] public float MovementSpeedMultiplier = 1f;
+        [Range(0f, 1.5f)] public float VisibilityMultiplier = 1f;
+        public float StaminaDrainPerHour;
+        public float HydrationDrainPerHour;
+        public float TemperatureDeltaCelsius;
+        [Range(0f, 1f)] public float LightningFireChancePerHour;
+        public string AmbientSoundCue = "amb_weather_clear";
+        [TextArea] public string GameplaySummary = "Clear conditions with no extra survival pressure.";
+
+        public static WeatherGameplayProfile Default => new WeatherGameplayProfile
+        {
+            Weather = WeatherState.Sunny,
+            MovementSpeedMultiplier = 1f,
+            VisibilityMultiplier = 1f,
+            AmbientSoundCue = "amb_weather_clear",
+            GameplaySummary = "Clear conditions with no extra survival pressure."
+        };
+    }
+
     public class WeatherManager : MonoBehaviour
     {
         [Serializable]
@@ -29,7 +52,13 @@ namespace Survivebest.World
         [SerializeField] private WorldClock worldClock;
         [SerializeField] private WeatherState weatherState = WeatherState.Sunny;
         [SerializeField] private GameEventHub gameEventHub;
+        [SerializeField] private BiomeManager biomeManager;
         [SerializeField] private bool useSimpleSeasonWeather = true;
+        [SerializeField] private bool allowBiomeWeatherInfluence = true;
+        [SerializeField] private bool publishLightningFireHazards = true;
+
+        [Header("Gameplay Profiles")]
+        [SerializeField] private WeatherGameplayProfile[] gameplayProfiles = Array.Empty<WeatherGameplayProfile>();
 
         [Header("Seasonal Weight Overrides")]
         [SerializeField] private WeatherWeight[] springWeights =
@@ -74,8 +103,10 @@ namespace Survivebest.World
 
         public event Action<WeatherState> OnWeatherChanged;
         public event Action<WeatherState, WeatherState, string> OnWeatherTransition;
+        public event Action<WeatherState, float> OnLightningFireStarted;
 
         public WeatherState CurrentWeather => weatherState;
+        public WeatherGameplayProfile CurrentGameplayProfile => GetGameplayProfile(weatherState);
 
         private void OnEnable()
         {
@@ -121,7 +152,13 @@ namespace Survivebest.World
         {
             if (useSimpleSeasonWeather)
             {
-                SetWeather(ResolveSimpleSeasonWeather(season), "simple_season");
+                WeatherState simple = ResolveSimpleSeasonWeather(season);
+                if (allowBiomeWeatherInfluence && biomeManager != null)
+                {
+                    simple = biomeManager.PickBiomeWeather(simple);
+                }
+
+                SetWeather(simple, allowBiomeWeatherInfluence && biomeManager != null ? "simple_season_biome" : "simple_season");
                 return;
             }
 
@@ -133,7 +170,13 @@ namespace Survivebest.World
                 _ => summerWeights
             };
 
-            SetWeather(PickWeightedWeather(weights), "weighted_season");
+            WeatherState picked = PickWeightedWeather(weights);
+            if (allowBiomeWeatherInfluence && biomeManager != null)
+            {
+                picked = biomeManager.PickBiomeWeather(picked);
+            }
+
+            SetWeather(picked, allowBiomeWeatherInfluence && biomeManager != null ? "weighted_season_biome" : "weighted_season");
         }
 
         private static WeatherState ResolveSimpleSeasonWeather(Season season)
@@ -191,15 +234,18 @@ namespace Survivebest.World
             OnWeatherChanged?.Invoke(weatherState);
             OnWeatherTransition?.Invoke(previous, weatherState, source);
 
+            WeatherGameplayProfile profile = CurrentGameplayProfile;
             (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
             {
                 Type = SimulationEventType.WeatherChanged,
                 Severity = IsHazardous(state) ? SimulationEventSeverity.Warning : SimulationEventSeverity.Info,
                 SystemName = nameof(WeatherManager),
                 ChangeKey = weatherState.ToString(),
-                Reason = $"Weather transitioned {previous} -> {weatherState} ({source})",
+                Reason = $"Weather transitioned {previous} -> {weatherState} ({source}). {profile.GameplaySummary}",
                 Magnitude = Mathf.Abs((float)weatherState - (float)previous) + 1f
             });
+
+            TryPublishLightningFire(state, profile);
         }
 
         private void PublishForecast(Season season, int day)
@@ -221,6 +267,63 @@ namespace Survivebest.World
                 Reason = $"Seasonal forecast: {forecast}",
                 Magnitude = (int)season + 1f
             });
+        }
+
+        public WeatherGameplayProfile GetGameplayProfile(WeatherState state)
+        {
+            if (gameplayProfiles != null)
+            {
+                for (int i = 0; i < gameplayProfiles.Length; i++)
+                {
+                    WeatherGameplayProfile profile = gameplayProfiles[i];
+                    if (profile != null && profile.Weather == state)
+                    {
+                        return profile;
+                    }
+                }
+            }
+
+            return BuildDefaultGameplayProfile(state);
+        }
+
+        private void TryPublishLightningFire(WeatherState state, WeatherGameplayProfile profile)
+        {
+            if (!publishLightningFireHazards || profile == null || profile.LightningFireChancePerHour <= 0f)
+            {
+                return;
+            }
+
+            if (UnityEngine.Random.value > profile.LightningFireChancePerHour)
+            {
+                return;
+            }
+
+            OnLightningFireStarted?.Invoke(state, profile.LightningFireChancePerHour);
+            (gameEventHub ?? GameEventHub.Instance)?.Publish(new SimulationEvent
+            {
+                Type = SimulationEventType.FireStarted,
+                Severity = SimulationEventSeverity.Critical,
+                SystemName = nameof(WeatherManager),
+                ChangeKey = $"LightningFire_{state}",
+                Reason = $"Lightning from {state} weather ignited a fire risk.",
+                Magnitude = profile.LightningFireChancePerHour
+            });
+        }
+
+        private static WeatherGameplayProfile BuildDefaultGameplayProfile(WeatherState state)
+        {
+            return state switch
+            {
+                WeatherState.Rainy => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.85f, VisibilityMultiplier = 0.82f, StaminaDrainPerHour = 1f, TemperatureDeltaCelsius = -2f, AmbientSoundCue = "amb_weather_rain", GameplaySummary = "Rain slows movement, dampens mood, and makes travel louder and slick." },
+                WeatherState.Stormy => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.7f, VisibilityMultiplier = 0.55f, StaminaDrainPerHour = 3f, TemperatureDeltaCelsius = -3f, LightningFireChancePerHour = 0.12f, AmbientSoundCue = "amb_weather_storm", GameplaySummary = "Storms sharply reduce visibility, drain stamina, and lightning can start fires." },
+                WeatherState.Foggy => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.92f, VisibilityMultiplier = 0.4f, StaminaDrainPerHour = 0.5f, TemperatureDeltaCelsius = -1f, AmbientSoundCue = "amb_weather_fog", GameplaySummary = "Fog heavily reduces visibility and makes navigation risky." },
+                WeatherState.Heatwave => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.88f, VisibilityMultiplier = 0.9f, StaminaDrainPerHour = 2f, HydrationDrainPerHour = 6f, TemperatureDeltaCelsius = 12f, AmbientSoundCue = "amb_weather_heatwave", GameplaySummary = "Heatwaves increase thirst, sap stamina, and raise temperature danger." },
+                WeatherState.Snowy => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.78f, VisibilityMultiplier = 0.72f, StaminaDrainPerHour = 2f, TemperatureDeltaCelsius = -8f, AmbientSoundCue = "amb_weather_snow", GameplaySummary = "Snow slows travel and cold steadily drains stamina." },
+                WeatherState.Blizzard => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.55f, VisibilityMultiplier = 0.25f, StaminaDrainPerHour = 4f, TemperatureDeltaCelsius = -16f, AmbientSoundCue = "amb_weather_blizzard", GameplaySummary = "Blizzards cripple movement, crush visibility, and create severe cold exposure." },
+                WeatherState.Windy => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 0.93f, VisibilityMultiplier = 0.85f, StaminaDrainPerHour = 1.2f, TemperatureDeltaCelsius = -1f, AmbientSoundCue = "amb_weather_wind", GameplaySummary = "Wind pushes against movement and carries sound farther." },
+                WeatherState.Cloudy => new WeatherGameplayProfile { Weather = state, MovementSpeedMultiplier = 1f, VisibilityMultiplier = 0.92f, TemperatureDeltaCelsius = -1f, AmbientSoundCue = "amb_weather_cloudy", GameplaySummary = "Cloud cover softens light and lowers temperature slightly." },
+                _ => WeatherGameplayProfile.Default
+            };
         }
 
         private static bool IsHazardous(WeatherState state)

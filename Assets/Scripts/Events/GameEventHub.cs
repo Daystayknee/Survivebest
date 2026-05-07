@@ -45,6 +45,11 @@ namespace Survivebest.Events
         SaveLoaded,
         BuildModeChanged,
         HomeHotspotUsed,
+        BiomeChanged,
+        BiomeDiscovery,
+        NightEventStarted,
+        SleepCycleUpdated,
+        FireStarted,
         StatusEffectChanged,
         ContractStateChanged,
         SubstanceStateChanged
